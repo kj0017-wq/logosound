@@ -1,6 +1,7 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
+const crypto = require("crypto");
 
 admin.initializeApp();
 
@@ -234,7 +235,24 @@ exports.voice = onRequest(
     const voiceId = String(request.body?.voiceId || DEFAULT_VOICE_ID).trim();
     const requestedVoiceSettings = request.body?.voiceSettings || {};
     const shouldStore = Boolean(request.body?.store);
-    const exerciseName = String(request.body?.exerciseName || "Neue Übung").trim();
+    const exerciseName = String(request.body?.exerciseName || "Neue Uebung").trim();
+    const voiceSettings = {
+      stability: clampVoiceSetting(requestedVoiceSettings.stability, 0.58),
+      similarity_boost: clampVoiceSetting(requestedVoiceSettings.similarity_boost, 0.82),
+      style: clampVoiceSetting(requestedVoiceSettings.style, 0.12),
+      use_speaker_boost: requestedVoiceSettings.use_speaker_boost !== false,
+    };
+    const textHash = hashClientText(text);
+    const cacheHash = hashVoiceCache(
+      JSON.stringify({
+        text: normalizeVoiceText(text),
+        voiceId,
+        voiceSettings,
+        model: "eleven_multilingual_v2",
+      }),
+    );
+    const safeName = slugify(exerciseName);
+    const cachedPath = `editor-voices/${safeName}/voice_${cacheHash}.mp3`;
 
     if (!text) {
       response.status(400).json({ error: "missing-text" });
@@ -247,6 +265,23 @@ exports.voice = onRequest(
     }
 
     try {
+      if (shouldStore) {
+        const cachedFile = admin.storage().bucket(STORAGE_BUCKET).file(cachedPath);
+        const [exists] = await cachedFile.exists();
+        if (exists) {
+          response.set("Cache-Control", "no-store");
+          response.status(200).json({
+            path: cachedPath,
+            downloadUrl: getStoredVoiceDownloadUrl(cachedPath),
+            voiceId,
+            voiceSettings,
+            textHash,
+            cached: true,
+          });
+          return;
+        }
+      }
+
       const ttsResponse = await fetch(`${ELEVENLABS_TTS_URL}/${voiceId}`, {
         method: "POST",
         headers: {
@@ -257,12 +292,7 @@ exports.voice = onRequest(
         body: JSON.stringify({
           text,
           model_id: "eleven_multilingual_v2",
-          voice_settings: {
-            stability: clampVoiceSetting(requestedVoiceSettings.stability, 0.58),
-            similarity_boost: clampVoiceSetting(requestedVoiceSettings.similarity_boost, 0.82),
-            style: clampVoiceSetting(requestedVoiceSettings.style, 0.12),
-            use_speaker_boost: requestedVoiceSettings.use_speaker_boost !== false,
-          },
+          voice_settings: voiceSettings,
         }),
       });
 
@@ -275,9 +305,7 @@ exports.voice = onRequest(
 
       const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
       if (shouldStore) {
-        const safeName = slugify(exerciseName);
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const path = `editor-voices/${safeName}/voice_${timestamp}.mp3`;
+        const path = cachedPath;
         const file = admin.storage().bucket(STORAGE_BUCKET).file(path);
 
         await file.save(audioBuffer, {
@@ -289,6 +317,8 @@ exports.voice = onRequest(
               exerciseName,
               voiceText: text.slice(0, 500),
               voiceId,
+              textHash,
+              cacheHash,
             },
           },
         });
@@ -296,7 +326,11 @@ exports.voice = onRequest(
         response.set("Cache-Control", "no-store");
         response.status(200).json({
           path,
-          downloadUrl: `/api/voice?path=${encodeURIComponent(path)}`,
+          downloadUrl: getStoredVoiceDownloadUrl(path),
+          voiceId,
+          voiceSettings,
+          textHash,
+          cached: false,
         });
         return;
       }
@@ -367,6 +401,23 @@ function getGlobalVoiceAudioUrl(url = "", path = "") {
   } catch (error) {}
 
   return audioUrl;
+}
+
+function normalizeVoiceText(text) {
+  return String(text || "").replace(/\s+/g, " ").trim();
+}
+
+function hashVoiceCache(text) {
+  return crypto.createHash("sha1").update(normalizeVoiceText(text)).digest("hex").slice(0, 16);
+}
+
+function hashClientText(text) {
+  const normalizedText = normalizeVoiceText(text);
+  let hash = 0;
+  for (let index = 0; index < normalizedText.length; index += 1) {
+    hash = (hash * 31 + normalizedText.charCodeAt(index)) | 0;
+  }
+  return String(hash >>> 0);
 }
 
 function clampVoiceSetting(value, fallback) {

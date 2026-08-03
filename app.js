@@ -5137,19 +5137,18 @@ function getThreeLineKaraokeLabels(timeline, activeIndex) {
   const spokenIndexes = timeline
     .map((item, index) => ({ item, index }))
     .filter(({ item }) => !item.isPause);
-  const activeSpokenOrdinal = Math.max(
+  const lineGroups = buildKaraokeLineGroups(spokenIndexes);
+  const activeGroupIndex = Math.max(
     0,
-    spokenIndexes.findIndex(({ index }) => index === activeWordIndex),
+    lineGroups.findIndex((group) =>
+      group.some(({ index }) => index === activeWordIndex),
+    ),
   );
-  const groupSize = getKaraokeGroupSize(timeline, activeWordIndex);
-  const groupStart = Math.floor(activeSpokenOrdinal / groupSize) * groupSize;
-  const currentGroupEnd = groupStart + groupSize;
-  const secondGroupSize = Math.min(3, groupSize + 1);
 
   return {
-    before: getSpokenGroupLabel(spokenIndexes, groupStart, groupSize),
-    current: getSpokenGroupLabel(spokenIndexes, currentGroupEnd, secondGroupSize),
-    after: getSpokenGroupLabel(spokenIndexes, currentGroupEnd + secondGroupSize, secondGroupSize),
+    before: getSpokenGroupLabel(lineGroups[activeGroupIndex]),
+    current: getSpokenGroupLabel(lineGroups[activeGroupIndex + 1]),
+    after: getSpokenGroupLabel(lineGroups[activeGroupIndex + 2]),
   };
 }
 
@@ -5165,17 +5164,39 @@ function getUpcomingKaraokeLabel(timeline, activeIndex, count = 2) {
   return labels.join(" ");
 }
 
-function getKaraokeGroupSize(timeline, activeIndex) {
-  const label = getTimelineLabelAt(timeline, activeIndex);
-  if (label.length >= 12) return 1;
-  if (label.length >= 7) return 2;
-  return 3;
+function buildKaraokeLineGroups(spokenIndexes) {
+  const groups = [];
+  let group = [];
+  let charCount = 0;
+  const maxWords = 4;
+  const maxChars = 28;
+
+  spokenIndexes.forEach((entry) => {
+    const word = String(entry.item?.label || "");
+    const nextCharCount = charCount + (group.length ? 1 : 0) + word.length;
+    if (group.length && (nextCharCount > maxChars || group.length >= maxWords)) {
+      groups.push(group);
+      group = [];
+      charCount = 0;
+    }
+
+    group.push(entry);
+    charCount += (group.length > 1 ? 1 : 0) + word.length;
+
+    if (isSentenceEndWord(word)) {
+      groups.push(group);
+      group = [];
+      charCount = 0;
+    }
+  });
+
+  if (group.length) groups.push(group);
+  return groups;
 }
 
-function getSpokenGroupLabel(spokenIndexes, start, size) {
-  if (start < 0 || start >= spokenIndexes.length) return "";
-  return spokenIndexes
-    .slice(start, start + size)
+function getSpokenGroupLabel(group) {
+  if (!Array.isArray(group) || !group.length) return "";
+  return group
     .map(({ item }) => item.label)
     .filter(Boolean)
     .join(" ");

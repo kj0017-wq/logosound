@@ -1050,7 +1050,7 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
   font-size: clamp(1.18rem, 4.9vw, 1.9rem);
   font-weight: 900;
   opacity: 0.78;
-  transform: translateY(18px) translateZ(-130px) rotateX(32deg) scale(0.72);
+  transform: translateY(14px) translateZ(-90px) rotateX(18deg) scale(0.78);
   transform-origin: center;
 }
 
@@ -1071,7 +1071,7 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
   font-size: clamp(1.18rem, 4.9vw, 1.9rem);
   font-weight: 900;
   opacity: 0.82;
-  transform: translateY(14px) translateZ(-110px) rotateX(28deg) scale(0.74);
+  transform: translateY(12px) translateZ(-76px) rotateX(16deg) scale(0.8);
   text-shadow: none;
 }
 
@@ -1081,31 +1081,31 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
   font-size: clamp(0.98rem, 4vw, 1.52rem);
   font-weight: 850;
   opacity: 0.62;
-  transform: translateY(24px) translateZ(-190px) rotateX(42deg) scale(0.58);
+  transform: translateY(22px) translateZ(-132px) rotateX(24deg) scale(0.66);
 }
 
 .karaoke-line-before.is-entering {
-  animation: karaokeFadeBack 360ms ease both;
+  animation: karaokeFadeBack 620ms ease both;
 }
 
 .karaoke-line-current.is-entering {
-  animation: karaokeFloatFocus 420ms cubic-bezier(0.2, 0.8, 0.22, 1) both;
+  animation: karaokeFloatFocus 760ms cubic-bezier(0.18, 0.78, 0.22, 1) both;
 }
 
 .karaoke-line-after.is-entering {
-  animation: karaokeFloatUpcoming 520ms cubic-bezier(0.2, 0.8, 0.22, 1) both;
+  animation: karaokeFloatUpcoming 880ms cubic-bezier(0.18, 0.78, 0.22, 1) both;
 }
 
 .karaoke-overlay.is-forward-only .karaoke-line-before.is-entering,
 .playback-karaoke-overlay.is-forward-only .karaoke-line-before.is-entering {
-  animation: karaokeFloatFocus 420ms cubic-bezier(0.2, 0.8, 0.22, 1) both;
+  animation: karaokeFloatFocus 760ms cubic-bezier(0.18, 0.78, 0.22, 1) both;
 }
 
 .karaoke-overlay.is-forward-only .karaoke-line-current.is-entering,
 .playback-karaoke-overlay.is-forward-only .karaoke-line-current.is-entering,
 .karaoke-overlay.is-forward-only .karaoke-line-after.is-entering,
 .playback-karaoke-overlay.is-forward-only .karaoke-line-after.is-entering {
-  animation: karaokeFloatUpcoming 520ms cubic-bezier(0.2, 0.8, 0.22, 1) both;
+  animation: karaokeFloatUpcoming 880ms cubic-bezier(0.18, 0.78, 0.22, 1) both;
 }
 
 .karaoke-speaker-label {
@@ -1141,21 +1141,21 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
 @keyframes karaokeFloatUpcoming {
   0% {
     opacity: 0;
-    transform: translateY(44px) translateZ(-220px) rotateX(48deg) scale(0.42);
-    filter: blur(2px);
+    transform: translateY(34px) translateZ(-150px) rotateX(28deg) scale(0.6);
+    filter: blur(1.2px);
   }
   100% {
     opacity: 0.78;
-    transform: translateY(18px) translateZ(-130px) rotateX(32deg) scale(0.72);
+    transform: translateY(14px) translateZ(-90px) rotateX(18deg) scale(0.78);
     filter: blur(0);
   }
 }
 
 @keyframes karaokeFloatFocus {
   0% {
-    opacity: 0.55;
-    transform: translateY(18px) translateZ(-80px) rotateX(20deg) scale(0.74);
-    filter: blur(1px);
+    opacity: 0.68;
+    transform: translateY(14px) translateZ(-64px) rotateX(14deg) scale(0.82);
+    filter: blur(0.8px);
   }
   100% {
     opacity: 1;
@@ -1166,8 +1166,8 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
 
 @keyframes karaokeFadeBack {
   0% {
-    opacity: 0.9;
-    transform: translateY(0) translateZ(0) rotateX(0deg) scale(0.92);
+    opacity: 0.82;
+    transform: translateY(0) translateZ(-24px) rotateX(4deg) scale(0.9);
   }
   100% {
     opacity: 0.62;

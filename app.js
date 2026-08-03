@@ -5068,8 +5068,8 @@ function updateThreeLineKaraokeDisplay(overlay, timeline, activeIndex) {
 
   [
     [".karaoke-line-before", lines.before],
-    [".karaoke-line-current", timeline.some((item) => item.isDialog) ? lines.after : lines.current],
-    [".karaoke-line-after", timeline.some((item) => item.isDialog) ? lines.current : lines.after],
+    [".karaoke-line-current", lines.current],
+    [".karaoke-line-after", lines.after],
   ].forEach(([selector, text]) => {
     const line = overlay.querySelector(selector);
     if (!line) return;
@@ -5113,7 +5113,7 @@ function getThreeLineKaraokeLabels(timeline, activeIndex) {
     return {
       before: getTimelineLabelAt(timeline, getPreviousSpokenIndex(timeline, currentIndex)),
       current: getTimelineLabelAt(timeline, currentIndex),
-      after: getTimelineLabelAt(timeline, getNextSpokenIndex(timeline, currentIndex)),
+      after: getUpcomingKaraokeLabel(timeline, currentIndex, 2),
     };
   }
 
@@ -5134,8 +5134,20 @@ function getThreeLineKaraokeLabels(timeline, activeIndex) {
   return {
     before: getSpokenGroupLabel(spokenIndexes, groupStart - groupSize, groupSize),
     current: getSpokenGroupLabel(spokenIndexes, groupStart, groupSize),
-    after: getSpokenGroupLabel(spokenIndexes, currentGroupEnd, groupSize),
+    after: getSpokenGroupLabel(spokenIndexes, currentGroupEnd, Math.min(3, groupSize + 1)),
   };
+}
+
+function getUpcomingKaraokeLabel(timeline, activeIndex, count = 2) {
+  const labels = [];
+  let index = activeIndex;
+  while (labels.length < count) {
+    index = getNextSpokenIndex(timeline, index);
+    if (index == null) break;
+    const label = getTimelineLabelAt(timeline, index);
+    if (label) labels.push(label);
+  }
+  return labels.join(" ");
 }
 
 function getKaraokeGroupSize(timeline, activeIndex) {

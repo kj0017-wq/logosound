@@ -1020,15 +1020,17 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
 }
 
 .karaoke-line-current {
-  color: rgba(255, 255, 255, 0.58);
-  font-size: clamp(1.18rem, 4.9vw, 1.9rem);
-  font-weight: 900;
+  color: #f6b44b;
+  font-size: clamp(1.85rem, 7.4vw, 3.05rem);
+  font-weight: 950;
 }
 
 .karaoke-line-after {
-  color: #f6b44b;
-  font-size: clamp(2.25rem, 9vw, 3.85rem);
-  font-weight: 950;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: clamp(1.18rem, 4.9vw, 1.9rem);
+  font-weight: 900;
+  transform: scale(1.04);
+  transform-origin: center;
 }
 
 .karaoke-speaker-label {
@@ -1053,12 +1055,12 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
 
 .karaoke-overlay.is-three-line.is-context-dense .karaoke-line-current,
 .playback-karaoke-overlay.is-three-line.is-context-dense .karaoke-line-current {
-  font-size: clamp(1.05rem, 4.4vw, 1.65rem);
+  font-size: clamp(1.75rem, 6.9vw, 2.75rem);
 }
 
 .karaoke-overlay.is-three-line.is-context-dense .karaoke-line-after,
 .playback-karaoke-overlay.is-three-line.is-context-dense .karaoke-line-after {
-  font-size: clamp(1.85rem, 7.4vw, 3.05rem);
+  font-size: clamp(1.05rem, 4.4vw, 1.65rem);
 }
 
 .karaoke-sentence {

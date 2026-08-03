@@ -5073,9 +5073,22 @@ function updateThreeLineKaraokeDisplay(overlay, timeline, activeIndex) {
   ].forEach(([selector, text]) => {
     const line = overlay.querySelector(selector);
     if (!line) return;
-    renderKaraokeLineContent(line, text, timeline.some((item) => item.isDialog));
+    updateAnimatedKaraokeLine(line, text, timeline.some((item) => item.isDialog));
     line.classList.toggle("is-empty", !text);
   });
+}
+
+function updateAnimatedKaraokeLine(line, text, isDialog = false) {
+  const nextText = String(text || "");
+  if (line.dataset.text === nextText) return;
+
+  line.dataset.text = nextText;
+  line.classList.remove("is-entering");
+  renderKaraokeLineContent(line, nextText, isDialog);
+  if (!nextText) return;
+
+  line.getBoundingClientRect();
+  line.classList.add("is-entering");
 }
 
 function renderKaraokeLineContent(line, text, isDialog = false) {

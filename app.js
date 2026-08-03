@@ -5990,23 +5990,42 @@ function saveElevenLabsSettings() {
 
 async function saveCloudElevenLabsSettings(settings = getElevenLabsSettings(), options = {}) {
   const normalizedSettings = normalizeElevenLabsSettings(settings);
-  await setDoc(doc(firestore, "settings", ELEVENLABS_SETTINGS_DOC), {
-    ...normalizedSettings,
-    updatedAt: new Date().toISOString(),
+  const response = await fetch(getApiUrl("/api/settings"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ settings: normalizedSettings }),
   });
+
+  if (!response.ok) {
+    await setDoc(doc(firestore, "settings", ELEVENLABS_SETTINGS_DOC), {
+      ...normalizedSettings,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
   if (!options.silent && settingsState) settingsState.textContent = "ElevenLabs-Stimmen in Firebase gespeichert.";
 }
 
 async function loadCloudElevenLabsSettings() {
   try {
-    const snapshot = await getDoc(doc(firestore, "settings", ELEVENLABS_SETTINGS_DOC));
-    if (!snapshot.exists()) {
+    const response = await fetch(getApiUrl("/api/settings"), { cache: "no-store" });
+    let cloudSettings = null;
+    if (response.ok) {
+      const payload = await response.json();
+      cloudSettings = payload.settings ? normalizeElevenLabsSettings(payload.settings) : null;
+    }
+
+    if (!cloudSettings) {
+      const snapshot = await getDoc(doc(firestore, "settings", ELEVENLABS_SETTINGS_DOC));
+      cloudSettings = snapshot.exists() ? normalizeElevenLabsSettings(snapshot.data()) : null;
+    }
+
+    if (!cloudSettings) {
       await saveCloudElevenLabsSettings(getElevenLabsSettings());
       return;
     }
 
     const localSettings = getElevenLabsSettings();
-    const cloudSettings = normalizeElevenLabsSettings(snapshot.data());
     const mergedSettings = mergeElevenLabsSettings(localSettings, cloudSettings);
     localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(mergedSettings));
     renderVoiceProfileSelect(mergedSettings);

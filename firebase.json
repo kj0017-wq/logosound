@@ -58,6 +58,13 @@
         }
       },
       {
+        "source": "/api/settings",
+        "function": {
+          "functionId": "settings",
+          "region": "europe-west3"
+        }
+      },
+      {
         "source": "/api/chatgpt",
         "function": {
           "functionId": "chatgpt",

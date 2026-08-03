@@ -10,6 +10,54 @@ const ELEVENLABS_TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech";
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const STORAGE_BUCKET = "logosound-19293-voices";
 const EDITOR_EXERCISES_COLLECTION = "editorExercises";
+const SETTINGS_COLLECTION = "settings";
+const ELEVENLABS_SETTINGS_DOC = "elevenLabsVoices";
+
+exports.settings = onRequest(
+  {
+    region: "europe-west3",
+    maxInstances: 5,
+  },
+  async (request, response) => {
+    if (handleCors(request, response)) return;
+    response.set("Cache-Control", "no-store");
+
+    const settingsRef = admin
+      .firestore()
+      .collection(SETTINGS_COLLECTION)
+      .doc(ELEVENLABS_SETTINGS_DOC);
+
+    if (request.method === "GET") {
+      try {
+        const snapshot = await settingsRef.get();
+        response.status(200).json({
+          settings: snapshot.exists ? normalizeElevenLabsSettings(snapshot.data()) : null,
+        });
+      } catch (error) {
+        console.error("Settings load failed", error);
+        response.status(500).json({ error: "settings-load-failed" });
+      }
+      return;
+    }
+
+    if (request.method === "POST") {
+      const settings = normalizeElevenLabsSettings(request.body?.settings || request.body);
+      try {
+        await settingsRef.set({
+          ...settings,
+          updatedAt: new Date().toISOString(),
+        });
+        response.status(200).json({ ok: true, settings });
+      } catch (error) {
+        console.error("Settings save failed", error);
+        response.status(500).json({ error: "settings-save-failed" });
+      }
+      return;
+    }
+
+    response.status(405).json({ error: "method-not-allowed" });
+  },
+);
 
 exports.editorExercises = onRequest(
   {
@@ -301,6 +349,48 @@ function clampVoiceSetting(value, fallback) {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return fallback;
   return Math.max(0, Math.min(1, numericValue));
+}
+
+function normalizeElevenLabsSettings(settings = {}) {
+  const defaultVoiceId = DEFAULT_VOICE_ID;
+  const fallbackVoice = {
+    key: "standard",
+    name: "Standard",
+    gender: "female",
+    voiceId: defaultVoiceId,
+  };
+  const voices = Array.isArray(settings.voices)
+    ? settings.voices
+        .map((voice) => ({
+          key: String(voice?.key || voice?.name || voice?.voiceId || "").trim(),
+          name: String(voice?.name || "Stimme").trim(),
+          gender: ["male", "female", "neutral"].includes(voice?.gender) ? voice.gender : "neutral",
+          voiceId: String(voice?.voiceId || "").trim(),
+        }))
+        .filter((voice) => voice.voiceId)
+    : [];
+
+  if (!voices.length) {
+    voices.push({
+      ...fallbackVoice,
+      voiceId: String(settings.voiceId || defaultVoiceId).trim(),
+    });
+  }
+
+  const activeVoiceKey = voices.some((voice) => voice.key === settings.activeVoiceKey)
+    ? settings.activeVoiceKey
+    : voices[0].key;
+  const activeVoice = voices.find((voice) => voice.key === activeVoiceKey) || voices[0];
+
+  return {
+    activeVoiceKey,
+    voiceId: activeVoice.voiceId || defaultVoiceId,
+    voices,
+    stability: Math.round(clampVoiceSetting(Number(settings.stability) / 100, 0.58) * 100),
+    similarity: Math.round(clampVoiceSetting(Number(settings.similarity) / 100, 0.82) * 100),
+    style: Math.round(clampVoiceSetting(Number(settings.style) / 100, 0.12) * 100),
+    speakerBoost: settings.speakerBoost !== false,
+  };
 }
 
 function buildChatGptExercisePrompt(exercise) {

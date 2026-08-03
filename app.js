@@ -10,6 +10,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   getFirestore,
   setDoc,
@@ -29,9 +30,12 @@ const savePatientButton = document.querySelector("#savePatientButton");
 const patientSuggestions = document.querySelector("#patientSuggestions");
 const exerciseName = document.querySelector("#exerciseName");
 const recordingExerciseShortcuts = document.querySelector("#recordingExerciseShortcuts");
+const previewExerciseButton = document.querySelector("#previewExerciseButton");
 const editorSavedExercises = document.querySelector("#editorSavedExercises");
+const editorSavedExerciseList = document.querySelector("#editorSavedExerciseList");
 const newEditorExerciseButton = document.querySelector("#newEditorExerciseButton");
 const exerciseEditor = document.querySelector("#exerciseEditor");
+const editorModeState = document.querySelector("#editorModeState");
 const editorExerciseName = document.querySelector("#editorExerciseName");
 const editorMode = document.querySelector("#editorMode");
 const editorContent = document.querySelector("#editorContent");
@@ -39,6 +43,9 @@ const editorSentenceBuilder = document.querySelector("#editorSentenceBuilder");
 const editorSentenceInput = document.querySelector("#editorSentenceInput");
 const addEditorSentenceButton = document.querySelector("#addEditorSentenceButton");
 const editorSentenceList = document.querySelector("#editorSentenceList");
+const editorDialogBuilder = document.querySelector("#editorDialogBuilder");
+const editorDialogList = document.querySelector("#editorDialogList");
+const addEditorDialogTurnButton = document.querySelector("#addEditorDialogTurnButton");
 const editorVoiceInstruction = document.querySelector("#editorVoiceInstruction");
 const suggestVoiceButton = document.querySelector("#suggestVoiceButton");
 const generateVoiceAudioButton = document.querySelector("#generateVoiceAudioButton");
@@ -50,6 +57,7 @@ const editorRepeats = document.querySelector("#editorRepeats");
 const editorSpeed = document.querySelector("#editorSpeed");
 const editorSpeedValue = document.querySelector("#editorSpeedValue");
 const editorPreview = document.querySelector("#editorPreview");
+const testEditorKaraokeButton = document.querySelector("#testEditorKaraokeButton");
 const saveEditorExerciseButton = document.querySelector("#saveEditorExerciseButton");
 const recordingTime = document.querySelector("#recordingTime");
 const volumeValue = document.querySelector("#volumeValue");
@@ -57,8 +65,11 @@ const frequencyValue = document.querySelector("#frequencyValue");
 const voiceFrequencyOverlay = document.querySelector("#voiceFrequencyOverlay");
 const voiceFrequencyText = document.querySelector("#voiceFrequencyText");
 const voiceFrequencyMarker = document.querySelector("#voiceFrequencyMarker");
+const repeatCounterOverlay = document.querySelector("#repeatCounterOverlay");
 const sensitivitySlider = document.querySelector("#sensitivitySlider");
 const sensitivityValue = document.querySelector("#sensitivityValue");
+const recordingKaraokeSpeed = document.querySelector("#recordingKaraokeSpeed");
+const recordingKaraokeSpeedValue = document.querySelector("#recordingKaraokeSpeedValue");
 const playbackVolumeSlider = document.querySelector("#playbackVolumeSlider");
 const playbackVolumeValue = document.querySelector("#playbackVolumeValue");
 const liveWaveform = document.querySelector("#liveWaveform");
@@ -79,6 +90,12 @@ const playbackKaraokeOverlay = document.querySelector("#playbackKaraokeOverlay")
 const playPauseButton = document.querySelector("#playPauseButton");
 const playbackSeek = document.querySelector("#playbackSeek");
 const playbackTimeLabel = document.querySelector("#playbackTimeLabel");
+const playbackLibrary = document.querySelector(".playback-library");
+const playbackExerciseSelect = document.querySelector("#playbackExerciseSelect");
+const playbackOpenExerciseButton = document.querySelector("#playbackOpenExerciseButton");
+const playbackRecordingSelect = document.querySelector("#playbackRecordingSelect");
+const playbackOpenRecordingButton = document.querySelector("#playbackOpenRecordingButton");
+const playbackSavedRecordingsList = document.querySelector("#playbackSavedRecordingsList");
 const calibrationButton = document.querySelector("#calibrationButton");
 const averageVolume = document.querySelector("#averageVolume");
 const maxVolume = document.querySelector("#maxVolume");
@@ -96,6 +113,27 @@ const patientAverageVolume = document.querySelector("#patientAverageVolume");
 const statisticsRecordingSelect = document.querySelector("#statisticsRecordingSelect");
 const statisticsPositionSlider = document.querySelector("#statisticsPositionSlider");
 const statisticsPositionValue = document.querySelector("#statisticsPositionValue");
+const statisticsWaveform = document.querySelector("#statisticsWaveform");
+const statisticsWaveformResizeHandle = document.querySelector("#statisticsWaveformResizeHandle");
+const statisticsVolumeTimeline = document.querySelector("#statisticsVolumeTimeline");
+const statisticsFrequencyTimeline = document.querySelector("#statisticsFrequencyTimeline");
+const statisticsAmplitudeGain = document.querySelector("#statisticsAmplitudeGain");
+const statisticsAmplitudeGainValue = document.querySelector("#statisticsAmplitudeGainValue");
+const statisticsVolumeGain = document.querySelector("#statisticsVolumeGain");
+const statisticsVolumeGainValue = document.querySelector("#statisticsVolumeGainValue");
+const statisticsFrequencyGain = document.querySelector("#statisticsFrequencyGain");
+const statisticsFrequencyGainValue = document.querySelector("#statisticsFrequencyGainValue");
+const statisticsRangeControl = document.querySelector("#statisticsRangeControl");
+const statisticsStartSlider = document.querySelector("#statisticsStartSlider");
+const statisticsStartValue = document.querySelector("#statisticsStartValue");
+const statisticsEndSlider = document.querySelector("#statisticsEndSlider");
+const statisticsEndValue = document.querySelector("#statisticsEndValue");
+const statisticsRangeValue = document.querySelector("#statisticsRangeValue");
+const statisticsPlayRangeButton = document.querySelector("#statisticsPlayRangeButton");
+const statisticsZoomRangeButton = document.querySelector("#statisticsZoomRangeButton");
+const analysisCalibrationPanel = document.querySelector(".analysis-calibration-panel");
+const analysisPlayRow = document.querySelector(".analysis-play-row");
+const analysisMiniGrid = document.querySelector(".analysis-mini-grid");
 const audioAnalysisTitle = document.querySelector("#audioAnalysisTitle");
 const audioAnalysisGrid = document.querySelector("#audioAnalysisGrid");
 const audioAnalysisNote = document.querySelector("#audioAnalysisNote");
@@ -107,12 +145,27 @@ const settingsVoiceSimilarityValue = document.querySelector("#settingsVoiceSimil
 const settingsVoiceStyle = document.querySelector("#settingsVoiceStyle");
 const settingsVoiceStyleValue = document.querySelector("#settingsVoiceStyleValue");
 const settingsSpeakerBoost = document.querySelector("#settingsSpeakerBoost");
+const settingsVoiceDemoText = document.querySelector("#settingsVoiceDemoText");
+const settingsTestVoiceButton = document.querySelector("#settingsTestVoiceButton");
+const settingsVoicePreview = document.querySelector("#settingsVoicePreview");
+const settingsVoiceIdHint = document.querySelector("#settingsVoiceIdHint");
+const settingsChatGptEnabled = document.querySelector("#settingsChatGptEnabled");
+const settingsChatGptApiKey = document.querySelector("#settingsChatGptApiKey");
+const settingsChatGptModel = document.querySelector("#settingsChatGptModel");
+const settingsChatGptPrompt = document.querySelector("#settingsChatGptPrompt");
 const settingsSensitivity = document.querySelector("#settingsSensitivity");
 const settingsSensitivityValue = document.querySelector("#settingsSensitivityValue");
 const settingsCalibrationButton = document.querySelector("#settingsCalibrationButton");
 const settingsPlaybackVolume = document.querySelector("#settingsPlaybackVolume");
 const settingsPlaybackVolumeValue = document.querySelector("#settingsPlaybackVolumeValue");
+const playbackGainPresetButtons = document.querySelectorAll("[data-playback-gain]");
 const settingsState = document.querySelector("#settingsState");
+const settingsVoiceSelect = document.querySelector("#settingsVoiceSelect");
+const settingsVoiceName = document.querySelector("#settingsVoiceName");
+const settingsVoiceGender = document.querySelector("#settingsVoiceGender");
+const settingsNewVoiceButton = document.querySelector("#settingsNewVoiceButton");
+const settingsSaveVoiceButton = document.querySelector("#settingsSaveVoiceButton");
+const settingsDeleteVoiceButton = document.querySelector("#settingsDeleteVoiceButton");
 const recordingsList = document.querySelector("#recordingsList");
 const navButtons = document.querySelectorAll(".nav-button");
 const appSections = document.querySelectorAll(".app-section");
@@ -124,8 +177,14 @@ const DB_NAME = "logosound-local";
 const STORE_NAME = "recordings";
 const SELECTED_PATIENT_KEY = "logosound-selected-patient";
 const SENSITIVITY_KEY = "logosound-sensitivity";
+const RECORDING_KARAOKE_SPEED_KEY = "logosound-recording-karaoke-speed";
+const RECORDING_KARAOKE_SPEEDS_KEY = "logosound-recording-karaoke-speeds-by-exercise";
 const PLAYBACK_GAIN_KEY = "logosound-playback-gain";
+const STATISTICS_WAVEFORM_HEIGHT_KEY = "logosound-statistics-waveform-height";
+const ANALYSIS_CALIBRATION_KEY = "logosound-analysis-calibration";
 const ELEVENLABS_SETTINGS_KEY = "logosound-elevenlabs-settings";
+const ELEVENLABS_SETTINGS_DOC = "elevenLabsVoices";
+const CHATGPT_SETTINGS_KEY = "logosound-chatgpt-settings";
 const EDITOR_DRAFT_KEY = "logosound-editor-draft";
 const SAVED_EDITOR_EXERCISE_KEY = "logosound-saved-editor-exercise";
 const SAVED_EDITOR_EXERCISES_KEY = "logosound-saved-editor-exercises";
@@ -135,7 +194,9 @@ const NOISE_FLOOR = 0.35;
 const RMS_SENSITIVITY = 30;
 const PEAK_SENSITIVITY = 2.2;
 const VOLUME_NOISE_GATE = 1.8;
-const VOLUME_SOFT_LIMIT = 62;
+const VOLUME_NOISE_GATE_MULTIPLIER = 1.65;
+const VOLUME_NOISE_FOLLOW_SPEED = 0.08;
+const VOLUME_SOFT_LIMIT = 86;
 const WAVEFORM_VISUAL_CEILING = 82;
 const WAVEFORM_DYNAMIC_RANGE = 1.35;
 const VOICE_LOW_HZ = 160;
@@ -151,17 +212,29 @@ const RECORDING_HEIGHT = 1280;
 const COUNTDOWN_STEPS = ["3", "2", "1"];
 const DEFAULT_KARAOKE_WORD_SECONDS = 1.05;
 const DEFAULT_KARAOKE_PAUSE_SECONDS = 0.45;
+const SENTENCE_END_PAUSE_SECONDS = 0.75;
+const KARAOKE_CONTEXT_BEFORE = 2;
+const KARAOKE_CONTEXT_AFTER = 2;
 const RECORDING_TAIL_SECONDS = 1.2;
+const SENTENCE_FINAL_TAIL_SECONDS = 0.35;
+const END_ANALYSIS_SILENCE_SECONDS = 0.45;
 const SENTENCE_SILENCE_MS = 1000;
+const SENTENCE_MAX_ACTIVE_MS = 12000;
 const SENTENCE_SPEECH_THRESHOLD = 8;
-const SENTENCE_SILENCE_THRESHOLD = 7;
+const SENTENCE_SILENCE_THRESHOLD = 4;
 const SENTENCE_MAX_SECONDS = 75;
+const PRODUCTION_ORIGIN = "https://logosound-19293.web.app";
+const API_ORIGIN = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+  ? PRODUCTION_ORIGIN
+  : "";
 const EDITOR_SPEEDS = {
   1: { label: "Sehr langsam", wordSeconds: 1.35, pauseSeconds: 0.7 },
   2: { label: "Langsam", wordSeconds: 1.18, pauseSeconds: 0.56 },
   3: { label: "Normal", wordSeconds: 0.98, pauseSeconds: 0.42 },
   4: { label: "Schnell", wordSeconds: 0.78, pauseSeconds: 0.3 },
   5: { label: "Sehr schnell", wordSeconds: 0.62, pauseSeconds: 0.22 },
+  6: { label: "Extra schnell", wordSeconds: 0.48, pauseSeconds: 0.16 },
+  7: { label: "Maximal", wordSeconds: 0.36, pauseSeconds: 0.1 },
 };
 const EXERCISE_INSTRUCTIONS = {
   "Vokal A halten":
@@ -233,6 +306,8 @@ const appSplash = document.querySelector("#appSplash");
 let mediaStream;
 let mediaRecorder;
 let audioContext;
+let instructionAudioContext;
+let instructionAudioSource;
 let playbackAudioContext;
 let analyser;
 let audioSource;
@@ -244,6 +319,8 @@ let playbackSource;
 let playbackGain;
 let composedRecordingStream;
 let composedRecordingAudioTrack;
+let recordingAudioDestination;
+let recordingAudioMicGain;
 let recordingCanvas;
 let recordingCanvasContext;
 let recordingDrawFrame;
@@ -262,6 +339,12 @@ let currentMetadata;
 let currentVideoUrl;
 let selectedAnalysisRecordingId = "";
 let selectedAnalysisPosition = 0;
+let selectedAnalysisStart = 0;
+let selectedAnalysisEnd = 1;
+let statisticsRangeStopTime = null;
+let statisticsRangeZoomed = false;
+let lastStatisticsPlaybackSyncAt = 0;
+let statisticsResizeState = null;
 let lastAmplitudeAt = 0;
 let isRecording = false;
 let isCalibrating = false;
@@ -271,17 +354,30 @@ let adaptiveNoiseFloor = 0;
 let lastSilentSignalNoticeAt = 0;
 let silentSignalStartedAt = 0;
 let analyserRestartInProgress = false;
+let adaptiveVolumeNoiseFloor = 0;
 let processorRms = 0;
 let processorPeak = 0;
 let lastProcessorSignalAt = 0;
 let karaokeWords = [];
 let karaokeTimeline = [];
+let editorPreviewTimeline = [];
+let editorPreviewTimerId = 0;
+let isTestingEditorKaraoke = false;
+let isPreviewingExercise = false;
+let previewAudioElement = null;
+let previewAnimationFrameId = 0;
+let previewAudioUrls = [];
+let previewPlaybackOffsetSeconds = 0;
 let playbackKaraokeTimeline = [];
 let activeKaraokeIndex = 0;
 let sentenceSilenceStartedAt = 0;
 let sentenceHasSpeechSinceAdvance = false;
 let sentenceStopScheduled = false;
 let sentencePeakVolumeSinceAdvance = 0;
+let sentenceActiveStartedAt = 0;
+let dialogVoiceInProgress = false;
+let dialogVoiceTurnIndex = -1;
+let dialogAdvanceLock = false;
 let playbackAnimationFrame;
 let autoStopTimeoutId;
 let hardStopTimeoutId;
@@ -293,6 +389,12 @@ let activeEditorExerciseName = "";
 let editorVoiceAudioDataUrl = "";
 let editorVoiceAudioUrl = "";
 let editorVoiceAudioPath = "";
+let editorVoiceAudioVoiceId = "";
+let editorVoiceAudioVoiceSettings = null;
+let editorVoiceAudioTextHash = "";
+let editorVoiceAudioUpdatedAt = "";
+let editorSaveFeedbackTimerId = 0;
+let settingsVoiceTestUrl = "";
 let isVideoPreviewHidden = false;
 let instructionPlaybackActive = false;
 
@@ -301,8 +403,11 @@ recordButton.disabled = true;
 patientName.value = localStorage.getItem(SELECTED_PATIENT_KEY) || patientName.value;
 sensitivitySlider.value = clampSensitivity(localStorage.getItem(SENSITIVITY_KEY) || sensitivitySlider.value);
 sensitivityValue.textContent = formatSensitivityLabel(sensitivitySlider.value);
+loadRecordingKaraokeSpeedForCurrentExercise();
 playbackVolumeSlider.value = localStorage.getItem(PLAYBACK_GAIN_KEY) || playbackVolumeSlider.value;
 playbackVolumeValue.textContent = `${playbackVolumeSlider.value}%`;
+applySavedStatisticsWaveformHeight();
+loadAnalysisCalibrationControls();
 loadSettingsControls();
 loadSavedEditorExercise();
 loadEditorDraft();
@@ -369,7 +474,44 @@ function hideSplashAfterStartup() {
   }, 3000);
 }
 
+function getApiUrl(path) {
+  return `${API_ORIGIN}${path}`;
+}
+
+function resolveAppUrl(url) {
+  if (!url) return "";
+  if (/^(blob:|data:|https?:)/i.test(url)) return url;
+  return `${API_ORIGIN || window.location.origin}${url.startsWith("/") ? url : `/${url}`}`;
+}
+
+function positionAnalysisCalibrationPanel() {
+  if (statisticsRangeControl && analysisMiniGrid) {
+    analysisMiniGrid.before(statisticsRangeControl);
+  }
+
+  if (analysisPlayRow && statisticsRangeControl) {
+    statisticsRangeControl.after(analysisPlayRow);
+  }
+
+  if (analysisMiniGrid && analysisPlayRow) {
+    analysisPlayRow.after(analysisMiniGrid);
+  }
+
+  if (analysisCalibrationPanel && analysisMiniGrid) {
+    analysisMiniGrid.after(analysisCalibrationPanel);
+  }
+}
+
+function positionPlaybackLibrary() {
+  if (!playbackLibrary || !resultPanel) return;
+  resultPanel.after(playbackLibrary);
+  playbackLibrary.querySelector('label[for="playbackExerciseSelect"]')?.remove();
+  playbackExerciseSelect?.closest(".playback-library-row")?.remove();
+}
+
 async function init() {
+  positionAnalysisCalibrationPanel();
+  positionPlaybackLibrary();
   drawWaveform(liveWaveform, [], {
     mode: "live",
     align: "right",
@@ -389,12 +531,15 @@ async function init() {
     updateEditorForm();
     setupKaraokeText();
   });
+  loadCloudElevenLabsSettings();
   await refreshRecordings();
 }
 recordButton.addEventListener("click", async () => {
   if (isRecording || mediaRecorder?.state === "recording") {
     stopRecording();
   } else {
+    stopExercisePreview();
+    unlockInstructionAudio();
     const hadActiveStream = hasActiveMediaStream();
     const streamReady = await ensureMediaStream();
     if (!streamReady) return;
@@ -407,6 +552,15 @@ recordButton.addEventListener("click", async () => {
   }
 });
 
+previewExerciseButton?.addEventListener("click", async () => {
+  if (isPreviewingExercise) {
+    stopExercisePreview();
+    return;
+  }
+
+  await startExercisePreview();
+});
+
 savePatientButton.addEventListener("click", () => {
   selectPatient(patientName.value);
 });
@@ -416,6 +570,8 @@ patientName.addEventListener("change", () => {
 });
 
 exerciseName.addEventListener("change", () => {
+  stopExercisePreview();
+  loadRecordingKaraokeSpeedForCurrentExercise();
   setupKaraokeText();
   renderRecordingExerciseShortcuts();
   message.textContent = `Übung ausgewählt: ${getExerciseLabel()}`;
@@ -440,6 +596,10 @@ addEditorSentenceButton?.addEventListener("click", () => {
   addEditorSentence();
 });
 
+addEditorDialogTurnButton?.addEventListener("click", () => {
+  addEditorDialogTurn();
+});
+
 editorSentenceInput?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
   event.preventDefault();
@@ -457,18 +617,46 @@ editorSavedExercises.addEventListener("change", () => {
 newEditorExerciseButton.addEventListener("click", () => {
   activeEditorExerciseName = "";
   editorSavedExercises.value = "";
-  resetEditorForm();
+  resetEditorForm({ blank: true });
   saveEditorDraft();
 });
 
-suggestVoiceButton.addEventListener("click", () => {
-  editorVoiceInstruction.value = buildVoiceInstructionSuggestion();
-  saveEditorDraft();
-  editorVoiceState.textContent = "Voice-Text vorgeschlagen.";
+suggestVoiceButton.addEventListener("click", async () => {
+  await suggestVoiceInstruction();
 });
 
 generateVoiceAudioButton.addEventListener("click", async () => {
   await generateVoiceAudio();
+});
+
+settingsTestVoiceButton?.addEventListener("click", async () => {
+  await testElevenLabsSettingsVoice();
+});
+
+settingsVoiceSelect?.addEventListener("change", () => {
+  activateSelectedVoiceProfileFromDropdown();
+});
+
+settingsNewVoiceButton?.addEventListener("click", () => {
+  startNewVoiceProfile();
+});
+
+settingsSaveVoiceButton?.addEventListener("click", () => {
+  saveCurrentVoiceProfileFromControls();
+});
+
+settingsDeleteVoiceButton?.addEventListener("click", () => {
+  deleteSelectedVoiceProfile();
+});
+
+testEditorKaraokeButton?.addEventListener("click", () => {
+  if (isTestingEditorKaraoke) {
+    stopEditorKaraokeTest();
+    editorVoiceState.textContent = "Karaoke-Test gestoppt.";
+    return;
+  }
+
+  startEditorKaraokeTest();
 });
 
 calibrationButton.addEventListener("click", async () => {
@@ -492,6 +680,10 @@ sensitivitySlider.addEventListener("input", () => {
   updateSensitivitySetting(sensitivitySlider.value);
 });
 
+recordingKaraokeSpeed?.addEventListener("input", () => {
+  updateRecordingKaraokeSpeed(recordingKaraokeSpeed.value);
+});
+
 playbackVolumeSlider.addEventListener("input", () => {
   updatePlaybackVolumeSetting(playbackVolumeSlider.value);
 });
@@ -504,19 +696,28 @@ settingsPlaybackVolume?.addEventListener("input", () => {
   updatePlaybackVolumeSetting(settingsPlaybackVolume.value);
 });
 
+playbackGainPresetButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    updatePlaybackVolumeSetting(button.dataset.playbackGain);
+  });
+});
+
 [
-  settingsVoiceId,
   settingsVoiceStability,
   settingsVoiceSimilarity,
   settingsVoiceStyle,
   settingsSpeakerBoost,
+  settingsChatGptEnabled,
+  settingsChatGptApiKey,
+  settingsChatGptModel,
+  settingsChatGptPrompt,
 ].forEach((input) => {
   input?.addEventListener("input", () => {
-    saveElevenLabsSettings();
+    saveAllAiSettings();
     renderSettingsControls();
   });
   input?.addEventListener("change", () => {
-    saveElevenLabsSettings();
+    saveAllAiSettings();
     renderSettingsControls();
   });
 });
@@ -524,13 +725,75 @@ settingsPlaybackVolume?.addEventListener("input", () => {
 statisticsRecordingSelect?.addEventListener("change", () => {
   selectedAnalysisRecordingId = statisticsRecordingSelect.value;
   selectedAnalysisPosition = 0;
+  selectedAnalysisStart = 0;
+  selectedAnalysisEnd = 1;
+  statisticsRangeZoomed = false;
   if (statisticsPositionSlider) statisticsPositionSlider.value = "0";
+  if (statisticsStartSlider) statisticsStartSlider.value = "0";
+  if (statisticsEndSlider) statisticsEndSlider.value = "1000";
   renderAudioAnalysis(getSelectedAnalysisRecording());
 });
 
 statisticsPositionSlider?.addEventListener("input", () => {
-  selectedAnalysisPosition = Number(statisticsPositionSlider.value) / 1000;
+  selectedAnalysisPosition = getAnalysisPositionFromSlider(statisticsPositionSlider.value);
   renderAudioAnalysis(getSelectedAnalysisRecording());
+});
+
+statisticsStartSlider?.addEventListener("input", () => {
+  selectedAnalysisStart = Number(statisticsStartSlider.value) / 1000;
+  if (selectedAnalysisStart > selectedAnalysisEnd) {
+    selectedAnalysisEnd = selectedAnalysisStart;
+    statisticsEndSlider.value = statisticsStartSlider.value;
+  }
+  clampSelectedAnalysisPositionToZoomRange();
+  renderAudioAnalysis(getSelectedAnalysisRecording());
+});
+
+statisticsEndSlider?.addEventListener("input", () => {
+  selectedAnalysisEnd = Number(statisticsEndSlider.value) / 1000;
+  if (selectedAnalysisEnd < selectedAnalysisStart) {
+    selectedAnalysisStart = selectedAnalysisEnd;
+    statisticsStartSlider.value = statisticsEndSlider.value;
+  }
+  clampSelectedAnalysisPositionToZoomRange();
+  renderAudioAnalysis(getSelectedAnalysisRecording());
+});
+
+statisticsPlayRangeButton?.addEventListener("click", () => {
+  toggleSelectedAnalysisRangePlayback();
+});
+
+statisticsZoomRangeButton?.addEventListener("click", () => {
+  statisticsRangeZoomed = !statisticsRangeZoomed;
+  clampSelectedAnalysisPositionToZoomRange();
+  syncAnalysisPositionSlider();
+  renderAudioAnalysis(getSelectedAnalysisRecording());
+});
+
+statisticsWaveformResizeHandle?.addEventListener("pointerdown", startStatisticsWaveformResize);
+
+[statisticsAmplitudeGain, statisticsVolumeGain, statisticsFrequencyGain].forEach((slider) => {
+  slider?.addEventListener("input", () => {
+    saveAnalysisCalibrationFromControls();
+    renderAudioAnalysis(getSelectedAnalysisRecording());
+  });
+});
+
+playbackOpenExerciseButton?.addEventListener("click", () => {
+  openPlaybackExerciseSelection();
+});
+
+playbackExerciseSelect?.addEventListener("change", () => {
+  openPlaybackExerciseSelection();
+});
+
+playbackOpenRecordingButton?.addEventListener("click", () => {
+  const selectedId = playbackRecordingSelect?.value;
+  if (selectedId) openStoredRecording(selectedId);
+});
+
+playbackRecordingSelect?.addEventListener("change", () => {
+  if (playbackRecordingSelect.value) openStoredRecording(playbackRecordingSelect.value);
 });
 
 document.addEventListener("pointerup", (event) => {
@@ -547,14 +810,18 @@ toggleVideoButton.addEventListener("click", () => {
 });
 
 recordingPlayer.addEventListener("timeupdate", () => {
+  stopAtStatisticsRangeEnd();
   updatePlaybackVisuals();
 });
 
 recordingPlayer.addEventListener("ended", () => {
   if (currentMetadata) {
     stopPlaybackAnimation();
+    selectedAnalysisPosition = 1;
+    lastStatisticsPlaybackSyncAt = 0;
+    syncAnalysisPositionSlider();
     updatePlaybackVisuals(1);
-    playPauseButton.textContent = "Play";
+    setPlayPauseButtonState("play");
   }
 });
 
@@ -574,12 +841,14 @@ recordingPlayer.addEventListener("play", () => {
   recordingPlayer.muted = false;
   recordingPlayer.volume = 1;
   ensurePlaybackAudioBoost();
-  playPauseButton.textContent = "Pause";
+  setPlayPauseButtonState("pause");
   startPlaybackAnimation();
 });
 
 recordingPlayer.addEventListener("pause", () => {
-  playPauseButton.textContent = "Play";
+  setPlayPauseButtonState("play");
+  statisticsRangeStopTime = null;
+  setStatisticsRangeButtonState("play");
   stopPlaybackAnimation();
   updatePlaybackVisuals();
 });
@@ -606,31 +875,28 @@ playbackSeek.addEventListener("input", () => {
   updatePlaybackVisuals();
 });
 
-retakeButton.addEventListener("click", () => {
+retakeButton?.addEventListener("click", () => {
   recordingPlayer.pause();
   resetRecordingUi();
   message.textContent = "Bereit für eine neue Aufnahme.";
 });
 
-deleteButton.addEventListener("click", async () => {
+deleteButton?.addEventListener("click", async () => {
   if (currentMetadata?.id) {
-    await deleteRecording(currentMetadata.id);
-    await refreshRecordings();
-    deleteCloudRecording(currentMetadata).catch(() => {
-      firebaseState.textContent = "Lokal gelöscht. Firebase-Löschen fehlgeschlagen.";
-    });
+    await deleteStoredRecordingById(currentMetadata.id);
+    return;
   }
   clearCurrentRecording();
   message.textContent = "Aufnahme gelöscht.";
 });
 
-downloadAudioButton.addEventListener("click", () => {
+downloadAudioButton?.addEventListener("click", () => {
   if (currentVideoBlob && currentMetadata) {
     downloadBlob(currentVideoBlob, currentMetadata.aufnahme);
   }
 });
 
-downloadJsonButton.addEventListener("click", () => {
+downloadJsonButton?.addEventListener("click", () => {
   if (currentMetadata) {
     const jsonBlob = new Blob([JSON.stringify(cleanMetadata(currentMetadata), null, 2)], {
       type: "application/json",
@@ -643,8 +909,7 @@ async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
   try {
     recordButton.disabled = true;
     recordButton.textContent = "Instruktion läuft";
-    const instructionPlayback = speakExerciseInstruction();
-    await withTimeout(instructionPlayback, INSTRUCTION_TIMEOUT_MS);
+    await speakExerciseInstruction();
     instructionPlaybackActive = false;
     await withTimeout(audioPreparation, 1800);
     await ensureRecordingAnalyserReady();
@@ -657,10 +922,12 @@ async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
     }
 
     countdownOverlay.classList.add("is-hidden");
+    stopInstructionAudio();
     recordButton.disabled = false;
     await startRecording();
   } catch (error) {
     instructionPlaybackActive = false;
+    stopInstructionAudio();
     setExerciseVisualsVisible(false);
     countdownOverlay.classList.add("is-hidden");
     recordButton.disabled = false;
@@ -672,11 +939,12 @@ async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
 async function speakExerciseInstruction() {
   instructionPlaybackActive = true;
   const activeExercise = getActiveRecordingExercise();
-  const editorAudio = activeExercise?.voiceAudioUrl || activeExercise?.voiceAudioDataUrl || "";
   const instruction =
     getExerciseInstruction() ||
     EXERCISE_INSTRUCTIONS[exerciseName.value] ||
     `Bitte lesen Sie die eingeblendeten Wörter deutlich und ruhig vor.`;
+
+  const editorAudio = await getCurrentInstructionAudio(activeExercise, instruction);
 
   if (editorAudio) {
     message.textContent = "Voice-Begleitung läuft.";
@@ -696,9 +964,53 @@ async function speakExerciseInstruction() {
   return speakWithBrowserVoice(instruction);
 }
 
+async function getCurrentInstructionAudio(exercise, instruction) {
+  const savedAudio = exercise?.voiceAudioUrl || exercise?.voiceAudioDataUrl || "";
+  if (savedAudio && isInstructionVoiceAudioCurrent(exercise, instruction)) return savedAudio;
+  if (isStandardEditorExerciseName(exercise?.name)) return "";
+  if (!exercise?.name) return "";
+
+  const storedAudio = await createStoredVoiceAudio(instruction, `${exercise.name} Intro`).catch(() => null);
+  if (!storedAudio?.url) return "";
+
+  const updatedExercise = hydrateEditorExercise({
+    ...exercise,
+    voiceInstruction: instruction,
+    voiceAudioUrl: storedAudio.url,
+    voiceAudioPath: storedAudio.path,
+    voiceAudioDataUrl: "",
+    voiceAudioVoiceId: storedAudio.voiceId,
+    voiceAudioVoiceSettings: storedAudio.voiceSettings,
+    voiceAudioTextHash: storedAudio.textHash,
+    voiceAudioSpeed: storedAudio.speed,
+    voiceAudioUpdatedAt: new Date().toISOString(),
+  });
+
+  await saveEditorExerciseObject(updatedExercise);
+  return storedAudio.url;
+}
+
+function isStandardEditorExerciseName(name) {
+  const normalizedName = normalizeEditorExerciseName(name);
+  return STANDARD_EDITOR_EXERCISES.some(
+    (exercise) => normalizeEditorExerciseName(exercise.name) === normalizedName,
+  );
+}
+
+function isInstructionVoiceAudioCurrent(exercise, instruction) {
+  if (!exercise?.voiceAudioUrl && !exercise?.voiceAudioDataUrl) return false;
+  if (!exercise.voiceAudioVoiceId || !exercise.voiceAudioTextHash) return false;
+  const requestSettings = getElevenLabsRequestSettings();
+  return (
+    exercise.voiceAudioVoiceId === requestSettings.voiceId &&
+    JSON.stringify(exercise.voiceAudioVoiceSettings || {}) === JSON.stringify(requestSettings.voiceSettings || {}) &&
+    exercise.voiceAudioTextHash === hashText(instruction)
+  );
+}
+
 async function createTemporaryVoiceAudio(text) {
   try {
-    const response = await fetch("/api/voice", {
+    const response = await fetch(getApiUrl("/api/voice"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -717,9 +1029,330 @@ async function createTemporaryVoiceAudio(text) {
     return "";
   }
 }
+
+async function createStoredVoiceAudio(text, exerciseLabel) {
+  const requestSettings = getElevenLabsRequestSettings();
+  const response = await fetch(getApiUrl("/api/voice"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      text,
+      store: true,
+      exerciseName: exerciseLabel || getExerciseLabel(),
+      ...requestSettings,
+    }),
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  if (!response.ok || !contentType.includes("application/json")) {
+    const details = await response.text().catch(() => "");
+    throw new Error(`Vorführung-Audio Fehler ${response.status}: ${details.slice(0, 80) || contentType || "keine Antwort"}`);
+  }
+
+  const payload = await response.json();
+  if (!payload.downloadUrl) throw new Error("Vorführung-Audio ohne URL.");
+  return {
+    url: resolveAppUrl(payload.downloadUrl),
+    path: payload.path || "",
+    voiceId: requestSettings.voiceId,
+    voiceSettings: requestSettings.voiceSettings,
+    textHash: hashText(text),
+    speed: clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3),
+  };
+}
+
+async function startExercisePreview() {
+  if (isRecording || mediaRecorder?.state === "recording") return;
+
+  unlockInstructionAudio();
+  setupKaraokeText();
+  const previewText = getExercisePreviewText();
+  if (!previewText) {
+    message.textContent = "Keine Vorführung möglich: Übung hat keinen Text.";
+    return;
+  }
+
+  isPreviewingExercise = true;
+  previewExerciseButton.disabled = true;
+  previewExerciseButton.textContent = "Vorführung lädt";
+  recordButton.disabled = true;
+
+  try {
+    const audioUrls = await getExercisePreviewAudioSegments(previewText);
+    await playExercisePreviewAudio(audioUrls);
+  } catch (error) {
+    message.textContent = error?.message || "Vorführung konnte nicht gestartet werden.";
+    stopExercisePreview();
+  } finally {
+    if (isPreviewingExercise && previewExerciseButton) {
+      previewExerciseButton.disabled = false;
+      previewExerciseButton.textContent = "Vorführung stoppen";
+    }
+  }
+}
+
+function getExercisePreviewText() {
+  const exercise = getActiveRecordingExercise();
+  if (exercise?.mode === "dialog") {
+    return getExerciseDialogTurns(exercise)
+      .filter((turn) => turn.role !== "patient")
+      .map((turn) => turn.text)
+      .join(". ");
+  }
+  if (exercise?.mode === "sentences") return getExerciseSentences(exercise).join(". ");
+  return String(exercise?.script || getExerciseScript() || "").replace(/\s*\|\s*/g, ". ").trim();
+}
+
+async function getExercisePreviewAudio(text) {
+  const activeExercise = getActiveRecordingExercise();
+  if (isStoredDemoAudioCurrent(activeExercise, text)) return activeExercise.demoAudioUrl;
+
+  const storedAudio = await createStoredVoiceAudio(text, `${getExerciseLabel()} Vorführung`);
+  if (activeExercise?.name) {
+    await saveDemoAudioForActiveExercise(storedAudio);
+  }
+  return storedAudio.url;
+}
+
+async function getExercisePreviewAudioSegments(text) {
+  const activeExercise = getActiveRecordingExercise();
+  if (activeExercise?.mode === "dialog") {
+    return getDialogPreviewAudioSegments(activeExercise);
+  }
+
+  const chunks = splitVoicePreviewText(text);
+
+  if (isStoredDemoAudioCurrent(activeExercise, text) && chunks.length <= 1) return [activeExercise.demoAudioUrl];
+  if (chunks.length <= 1) return [await getExercisePreviewAudio(text)];
+
+  const urls = [];
+  for (let index = 0; index < chunks.length; index += 1) {
+    if (!isPreviewingExercise) break;
+    previewExerciseButton.textContent = `Vorführung lädt ${index + 1}/${chunks.length}`;
+    const audioUrl = await createTemporaryVoiceAudio(chunks[index]);
+    if (!audioUrl) throw new Error(`Vorführung-Teil ${index + 1} konnte nicht erzeugt werden.`);
+    urls.push(audioUrl);
+  }
+  return urls;
+}
+
+async function getDialogPreviewAudioSegments(exercise) {
+  const turns = getExerciseDialogTurns(exercise);
+  const systemTurns = turns.filter((turn) => turn.role !== "patient" && turn.text);
+  if (!systemTurns.length) return [];
+
+  const updatedTurns = [];
+  const urls = [];
+  let systemIndex = 0;
+  let hasUpdates = false;
+
+  for (const turn of turns) {
+    if (turn.role === "patient" || !turn.text) {
+      updatedTurns.push(normalizeDialogTurn(turn));
+      continue;
+    }
+
+    systemIndex += 1;
+    if (isDialogTurnAudioCurrent(turn)) {
+      updatedTurns.push(turn);
+      urls.push(turn.audioUrl);
+      continue;
+    }
+
+    previewExerciseButton.textContent = `Dialog-Audio lädt ${systemIndex}/${systemTurns.length}`;
+    const storedAudio = await createStoredVoiceAudio(turn.text, `${exercise.name} Dialog ${systemIndex}`);
+    const updatedTurn = {
+      ...normalizeDialogTurn(turn),
+      audioUrl: storedAudio.url,
+      audioPath: storedAudio.path,
+      audioVoiceId: storedAudio.voiceId,
+      audioVoiceSettings: storedAudio.voiceSettings,
+      audioTextHash: storedAudio.textHash,
+      audioSpeed: storedAudio.speed,
+      audioUpdatedAt: new Date().toISOString(),
+    };
+    updatedTurns.push(updatedTurn);
+    urls.push(updatedTurn.audioUrl);
+    hasUpdates = true;
+  }
+
+  if (hasUpdates) {
+    const updatedExercise = hydrateEditorExercise({
+      ...exercise,
+      dialogTurns: updatedTurns,
+      content: serializeDialogTurns(updatedTurns),
+      script: serializeDialogTurns(updatedTurns),
+      dialogAudioUpdatedAt: new Date().toISOString(),
+    });
+    await saveEditorExerciseObject(updatedExercise);
+  }
+
+  return urls;
+}
+
+function isStoredDemoAudioCurrent(exercise, text) {
+  if (!exercise?.demoAudioUrl) return false;
+  const requestSettings = getElevenLabsRequestSettings();
+  return (
+    exercise.demoVoiceId === requestSettings.voiceId &&
+    exercise.demoTextHash === hashText(text) &&
+    Number(exercise.demoSpeed || 0) === clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3)
+  );
+}
+
+function hashText(text) {
+  const normalizedText = String(text || "").replace(/\s+/g, " ").trim();
+  let hash = 0;
+  for (let index = 0; index < normalizedText.length; index += 1) {
+    hash = (hash * 31 + normalizedText.charCodeAt(index)) | 0;
+  }
+  return String(hash >>> 0);
+}
+
+function splitVoicePreviewText(text, maxLength = 840) {
+  const normalizedText = String(text || "").replace(/\s+/g, " ").trim();
+  if (!normalizedText) return [];
+  if (normalizedText.length <= maxLength) return [normalizedText];
+
+  const sentences = normalizedText
+    .split(/(?<=[.!?;:])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+  const chunks = [];
+  let current = "";
+
+  sentences.forEach((sentence) => {
+    if (sentence.length > maxLength) {
+      if (current) chunks.push(current);
+      current = "";
+      for (let index = 0; index < sentence.length; index += maxLength) {
+        chunks.push(sentence.slice(index, index + maxLength).trim());
+      }
+      return;
+    }
+
+    const next = current ? `${current} ${sentence}` : sentence;
+    if (next.length > maxLength) {
+      if (current) chunks.push(current);
+      current = sentence;
+    } else {
+      current = next;
+    }
+  });
+
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+async function saveDemoAudioForActiveExercise(storedAudio) {
+  const activeExercise = getActiveRecordingExercise();
+  if (!activeExercise?.name) return;
+
+  const updatedExercise = hydrateEditorExercise({
+    ...activeExercise,
+    demoAudioUrl: storedAudio.url,
+    demoAudioPath: storedAudio.path,
+    demoVoiceId: storedAudio.voiceId,
+    demoVoiceSettings: storedAudio.voiceSettings,
+    demoTextHash: storedAudio.textHash,
+    demoSpeed: storedAudio.speed,
+    demoCreatedAt: new Date().toISOString(),
+  });
+  savedEditorExercise = updatedExercise;
+  savedEditorExercises = upsertEditorExercise(savedEditorExercises, updatedExercise);
+  persistEditorExercises();
+  renderRecordingExerciseOptions(updatedExercise.name);
+  renderSavedEditorExercises();
+  await saveCloudEditorExercise(updatedExercise).catch(() => {});
+}
+
+async function playExercisePreviewAudio(audioUrls) {
+  const urls = Array.isArray(audioUrls) ? audioUrls.filter(Boolean) : [audioUrls].filter(Boolean);
+  if (!urls.length) throw new Error("Keine Vorführ-Audiodatei vorhanden.");
+
+  setExerciseVisualsVisible(true);
+  message.textContent = "Vorführung läuft.";
+  previewAudioUrls = urls;
+  previewPlaybackOffsetSeconds = 0;
+  await playExercisePreviewSegment(0);
+}
+
+async function playExercisePreviewSegment(index) {
+  if (!isPreviewingExercise || index >= previewAudioUrls.length) {
+    stopExercisePreview();
+    return;
+  }
+
+  previewAudioElement = new Audio(previewAudioUrls[index]);
+  previewAudioElement.preload = "auto";
+  previewAudioElement.volume = 1;
+  previewAudioElement.addEventListener("ended", async () => {
+    previewPlaybackOffsetSeconds += Number(previewAudioElement?.duration) || 0;
+    previewAudioElement = null;
+    await playExercisePreviewSegment(index + 1);
+  }, { once: true });
+  previewAudioElement.addEventListener("error", () => {
+    message.textContent = "Vorführung-Audio konnte nicht abgespielt werden.";
+    stopExercisePreview();
+  }, { once: true });
+
+  previewExerciseButton.disabled = false;
+  previewExerciseButton.textContent = previewAudioUrls.length > 1
+    ? `Vorführung stoppen ${index + 1}/${previewAudioUrls.length}`
+    : "Vorführung stoppen";
+  await previewAudioElement.play();
+  animateExercisePreviewKaraoke();
+}
+
+function animateExercisePreviewKaraoke() {
+  if (!isPreviewingExercise || !previewAudioElement) return;
+  updateKaraokeDisplayAtTime(
+    karaokeOverlay,
+    karaokeTimeline,
+    previewPlaybackOffsetSeconds + (previewAudioElement.currentTime || 0),
+  );
+  previewAnimationFrameId = window.requestAnimationFrame(animateExercisePreviewKaraoke);
+}
+
+function stopExercisePreview() {
+  const wasPreviewing = isPreviewingExercise || Boolean(previewAudioElement);
+  if (!wasPreviewing) return;
+
+  isPreviewingExercise = false;
+  window.cancelAnimationFrame(previewAnimationFrameId);
+  previewAnimationFrameId = 0;
+
+  if (previewAudioElement) {
+    previewAudioElement.pause();
+    previewAudioElement.removeAttribute("src");
+    previewAudioElement.load();
+    previewAudioElement = null;
+  }
+  previewAudioUrls.forEach((url) => {
+    if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
+  });
+  previewAudioUrls = [];
+  previewPlaybackOffsetSeconds = 0;
+
+  setExerciseVisualsVisible(false);
+  if (previewExerciseButton) {
+    previewExerciseButton.disabled = false;
+    previewExerciseButton.textContent = "Vorführung";
+  }
+  if (!isRecording) {
+    recordButton.disabled = false;
+    recordButton.textContent = "Übung starten";
+  }
+  message.textContent = "Vorführung beendet. Übung kann gestartet werden.";
+}
+
 function speakWithBrowserVoice(instruction) {
   return new Promise((resolve) => {
-    const fallbackId = window.setTimeout(resolve, INSTRUCTION_TIMEOUT_MS);
+    const fallbackMs = Math.max(
+      2500,
+      Math.min(45000, String(instruction || "").length * 85 + 1200),
+    );
+    const fallbackId = window.setTimeout(resolve, fallbackMs);
     const finish = () => {
       window.clearTimeout(fallbackId);
       resolve();
@@ -744,13 +1377,116 @@ function speakWithBrowserVoice(instruction) {
   });
 }
 
-function playVoiceAudio(audioUrl) {
+async function playVoiceAudio(audioUrl) {
+  const webAudioPlayed = await playVoiceAudioBuffer(audioUrl);
+  if (webAudioPlayed) return true;
+  return playVoiceAudioElement(audioUrl);
+}
+
+async function unlockInstructionAudio() {
+  try {
+    const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextConstructor) return false;
+    if (isRecording && audioContext && audioContext.state !== "closed") {
+      instructionAudioContext = audioContext;
+    }
+    if (!instructionAudioContext) {
+      instructionAudioContext = new AudioContextConstructor();
+    }
+
+    if (instructionAudioContext.state === "suspended") {
+      await instructionAudioContext.resume();
+    }
+
+    const silentBuffer = instructionAudioContext.createBuffer(
+      1,
+      1,
+      instructionAudioContext.sampleRate,
+    );
+    const source = instructionAudioContext.createBufferSource();
+    const gain = instructionAudioContext.createGain();
+    gain.gain.value = 0;
+    source.buffer = silentBuffer;
+    source.connect(gain);
+    gain.connect(instructionAudioContext.destination);
+    source.start(0);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function playVoiceAudioBuffer(audioUrl) {
+  try {
+    await unlockInstructionAudio();
+    if (!instructionAudioContext || instructionAudioContext.state === "closed") return false;
+    if (instructionAudioContext.state === "suspended") {
+      await instructionAudioContext.resume();
+    }
+
+    instructionAudioSource?.stop?.();
+    instructionAudioSource = null;
+
+    const response = await fetch(resolveAppUrl(audioUrl), { cache: "no-store" });
+    if (!response.ok) return false;
+    const audioData = await response.arrayBuffer();
+    if (!audioData.byteLength) return false;
+    const audioBuffer = await instructionAudioContext.decodeAudioData(audioData.slice(0));
+
+    return await new Promise((resolve) => {
+      const source = instructionAudioContext.createBufferSource();
+      const gain = instructionAudioContext.createGain();
+      const fallbackMs = Math.max(1800, Math.ceil((audioBuffer.duration || 0) * 1000) + 1800);
+      const fallbackId = window.setTimeout(() => finish(true, { stopSource: true }), fallbackMs);
+      const finish = (played, options = {}) => {
+        window.clearTimeout(fallbackId);
+        if (options.stopSource) {
+          try {
+            source.stop();
+          } catch (error) {}
+        }
+        if (instructionAudioSource === source) instructionAudioSource = null;
+        source.onended = null;
+        resolve(Boolean(played));
+      };
+
+      gain.gain.value = 1;
+      source.buffer = audioBuffer;
+      source.connect(gain);
+      gain.connect(instructionAudioContext.destination);
+      if (shouldMixVoiceAudioIntoRecording() && instructionAudioContext === audioContext && recordingAudioDestination) {
+        gain.connect(recordingAudioDestination);
+      }
+      source.onended = () => finish(true);
+      instructionAudioSource = source;
+      message.textContent = "Instruktion wird abgespielt.";
+      source.start(0);
+    });
+  } catch (error) {
+    return false;
+  }
+}
+
+function shouldMixVoiceAudioIntoRecording() {
+  return Boolean(isRecording && getActiveRecordingExercise()?.mode === "dialog");
+}
+
+function playVoiceAudioElement(audioUrl) {
   return new Promise((resolve) => {
     let started = false;
-    const fallbackId = window.setTimeout(() => finish(started), INSTRUCTION_TIMEOUT_MS);
+    let fallbackId = window.setTimeout(() => finish(started), INSTRUCTION_TIMEOUT_MS);
+    const refreshFallback = () => {
+      if (!Number.isFinite(instructionAudio.duration) || instructionAudio.duration <= 0) return;
+      window.clearTimeout(fallbackId);
+      fallbackId = window.setTimeout(
+        () => finish(true),
+        Math.max(1800, Math.ceil(instructionAudio.duration * 1000) + 1800),
+      );
+    };
     const cleanup = () => {
       instructionAudio.removeEventListener("playing", handleStarted);
       instructionAudio.removeEventListener("timeupdate", handleStarted);
+      instructionAudio.removeEventListener("loadedmetadata", refreshFallback);
       instructionAudio.removeEventListener("ended", handleEnded);
       instructionAudio.removeEventListener("error", handleError);
       instructionAudio.removeEventListener("abort", handleError);
@@ -772,6 +1508,7 @@ function playVoiceAudio(audioUrl) {
     cleanup();
     instructionAudio.addEventListener("playing", handleStarted);
     instructionAudio.addEventListener("timeupdate", handleStarted);
+    instructionAudio.addEventListener("loadedmetadata", refreshFallback);
     instructionAudio.addEventListener("ended", handleEnded, { once: true });
     instructionAudio.addEventListener("error", handleError, { once: true });
     instructionAudio.addEventListener("abort", handleError, { once: true });
@@ -779,13 +1516,23 @@ function playVoiceAudio(audioUrl) {
     instructionAudio.muted = false;
     instructionAudio.defaultMuted = false;
     instructionAudio.volume = 1;
-    instructionAudio.src = audioUrl;
+    instructionAudio.src = resolveAppUrl(audioUrl);
     instructionAudio.load();
     instructionAudio.play().catch((error) => {
       message.textContent = `ElevenLabs konnte nicht starten: ${error?.name || "Audio blockiert"}.`;
       finish(false);
     });
   });
+}
+
+function stopInstructionAudio() {
+  instructionAudio.pause();
+  instructionAudio.removeAttribute("src");
+  instructionAudio.load();
+  try {
+    instructionAudioSource?.stop?.();
+  } catch (error) {}
+  instructionAudioSource = null;
 }
 async function startRecording() {
   if (!mediaStream) return;
@@ -800,6 +1547,7 @@ async function startRecording() {
   frequencyValues = [];
   pitchHzValues = [];
   adaptiveNoiseFloor = 0;
+  adaptiveVolumeNoiseFloor = 0;
   lastSilentSignalNoticeAt = 0;
   silentSignalStartedAt = 0;
   analyserRestartInProgress = false;
@@ -808,6 +1556,10 @@ async function startRecording() {
   sentenceHasSpeechSinceAdvance = false;
   sentenceStopScheduled = false;
   sentencePeakVolumeSinceAdvance = 0;
+  sentenceActiveStartedAt = performance.now();
+  dialogVoiceInProgress = false;
+  dialogVoiceTurnIndex = -1;
+  dialogAdvanceLock = false;
   lastAmplitudeAt = 0;
   window.cancelAnimationFrame(animationFrame);
   recordingPlayer.pause();
@@ -1147,11 +1899,40 @@ async function ensureAudioContext() {
 async function ensurePlaybackAudioBoost() {
   recordingPlayer.muted = false;
   recordingPlayer.volume = 1;
+  await ensurePlaybackAudioContext();
   applyPlaybackGain();
 }
 
+async function ensurePlaybackAudioContext() {
+  const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextConstructor) return;
+
+  if (!playbackAudioContext || playbackAudioContext.state === "closed") {
+    playbackAudioContext = new AudioContextConstructor();
+  }
+
+  if (!playbackSource) {
+    try {
+      playbackSource = playbackAudioContext.createMediaElementSource(recordingPlayer);
+      playbackGain = playbackAudioContext.createGain();
+      playbackSource.connect(playbackGain);
+      playbackGain.connect(playbackAudioContext.destination);
+    } catch (error) {
+      playbackSource = null;
+      playbackGain = null;
+      return;
+    }
+  }
+
+  if (playbackAudioContext.state === "suspended") {
+    await playbackAudioContext.resume();
+  }
+}
+
 function applyPlaybackGain() {
-  playbackVolumeValue.textContent = `${playbackVolumeSlider.value}%`;
+  const gainValue = Math.max(1, Math.min(4, (Number(playbackVolumeSlider.value) || 200) / 100));
+  playbackVolumeValue.textContent = `${Math.round(gainValue * 100)}%`;
+  if (playbackGain) playbackGain.gain.value = gainValue;
   recordingPlayer.volume = 1;
 }
 
@@ -1282,7 +2063,12 @@ function measureAudio() {
   }
 
   const volumeSignal = Math.max(rms * 28, effectivePeak * 1.15);
-  const gatedVolumeSignal = Math.max(0, volumeSignal - VOLUME_NOISE_GATE);
+  adaptiveVolumeNoiseFloor = updateAdaptiveVolumeNoiseFloor(volumeSignal, adaptiveVolumeNoiseFloor);
+  const dynamicVolumeGate = Math.max(
+    VOLUME_NOISE_GATE,
+    adaptiveVolumeNoiseFloor * VOLUME_NOISE_GATE_MULTIPLIER,
+  );
+  const gatedVolumeSignal = Math.max(0, volumeSignal - dynamicVolumeGate);
   const calibratedVolume = scaleVolumeLevel(gatedVolumeSignal);
   const frequencySignal = Math.max(voiceAverage * 0.95, voiceContrast * 2.1, voicePeakContrast * 0.72);
   const rawSignal = Math.max(gatedVolumeSignal * 1.35, frequencySignal * 0.72);
@@ -1325,6 +2111,10 @@ function measureAudio() {
 
 function setupKaraokeText() {
   const activeExercise = getActiveRecordingExercise();
+  const dialogTurns =
+    activeExercise?.mode === "dialog"
+      ? getExerciseDialogTurns(activeExercise)
+      : [];
   const sentences =
     activeExercise?.mode === "sentences"
       ? getExerciseSentences(activeExercise)
@@ -1334,14 +2124,21 @@ function setupKaraokeText() {
   sentenceHasSpeechSinceAdvance = false;
   sentenceStopScheduled = false;
   sentencePeakVolumeSinceAdvance = 0;
+  sentenceActiveStartedAt = performance.now();
   activeKaraokeIndex = 0;
 
-  if (sentences.length) {
+  if (dialogTurns.length) {
+    karaokeWords = dialogTurns.map((turn) => turn.text);
+    karaokeTimeline = buildDialogTimeline(dialogTurns);
+  } else if (sentences.length) {
     karaokeWords = sentences;
     karaokeTimeline = buildSentenceTimeline(sentences);
   } else {
     karaokeWords = getExerciseScript().split(/\s+/).filter(Boolean);
-    karaokeTimeline = buildKaraokeTimeline(karaokeWords, getCurrentKaraokeTiming());
+    karaokeTimeline = applyRepeatMetadata(
+      buildKaraokeTimeline(karaokeWords, getCurrentKaraokeTiming()),
+      activeExercise?.repeats || 1,
+    );
   }
 
   renderKaraokeOverlay(karaokeOverlay, karaokeTimeline);
@@ -1364,6 +2161,242 @@ function getExerciseSentences(exercise = getActiveRecordingExercise()) {
   return sentences.map((sentence) => sentence.trim()).filter(Boolean);
 }
 
+function getEditorDialogTurns() {
+  return parseDialogTurns(editorContent.value);
+}
+
+function syncEditorDialogTurns(turns, options = {}) {
+  editorContent.value = serializeDialogTurns(turns);
+  saveEditorDraft();
+  renderEditorPreview(buildEditorExerciseFromForm());
+  if (!options.skipListRender) renderEditorDialogList();
+  if (exerciseName.value === "custom-editor") setupKaraokeText();
+}
+
+function serializeDialogTurns(turns) {
+  return turns
+    .map((turn) => {
+      const normalizedTurn = normalizeDialogTurn(turn);
+      if (!normalizedTurn.text) return "";
+      return `${getDialogSpeakerLabel(normalizedTurn.role)}: ${normalizedTurn.text}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
+function addEditorDialogTurn() {
+  const turns = getEditorDialogTurns();
+  const previousRole = turns.at(-1)?.role;
+  const nextRole = previousRole === "patient" ? "system" : "patient";
+  syncEditorDialogTurns([
+    ...turns,
+    {
+      role: nextRole,
+      text: nextRole === "patient" ? "Meine Antwort." : "Antwort der KI-Stimme.",
+    },
+  ]);
+}
+
+function renderEditorDialogList() {
+  if (!editorDialogList) return;
+
+  let turns = getEditorDialogTurns();
+  editorDialogList.innerHTML = "";
+
+  if (!turns.length) {
+    turns = [
+      { role: "system", text: "Guten Morgen, wie geht es Ihnen?" },
+      { role: "patient", text: "Mir geht es heute gut." },
+    ];
+    editorContent.value = turns
+      .map((turn) => `${getDialogSpeakerLabel(turn.role)}: ${turn.text}`)
+      .join("\n");
+    saveEditorDraft();
+    renderEditorPreview(buildEditorExerciseFromForm());
+  }
+
+  turns.forEach((turn, index) => {
+    const item = document.createElement("div");
+    item.className = `editor-dialog-item is-${turn.role}`;
+
+    const row = document.createElement("div");
+    row.className = "editor-dialog-speaker-row";
+
+    const select = document.createElement("select");
+    select.className = "select-input compact-select";
+    [
+      ["system", getActiveVoiceLabel()],
+      ["patient", getCurrentPatientName()],
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      select.append(option);
+    });
+    select.value = turn.role;
+    select.addEventListener("change", () => {
+      const nextTurns = getEditorDialogTurns();
+      nextTurns[index] = { ...nextTurns[index], role: select.value };
+      syncEditorDialogTurns(nextTurns);
+    });
+
+    const badge = document.createElement("span");
+    badge.className = "editor-dialog-role-badge";
+    badge.textContent = turn.role === "patient"
+      ? "Sprecher"
+      : isDialogTurnAudioCurrent(turn)
+        ? "KI Audio"
+        : "KI neu";
+
+    row.append(select, badge);
+
+    const textarea = document.createElement("textarea");
+    textarea.rows = 3;
+    textarea.value = turn.text;
+    textarea.placeholder = turn.role === "patient" ? `${getCurrentPatientName()} spricht...` : "KI-Stimme spricht...";
+    textarea.addEventListener("input", () => {
+      const nextTurns = getEditorDialogTurns();
+      nextTurns[index] = { ...nextTurns[index], text: textarea.value };
+      syncEditorDialogTurns(nextTurns, { skipListRender: true });
+    });
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.textContent = "×";
+    removeButton.setAttribute("aria-label", `Dialogzeile ${index + 1} entfernen`);
+    removeButton.addEventListener("click", () => {
+      const nextTurns = getEditorDialogTurns();
+      nextTurns.splice(index, 1);
+      syncEditorDialogTurns(nextTurns);
+    });
+
+    item.append(row, textarea, removeButton);
+    editorDialogList.append(item);
+  });
+}
+
+function getActiveVoiceLabel() {
+  const settings = getElevenLabsSettings();
+  const voice = getActiveElevenLabsVoice(settings);
+  return voice?.name || "ElevenLabs";
+}
+
+function getExerciseDialogTurns(exercise = getActiveRecordingExercise()) {
+  if (!exercise || exercise.mode !== "dialog") return [];
+  if (Array.isArray(exercise.dialogTurns) && exercise.dialogTurns.length) {
+    return exercise.dialogTurns
+      .map((turn) => normalizeDialogTurn(turn))
+      .filter((turn) => turn.text);
+  }
+  return parseDialogTurns(exercise.content || exercise.script || "");
+}
+
+function hydrateDialogTurnsWithAudio(turns, baseExercise) {
+  const previousTurns = Array.isArray(baseExercise?.dialogTurns) ? baseExercise.dialogTurns : [];
+  return turns.map((turn, index) => {
+    const normalizedTurn = normalizeDialogTurn(turn);
+    if (normalizedTurn.role === "patient") return normalizedTurn;
+
+    const matchingPrevious =
+      previousTurns[index]?.role === "system" &&
+      hashText(previousTurns[index]?.text) === hashText(normalizedTurn.text)
+        ? previousTurns[index]
+        : previousTurns.find(
+            (candidate) =>
+              candidate?.role === "system" &&
+              hashText(candidate?.text) === hashText(normalizedTurn.text) &&
+              isDialogTurnAudioCurrent(candidate),
+          );
+
+    if (!matchingPrevious || !isDialogTurnAudioCurrent(matchingPrevious, normalizedTurn.text)) {
+      return normalizedTurn;
+    }
+
+    return {
+      ...normalizedTurn,
+      audioUrl: matchingPrevious.audioUrl || "",
+      audioPath: matchingPrevious.audioPath || "",
+      audioVoiceId: matchingPrevious.audioVoiceId || "",
+      audioVoiceSettings: matchingPrevious.audioVoiceSettings || null,
+      audioTextHash: matchingPrevious.audioTextHash || "",
+      audioSpeed: matchingPrevious.audioSpeed || 0,
+      audioUpdatedAt: matchingPrevious.audioUpdatedAt || "",
+    };
+  });
+}
+
+function isDialogTurnAudioCurrent(turn, textOverride = "") {
+  if (!turn?.audioUrl) return false;
+  const requestSettings = getElevenLabsRequestSettings();
+  return (
+    turn.audioVoiceId === requestSettings.voiceId &&
+    JSON.stringify(turn.audioVoiceSettings || {}) === JSON.stringify(requestSettings.voiceSettings || {}) &&
+    turn.audioTextHash === hashText(textOverride || turn.text)
+  );
+}
+
+function parseDialogTurns(text) {
+  return String(text || "")
+    .split(/\n+|\s*\|\s*/)
+    .map((line, index) => parseDialogLine(line, index))
+    .filter((turn) => turn.text);
+}
+
+function parseDialogLine(line, index = 0) {
+  const rawLine = String(line || "").trim();
+  const match = rawLine.match(/^([^:\-]+)\s*[:\-]\s*(.+)$/);
+  if (match) {
+    const roleName = match[1].trim();
+    return normalizeDialogTurn({
+      role: isSystemDialogRole(roleName) ? "system" : "patient",
+      text: match[2],
+    });
+  }
+
+  return normalizeDialogTurn({
+    role: index % 2 === 0 ? "system" : "patient",
+    text: rawLine,
+  });
+}
+
+function normalizeDialogTurn(turn = {}) {
+  const role = isPatientDialogRole(turn.role) ? "patient" : "system";
+  return {
+    role,
+    text: String(turn.text || turn.label || "").trim(),
+    audioUrl: String(turn.audioUrl || ""),
+    audioPath: String(turn.audioPath || ""),
+    audioVoiceId: String(turn.audioVoiceId || ""),
+    audioVoiceSettings: turn.audioVoiceSettings || null,
+    audioTextHash: String(turn.audioTextHash || ""),
+    audioSpeed: Number(turn.audioSpeed || 0),
+    audioUpdatedAt: String(turn.audioUpdatedAt || ""),
+  };
+}
+
+function isPatientDialogRole(role) {
+  const normalizedRole = normalizeEditorExerciseName(role);
+  const normalizedPatient = normalizeEditorExerciseName(getCurrentPatientName());
+  return (
+    /^(patient|patientin|nutzer|ich)$/i.test(String(role || "").trim()) ||
+    Boolean(normalizedPatient && normalizedRole === normalizedPatient)
+  );
+}
+
+function isSystemDialogRole(role) {
+  const normalizedRole = normalizeEditorExerciseName(role);
+  const activeVoice = getActiveElevenLabsVoice(getElevenLabsSettings());
+  return (
+    /^(system|therapeut|therapeutin|app|ki|elevenlabs)$/i.test(String(role || "").trim()) ||
+    Boolean(normalizedRole && normalizedRole === normalizeEditorExerciseName(getActiveVoiceLabel())) ||
+    Boolean(activeVoice?.name && normalizedRole === normalizeEditorExerciseName(activeVoice.name))
+  );
+}
+
+function getDialogSpeakerLabel(role) {
+  return role === "patient" ? getCurrentPatientName() : getActiveVoiceLabel();
+}
+
 function buildSentenceTimeline(sentences, secondsPerSentence = SENTENCE_MAX_SECONDS) {
   return sentences.map((sentence, index) => ({
     label: sentence,
@@ -1374,7 +2407,37 @@ function buildSentenceTimeline(sentences, secondsPerSentence = SENTENCE_MAX_SECO
   }));
 }
 
+function buildDialogTimeline(turns, secondsPerTurn = SENTENCE_MAX_SECONDS) {
+  return turns.map((turn, index) => ({
+    label: `${getDialogSpeakerLabel(turn.role)}: ${turn.text}`,
+    text: turn.text,
+    role: turn.role,
+    roleLabel: getDialogSpeakerLabel(turn.role),
+    audioUrl: turn.audioUrl || "",
+    audioPath: turn.audioPath || "",
+    audioVoiceId: turn.audioVoiceId || "",
+    audioTextHash: turn.audioTextHash || "",
+    isPause: false,
+    isSentence: true,
+    isDialog: true,
+    isPatientTurn: turn.role === "patient",
+    isSystemTurn: turn.role !== "patient",
+    start: index * secondsPerTurn,
+    end: (index + 1) * secondsPerTurn,
+  }));
+}
+
 function updateExercisePromptProgress(displayVolume) {
+  if (isHoldUntilSilenceExercise()) {
+    updateHoldPromptBySilence(displayVolume);
+    return;
+  }
+
+  if (karaokeTimeline.some((item) => item.isDialog)) {
+    updateDialogPromptProgress(displayVolume);
+    return;
+  }
+
   if (karaokeTimeline.some((item) => item.isSentence)) {
     updateSentencePromptBySilence(displayVolume);
     return;
@@ -1383,28 +2446,41 @@ function updateExercisePromptProgress(displayVolume) {
   updateKaraokeHighlight();
 }
 
-function updateSentencePromptBySilence(displayVolume) {
+function isHoldUntilSilenceExercise(exercise = getActiveRecordingExercise()) {
+  const combinedText = exercise
+    ? `${exercise.name || ""} ${exercise.content || ""} ${exercise.script || ""}`
+    : `${getExerciseLabel()} ${getExerciseScript()} ${exerciseName.value || ""}`;
+  if (exercise && exercise.mode !== "vowels") return false;
+  return /\bhalten\b/i.test(combinedText);
+}
+
+function updateHoldPromptBySilence(displayVolume) {
   if (!karaokeTimeline.length || sentenceStopScheduled) return;
 
-  updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
+  updateKaraokeHighlight();
 
   const now = performance.now();
-  const hasSpeech = displayVolume >= SENTENCE_SPEECH_THRESHOLD;
+  sentenceActiveStartedAt ||= now;
   sentencePeakVolumeSinceAdvance = Math.max(sentencePeakVolumeSinceAdvance, displayVolume);
   const dynamicSilenceThreshold = Math.max(
     SENTENCE_SILENCE_THRESHOLD,
-    Math.min(16, Math.round(sentencePeakVolumeSinceAdvance * 0.38)),
+    Math.min(14, Math.round(sentencePeakVolumeSinceAdvance * 0.32)),
   );
-  const hasSilence = displayVolume <= dynamicSilenceThreshold;
+  const speechThreshold = Math.max(
+    dynamicSilenceThreshold + 1,
+    Math.min(SENTENCE_SPEECH_THRESHOLD, Math.round(sentencePeakVolumeSinceAdvance * 0.5) || SENTENCE_SPEECH_THRESHOLD),
+  );
 
-  if (hasSpeech) {
+  if (displayVolume >= speechThreshold) {
     sentenceHasSpeechSinceAdvance = true;
     sentenceSilenceStartedAt = 0;
+    message.textContent = "Vokal halten. Aufnahme stoppt nach der Pause.";
     return;
   }
 
   if (!sentenceHasSpeechSinceAdvance) return;
-  if (!hasSilence) {
+
+  if (displayVolume > dynamicSilenceThreshold) {
     sentenceSilenceStartedAt = 0;
     return;
   }
@@ -1412,9 +2488,166 @@ function updateSentencePromptBySilence(displayVolume) {
   sentenceSilenceStartedAt ||= now;
   if (now - sentenceSilenceStartedAt < SENTENCE_SILENCE_MS) return;
 
+  scheduleSentenceFinalStop();
+}
+
+function updateDialogPromptProgress(displayVolume) {
+  if (!karaokeTimeline.length || sentenceStopScheduled) return;
+
+  const currentItem = karaokeTimeline[activeKaraokeIndex] || karaokeTimeline[0];
+  updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
+
+  if (currentItem?.isSystemTurn) {
+    playCurrentDialogSystemTurn();
+    return;
+  }
+
+  if (currentItem?.isPatientTurn) {
+    updateSentencePromptBySilence(displayVolume);
+  }
+}
+
+async function playCurrentDialogSystemTurn() {
+  if (dialogVoiceInProgress || dialogVoiceTurnIndex === activeKaraokeIndex || dialogAdvanceLock) return;
+
+  const currentItem = karaokeTimeline[activeKaraokeIndex];
+  if (!currentItem?.isSystemTurn) return;
+
+  dialogVoiceInProgress = true;
+  dialogVoiceTurnIndex = activeKaraokeIndex;
+  sentenceHasSpeechSinceAdvance = true;
+  sentenceSilenceStartedAt = 0;
+
+  try {
+    const audioUrl = currentItem.audioUrl || await createAndStoreDialogTurnAudio(activeKaraokeIndex);
+    if (audioUrl) {
+      message.textContent = `${currentItem.roleLabel} spricht.`;
+      await playVoiceAudio(audioUrl);
+    } else {
+      message.textContent = `${currentItem.roleLabel}: ${currentItem.text || currentItem.label}`;
+      await wait(Math.max(900, Math.min(3200, String(currentItem.text || currentItem.label || "").length * 55)));
+    }
+  } finally {
+    dialogVoiceInProgress = false;
+    advanceDialogPrompt();
+  }
+}
+
+async function createAndStoreDialogTurnAudio(timelineIndex) {
+  const currentItem = karaokeTimeline[timelineIndex];
+  if (!currentItem?.isSystemTurn || !currentItem.text) return "";
+
+  const exercise = getActiveRecordingExercise();
+  if (exercise?.mode !== "dialog") return "";
+
+  const storedAudio = await createStoredVoiceAudio(
+    currentItem.text,
+    `${exercise.name || getExerciseLabel()} Dialog ${timelineIndex + 1}`,
+  ).catch(() => null);
+  if (!storedAudio?.url) return "";
+
+  const updatedTurnAudio = {
+    audioUrl: storedAudio.url,
+    audioPath: storedAudio.path,
+    audioVoiceId: storedAudio.voiceId,
+    audioVoiceSettings: storedAudio.voiceSettings,
+    audioTextHash: storedAudio.textHash,
+    audioSpeed: storedAudio.speed,
+    audioUpdatedAt: new Date().toISOString(),
+  };
+
+  Object.assign(currentItem, updatedTurnAudio);
+
+  const updatedTurns = getExerciseDialogTurns(exercise).map((turn, index) =>
+    index === timelineIndex
+      ? { ...normalizeDialogTurn(turn), ...updatedTurnAudio }
+      : normalizeDialogTurn(turn),
+  );
+  const updatedExercise = hydrateEditorExercise({
+    ...exercise,
+    dialogTurns: updatedTurns,
+    content: serializeDialogTurns(updatedTurns),
+    script: serializeDialogTurns(updatedTurns),
+    dialogAudioUpdatedAt: new Date().toISOString(),
+  });
+  await saveEditorExerciseObject(updatedExercise);
+  return storedAudio.url;
+}
+
+function advanceDialogPrompt() {
+  if (dialogAdvanceLock || sentenceStopScheduled) return;
+  dialogAdvanceLock = true;
+
+  window.setTimeout(() => {
+    dialogAdvanceLock = false;
+  }, 180);
+
+  if (activeKaraokeIndex < karaokeTimeline.length - 1) {
+    activeKaraokeIndex += 1;
+    resetSentenceSilenceState();
+    updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
+    const item = karaokeTimeline[activeKaraokeIndex];
+    message.textContent = item?.isPatientTurn
+      ? `${item.roleLabel} spricht jetzt.`
+      : `${item.roleLabel} ist dran.`;
+    return;
+  }
+
+  scheduleSentenceFinalStop();
+}
+
+function updateSentencePromptBySilence(displayVolume) {
+  if (!karaokeTimeline.length || sentenceStopScheduled) return;
+
+  updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
+
+  const now = performance.now();
+  sentenceActiveStartedAt ||= now;
+  sentencePeakVolumeSinceAdvance = Math.max(sentencePeakVolumeSinceAdvance, displayVolume);
+  const dynamicSilenceThreshold = Math.max(
+    SENTENCE_SILENCE_THRESHOLD,
+    Math.min(16, Math.round(sentencePeakVolumeSinceAdvance * 0.34)),
+  );
+  const speechThreshold = Math.max(
+    dynamicSilenceThreshold + 1,
+    Math.min(SENTENCE_SPEECH_THRESHOLD, Math.round(sentencePeakVolumeSinceAdvance * 0.55) || SENTENCE_SPEECH_THRESHOLD),
+  );
+  const hasSpeech = displayVolume >= speechThreshold;
+  const hasSilence = displayVolume <= dynamicSilenceThreshold;
+  const sentenceTimedOut = now - sentenceActiveStartedAt >= SENTENCE_MAX_ACTIVE_MS;
+
+  if (hasSpeech) {
+    sentenceHasSpeechSinceAdvance = true;
+    sentenceSilenceStartedAt = 0;
+    return;
+  }
+
+  if (!sentenceHasSpeechSinceAdvance && !sentenceTimedOut) return;
+  if (!hasSilence) {
+    if (sentenceTimedOut) {
+      advanceSentencePrompt();
+      return;
+    }
+    sentenceSilenceStartedAt = 0;
+    return;
+  }
+
+  sentenceSilenceStartedAt ||= now;
+  if (now - sentenceSilenceStartedAt < SENTENCE_SILENCE_MS) return;
+
+  advanceSentencePrompt();
+}
+
+function advanceSentencePrompt() {
   sentenceSilenceStartedAt = 0;
   sentenceHasSpeechSinceAdvance = false;
   sentencePeakVolumeSinceAdvance = 0;
+  sentenceActiveStartedAt = performance.now();
+
+  if (karaokeTimeline[activeKaraokeIndex]?.isPatientTurn) {
+    advanceDialogPrompt();
+    return;
+  }
 
   if (activeKaraokeIndex < karaokeTimeline.length - 1) {
     activeKaraokeIndex += 1;
@@ -1423,11 +2656,23 @@ function updateSentencePromptBySilence(displayVolume) {
     return;
   }
 
+  scheduleSentenceFinalStop();
+}
+
+function resetSentenceSilenceState() {
+  sentenceSilenceStartedAt = 0;
+  sentenceHasSpeechSinceAdvance = false;
+  sentencePeakVolumeSinceAdvance = 0;
+  sentenceActiveStartedAt = performance.now();
+}
+
+function scheduleSentenceFinalStop() {
+  if (sentenceStopScheduled) return;
   sentenceStopScheduled = true;
-  message.textContent = "Letzter Satz beendet. Aufnahme stoppt gleich.";
+  message.textContent = "Letzter Teil beendet. Aufnahme stoppt gleich.";
   window.setTimeout(() => {
     if (isRecording || mediaRecorder?.state === "recording") stopRecording();
-  }, RECORDING_TAIL_SECONDS * 1000);
+  }, SENTENCE_FINAL_TAIL_SECONDS * 1000);
 }
 
 function setExerciseVisualsVisible(isVisible) {
@@ -1449,6 +2694,7 @@ async function startCalibration() {
   pitchHzValues = [];
   lastAmplitudeAt = 0;
   adaptiveNoiseFloor = 0;
+  adaptiveVolumeNoiseFloor = 0;
   silentSignalStartedAt = 0;
   document.body.classList.add("calibration-mode");
   setExerciseVisualsVisible(true);
@@ -1493,13 +2739,87 @@ function getExerciseScript() {
 }
 
 function getCurrentKaraokeTiming() {
+  const selectedTiming = getRecordingKaraokeTiming();
   const activeExercise = getActiveRecordingExercise();
-  if (activeExercise) return activeExercise.timing;
+  const baseTiming = activeExercise?.timing || {};
 
   return {
-    wordSeconds: DEFAULT_KARAOKE_WORD_SECONDS,
-    pauseSeconds: DEFAULT_KARAOKE_PAUSE_SECONDS,
+    ...baseTiming,
+    wordSeconds: selectedTiming.wordSeconds,
+    pauseSeconds: selectedTiming.pauseSeconds,
+    sentencePauseSeconds: selectedTiming.sentencePauseSeconds || baseTiming.sentencePauseSeconds,
   };
+}
+
+function getRecordingKaraokeTiming() {
+  const speed = clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3);
+  return EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
+}
+
+function getCurrentExerciseSpeedKey() {
+  const activeExercise = getActiveRecordingExercise();
+  const label = activeExercise?.name || exerciseName.value || getExerciseLabel();
+  return normalizeEditorExerciseName(label);
+}
+
+function getRecordingKaraokeSpeedMap() {
+  try {
+    return JSON.parse(localStorage.getItem(RECORDING_KARAOKE_SPEEDS_KEY) || "{}") || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function getDefaultKaraokeSpeedForCurrentExercise() {
+  const activeExercise = getActiveRecordingExercise();
+  if (activeExercise?.speed) return clampRecordingKaraokeSpeed(activeExercise.speed);
+
+  return clampRecordingKaraokeSpeed(
+    localStorage.getItem(RECORDING_KARAOKE_SPEED_KEY) ||
+      recordingKaraokeSpeed?.value ||
+      3,
+  );
+}
+
+function loadRecordingKaraokeSpeedForCurrentExercise() {
+  const speedMap = getRecordingKaraokeSpeedMap();
+  const key = getCurrentExerciseSpeedKey();
+  const speed = clampRecordingKaraokeSpeed(speedMap[key] || getDefaultKaraokeSpeedForCurrentExercise());
+  if (recordingKaraokeSpeed) recordingKaraokeSpeed.value = String(speed);
+  updateRecordingKaraokeSpeedLabel();
+}
+
+function saveRecordingKaraokeSpeedForCurrentExercise(speed) {
+  saveRecordingKaraokeSpeedForExerciseName(getCurrentExerciseSpeedKey(), speed);
+}
+
+function saveRecordingKaraokeSpeedForExerciseName(nameOrKey, speed) {
+  const key = normalizeEditorExerciseName(nameOrKey);
+  if (!key) return;
+  const speedMap = getRecordingKaraokeSpeedMap();
+  speedMap[key] = clampRecordingKaraokeSpeed(speed);
+  localStorage.setItem(RECORDING_KARAOKE_SPEEDS_KEY, JSON.stringify(speedMap));
+  localStorage.setItem(RECORDING_KARAOKE_SPEED_KEY, String(speedMap[key]));
+}
+
+function clampRecordingKaraokeSpeed(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return 3;
+  return Math.max(1, Math.min(7, Math.round(numericValue)));
+}
+
+function updateRecordingKaraokeSpeed(value) {
+  const nextValue = clampRecordingKaraokeSpeed(value);
+  if (recordingKaraokeSpeed) recordingKaraokeSpeed.value = String(nextValue);
+  saveRecordingKaraokeSpeedForCurrentExercise(nextValue);
+  updateRecordingKaraokeSpeedLabel();
+  if (!isRecording) setupKaraokeText();
+}
+
+function updateRecordingKaraokeSpeedLabel() {
+  if (!recordingKaraokeSpeedValue) return;
+  const speed = clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3);
+  recordingKaraokeSpeedValue.textContent = EDITOR_SPEEDS[speed]?.label || "Normal";
 }
 function getEditorTokens() {
   return editorContent.value
@@ -1581,6 +2901,10 @@ function getExerciseInstruction() {
   if (!exercise) return "";
   if (exercise.voiceInstruction) return exercise.voiceInstruction;
 
+  if (exercise.mode === "dialog") {
+    return `Bereiten Sie sich auf den Dialog vor. Hören Sie auf die System-Antworten und sprechen Sie Ihren Teil ruhig und deutlich.`;
+  }
+
   if (exercise.mode === "sentences") {
     return `Bereiten Sie sich auf die kurzen Sätze vor. Lesen Sie jeden Satz im Tempo ${exercise.timing.label}. Machen Sie nach jedem Satz eine kurze Pause.`;
   }
@@ -1594,21 +2918,53 @@ function getExerciseInstruction() {
 
 function getExerciseConfiguration() {
   const exercise = getActiveRecordingExercise();
-  if (!exercise) return null;
+  const recordingTiming = getCurrentKaraokeTiming();
+  const recordingSpeed = clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3);
+
+  if (!exercise) {
+    return {
+      typ: "standard",
+      name: getExerciseLabel(),
+      inhalt: getExerciseScript(),
+      wiederholungen: 1,
+      geschwindigkeit: recordingSpeed,
+      geschwindigkeitLabel: EDITOR_SPEEDS[recordingSpeed]?.label || "Normal",
+      karaokeGeschwindigkeit: {
+        wert: recordingSpeed,
+        label: EDITOR_SPEEDS[recordingSpeed]?.label || "Normal",
+        sekundenProEinheit: recordingTiming.wordSeconds,
+        pauseSekunden: recordingTiming.pauseSeconds,
+        individuellGespeichert: Boolean(getRecordingKaraokeSpeedMap()[getCurrentExerciseSpeedKey()]),
+      },
+      sekundenProEinheit: recordingTiming.wordSeconds,
+      pauseSekunden: recordingTiming.pauseSeconds,
+      satzPauseSekunden: recordingTiming.sentencePauseSeconds || SENTENCE_END_PAUSE_SECONDS,
+    };
+  }
 
   return {
     typ: exercise.mode,
     name: exercise.name,
     inhalt: exercise.content,
     saetze: exercise.sentences || [],
+    dialog: exercise.dialogTurns || [],
     wiederholungen: exercise.repeats,
-    geschwindigkeit: exercise.speed,
+    geschwindigkeit: recordingSpeed,
+    geschwindigkeitLabel: EDITOR_SPEEDS[recordingSpeed]?.label || "Normal",
+    karaokeGeschwindigkeit: {
+      wert: recordingSpeed,
+      label: EDITOR_SPEEDS[recordingSpeed]?.label || "Normal",
+      sekundenProEinheit: recordingTiming.wordSeconds,
+      pauseSekunden: recordingTiming.pauseSeconds,
+      individuellGespeichert: Boolean(getRecordingKaraokeSpeedMap()[getCurrentExerciseSpeedKey()]),
+    },
     voiceBegleitung: exercise.voiceInstruction,
     voiceAudioVorhanden: Boolean(exercise.voiceAudioUrl || exercise.voiceAudioDataUrl),
     voiceAudioUrl: exercise.voiceAudioUrl || "",
     voiceAudioPath: exercise.voiceAudioPath || "",
-    sekundenProEinheit: exercise.timing.wordSeconds,
-    pauseSekunden: exercise.timing.pauseSeconds,
+    sekundenProEinheit: recordingTiming.wordSeconds,
+    pauseSekunden: recordingTiming.pauseSeconds,
+    satzPauseSekunden: recordingTiming.sentencePauseSeconds || SENTENCE_END_PAUSE_SECONDS,
   };
 }
 
@@ -1622,6 +2978,13 @@ function getActiveRecordingExercise() {
   const selectedOption = exerciseName.selectedOptions?.[0];
   const selectedLabel = selectedOption?.textContent?.trim() || "";
   const candidates = [selectedLabel, exerciseName.value];
+  const standardExercise = STANDARD_EDITOR_EXERCISES.find((exercise) =>
+    candidates.some(
+      (candidate) => normalizeEditorExerciseName(candidate) === normalizeEditorExerciseName(exercise.name),
+    ),
+  );
+  if (standardExercise) return hydrateEditorExercise(standardExercise);
+
   const savedOverride = savedEditorExercises.find((exercise) =>
     candidates.some(
       (candidate) => normalizeEditorExerciseName(candidate) === normalizeEditorExerciseName(exercise.name),
@@ -1639,11 +3002,18 @@ function hydrateEditorExercise(exercise) {
   const timing = exercise.timing || EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
   const content = exercise.content || getDefaultEditorContent(mode);
   const repeats = Math.max(1, Number(exercise.repeats || 1));
-  const script = exercise.script || (mode !== "text" && repeats > 1 ? buildRepeatedScript(content, repeats) : content);
+  const parsedDialogTurns = mode === "dialog" ? getExerciseDialogTurns({ ...exercise, mode, content }) : [];
+  const dialogTurns = mode === "dialog" ? hydrateDialogTurnsWithAudio(parsedDialogTurns, exercise) : [];
+  const script = mode !== "text" && mode !== "dialog" && repeats > 1
+    ? buildRepeatedScript(content, repeats)
+    : exercise.script || content;
   const sentences = exercise.sentences || (mode === "sentences" ? content.split("|").map((sentence) => sentence.trim()).filter(Boolean) : []);
+  const patientTurnCount = dialogTurns.filter((turn) => turn.role === "patient").length;
   const contentLabel =
     exercise.contentLabel ||
-    (mode === "sentences"
+    (mode === "dialog"
+      ? `${patientTurnCount || 1} Sprecherteil${patientTurnCount === 1 ? "" : "e"}`
+      : mode === "sentences"
       ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
       : content.split(/\s+/).filter(Boolean).join(", ")) ||
     content;
@@ -1656,6 +3026,7 @@ function hydrateEditorExercise(exercise) {
     content,
     contentLabel,
     sentences,
+    dialogTurns,
     repeats,
     script,
   };
@@ -1666,23 +3037,31 @@ function buildEditorExerciseFromForm() {
   const speed = Number(editorSpeed.value);
   const timing = EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
   const sentences = mode === "sentences" ? getEditorSentences() : [];
+  const baseExerciseForAudio =
+    findSavedEditorExerciseByName(name) ||
+    (savedEditorExercise?.name === name ? savedEditorExercise : null);
+  const parsedDialogTurns = mode === "dialog" ? getEditorDialogTurns() : [];
+  const dialogTurns = mode === "dialog" ? hydrateDialogTurnsWithAudio(parsedDialogTurns, baseExerciseForAudio) : [];
   const tokens =
     mode === "text"
       ? editorContent.value.split(/\s+/).map((token) => token.trim()).filter(Boolean)
-      : mode === "sentences"
+      : mode === "sentences" || mode === "dialog"
         ? []
         : getEditorTokens();
   const content =
-    mode === "sentences"
+    mode === "dialog"
+      ? editorContent.value.trim() || getDefaultEditorContent(mode)
+      : mode === "sentences"
       ? sentences.join(" | ") || getDefaultEditorContent(mode)
       : tokens.length
         ? tokens.join(" ")
         : getDefaultEditorContent(mode);
   const voiceInstruction =
     editorVoiceInstruction.value.trim() || getDefaultEditorVoiceInstruction(mode);
-  const useRepeats = editorUseRepeats.checked && mode !== "text" && mode !== "sentences";
+  const useRepeats = editorUseRepeats.checked && mode !== "text" && mode !== "sentences" && mode !== "dialog";
   const repeats = useRepeats ? getEditorRepeats() : 1;
   const script = useRepeats ? buildRepeatedScript(content, repeats) : content;
+  const patientTurnCount = dialogTurns.filter((turn) => turn.role === "patient").length;
 
   return {
     name,
@@ -1691,14 +3070,28 @@ function buildEditorExerciseFromForm() {
     timing,
     content,
     contentLabel:
-      mode === "sentences"
+      mode === "dialog"
+        ? `${patientTurnCount || 1} Sprecherteil${patientTurnCount === 1 ? "" : "e"}`
+        : mode === "sentences"
         ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
         : tokens.join(", ") || getDefaultEditorContent(mode),
     sentences,
+    dialogTurns,
     voiceInstruction,
     voiceAudioUrl: editorVoiceAudioUrl,
     voiceAudioPath: editorVoiceAudioPath,
     voiceAudioDataUrl: editorVoiceAudioDataUrl,
+    voiceAudioVoiceId: editorVoiceAudioVoiceId,
+    voiceAudioVoiceSettings: editorVoiceAudioVoiceSettings,
+    voiceAudioTextHash: editorVoiceAudioTextHash,
+    voiceAudioUpdatedAt: editorVoiceAudioUpdatedAt,
+    demoAudioUrl: savedEditorExercise?.name === name ? savedEditorExercise.demoAudioUrl || "" : "",
+    demoAudioPath: savedEditorExercise?.name === name ? savedEditorExercise.demoAudioPath || "" : "",
+    demoVoiceId: savedEditorExercise?.name === name ? savedEditorExercise.demoVoiceId || "" : "",
+    demoVoiceSettings: savedEditorExercise?.name === name ? savedEditorExercise.demoVoiceSettings || null : null,
+    demoTextHash: savedEditorExercise?.name === name ? savedEditorExercise.demoTextHash || "" : "",
+    demoSpeed: savedEditorExercise?.name === name ? savedEditorExercise.demoSpeed || 0 : 0,
+    demoCreatedAt: savedEditorExercise?.name === name ? savedEditorExercise.demoCreatedAt || "" : "",
     repeats,
     script,
   };
@@ -1708,7 +3101,7 @@ function buildRepeatedScript(content, repeats) {
   const rows = [];
 
   for (let index = 1; index <= repeats; index += 1) {
-    rows.push(`${index} ${content}`);
+    rows.push(content);
   }
 
   return rows.join(" | ");
@@ -1718,10 +3111,15 @@ function getDefaultEditorContent(mode) {
   if (mode === "sentences") return "";
   if (mode === "text") return "Heute lese ich langsam und deutlich.";
   if (mode === "vowels") return "A E I O U";
+  if (mode === "dialog") {
+    const speakerName = getCurrentPatientName();
+    return `System: Guten Morgen, wie geht es Ihnen?\n${speakerName}: Mir geht es heute gut.\nSystem: Was haben Sie heute geübt?\n${speakerName}: Ich habe ruhig und deutlich gesprochen.`;
+  }
   return "Pa Ta Ka";
 }
 
 function getDefaultEditorVoiceInstruction(mode) {
+  if (mode === "dialog") return "Bitte hören Sie auf die System-Sätze und sprechen Sie Ihren Teil ruhig und deutlich.";
   if (mode === "sentences") return "Bitte lesen Sie die kurzen Sätze nacheinander ruhig und deutlich vor. Machen Sie nach jedem Satz eine kurze Pause.";
   if (mode === "text") return "Bitte lesen Sie den eingeblendeten Text ruhig und deutlich vor.";
   if (mode === "vowels") return "Bitte sprechen Sie die Vokale nacheinander deutlich aus.";
@@ -1736,6 +3134,10 @@ function buildVoiceInstructionSuggestion() {
     return `Bereiten Sie sich auf die kurzen Sätze vor. Lesen Sie jeden Satz im Tempo ${speedText}. Machen Sie nach jedem Satz eine kurze Pause.`;
   }
 
+  if (exercise.mode === "dialog") {
+    return `Bereiten Sie sich auf den Dialog vor. Die Systemteile werden vorgelesen, Ihren Teil sprechen Sie ruhig und deutlich. Das Tempo ist ${speedText}.`;
+  }
+
   if (exercise.mode === "text") {
     return `Bereiten Sie sich auf den Text vor. Lesen Sie gleich Wort für Wort im Tempo ${speedText}. Sprechen Sie ruhig, deutlich und ohne Druck.`;
   }
@@ -1747,7 +3149,65 @@ function buildVoiceInstructionSuggestion() {
   return `Bereiten Sie sich auf die Silbenübung vor. Sprechen Sie ${exercise.contentLabel} einzeln und deutlich. Wiederholen Sie die Folge ${exercise.repeats} mal im Tempo ${speedText}.`;
 }
 
+async function suggestVoiceInstruction() {
+  const fallbackSuggestion = buildVoiceInstructionSuggestion();
+  const chatGptSettings = getChatGptSettings();
+
+  if (!chatGptSettings.enabled || !chatGptSettings.apiKey) {
+    editorVoiceInstruction.value = fallbackSuggestion;
+    saveEditorDraft();
+    editorVoiceState.textContent = "Lokaler KI-Vorschlag erstellt. ChatGPT ist im Setup nicht aktiv.";
+    return;
+  }
+
+  suggestVoiceButton.disabled = true;
+  editorVoiceState.textContent = "ChatGPT erstellt einen Vorschlag...";
+
+  try {
+    const exercise = buildEditorExerciseFromForm();
+    const response = await fetch(getApiUrl("/api/chatgpt"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        apiKey: chatGptSettings.apiKey,
+        model: chatGptSettings.model,
+        systemPrompt: chatGptSettings.systemPrompt,
+        exercise: {
+          name: exercise.name,
+          mode: exercise.mode,
+          content: exercise.content,
+          script: exercise.script,
+          sentences: exercise.sentences,
+          dialogTurns: exercise.dialogTurns,
+          repeats: exercise.repeats,
+          speedLabel: exercise.timing.label,
+        },
+      }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.text) {
+      throw new Error(payload.error || "chatgpt-suggestion-failed");
+    }
+
+    editorVoiceInstruction.value = String(payload.text).trim();
+    saveEditorDraft();
+    editorVoiceState.textContent = "ChatGPT-Vorschlag erstellt.";
+  } catch (error) {
+    editorVoiceInstruction.value = fallbackSuggestion;
+    saveEditorDraft();
+    editorVoiceState.textContent = "ChatGPT nicht erreichbar. Lokaler Vorschlag eingesetzt.";
+  } finally {
+    suggestVoiceButton.disabled = false;
+  }
+}
+
 async function generateVoiceAudio() {
+  if (editorMode.value === "dialog") {
+    await generateDialogVoiceAudio();
+    return;
+  }
+
   const text = editorVoiceInstruction.value.trim();
   if (!text) {
     editorVoiceState.textContent = "Bitte zuerst einen Voice-Text eintragen.";
@@ -1758,7 +3218,7 @@ async function generateVoiceAudio() {
   editorVoiceState.textContent = "ElevenLabs-Audio wird erstellt...";
 
   try {
-    const response = await fetch("/api/voice", {
+    const response = await fetch(getApiUrl("/api/voice"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1780,8 +3240,12 @@ async function generateVoiceAudio() {
       throw new Error("Audio gespeichert, aber URL fehlt.");
     }
     editorVoiceAudioDataUrl = "";
-    editorVoiceAudioUrl = cloudVoice.downloadUrl;
+    editorVoiceAudioUrl = resolveAppUrl(cloudVoice.downloadUrl);
     editorVoiceAudioPath = cloudVoice.path;
+    editorVoiceAudioVoiceId = cloudVoice.voiceId || getElevenLabsRequestSettings().voiceId;
+    editorVoiceAudioVoiceSettings = cloudVoice.voiceSettings || getElevenLabsRequestSettings().voiceSettings;
+    editorVoiceAudioTextHash = cloudVoice.textHash || hashText(text);
+    editorVoiceAudioUpdatedAt = new Date().toISOString();
     editorVoicePreview.src = editorVoiceAudioUrl;
     editorVoiceState.textContent = "ElevenLabs-Audio erstellt und in Firebase gespeichert.";
     saveEditorDraft();
@@ -1791,6 +3255,10 @@ async function generateVoiceAudio() {
     editorVoiceAudioDataUrl = "";
     editorVoiceAudioUrl = "";
     editorVoiceAudioPath = "";
+    editorVoiceAudioVoiceId = "";
+    editorVoiceAudioVoiceSettings = null;
+    editorVoiceAudioTextHash = "";
+    editorVoiceAudioUpdatedAt = "";
     editorVoicePreview.removeAttribute("src");
     editorVoicePreview.load();
     editorVoiceState.textContent = error?.message || "Audio konnte nicht erstellt werden.";
@@ -1809,36 +3277,231 @@ function blobToDataUrl(blob) {
 }
 
 function updateEditorForm() {
+  stopEditorKaraokeTest();
   const isTextMode = editorMode.value === "text";
   const isSentenceMode = editorMode.value === "sentences";
   exerciseEditor?.classList.toggle("sentence-mode", isSentenceMode);
-  if (isTextMode || isSentenceMode) editorUseRepeats.checked = false;
-  repeatControl.classList.toggle("is-hidden", isTextMode || isSentenceMode || !editorUseRepeats.checked);
-  editorUseRepeats.disabled = isTextMode || isSentenceMode;
+  exerciseEditor?.classList.toggle("text-mode", isTextMode);
+  const isDialogMode = editorMode.value === "dialog";
+  exerciseEditor?.classList.toggle("dialog-mode", isDialogMode);
+  if (isTextMode || isSentenceMode || isDialogMode) editorUseRepeats.checked = false;
+  repeatControl.classList.toggle("is-hidden", isTextMode || isSentenceMode || isDialogMode || !editorUseRepeats.checked);
+  editorUseRepeats.disabled = isTextMode || isSentenceMode || isDialogMode;
   editorSentenceBuilder?.classList.toggle("is-hidden", !isSentenceMode);
+  editorDialogBuilder?.classList.toggle("is-hidden", !isDialogMode);
   editorSpeedValue.textContent = EDITOR_SPEEDS[editorSpeed.value]?.label || "Normal";
-  const previewParts = buildEditorExerciseFromForm().script.split("|").map((part) => part.trim());
-  editorPreview.textContent = previewParts.slice(0, 3).join("  |  ");
+  renderEditorPreview(buildEditorExerciseFromForm());
   renderEditorSentenceList();
+  if (isDialogMode) renderEditorDialogList();
+}
+
+function renderEditorPreview(exercise, activeIndex = -1) {
+  if (!editorPreview) return;
+
+  editorPreview.innerHTML = "";
+  editorPreviewTimeline = buildEditorPreviewTimeline(exercise);
+
+  if (!editorPreviewTimeline.length) {
+    editorPreview.textContent = "Noch kein Text.";
+    return;
+  }
+
+  const previewItems = exercise.mode === "text"
+    ? editorPreviewTimeline
+    : editorPreviewTimeline.slice(0, 12);
+
+  previewItems.forEach((item, index) => {
+    const span = document.createElement("span");
+    span.className = item.isPause
+      ? "editor-preview-word editor-preview-pause"
+      : "editor-preview-word";
+    span.textContent = item.label || "|";
+    span.classList.toggle("is-active", index === activeIndex);
+    span.classList.toggle("is-next", index === activeIndex + 1 && !item.isPause);
+    editorPreview.append(span);
+  });
+}
+
+function buildEditorPreviewTimeline(exercise = buildEditorExerciseFromForm()) {
+  if (exercise.mode === "dialog") {
+    return getExerciseDialogTurns(exercise).map((turn, index) => ({
+      label: `${getDialogSpeakerLabel(turn.role)}: ${turn.text}`,
+      role: turn.role,
+      isPause: false,
+      isSentence: true,
+      isDialog: true,
+      start: index * SENTENCE_MAX_SECONDS,
+      end: (index + 1) * SENTENCE_MAX_SECONDS,
+    }));
+  }
+
+  if (exercise.mode === "sentences") {
+    return getExerciseSentences(exercise).map((sentence, index) => ({
+      label: sentence,
+      isPause: false,
+      start: index * SENTENCE_MAX_SECONDS,
+      end: (index + 1) * SENTENCE_MAX_SECONDS,
+    }));
+  }
+
+  const words = String(exercise.script || "")
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter(Boolean);
+
+  return buildKaraokeTimeline(words, exercise.timing);
+}
+
+function startEditorKaraokeTest() {
+  const exercise = buildEditorExerciseFromForm();
+
+  if (exercise.mode !== "text") {
+    editorVoiceState.textContent = "Der Tempo-Test ist für Karaoke-Text gedacht.";
+    return;
+  }
+
+  editorPreviewTimeline = buildEditorPreviewTimeline(exercise);
+  if (!editorPreviewTimeline.length) {
+    editorVoiceState.textContent = "Bitte zuerst einen Karaoke-Text eingeben.";
+    return;
+  }
+
+  isTestingEditorKaraoke = true;
+  testEditorKaraokeButton.textContent = "Test stoppen";
+  editorVoiceState.textContent = `Karaoke-Test läuft: ${exercise.timing.label}.`;
+  runEditorKaraokeFrame(performance.now(), exercise);
+}
+
+function runEditorKaraokeFrame(startTime, exercise) {
+  if (!isTestingEditorKaraoke) return;
+
+  const elapsedSeconds = Math.max(0, (performance.now() - startTime) / 1000);
+  let activeIndex = editorPreviewTimeline.findIndex(
+    (item) => elapsedSeconds >= item.start && elapsedSeconds < item.end,
+  );
+
+  if (activeIndex < 0) {
+    stopEditorKaraokeTest();
+    renderEditorPreview(exercise);
+    editorVoiceState.textContent = `Karaoke-Test beendet: ${exercise.timing.label}.`;
+    return;
+  }
+
+  renderEditorPreview(exercise, activeIndex);
+  editorPreviewTimerId = window.setTimeout(
+    () => runEditorKaraokeFrame(startTime, exercise),
+    60,
+  );
+}
+
+function stopEditorKaraokeTest(options = {}) {
+  window.clearTimeout(editorPreviewTimerId);
+  editorPreviewTimerId = 0;
+  isTestingEditorKaraoke = false;
+  if (!options.keepButtonLabel && testEditorKaraokeButton) {
+    testEditorKaraokeButton.textContent = "Karaoke-Tempo testen";
+  }
 }
 
 function applyEditorModeDefaults() {
   editorContent.value = getDefaultEditorContent(editorMode.value);
   editorVoiceInstruction.value = getDefaultEditorVoiceInstruction(editorMode.value);
-  editorUseRepeats.checked = editorMode.value !== "text" && editorMode.value !== "sentences";
+  editorUseRepeats.checked =
+    editorMode.value !== "text" &&
+    editorMode.value !== "sentences" &&
+    editorMode.value !== "dialog";
   if (editorMode.value === "sentences") {
     editorExerciseName.value = "Kurze Sätze";
   } else if (editorMode.value === "text") {
     editorExerciseName.value = "Karaoke-Text";
   } else if (editorMode.value === "vowels") {
     editorExerciseName.value = "Vokale nacheinander";
+  } else if (editorMode.value === "dialog") {
+    editorExerciseName.value = "Dialog";
   } else {
     editorExerciseName.value = "Neue Silbenübung";
   }
 }
 
+async function generateDialogVoiceAudio() {
+  const exercise = buildEditorExerciseFromForm();
+  const turns = Array.isArray(exercise.dialogTurns) ? exercise.dialogTurns : [];
+  const systemTurns = turns.filter((turn) => turn.role !== "patient" && turn.text);
+
+  if (!systemTurns.length) {
+    editorVoiceState.textContent = "Bitte mindestens eine KI-Dialogzeile eintragen.";
+    return;
+  }
+
+  generateVoiceAudioButton.disabled = true;
+  editorVoiceState.textContent = `Dialog-Audio wird erstellt: 0/${systemTurns.length}`;
+
+  try {
+    let createdCount = 0;
+    let reusedCount = 0;
+    let systemIndex = 0;
+    const updatedTurns = [];
+
+    for (const turn of turns) {
+      if (turn.role === "patient" || !turn.text) {
+        updatedTurns.push(normalizeDialogTurn(turn));
+        continue;
+      }
+
+      systemIndex += 1;
+      if (isDialogTurnAudioCurrent(turn)) {
+        reusedCount += 1;
+        updatedTurns.push(turn);
+        editorVoiceState.textContent = `Dialog-Audio aktuell: ${systemIndex}/${systemTurns.length}`;
+        continue;
+      }
+
+      editorVoiceState.textContent = `Dialog-Audio wird erstellt: ${systemIndex}/${systemTurns.length}`;
+      const storedAudio = await createStoredVoiceAudio(
+        turn.text,
+        `${exercise.name} Dialog ${systemIndex}`,
+      );
+      createdCount += 1;
+      updatedTurns.push({
+        ...normalizeDialogTurn(turn),
+        audioUrl: storedAudio.url,
+        audioPath: storedAudio.path,
+        audioVoiceId: storedAudio.voiceId,
+        audioVoiceSettings: storedAudio.voiceSettings,
+        audioTextHash: storedAudio.textHash,
+        audioSpeed: storedAudio.speed,
+        audioUpdatedAt: new Date().toISOString(),
+      });
+    }
+
+    const updatedExercise = hydrateEditorExercise({
+      ...exercise,
+      dialogTurns: updatedTurns,
+      content: serializeDialogTurns(updatedTurns),
+      script: serializeDialogTurns(updatedTurns),
+      dialogAudioUpdatedAt: new Date().toISOString(),
+    });
+
+    editorContent.value = updatedExercise.content;
+    await saveEditorExerciseObject(updatedExercise);
+    applyEditorExerciseToForm(updatedExercise);
+    updateEditorForm();
+    editorVoiceState.textContent =
+      `Dialog-Audio gespeichert: ${createdCount} neu, ${reusedCount} bereits aktuell.`;
+  } catch (error) {
+    editorVoiceState.textContent = error?.message || "Dialog-Audio konnte nicht erstellt werden.";
+  } finally {
+    generateVoiceAudioButton.disabled = false;
+  }
+}
+
 function saveEditorExercise() {
   const exercise = buildEditorExerciseFromForm();
+  saveEditorExerciseObject(exercise);
+}
+
+async function saveEditorExerciseObject(exercise) {
+  saveRecordingKaraokeSpeedForExerciseName(exercise.name, exercise.speed);
   savedEditorExercises = upsertEditorExercise(savedEditorExercises, exercise);
   savedEditorExercise = exercise;
   activeEditorExerciseName = exercise.name;
@@ -1847,17 +3510,17 @@ function saveEditorExercise() {
     firebaseState.textContent = "Übung lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
   });
   renderSavedEditorExercises();
+  renderPlaybackRecordingAccess(getPatientRecordings(), currentMetadata?.id || null);
   editorSavedExercises.value = exercise.name;
   saveEditorDraft();
   exerciseName.value = exercise.name;
   renderRecordingExerciseOptions(exercise.name);
   exerciseName.value = exercise.name;
+  loadRecordingKaraokeSpeedForCurrentExercise();
   setupKaraokeText();
   updateEditorForm();
-  message.textContent = `Gespeichert: ${exercise.name}`;
-  editorVoiceState.textContent = `Gespeichert: ${exercise.name}`;
+  updateEditorModeState();
   showEditorSaveFeedback(exercise.name);
-  showAppNotice(`Gespeichert: ${exercise.name}`, "success");
 }
 
 function upsertEditorExercise(exercises, exercise) {
@@ -1881,18 +3544,6 @@ function persistEditorExercises() {
   localStorage.setItem(SAVED_EDITOR_EXERCISE_KEY, JSON.stringify(savedEditorExercise));
 }
 
-function showEditorSaveFeedback(exerciseLabel) {
-  const originalText = saveEditorExerciseButton.textContent;
-  saveEditorExerciseButton.textContent = "Gespeichert ✓";
-  saveEditorExerciseButton.classList.add("is-saved");
-  firebaseState.textContent = `Übung gespeichert und in Aufnahme auswählbar: ${exerciseLabel}`;
-
-  window.setTimeout(() => {
-    saveEditorExerciseButton.textContent = originalText;
-    saveEditorExerciseButton.classList.remove("is-saved");
-  }, 1600);
-}
-
 function showAppNotice(text, type = "success") {
   const existingNotice = document.querySelector(".app-notice");
   existingNotice?.remove();
@@ -1912,26 +3563,60 @@ function showAppNotice(text, type = "success") {
   }, 2600);
 }
 
+function showEditorSaveFeedback(exerciseLabel) {
+  window.clearTimeout(editorSaveFeedbackTimerId);
+  saveEditorExerciseButton.textContent = "Gespeichert";
+  saveEditorExerciseButton.classList.add("is-saved");
+  saveEditorExerciseButton.disabled = true;
+  editorVoiceState.textContent = "Übung gespeichert.";
+  firebaseState.textContent = `Übung gespeichert und in Aufnahme auswählbar: ${exerciseLabel}`;
+
+  editorSaveFeedbackTimerId = window.setTimeout(() => {
+    saveEditorExerciseButton.textContent = "Speichern";
+    saveEditorExerciseButton.classList.remove("is-saved");
+    saveEditorExerciseButton.disabled = false;
+  }, 1600);
+}
+
 function normalizeEditorExerciseName(name) {
   return String(name || "").trim().toLowerCase();
 }
 
-function resetEditorForm() {
-  editorExerciseName.value = "Kurze Sätze";
-  editorMode.value = "sentences";
-  editorContent.value = "";
+function updateEditorModeState() {
+  const isEditingSaved = Boolean(activeEditorExerciseName);
+  newEditorExerciseButton.classList.toggle("is-active", !isEditingSaved);
+  editorSavedExercises.classList.toggle("is-editing", isEditingSaved);
+  if (editorModeState) {
+    editorModeState.textContent = isEditingSaved
+      ? `Gespeicherte Übung bearbeiten: ${activeEditorExerciseName}`
+      : "Neue Übung";
+  }
+}
+
+function resetEditorForm(options = {}) {
+  editorExerciseName.value = "";
+  editorMode.value = options.blank ? "syllables" : "sentences";
+  editorContent.value = options.blank ? "" : "";
   if (editorSentenceInput) editorSentenceInput.value = "";
-  editorVoiceInstruction.value = getDefaultEditorVoiceInstruction("sentences");
+  editorVoiceInstruction.value = options.blank ? "" : getDefaultEditorVoiceInstruction(editorMode.value);
   editorVoiceAudioDataUrl = "";
   editorVoiceAudioUrl = "";
   editorVoiceAudioPath = "";
+  editorVoiceAudioVoiceId = "";
+  editorVoiceAudioVoiceSettings = null;
+  editorVoiceAudioTextHash = "";
+  editorVoiceAudioUpdatedAt = "";
   editorVoicePreview.removeAttribute("src");
   editorVoicePreview.load();
   editorVoiceState.textContent = "Voice-Audio optional.";
   editorUseRepeats.checked = false;
   editorRepeats.value = "1";
   editorSpeed.value = "3";
+  activeEditorExerciseName = "";
+  savedEditorExercise = null;
+  editorSavedExercises.value = "";
   updateEditorForm();
+  updateEditorModeState();
 }
 
 function renderSavedEditorExercises() {
@@ -1941,7 +3626,7 @@ function renderSavedEditorExercises() {
 
   const emptyOption = document.createElement("option");
   emptyOption.value = "";
-  emptyOption.textContent = "Neue Übung erstellen";
+  emptyOption.textContent = "Gespeicherte Übung auswählen";
   editorSavedExercises.append(emptyOption);
 
   const templateGroup = document.createElement("optgroup");
@@ -1973,6 +3658,47 @@ function renderSavedEditorExercises() {
     : "";
 
   renderRecordingExerciseOptions();
+  renderPlaybackRecordingAccess(getPatientRecordings(), currentMetadata?.id || null);
+  renderSavedEditorExerciseList();
+  updateEditorModeState();
+}
+
+function renderSavedEditorExerciseList() {
+  if (!editorSavedExerciseList) return;
+
+  editorSavedExerciseList.innerHTML = "";
+  if (!savedEditorExercises.length) {
+    editorSavedExerciseList.classList.add("is-empty");
+    editorSavedExerciseList.textContent = "Keine gespeicherten Editor-Übungen.";
+    return;
+  }
+
+  editorSavedExerciseList.classList.remove("is-empty");
+  savedEditorExercises.forEach((exercise) => {
+    const item = document.createElement("div");
+    item.className = "editor-saved-exercise-item";
+
+    const summary = document.createElement("button");
+    summary.type = "button";
+    summary.className = "editor-saved-exercise-open";
+    summary.textContent = exercise.name || "Unbenannte Übung";
+    summary.addEventListener("click", () => {
+      editorSavedExercises.value = exercise.name;
+      loadEditorExerciseIntoForm(exercise.name);
+    });
+
+    const deleteListButton = document.createElement("button");
+    deleteListButton.type = "button";
+    deleteListButton.className = "recording-delete-button editor-exercise-delete-button";
+    deleteListButton.setAttribute("aria-label", `Vorlage löschen: ${exercise.name || "Übung"}`);
+    deleteListButton.title = "Vorlage löschen";
+    deleteListButton.addEventListener("click", async () => {
+      await deleteSavedEditorExercise(exercise.name);
+    });
+
+    item.append(summary, deleteListButton);
+    editorSavedExerciseList.append(item);
+  });
 }
 
 function renderRecordingExerciseOptions(preferredValue = exerciseName.value) {
@@ -2052,7 +3778,7 @@ function loadEditorExerciseIntoForm(name) {
   if (!exercise) {
     activeEditorExerciseName = "";
     savedEditorExercise = null;
-    resetEditorForm();
+    resetEditorForm({ blank: true });
     saveEditorDraft();
     return;
   }
@@ -2063,6 +3789,7 @@ function loadEditorExerciseIntoForm(name) {
   applyEditorExerciseToForm(exercise);
   saveEditorDraft();
   updateEditorForm();
+  updateEditorModeState();
   editorVoiceState.textContent = exercise.voiceAudioUrl
     ? "Geladen. Voice-Audio in Firebase vorhanden."
     : `Geladen: ${exercise.name}`;
@@ -2085,6 +3812,10 @@ function applyEditorExerciseToForm(exercise) {
   editorVoiceAudioDataUrl = exercise.voiceAudioDataUrl || "";
   editorVoiceAudioUrl = exercise.voiceAudioUrl || "";
   editorVoiceAudioPath = exercise.voiceAudioPath || "";
+  editorVoiceAudioVoiceId = exercise.voiceAudioVoiceId || "";
+  editorVoiceAudioVoiceSettings = exercise.voiceAudioVoiceSettings || null;
+  editorVoiceAudioTextHash = exercise.voiceAudioTextHash || "";
+  editorVoiceAudioUpdatedAt = exercise.voiceAudioUpdatedAt || "";
 
   if (editorVoiceAudioUrl || editorVoiceAudioDataUrl) {
     editorVoicePreview.src = editorVoiceAudioUrl || editorVoiceAudioDataUrl;
@@ -2097,7 +3828,11 @@ function applyEditorExerciseToForm(exercise) {
     editorVoiceState.textContent = "Voice-Audio optional.";
   }
 
-  editorUseRepeats.checked = (exercise.repeats || 1) > 1 && exercise.mode !== "text";
+  editorUseRepeats.checked =
+    (exercise.repeats || 1) > 1 &&
+    exercise.mode !== "text" &&
+    exercise.mode !== "sentences" &&
+    exercise.mode !== "dialog";
   editorRepeats.value = String(exercise.repeats || 1);
   editorSpeed.value = String(exercise.speed || 3);
 }
@@ -2112,6 +3847,10 @@ function saveEditorDraft() {
     voiceAudioUrl: editorVoiceAudioUrl,
     voiceAudioPath: editorVoiceAudioPath,
     voiceAudioDataUrl: editorVoiceAudioDataUrl,
+    voiceAudioVoiceId: editorVoiceAudioVoiceId,
+    voiceAudioVoiceSettings: editorVoiceAudioVoiceSettings,
+    voiceAudioTextHash: editorVoiceAudioTextHash,
+    voiceAudioUpdatedAt: editorVoiceAudioUpdatedAt,
     useRepeats: editorUseRepeats.checked,
     repeats: editorRepeats.value,
     speed: editorSpeed.value,
@@ -2129,8 +3868,8 @@ function loadSavedEditorExercise() {
       savedEditorExercises = upsertEditorExercise(savedEditorExercises, legacyExercise);
     }
 
-    savedEditorExercise = savedEditorExercises[0] || legacyExercise || null;
-    activeEditorExerciseName = savedEditorExercise?.name || "";
+    savedEditorExercise = legacyExercise || null;
+    activeEditorExerciseName = "";
     persistEditorExercises();
   } catch (error) {
     savedEditorExercise = null;
@@ -2152,9 +3891,6 @@ async function loadCloudEditorExercises() {
     if (activeEditorExerciseName) {
       const activeExercise = findSavedEditorExerciseByName(activeEditorExerciseName);
       if (activeExercise) savedEditorExercise = activeExercise;
-    } else if (!savedEditorExercise && savedEditorExercises.length) {
-      savedEditorExercise = savedEditorExercises[0];
-      activeEditorExerciseName = savedEditorExercise.name;
     }
 
     persistEditorExercises();
@@ -2169,7 +3905,7 @@ async function saveCloudEditorExercise(exercise) {
   const hydratedExercise = hydrateEditorExercise(exercise);
   if (!hydratedExercise?.name) return;
 
-  const response = await fetch("/api/editor-exercises", {
+  const response = await fetch(getApiUrl("/api/editor-exercises"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ exercise: hydratedExercise }),
@@ -2186,9 +3922,65 @@ async function saveCloudEditorExercise(exercise) {
   firebaseState.textContent = "Editor-Übung in Firebase gespeichert.";
 }
 
+async function deleteSavedEditorExercise(name) {
+  const exercise = findSavedEditorExerciseByName(name);
+  if (!exercise?.name) return;
+
+  const confirmed = window.confirm(`Vorlage "${exercise.name}" wirklich löschen?`);
+  if (!confirmed) return;
+
+  const normalizedName = normalizeEditorExerciseName(exercise.name);
+  savedEditorExercises = savedEditorExercises.filter(
+    (item) => normalizeEditorExerciseName(item.name) !== normalizedName,
+  );
+
+  if (normalizeEditorExerciseName(activeEditorExerciseName) === normalizedName) {
+    activeEditorExerciseName = "";
+    savedEditorExercise = null;
+    resetEditorForm({ blank: true });
+  } else if (normalizeEditorExerciseName(savedEditorExercise?.name) === normalizedName) {
+    savedEditorExercise = null;
+  }
+
+  persistEditorExercises();
+  renderSavedEditorExercises();
+  renderRecordingExerciseOptions();
+  renderPlaybackRecordingAccess(getPatientRecordings(), currentMetadata?.id || null);
+  firebaseState.textContent = `Vorlage gelöscht: ${exercise.name}`;
+
+  deleteCloudEditorExercise(exercise).catch(() => {
+    firebaseState.textContent = "Lokal gelöscht. Firebase-Löschen fehlgeschlagen.";
+  });
+}
+
+async function deleteCloudEditorExercise(exercise) {
+  if (!exercise?.name) return;
+  const deleteTasks = [deleteDoc(doc(firestore, "editorExercises", slugify(exercise.name)))];
+
+  collectEditorExerciseAudioPaths(exercise).forEach((path) => {
+    deleteTasks.push(deleteObject(ref(storage, path)).catch(() => {}));
+  });
+
+  await Promise.all(deleteTasks);
+}
+
+function collectEditorExerciseAudioPaths(exercise) {
+  const paths = new Set();
+  [
+    exercise.voiceAudioPath,
+    exercise.demoAudioPath,
+    ...(Array.isArray(exercise.dialogTurns)
+      ? exercise.dialogTurns.map((turn) => turn?.audioPath)
+      : []),
+  ].forEach((path) => {
+    if (path) paths.add(path);
+  });
+  return [...paths];
+}
+
 async function fetchEditorExercisesFromCloud() {
   try {
-    const response = await fetch("/api/editor-exercises", { cache: "no-store" });
+    const response = await fetch(getApiUrl("/api/editor-exercises"), { cache: "no-store" });
     if (response.ok) {
       const payload = await response.json();
       return Array.isArray(payload.exercises) ? payload.exercises : [];
@@ -2208,6 +4000,12 @@ function findSavedEditorExerciseByName(name) {
 function loadEditorDraft() {
   try {
     const draft = JSON.parse(localStorage.getItem(EDITOR_DRAFT_KEY) || "{}");
+    if (!Object.keys(draft).length) {
+      resetEditorForm({ blank: true });
+      renderSavedEditorExercises();
+      updateEditorForm();
+      return;
+    }
     activeEditorExerciseName = draft.activeExerciseName || activeEditorExerciseName;
 
     const savedDraftExercise = findSavedEditorExerciseByName(activeEditorExerciseName);
@@ -2222,6 +4020,10 @@ function loadEditorDraft() {
       editorVoiceAudioUrl = draft.voiceAudioUrl || "";
       editorVoiceAudioPath = draft.voiceAudioPath || "";
       editorVoiceAudioDataUrl = draft.voiceAudioDataUrl || "";
+      editorVoiceAudioVoiceId = draft.voiceAudioVoiceId || "";
+      editorVoiceAudioVoiceSettings = draft.voiceAudioVoiceSettings || null;
+      editorVoiceAudioTextHash = draft.voiceAudioTextHash || "";
+      editorVoiceAudioUpdatedAt = draft.voiceAudioUpdatedAt || "";
       if (editorVoiceAudioUrl || editorVoiceAudioDataUrl) {
         editorVoicePreview.src = editorVoiceAudioUrl || editorVoiceAudioDataUrl;
         editorVoiceState.textContent = editorVoiceAudioUrl
@@ -2233,7 +4035,7 @@ function loadEditorDraft() {
       editorSpeed.value = draft.speed || editorSpeed.value;
     }
   } catch (error) {
-    resetEditorForm();
+    resetEditorForm({ blank: true });
   }
   renderSavedEditorExercises();
   updateEditorForm();
@@ -2241,19 +4043,43 @@ function loadEditorDraft() {
 
 function buildKaraokeTimeline(words, timing = getCurrentKaraokeTiming()) {
   let cursorSeconds = 0;
+  const timeline = [];
 
-  return words.map((word) => {
+  words.forEach((word) => {
     const isPause = word === "|";
+    const isSentenceEnd = !isPause && isSentenceEndWord(word);
     const duration = isPause ? timing.pauseSeconds : timing.wordSeconds;
     const item = {
       label: isPause ? "" : word,
       isPause,
+      isRepeatPause: isPause,
       start: cursorSeconds,
       end: cursorSeconds + duration,
     };
+    timeline.push(item);
     cursorSeconds += duration;
-    return item;
+
+    if (isSentenceEnd) {
+      const pauseDuration = Math.max(
+        timing.pauseSeconds,
+        Number(timing.sentencePauseSeconds) || SENTENCE_END_PAUSE_SECONDS,
+      );
+      timeline.push({
+        label: "",
+        isPause: true,
+        isSentenceEndPause: true,
+        start: cursorSeconds,
+        end: cursorSeconds + pauseDuration,
+      });
+      cursorSeconds += pauseDuration;
+    }
   });
+
+  return timeline;
+}
+
+function isSentenceEndWord(word) {
+  return /[.!?…:;]$/.test(String(word || "").trim());
 }
 
 function updateKaraokeHighlight() {
@@ -2271,23 +4097,28 @@ function updateKaraokeHighlight() {
 function renderKaraokeOverlay(overlay, timeline) {
   overlay.innerHTML = "";
   overlay.classList.toggle("is-sentence-mode", timeline.some((item) => item.isSentence));
+  overlay.classList.add("is-three-line");
 
-  timeline.forEach((item, index) => {
-    const span = document.createElement("span");
-    span.className = item.isPause
-      ? "karaoke-word karaoke-pause"
-      : item.isSentence
-        ? "karaoke-word karaoke-sentence"
-        : "karaoke-word";
-    span.dataset.index = String(index);
-    span.textContent = item.label;
-    overlay.append(span);
+  ["before", "current", "after"].forEach((lineName) => {
+    const line = document.createElement("div");
+    line.className = `karaoke-line karaoke-line-${lineName}`;
+    overlay.append(line);
   });
 }
 
 function updateKaraokeDisplay(overlay, timeline, activeIndex) {
+  if (overlay === karaokeOverlay) {
+    updateRepeatCounterOverlay(timeline, activeIndex);
+  }
+
+  if (overlay.classList.contains("is-three-line")) {
+    updateThreeLineKaraokeDisplay(overlay, timeline, activeIndex);
+    return;
+  }
+
   if (timeline.some((item) => item.isSentence)) {
     const boundedIndex = Math.max(0, Math.min(activeIndex, timeline.length - 1));
+    overlay.classList.remove("is-context-dense");
     overlay.querySelectorAll(".karaoke-word").forEach((word) => {
       const index = Number(word.dataset.index);
       word.classList.toggle("is-active", index === boundedIndex);
@@ -2301,16 +4132,46 @@ function updateKaraokeDisplay(overlay, timeline, activeIndex) {
     ? getPreviousSpokenIndex(timeline, activeIndex) ?? getNextSpokenIndex(timeline, activeIndex) ?? activeIndex
     : activeIndex;
   const nextWordIndex = getNextSpokenIndex(timeline, activeWordIndex);
+  const visibleIndexes = getKaraokeContextIndexes(timeline, activeWordIndex);
+  const visibleWordCount = [...visibleIndexes].filter((index) => !timeline[index]?.isPause).length;
+  overlay.classList.toggle("is-context-dense", visibleWordCount >= 5);
 
   overlay.querySelectorAll(".karaoke-word").forEach((word) => {
     const index = Number(word.dataset.index);
     const isActive = index === activeWordIndex && !timeline[index]?.isPause;
     const isNext = index === nextWordIndex && !timeline[index]?.isPause;
+    const isBefore = index < activeWordIndex && visibleIndexes.has(index);
+    const isAfter = index > activeWordIndex && visibleIndexes.has(index);
 
     word.classList.toggle("is-active", isActive);
     word.classList.toggle("is-next", isNext);
-    word.classList.toggle("is-visible", isActive || isNext);
+    word.classList.toggle("is-before", isBefore);
+    word.classList.toggle("is-after", isAfter);
+    word.classList.toggle("is-visible", visibleIndexes.has(index));
   });
+}
+
+function getKaraokeContextIndexes(timeline, activeIndex) {
+  const indexes = new Set();
+  if (activeIndex == null || activeIndex < 0) return indexes;
+
+  indexes.add(activeIndex);
+
+  let beforeCount = 0;
+  for (let index = activeIndex - 1; index >= 0 && beforeCount < KARAOKE_CONTEXT_BEFORE; index -= 1) {
+    if (timeline[index]?.isPause) continue;
+    indexes.add(index);
+    beforeCount += 1;
+  }
+
+  let afterCount = 0;
+  for (let index = activeIndex + 1; index < timeline.length && afterCount < KARAOKE_CONTEXT_AFTER; index += 1) {
+    if (timeline[index]?.isPause) continue;
+    indexes.add(index);
+    afterCount += 1;
+  }
+
+  return indexes;
 }
 
 function getNextSpokenIndex(timeline, fromIndex) {
@@ -2337,6 +4198,27 @@ function updateKaraokeDisplayAtTime(overlay, timeline, seconds) {
 function scheduleAutoStop() {
   window.clearTimeout(autoStopTimeoutId);
   window.clearTimeout(hardStopTimeoutId);
+
+  if (isHoldUntilSilenceExercise()) {
+    hardStopTimeoutId = window.setTimeout(() => {
+      if (mediaRecorder?.state === "recording") {
+        message.textContent = "Sicherheitsstopp erreicht. Aufnahme wird beendet.";
+        stopRecording();
+      }
+    }, 90000);
+    return;
+  }
+
+  if (karaokeTimeline.some((item) => item.isDialog)) {
+    const hardLimitSeconds = Math.max(30, karaokeTimeline.length * SENTENCE_MAX_SECONDS);
+    hardStopTimeoutId = window.setTimeout(() => {
+      if (mediaRecorder?.state === "recording") {
+        message.textContent = "Sicherheitsstopp erreicht. Aufnahme wird beendet.";
+        stopRecording();
+      }
+    }, hardLimitSeconds * 1000);
+    return;
+  }
 
   if (karaokeTimeline.some((item) => item.isSentence)) {
     const hardLimitSeconds = Math.max(30, karaokeTimeline.length * SENTENCE_MAX_SECONDS);
@@ -2503,11 +4385,15 @@ function shouldUseDirectRecordingStream() {
 
 function startComposedVideoStream() {
   if (shouldUseDirectRecordingStream()) {
-    composedRecordingStream = null;
-    composedRecordingAudioTrack = null;
+    composedRecordingStream = new MediaStream();
+    mediaStream.getVideoTracks().forEach((track) => {
+      composedRecordingStream.addTrack(track.clone());
+    });
+    composedRecordingAudioTrack = createRecordingAudioTrack() || mediaStream.getAudioTracks()[0]?.clone?.();
+    if (composedRecordingAudioTrack) composedRecordingStream.addTrack(composedRecordingAudioTrack);
     recordingCanvas = null;
     recordingCanvasContext = null;
-    return mediaStream;
+    return composedRecordingStream;
   }
 
   recordingCanvas = document.createElement("canvas");
@@ -2524,13 +4410,29 @@ function startComposedVideoStream() {
   drawComposedVideoFrame();
 
   composedRecordingStream = recordingCanvas.captureStream(30);
-  const audioTrack = mediaStream.getAudioTracks()[0];
-  if (audioTrack) {
-    composedRecordingAudioTrack = audioTrack.clone();
+  composedRecordingAudioTrack = createRecordingAudioTrack() || mediaStream.getAudioTracks()[0]?.clone?.();
+  if (composedRecordingAudioTrack) {
     composedRecordingStream.addTrack(composedRecordingAudioTrack);
   }
 
   return composedRecordingStream;
+}
+
+function createRecordingAudioTrack() {
+  if (!audioContext || audioContext.state === "closed" || !audioSource) return null;
+
+  try {
+    recordingAudioDestination = audioContext.createMediaStreamDestination();
+    recordingAudioMicGain = audioContext.createGain();
+    recordingAudioMicGain.gain.value = 1;
+    audioSource.connect(recordingAudioMicGain);
+    recordingAudioMicGain.connect(recordingAudioDestination);
+    return recordingAudioDestination.stream.getAudioTracks()[0] || null;
+  } catch (error) {
+    recordingAudioDestination = null;
+    recordingAudioMicGain = null;
+    return null;
+  }
 }
 
 function drawComposedVideoFrame() {
@@ -2572,8 +4474,14 @@ function stopComposedVideoStream() {
     composedRecordingAudioTrack.stop();
   }
 
+  try {
+    recordingAudioMicGain?.disconnect();
+  } catch (error) {}
+
   composedRecordingStream = null;
   composedRecordingAudioTrack = null;
+  recordingAudioDestination = null;
+  recordingAudioMicGain = null;
   recordingCanvas = null;
   recordingCanvasContext = null;
 }
@@ -2619,20 +4527,77 @@ function drawWaveform(canvas, values, options = {}) {
   );
   const displayLevels = getWaveformColorLevels(values, displayValues, waveformWidth, options);
   const barCount = displayValues.length;
-  const gap = options.mode === "live" ? 4 : 3;
-  const barWidth = Math.max(3, (waveformWidth - gap * (barCount - 1)) / barCount);
+  const gap = Number.isFinite(options.barGap) ? options.barGap : options.mode === "live" ? 4 : 3;
+  const minimumBarWidth = Number.isFinite(options.minBarWidth) ? options.minBarWidth : 3;
+  const barWidth = Math.max(minimumBarWidth, (waveformWidth - gap * (barCount - 1)) / barCount);
   const activeX = progress === null ? waveformWidth : waveformWidth * Math.max(0, Math.min(1, progress));
+
+  if (options.waveformStyle === "filled") {
+    drawFilledWaveformEnvelope(context, displayValues, displayLevels, {
+      activeX,
+      height,
+      middle,
+      waveformWidth,
+      minVisibleHeight: options.minVisibleHeight || 7,
+      mode: options.mode,
+      dim: Boolean(options.dim),
+    });
+    if (progress !== null) {
+      context.strokeStyle = "#ff7a90";
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(activeX, 16);
+      context.lineTo(activeX, height - 16);
+      context.stroke();
+    }
+    if (options.levelMeter) {
+      drawLevelMeter(context, width - levelMeterWidth, 0, levelMeterWidth, height, options.currentLevel || 0);
+    }
+    return;
+  }
+
+  if (options.waveformStyle === "line") {
+    drawLineWaveformEnvelope(context, displayValues, displayLevels, {
+      activeX,
+      height,
+      middle,
+      waveformWidth,
+      minVisibleHeight: options.minVisibleHeight || 8,
+      lineWidth: options.lineWidth || 5,
+      mode: options.mode,
+      dim: Boolean(options.dim),
+    });
+    if (progress !== null) {
+      context.strokeStyle = "#ff7a90";
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(activeX, 16);
+      context.lineTo(activeX, height - 16);
+      context.stroke();
+    }
+    if (options.levelMeter) {
+      drawLevelMeter(context, width - levelMeterWidth, 0, levelMeterWidth, height, options.currentLevel || 0);
+    }
+    return;
+  }
 
   const usedWidth = barCount * barWidth + (barCount - 1) * gap;
   const startX = options.align === "right" ? waveformWidth - usedWidth : 0;
 
   displayValues.forEach((value, index) => {
     const x = startX + index * (barWidth + gap);
+    const colorLevel = displayLevels[index] ?? value;
+    const isPause = isWaveformPause(colorLevel);
     const normalized = Math.max(0, Math.min(1, value / 100));
-    const barHeight = normalized <= 0 ? 0 : Math.max(2, normalized * (height - 38));
+    const barHeight = normalized <= 0
+      ? (isPause ? options.minPauseBarHeight || 3 : 0)
+      : Math.max(
+          isPause ? options.minPauseBarHeight || 3 : options.minSpeechBarHeight || 2,
+          normalized * (height - 38),
+        );
     const isPlayed = x <= activeX;
 
-    context.fillStyle = getWaveformBarColor(displayLevels[index] ?? value, {
+    context.fillStyle = getWaveformBarColor(colorLevel, {
       dim: Boolean(options.dim),
       played: options.mode !== "playback" || isPlayed,
     });
@@ -2643,7 +4608,7 @@ function drawWaveform(canvas, values, options = {}) {
   });
 
   if (progress !== null) {
-    context.strokeStyle = "#ffffff";
+    context.strokeStyle = "#ff7a90";
     context.lineWidth = 4;
     context.beginPath();
     context.moveTo(activeX, 16);
@@ -2656,26 +4621,115 @@ function drawWaveform(canvas, values, options = {}) {
   }
 }
 
+function drawFilledWaveformEnvelope(context, values, levels, options = {}) {
+  const count = values.length;
+  const width = options.waveformWidth || 1;
+  const height = options.height || 1;
+  const middle = options.middle || height / 2;
+  const activeX = options.activeX ?? width;
+  const step = count > 1 ? width / (count - 1) : width;
+
+  const getHeight = (value, level) => {
+    const isPause = isWaveformPause(level);
+    const normalized = Math.max(0, Math.min(1, value / 100));
+    if (normalized <= 0) return isPause ? 2 : 0;
+    const visibleMinimum = isPause ? 3 : options.minVisibleHeight;
+    return Math.max(visibleMinimum, normalized * (height - 34));
+  };
+
+  if (count === 1) {
+    const barHeight = getHeight(values[0], levels[0]);
+    context.fillStyle = getWaveformBarColor(levels[0], { dim: options.dim, played: true });
+    roundRect(context, 0, middle - barHeight / 2, width, barHeight, 5);
+    context.fill();
+    return;
+  }
+
+  for (let index = 0; index < count - 1; index += 1) {
+    const x1 = index * step;
+    const x2 = (index + 1) * step;
+    const level = levels[index] ?? values[index];
+    const h1 = getHeight(values[index], level);
+    const h2 = getHeight(values[index + 1], levels[index + 1] ?? values[index + 1]);
+    const isPlayed = x1 <= activeX;
+
+    context.fillStyle = getWaveformBarColor(level, {
+      dim: Boolean(options.dim),
+      played: options.mode !== "playback" || isPlayed,
+    });
+    context.beginPath();
+    context.moveTo(x1, middle - h1 / 2);
+    context.lineTo(x2, middle - h2 / 2);
+    context.lineTo(x2, middle + h2 / 2);
+    context.lineTo(x1, middle + h1 / 2);
+    context.closePath();
+    context.fill();
+  }
+}
+
+function drawLineWaveformEnvelope(context, values, levels, options = {}) {
+  const count = values.length;
+  const width = options.waveformWidth || 1;
+  const height = options.height || 1;
+  const middle = options.middle || height / 2;
+  const activeX = options.activeX ?? width;
+  const step = count > 1 ? width / (count - 1) : width;
+  const lineWidth = options.lineWidth || 5;
+
+  const getHeight = (value, level) => {
+    const isPause = isWaveformPause(level);
+    const normalized = Math.max(0, Math.min(1, value / 100));
+    if (normalized <= 0) return isPause ? 0 : 0;
+    return Math.max(isPause ? 0 : options.minVisibleHeight, normalized * (height - 44));
+  };
+
+  context.save();
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.lineWidth = lineWidth;
+
+  for (let index = 0; index < count - 1; index += 1) {
+    const x1 = index * step;
+    const x2 = (index + 1) * step;
+    const level = levels[index] ?? values[index];
+    const nextLevel = levels[index + 1] ?? values[index + 1];
+    const h1 = getHeight(values[index], level);
+    const h2 = getHeight(values[index + 1], nextLevel);
+    const isPlayed = x1 <= activeX;
+    const color = getWaveformBarColor(Math.max(level, nextLevel), {
+      dim: Boolean(options.dim),
+      played: options.mode !== "playback" || isPlayed,
+    });
+
+    if (h1 <= 0 && h2 <= 0) continue;
+    context.strokeStyle = color;
+    context.beginPath();
+    context.moveTo(x1, middle - h1 / 2);
+    context.lineTo(x2, middle - h2 / 2);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(x1, middle + h1 / 2);
+    context.lineTo(x2, middle + h2 / 2);
+    context.stroke();
+  }
+
+  context.restore();
+}
+
 function getWaveformColorLevels(values, displayValues, waveformWidth, options = {}) {
   const levelValues = Array.isArray(options.levelValues) && options.levelValues.length
     ? options.levelValues
     : values;
 
   if (options.mode === "playback") {
-    return normalizeWaveformValues(resamplePlaybackValues(levelValues, waveformWidth, options), {
-      ...options,
-      compress: 1,
-    });
+    return resamplePlaybackValues(levelValues, waveformWidth, options);
   }
 
-  return normalizeWaveformValues(levelValues.slice(-displayValues.length), {
-    ...options,
-    compress: 1,
-  });
+  return levelValues.slice(-displayValues.length);
 }
 
 function getWaveformBarColor(level, options = {}) {
-  const isPause = Number(level || 0) <= SENTENCE_SILENCE_THRESHOLD;
+  const isPause = isWaveformPause(level);
 
   if (!options.played) {
     return isPause ? "rgba(56, 193, 114, 0.34)" : "rgba(246, 180, 75, 0.34)";
@@ -2686,6 +4740,10 @@ function getWaveformBarColor(level, options = {}) {
   }
 
   return isPause ? "#38c172" : "#f6b44b";
+}
+
+function isWaveformPause(level) {
+  return Number(level || 0) <= SENTENCE_SILENCE_THRESHOLD;
 }
 
 function drawLevelMeter(context, x, y, width, height, level) {
@@ -2724,39 +4782,65 @@ function normalizeWaveformValues(values, options = {}) {
   const validValues = values.map((value) => Math.max(0, Number(value) || 0));
   if (!validValues.length) return validValues;
 
-  const sortedValues = [...validValues].sort((a, b) => a - b);
+  const noiseFloor = options.subtractFloor ? getWaveformNoiseFloor(validValues, options) : 0;
+  const adjustedValues = validValues.map((value) => Math.max(0, value - noiseFloor));
+  const sortedValues = [...adjustedValues].sort((a, b) => a - b);
   const percentileIndex = Math.max(0, Math.floor((sortedValues.length - 1) * 0.88));
-  const localPeak = Math.max(18, sortedValues[percentileIndex], Math.max(...validValues) * 0.62);
+  const minimumPeak = Number.isFinite(options.minLocalPeak) ? options.minLocalPeak : 18;
+  const localPeak = Math.max(minimumPeak, sortedValues[percentileIndex], Math.max(...adjustedValues) * 0.62);
   const visualCeiling = options.visualCeiling || WAVEFORM_VISUAL_CEILING;
   const dynamicRange = options.dynamicRange || WAVEFORM_DYNAMIC_RANGE;
   const externalCompress = options.compress || 1;
+  const shapePower = Number.isFinite(options.shapePower) ? options.shapePower : 0.72;
 
-  return validValues.map((value) => {
+  return adjustedValues.map((value) => {
     const relative = Math.min(value, localPeak * dynamicRange) / (localPeak * dynamicRange);
-    const shaped = Math.pow(relative, 0.72);
+    const shaped = Math.pow(relative, shapePower);
     return Math.min(visualCeiling, shaped * visualCeiling * externalCompress);
   });
+}
+
+function getWaveformNoiseFloor(values, options = {}) {
+  if (!values.length) return 0;
+  const sortedValues = [...values].sort((a, b) => a - b);
+  const percentile = Number.isFinite(options.floorPercentile) ? options.floorPercentile : 0.18;
+  const index = Math.max(0, Math.min(sortedValues.length - 1, Math.floor((sortedValues.length - 1) * percentile)));
+  return Math.max(0, sortedValues[index] || 0);
 }
 
 function resamplePlaybackValues(values, waveformWidth, options = {}) {
   if (!values.length || !options.durationSeconds) return values;
 
-  const targetCount = Math.max(40, Math.min(values.length, Math.round(waveformWidth / 5)));
+  const pixelsPerBar = Number.isFinite(options.pixelsPerBar) ? options.pixelsPerBar : 5;
+  const targetCount = Math.max(40, Math.min(values.length, Math.round(waveformWidth / pixelsPerBar)));
   if (targetCount >= values.length) return values;
 
   const bucketSize = values.length / targetCount;
   const resampled = [];
+  const useAverage = options.resampleMode === "average";
+  const useRms = options.resampleMode === "rms";
 
   for (let bucket = 0; bucket < targetCount; bucket += 1) {
     const start = Math.floor(bucket * bucketSize);
     const end = Math.max(start + 1, Math.ceil((bucket + 1) * bucketSize));
     let maxValue = 0;
+    let sum = 0;
+    let sumSquares = 0;
+    let count = 0;
 
     for (let index = start; index < end && index < values.length; index += 1) {
-      maxValue = Math.max(maxValue, Number(values[index]) || 0);
+      const value = Number(values[index]) || 0;
+      maxValue = Math.max(maxValue, value);
+      sum += value;
+      sumSquares += value * value;
+      count += 1;
     }
 
-    resampled.push(maxValue);
+    if (useRms) {
+      resampled.push(Math.sqrt(sumSquares / Math.max(1, count)));
+    } else {
+      resampled.push(useAverage ? sum / Math.max(1, count) : maxValue);
+    }
   }
 
   return resampled;
@@ -2773,7 +4857,7 @@ function resizeCanvasToDisplay(canvas) {
   }
 }
 
-function drawFrequencyTimeline(canvas, pitchValues, strengthValues = []) {
+function drawFrequencyTimeline(canvas, pitchValues, strengthValues = [], options = {}) {
   const context = canvas.getContext("2d");
   resizeCanvasToDisplay(canvas);
 
@@ -2781,8 +4865,8 @@ function drawFrequencyTimeline(canvas, pitchValues, strengthValues = []) {
   const height = canvas.height;
   const pixelRatio = window.devicePixelRatio || 1;
   const padding = 12 * pixelRatio;
-  const values = pitchValues.slice(-MAX_VISIBLE_SAMPLES);
-  const strengths = strengthValues.slice(-values.length);
+  const values = options.limit === false ? pitchValues : pitchValues.slice(-MAX_VISIBLE_SAMPLES);
+  const strengths = options.limit === false ? strengthValues.slice(0, values.length) : strengthValues.slice(-values.length);
   const lowHz = PITCH_LOW_HZ;
   const highHz = PITCH_HIGH_HZ;
   const graphHeight = Math.max(1, height - padding * 2);
@@ -2837,6 +4921,268 @@ function drawFrequencyTimeline(canvas, pitchValues, strengthValues = []) {
     context.arc(x, y, Math.max(1.7 * pixelRatio, strength * 4 * pixelRatio), 0, Math.PI * 2);
     context.fill();
   });
+
+  if (Number.isFinite(options.progress)) {
+    const x = padding + Math.max(0, Math.min(1, options.progress)) * (width - padding * 2);
+    context.strokeStyle = "#ff7a90";
+    context.lineWidth = 3 * pixelRatio;
+    context.beginPath();
+    context.moveTo(x, padding);
+    context.lineTo(x, height - padding);
+    context.stroke();
+  }
+
+  drawTimelineRangeMarkers(context, {
+    start: Number.isFinite(options.rangeStart) ? options.rangeStart : null,
+    end: Number.isFinite(options.rangeEnd) ? options.rangeEnd : null,
+    width,
+    height,
+    left: padding,
+    right: width - padding,
+  });
+}
+
+function updateThreeLineKaraokeDisplay(overlay, timeline, activeIndex) {
+  const lines = getThreeLineKaraokeLabels(timeline, activeIndex);
+  overlay.classList.toggle("is-context-dense", Object.values(lines).some((line) => line.length > 18));
+  overlay.classList.toggle("is-dialog-mode", timeline.some((item) => item.isDialog));
+
+  [
+    [".karaoke-line-before", lines.before],
+    [".karaoke-line-current", timeline.some((item) => item.isDialog) ? lines.after : lines.current],
+    [".karaoke-line-after", timeline.some((item) => item.isDialog) ? lines.current : lines.after],
+  ].forEach(([selector, text]) => {
+    const line = overlay.querySelector(selector);
+    if (!line) return;
+    renderKaraokeLineContent(line, text, timeline.some((item) => item.isDialog));
+    line.classList.toggle("is-empty", !text);
+  });
+}
+
+function renderKaraokeLineContent(line, text, isDialog = false) {
+  line.textContent = "";
+  if (!text) {
+    line.textContent = " ";
+    return;
+  }
+
+  const dialogMatch = isDialog ? String(text).match(/^([^:]+:\s*)(.+)$/) : null;
+  if (!dialogMatch) {
+    line.textContent = text;
+    return;
+  }
+
+  const speaker = document.createElement("span");
+  speaker.className = "karaoke-speaker-label";
+  speaker.textContent = dialogMatch[1];
+
+  const spokenText = document.createElement("span");
+  spokenText.className = "karaoke-spoken-text";
+  spokenText.textContent = dialogMatch[2];
+
+  line.append(speaker, spokenText);
+}
+
+function getThreeLineKaraokeLabels(timeline, activeIndex) {
+  if (!timeline.length) return { before: "", current: "", after: "" };
+
+  const boundedIndex = Math.max(0, Math.min(activeIndex, timeline.length - 1));
+  if (timeline.some((item) => item.isSentence)) {
+    const currentIndex = timeline[boundedIndex]?.isPause
+      ? getPreviousSpokenIndex(timeline, boundedIndex) ?? getNextSpokenIndex(timeline, boundedIndex) ?? boundedIndex
+      : boundedIndex;
+    return {
+      before: getTimelineLabelAt(timeline, getPreviousSpokenIndex(timeline, currentIndex)),
+      current: getTimelineLabelAt(timeline, currentIndex),
+      after: getTimelineLabelAt(timeline, getNextSpokenIndex(timeline, currentIndex)),
+    };
+  }
+
+  const activeWordIndex = timeline[boundedIndex]?.isPause
+    ? getPreviousSpokenIndex(timeline, boundedIndex) ?? getNextSpokenIndex(timeline, boundedIndex) ?? boundedIndex
+    : boundedIndex;
+  const spokenIndexes = timeline
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => !item.isPause);
+  const activeSpokenOrdinal = Math.max(
+    0,
+    spokenIndexes.findIndex(({ index }) => index === activeWordIndex),
+  );
+  const groupSize = getKaraokeGroupSize(timeline, activeWordIndex);
+  const groupStart = Math.floor(activeSpokenOrdinal / groupSize) * groupSize;
+  const currentGroupEnd = groupStart + groupSize;
+
+  return {
+    before: getSpokenGroupLabel(spokenIndexes, groupStart - groupSize, groupSize),
+    current: getSpokenGroupLabel(spokenIndexes, groupStart, groupSize),
+    after: getSpokenGroupLabel(spokenIndexes, currentGroupEnd, groupSize),
+  };
+}
+
+function getKaraokeGroupSize(timeline, activeIndex) {
+  const label = getTimelineLabelAt(timeline, activeIndex);
+  if (label.length >= 12) return 1;
+  if (label.length >= 7) return 2;
+  return 3;
+}
+
+function getSpokenGroupLabel(spokenIndexes, start, size) {
+  if (start < 0 || start >= spokenIndexes.length) return "";
+  return spokenIndexes
+    .slice(start, start + size)
+    .map(({ item }) => item.label)
+    .filter(Boolean)
+    .join(" ");
+}
+
+function getTimelineLabelAt(timeline, index) {
+  if (index == null || index < 0 || index >= timeline.length) return "";
+  return timeline[index]?.label || "";
+}
+
+function applyRepeatMetadata(timeline, repeatTotal = 1) {
+  const total = Math.max(1, Number(repeatTotal) || 1);
+  if (total <= 1) return timeline;
+
+  let repeatIndex = 1;
+  timeline.forEach((item) => {
+    item.repeatIndex = repeatIndex;
+    item.repeatTotal = total;
+    if (item.isRepeatPause) {
+      repeatIndex = Math.min(total, repeatIndex + 1);
+    }
+  });
+  return timeline;
+}
+
+function updateRepeatCounterOverlay(timeline, activeIndex) {
+  if (!repeatCounterOverlay) return;
+
+  const visibleItem =
+    timeline[activeIndex] ||
+    timeline[getPreviousSpokenIndex(timeline, activeIndex)] ||
+    timeline[getNextSpokenIndex(timeline, activeIndex)];
+  const total = Number(visibleItem?.repeatTotal || 1);
+
+  repeatCounterOverlay.classList.toggle("is-hidden", total <= 1);
+  if (total <= 1) return;
+
+  const repeatIndex = Math.max(1, Math.min(total, Number(visibleItem?.repeatIndex || 1)));
+  repeatCounterOverlay.textContent = `${repeatIndex} / ${total}`;
+}
+
+function drawVolumeLevelTimeline(canvas, values, options = {}) {
+  const context = canvas.getContext("2d");
+  resizeCanvasToDisplay(canvas);
+
+  const width = canvas.width;
+  const height = canvas.height;
+  const pixelRatio = window.devicePixelRatio || 1;
+  const meterWidth = Math.max(10 * pixelRatio, 10);
+  const meterGap = Math.max(6 * pixelRatio, 6);
+  const graphWidth = Math.max(1, width - meterWidth - meterGap);
+  const padding = 10 * pixelRatio;
+  const graphHeight = Math.max(1, height - padding * 2);
+  const numericValues = values.map((value) => Math.max(0, Number(value) || 0));
+  const progress = Number.isFinite(options.progress) ? Math.max(0, Math.min(1, options.progress)) : null;
+  const currentLevel = Math.max(0, Math.min(100, Number(options.currentLevel) || 0));
+
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#101820";
+  context.fillRect(0, 0, width, height);
+
+  context.strokeStyle = "rgba(255,255,255,0.12)";
+  context.lineWidth = 1 * pixelRatio;
+  [0.25, 0.5, 0.75].forEach((ratio) => {
+    const y = padding + graphHeight * ratio;
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(graphWidth, y);
+    context.stroke();
+  });
+
+  if (!numericValues.length) {
+    drawLevelMeter(context, width - meterWidth, 0, meterWidth, height, currentLevel);
+    return;
+  }
+
+  const displayValues = resamplePlaybackValues(numericValues, graphWidth, {
+    durationSeconds: options.durationSeconds || 1,
+    pixelsPerBar: 4,
+    resampleMode: "rms",
+  });
+  const noiseFloor = getWaveformNoiseFloor(displayValues, {
+    subtractFloor: true,
+    floorPercentile: 0.22,
+  });
+  const normalizedValues = displayValues.map((value) => {
+    const cleaned = Math.max(0, value - noiseFloor);
+    return Math.max(0, Math.min(100, Math.pow(cleaned / 100, 0.94) * 82));
+  });
+  const count = Math.max(1, normalizedValues.length);
+  const gap = Math.min(2 * pixelRatio, (graphWidth / count) * 0.28);
+  const barWidth = Math.max(1 * pixelRatio, (graphWidth - gap * Math.max(0, count - 1)) / count);
+  normalizedValues.forEach((value, index) => {
+    const level = Math.max(0, Math.min(100, value));
+    const x = index * (barWidth + gap);
+    const fillHeight = Math.max(level > 0 ? 4 * pixelRatio : 0, (level / 100) * graphHeight);
+    const y = padding + graphHeight - fillHeight;
+
+    context.fillStyle = getVolumeHubColor(level);
+    roundRect(context, x, y, barWidth, fillHeight, Math.min(5 * pixelRatio, barWidth / 2));
+    context.fill();
+  });
+
+  if (progress !== null) {
+    const x = progress * graphWidth;
+    context.strokeStyle = "#ffffff";
+    context.lineWidth = 3 * pixelRatio;
+    context.beginPath();
+    context.moveTo(x, padding);
+    context.lineTo(x, height - padding);
+    context.stroke();
+  }
+
+  drawTimelineRangeMarkers(context, {
+    start: Number.isFinite(options.rangeStart) ? options.rangeStart : null,
+    end: Number.isFinite(options.rangeEnd) ? options.rangeEnd : null,
+    width,
+    height,
+    left: 0,
+    right: graphWidth,
+  });
+  drawLevelMeter(context, width - meterWidth, 0, meterWidth, height, currentLevel);
+}
+
+function drawTimelineRangeMarkers(context, options = {}) {
+  const start = options.start;
+  const end = options.end;
+  if (start === null || end === null) return;
+
+  const left = Number(options.left) || 0;
+  const right = Number(options.right) || Number(options.width) || 1;
+  const height = Number(options.height) || 1;
+  const startX = left + Math.max(0, Math.min(1, start)) * (right - left);
+  const endX = left + Math.max(0, Math.min(1, end)) * (right - left);
+
+  context.save();
+  context.strokeStyle = "#ffd166";
+  context.lineWidth = 4;
+  context.shadowColor = "rgba(255, 91, 91, 0.55)";
+  context.shadowBlur = 6;
+  context.beginPath();
+  context.moveTo(startX, 7);
+  context.lineTo(startX, height - 7);
+  context.moveTo(endX, 7);
+  context.lineTo(endX, height - 7);
+  context.stroke();
+  context.restore();
+}
+
+function getVolumeHubColor(level) {
+  if (level >= 88) return "#e1495b";
+  if (level >= 64) return "#f6b44b";
+  return "#38c172";
 }
 
 function roundRect(context, x, y, width, height, radius) {
@@ -2868,7 +5214,7 @@ function showResult(metadata, videoBlob) {
   durationBadge.textContent = formatTime(metadata.dauerSekunden);
   updateResultStats(metadata);
   setupPlaybackKaraoke(metadata);
-  playPauseButton.textContent = "Play";
+  setPlayPauseButtonState("play");
   playbackSeek.value = "0";
   playbackTimeLabel.textContent = `00:00 / ${formatTime(metadata.dauerSekunden || 0)}`;
 
@@ -2876,9 +5222,18 @@ function showResult(metadata, videoBlob) {
     mode: "playback",
     progress: 0,
     durationSeconds: metadata.dauerSekunden,
-    compress: 0.55,
+    compress: 1.7,
+    dynamicRange: 0.54,
+    minLocalPeak: 0.9,
+    visualCeiling: 100,
+    shapePower: 0.42,
     dim: true,
     levelValues: metadata.lautstaerkePegel || metadata.lautstaerken || metadata.amplituden,
+    pixelsPerBar: 2.4,
+    barGap: 1,
+    minBarWidth: 2,
+    minSpeechBarHeight: 26,
+    minPauseBarHeight: 2,
   });
   playbackEmptyState?.classList.add("is-hidden");
   resultPanel.classList.remove("is-hidden");
@@ -2890,6 +5245,12 @@ function showResult(metadata, videoBlob) {
 
 function setupPlaybackKaraoke(metadata) {
   const script = metadata.uebungText || metadata.uebung || "";
+  const dialogTurns =
+    metadata.uebungKonfiguration?.typ === "dialog"
+      ? (Array.isArray(metadata.uebungKonfiguration.dialog)
+          ? metadata.uebungKonfiguration.dialog
+          : parseDialogTurns(metadata.uebungKonfiguration.inhalt || script))
+      : [];
   const sentences =
     metadata.uebungKonfiguration?.typ === "sentences"
       ? (metadata.uebungKonfiguration.saetze?.length
@@ -2902,12 +5263,20 @@ function setupPlaybackKaraoke(metadata) {
   const playbackSentenceSeconds = sentences.length
     ? Math.max(1.4, (Number(metadata.dauerSekunden) || sentences.length * 3) / sentences.length)
     : SENTENCE_MAX_SECONDS;
+  const playbackDialogSeconds = dialogTurns.length
+    ? Math.max(1.4, (Number(metadata.dauerSekunden) || dialogTurns.length * 3) / dialogTurns.length)
+    : SENTENCE_MAX_SECONDS;
 
-  playbackKaraokeTimeline = sentences.length
+  playbackKaraokeTimeline = dialogTurns.length
+    ? buildDialogTimeline(dialogTurns.map((turn) => normalizeDialogTurn(turn)), playbackDialogSeconds)
+    : sentences.length
     ? buildSentenceTimeline(sentences, playbackSentenceSeconds)
-    : buildKaraokeTimeline(
-        script.split(/\s+/).filter(Boolean),
-        getPlaybackKaraokeTiming(metadata),
+    : applyRepeatMetadata(
+        buildKaraokeTimeline(
+          script.split(/\s+/).filter(Boolean),
+          getPlaybackKaraokeTiming(metadata),
+        ),
+        metadata.uebungKonfiguration?.wiederholungen || 1,
       );
   renderKaraokeOverlay(playbackKaraokeOverlay, playbackKaraokeTimeline);
   updateKaraokeDisplay(playbackKaraokeOverlay, playbackKaraokeTimeline, 0);
@@ -2919,6 +5288,7 @@ function getPlaybackKaraokeTiming(metadata) {
     return {
       wordSeconds: Number(config.sekundenProEinheit) || DEFAULT_KARAOKE_WORD_SECONDS,
       pauseSeconds: Number(config.pauseSekunden) || DEFAULT_KARAOKE_PAUSE_SECONDS,
+      sentencePauseSeconds: Number(config.satzPauseSekunden) || SENTENCE_END_PAUSE_SECONDS,
     };
   }
 
@@ -2926,6 +5296,7 @@ function getPlaybackKaraokeTiming(metadata) {
     return {
       wordSeconds: Number(config.sekundenProWort) || DEFAULT_KARAOKE_WORD_SECONDS,
       pauseSeconds: Number(config.pauseSekunden) || DEFAULT_KARAOKE_PAUSE_SECONDS,
+      sentencePauseSeconds: Number(config.satzPauseSekunden) || SENTENCE_END_PAUSE_SECONDS,
     };
   }
 
@@ -2933,12 +5304,14 @@ function getPlaybackKaraokeTiming(metadata) {
     return {
       wordSeconds: Number(config.sekundenProSilbe) || DEFAULT_KARAOKE_WORD_SECONDS,
       pauseSeconds: Number(config.pauseSekunden) || DEFAULT_KARAOKE_PAUSE_SECONDS,
+      sentencePauseSeconds: Number(config.satzPauseSekunden) || SENTENCE_END_PAUSE_SECONDS,
     };
   }
 
   return {
     wordSeconds: DEFAULT_KARAOKE_WORD_SECONDS,
     pauseSeconds: DEFAULT_KARAOKE_PAUSE_SECONDS,
+    sentencePauseSeconds: SENTENCE_END_PAUSE_SECONDS,
   };
 }
 
@@ -2973,11 +5346,11 @@ async function togglePlayback() {
 
   if (recordingPlayer.paused) {
     playPauseButton.disabled = true;
-    playPauseButton.textContent = "Lädt";
+    setPlayPauseButtonState("loading");
     recordingPlayer.muted = false;
     recordingPlayer.defaultMuted = false;
     recordingPlayer.volume = 1;
-    applyPlaybackGain();
+    await ensurePlaybackAudioBoost();
     if (recordingPlayer.ended) recordingPlayer.currentTime = 0;
 
     await waitForPlaybackReady(recordingPlayer, 1600);
@@ -2986,11 +5359,25 @@ async function togglePlayback() {
       message.textContent = "Zum Abspielen bitte noch einmal tippen.";
     }).finally(() => {
       playPauseButton.disabled = false;
-      playPauseButton.textContent = recordingPlayer.paused ? "Play" : "Pause";
+      setPlayPauseButtonState(recordingPlayer.paused ? "play" : "pause");
     });
   } else {
     recordingPlayer.pause();
   }
+}
+
+function setPlayPauseButtonState(state) {
+  if (!playPauseButton) return;
+  const normalizedState = ["play", "pause", "loading"].includes(state) ? state : "play";
+  playPauseButton.dataset.state = normalizedState;
+  playPauseButton.setAttribute(
+    "aria-label",
+    normalizedState === "pause"
+      ? "Pausieren"
+      : normalizedState === "loading"
+        ? "Wiedergabe lädt"
+        : "Abspielen",
+  );
 }
 
 function waitForPlaybackReady(videoElement, timeoutMs = 1600) {
@@ -3020,22 +5407,46 @@ function updatePlaybackVisuals(forcedProgress = null) {
   const measuredDuration = currentMetadata.dauerSekunden || 0;
   const mediaDuration = Number.isFinite(recordingPlayer.duration) ? recordingPlayer.duration : 0;
   const duration = measuredDuration || mediaDuration || 0;
-  const syncedCurrentTime = getSyncedPlaybackTime(duration, mediaDuration);
   const progress =
-    forcedProgress ?? (duration ? Math.max(0, Math.min(1, syncedCurrentTime / duration)) : 0);
+    forcedProgress ?? mediaTimeToAnalysisProgress(recordingPlayer.currentTime || 0, currentMetadata);
+  const syncedCurrentTime = duration ? progress * duration : 0;
 
   drawWaveform(playbackWaveform, playbackValues, {
     mode: "playback",
     progress,
     durationSeconds: duration,
-    compress: 0.55,
+    compress: 1.7,
+    dynamicRange: 0.54,
+    minLocalPeak: 0.9,
+    visualCeiling: 100,
+    shapePower: 0.42,
     dim: true,
     levelValues: currentMetadata.lautstaerkePegel || currentMetadata.lautstaerken || playbackValues,
+    pixelsPerBar: 2.4,
+    barGap: 1,
+    minBarWidth: 2,
+    minSpeechBarHeight: 26,
+    minPauseBarHeight: 2,
   });
 
   playbackSeek.value = String(Math.round(progress * 1000));
   playbackTimeLabel.textContent = `${formatTime(syncedCurrentTime || 0)} / ${formatTime(duration || 0)}`;
   updateKaraokeDisplayAtTime(playbackKaraokeOverlay, playbackKaraokeTimeline, syncedCurrentTime || 0);
+  syncStatisticsToPlayback(progress);
+}
+
+function syncStatisticsToPlayback(progress) {
+  if (!currentMetadata || selectedAnalysisRecordingId !== currentMetadata.id) return;
+
+  selectedAnalysisPosition = Math.max(0, Math.min(1, Number(progress) || 0));
+  const now = performance.now();
+  if (now - lastStatisticsPlaybackSyncAt < 160) {
+    syncAnalysisPositionSlider();
+    return;
+  }
+
+  lastStatisticsPlaybackSyncAt = now;
+  renderAudioAnalysis(currentMetadata);
 }
 
 function refreshPlaybackReadyState() {
@@ -3054,6 +5465,33 @@ function getSyncedPlaybackTime(targetDuration, mediaDuration) {
   }
 
   return Math.max(0, Math.min(targetDuration, (currentTime / mediaDuration) * targetDuration));
+}
+
+function getPlaybackDurations(metadata = currentMetadata) {
+  const analysisDuration = Number(metadata?.dauerSekunden || 0);
+  const mediaDuration = Number.isFinite(recordingPlayer.duration) && recordingPlayer.duration > 0
+    ? recordingPlayer.duration
+    : analysisDuration;
+
+  return {
+    analysisDuration,
+    mediaDuration,
+  };
+}
+
+function analysisProgressToMediaTime(progress, metadata = currentMetadata) {
+  const { analysisDuration, mediaDuration } = getPlaybackDurations(metadata);
+  const safeProgress = Math.max(0, Math.min(1, Number(progress) || 0));
+  if (!analysisDuration || !mediaDuration) return 0;
+  return Math.max(0, Math.min(mediaDuration, safeProgress * mediaDuration));
+}
+
+function mediaTimeToAnalysisProgress(mediaTime, metadata = currentMetadata) {
+  const { analysisDuration, mediaDuration } = getPlaybackDurations(metadata);
+  const safeMediaTime = Math.max(0, Number(mediaTime) || 0);
+  if (!analysisDuration && !mediaDuration) return 0;
+  if (!mediaDuration) return Math.max(0, Math.min(1, safeMediaTime / analysisDuration));
+  return Math.max(0, Math.min(1, safeMediaTime / mediaDuration));
 }
 
 function applyVideoAspectRatio(videoElement) {
@@ -3098,9 +5536,9 @@ function updateResultStats(metadata) {
   metadata.durchschnittlicheLautstaerke = stats.average;
   metadata.maximaleLautstaerke = stats.maximum;
   metadata.audioAnalyse = metadata.audioAnalyse || buildAudioAnalysis(metadata);
-  averageVolume.textContent = String(stats.average);
-  maxVolume.textContent = String(stats.maximum);
-  sampleCount.textContent = String((metadata.amplituden || []).length);
+  if (averageVolume) averageVolume.textContent = String(stats.average);
+  if (maxVolume) maxVolume.textContent = String(stats.maximum);
+  if (sampleCount) sampleCount.textContent = String((metadata.amplituden || []).length);
   renderAudioAnalysis(metadata);
 }
 
@@ -3141,8 +5579,18 @@ function formatSensitivityLabel(value) {
 }
 
 function getDefaultElevenLabsSettings() {
+  const defaultVoiceId = "21m00Tcm4TlvDq8ikWAM";
   return {
-    voiceId: "21m00Tcm4TlvDq8ikWAM",
+    activeVoiceKey: "standard",
+    voiceId: defaultVoiceId,
+    voices: [
+      {
+        key: "standard",
+        name: "Standard",
+        gender: "female",
+        voiceId: defaultVoiceId,
+      },
+    ],
     stability: 58,
     similarity: 82,
     style: 12,
@@ -3152,19 +5600,53 @@ function getDefaultElevenLabsSettings() {
 
 function getElevenLabsSettings() {
   try {
-    return {
+    const settings = {
       ...getDefaultElevenLabsSettings(),
       ...JSON.parse(localStorage.getItem(ELEVENLABS_SETTINGS_KEY) || "{}"),
     };
+    return normalizeElevenLabsSettings(settings);
   } catch (error) {
     return getDefaultElevenLabsSettings();
   }
 }
 
+function normalizeElevenLabsSettings(settings) {
+  const fallback = getDefaultElevenLabsSettings();
+  const voices = Array.isArray(settings.voices) ? settings.voices : [];
+  const normalizedVoices = voices
+    .map((voice) => ({
+      key: String(voice.key || voice.name || voice.voiceId || "").trim(),
+      name: String(voice.name || "Stimme").trim(),
+      gender: ["male", "female", "neutral"].includes(voice.gender) ? voice.gender : "neutral",
+      voiceId: String(voice.voiceId || "").trim(),
+    }))
+    .filter((voice) => voice.voiceId);
+
+  if (!normalizedVoices.length) {
+    normalizedVoices.push({
+      ...fallback.voices[0],
+      voiceId: String(settings.voiceId || fallback.voiceId).trim(),
+    });
+  }
+
+  const activeVoiceKey = normalizedVoices.some((voice) => voice.key === settings.activeVoiceKey)
+    ? settings.activeVoiceKey
+    : normalizedVoices[0].key;
+  const activeVoice = normalizedVoices.find((voice) => voice.key === activeVoiceKey) || normalizedVoices[0];
+
+  return {
+    ...settings,
+    activeVoiceKey,
+    voices: normalizedVoices,
+    voiceId: activeVoice.voiceId || settings.voiceId || fallback.voiceId,
+  };
+}
+
 function getElevenLabsRequestSettings() {
   const settings = getElevenLabsSettings();
+  const activeVoice = getActiveElevenLabsVoice(settings);
   return {
-    voiceId: String(settings.voiceId || "").trim() || getDefaultElevenLabsSettings().voiceId,
+    voiceId: String(activeVoice?.voiceId || settings.voiceId || "").trim() || getDefaultElevenLabsSettings().voiceId,
     voiceSettings: {
       stability: clampPercent(settings.stability) / 100,
       similarity_boost: clampPercent(settings.similarity) / 100,
@@ -3172,6 +5654,41 @@ function getElevenLabsRequestSettings() {
       use_speaker_boost: Boolean(settings.speakerBoost),
     },
   };
+}
+
+function getElevenLabsRequestSettingsFromControls() {
+  return {
+    voiceId:
+      String(settingsVoiceId?.value || "").trim() ||
+      getElevenLabsRequestSettings().voiceId,
+    voiceSettings: {
+      stability: clampPercent(settingsVoiceStability?.value) / 100,
+      similarity_boost: clampPercent(settingsVoiceSimilarity?.value) / 100,
+      style: clampPercent(settingsVoiceStyle?.value) / 100,
+      use_speaker_boost: Boolean(settingsSpeakerBoost?.checked),
+    },
+  };
+}
+
+function getDefaultChatGptSettings() {
+  return {
+    enabled: false,
+    apiKey: "",
+    model: "gpt-5",
+    systemPrompt:
+      "Erstelle eine kurze, freundliche logopädische Voice-Instruktion auf Deutsch. Sprich den Patienten direkt an. Maximal drei kurze Sätze. Keine Markdown-Zeichen.",
+  };
+}
+
+function getChatGptSettings() {
+  try {
+    return {
+      ...getDefaultChatGptSettings(),
+      ...JSON.parse(localStorage.getItem(CHATGPT_SETTINGS_KEY) || "{}"),
+    };
+  } catch (error) {
+    return getDefaultChatGptSettings();
+  }
 }
 
 function clampPercent(value) {
@@ -3182,34 +5699,405 @@ function clampPercent(value) {
 
 function loadSettingsControls() {
   const elevenSettings = getElevenLabsSettings();
-  if (settingsVoiceId) settingsVoiceId.value = elevenSettings.voiceId;
+  const chatGptSettings = getChatGptSettings();
+  renderVoiceProfileSelect(elevenSettings);
+  loadSelectedVoiceProfileIntoControls(elevenSettings.activeVoiceKey, { settings: elevenSettings, silent: true });
   if (settingsVoiceStability) settingsVoiceStability.value = String(clampPercent(elevenSettings.stability));
   if (settingsVoiceSimilarity) settingsVoiceSimilarity.value = String(clampPercent(elevenSettings.similarity));
   if (settingsVoiceStyle) settingsVoiceStyle.value = String(clampPercent(elevenSettings.style));
   if (settingsSpeakerBoost) settingsSpeakerBoost.checked = Boolean(elevenSettings.speakerBoost);
+  if (settingsChatGptEnabled) settingsChatGptEnabled.checked = Boolean(chatGptSettings.enabled);
+  if (settingsChatGptApiKey) settingsChatGptApiKey.value = chatGptSettings.apiKey || "";
+  if (settingsChatGptModel) settingsChatGptModel.value = chatGptSettings.model || getDefaultChatGptSettings().model;
+  if (settingsChatGptPrompt) settingsChatGptPrompt.value = chatGptSettings.systemPrompt || getDefaultChatGptSettings().systemPrompt;
   if (settingsSensitivity) settingsSensitivity.value = sensitivitySlider.value;
   if (settingsPlaybackVolume) settingsPlaybackVolume.value = playbackVolumeSlider.value;
   renderSettingsControls();
 }
 
 function renderSettingsControls() {
+  const elevenSettings = getElevenLabsSettings();
+  const activeVoice = getActiveElevenLabsVoice(elevenSettings);
+  if (settingsVoiceSelect) settingsVoiceSelect.value = elevenSettings.activeVoiceKey || "";
+  const isCreatingVoice = settingsVoiceSelect?.value === "";
+  if (!isCreatingVoice && settingsVoiceName && document.activeElement !== settingsVoiceName) settingsVoiceName.value = activeVoice?.name || "";
+  if (!isCreatingVoice && settingsVoiceGender && document.activeElement !== settingsVoiceGender) settingsVoiceGender.value = activeVoice?.gender || "neutral";
+  if (!isCreatingVoice && settingsVoiceId && document.activeElement !== settingsVoiceId) settingsVoiceId.value = activeVoice?.voiceId || elevenSettings.voiceId || "";
+  updateVoiceIdHint(settingsVoiceId?.value || activeVoice?.voiceId || elevenSettings.voiceId || "");
+  if (settingsDeleteVoiceButton) settingsDeleteVoiceButton.disabled = isCreatingVoice || (elevenSettings.voices || []).length <= 1;
   if (settingsVoiceStabilityValue) settingsVoiceStabilityValue.textContent = `${settingsVoiceStability?.value || 0}%`;
   if (settingsVoiceSimilarityValue) settingsVoiceSimilarityValue.textContent = `${settingsVoiceSimilarity?.value || 0}%`;
   if (settingsVoiceStyleValue) settingsVoiceStyleValue.textContent = `${settingsVoiceStyle?.value || 0}%`;
   if (settingsSensitivityValue) settingsSensitivityValue.textContent = formatSensitivityLabel(sensitivitySlider.value);
   if (settingsPlaybackVolumeValue) settingsPlaybackVolumeValue.textContent = `${playbackVolumeSlider.value}%`;
+  playbackGainPresetButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.playbackGain === String(playbackVolumeSlider.value));
+  });
   if (settingsState) settingsState.textContent = "Einstellungen lokal gespeichert.";
 }
 
+function renderVoiceProfileSelect(settings = getElevenLabsSettings()) {
+  if (!settingsVoiceSelect) return;
+
+  settingsVoiceSelect.innerHTML = "";
+  const newOption = document.createElement("option");
+  newOption.value = "";
+  newOption.textContent = "Neue Stimme anlegen";
+  settingsVoiceSelect.append(newOption);
+
+  settings.voices.forEach((voice) => {
+    const option = document.createElement("option");
+    option.value = voice.key;
+    option.dataset.voiceId = voice.voiceId;
+    option.dataset.voiceName = voice.name;
+    option.dataset.voiceGender = voice.gender;
+    option.textContent = formatVoiceProfileOptionLabel(voice);
+    settingsVoiceSelect.append(option);
+  });
+  settingsVoiceSelect.value = settings.activeVoiceKey;
+}
+
+function formatVoiceProfileOptionLabel(voice) {
+  const shortId = String(voice.voiceId || "").slice(-6) || "ohne ID";
+  return `${voice.name} · ${getVoiceGenderLabel(voice.gender)} · ${shortId}`;
+}
+
+function activateSelectedVoiceProfileFromDropdown() {
+  const selectedOption = settingsVoiceSelect?.selectedOptions?.[0];
+  const selectedKey = settingsVoiceSelect?.value || "";
+  if (!selectedKey) {
+    startNewVoiceProfile();
+    return;
+  }
+
+  const settings = getElevenLabsSettings();
+  const voice =
+    settings.voices.find((item) => item.key === selectedKey) ||
+    (selectedOption?.dataset.voiceId
+      ? {
+          key: selectedKey,
+          name: selectedOption.dataset.voiceName || "Stimme",
+          gender: selectedOption.dataset.voiceGender || "neutral",
+          voiceId: selectedOption.dataset.voiceId,
+        }
+      : null);
+  if (!voice?.voiceId) {
+    if (settingsState) settingsState.textContent = "Stimme konnte nicht geladen werden: Voice-ID fehlt.";
+    return;
+  }
+
+  if (settingsVoiceName) settingsVoiceName.value = voice.name;
+  if (settingsVoiceGender) settingsVoiceGender.value = voice.gender;
+  if (settingsVoiceId) settingsVoiceId.value = voice.voiceId;
+  updateVoiceIdHint(voice.voiceId);
+  loadSelectedVoiceProfileIntoControls(voice.key, {
+    settings: {
+      ...settings,
+      voices: upsertVoiceProfile(settings.voices, voice),
+    },
+    forceControls: true,
+  });
+}
+
+function getVoiceGenderLabel(gender) {
+  if (gender === "male") return "männlich";
+  if (gender === "female") return "weiblich";
+  return "neutral";
+}
+
+function createVoiceProfileKey(name, voiceId) {
+  const base = `${name || "stimme"}-${voiceId || Date.now()}`
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return base || `stimme-${Date.now()}`;
+}
+
+function loadSelectedVoiceProfileIntoControls(key, options = {}) {
+  const settings = options.settings || getElevenLabsSettings();
+  if (!key) {
+    startNewVoiceProfile({ silent: options.silent });
+    return;
+  }
+
+  const voice = settings.voices.find((item) => item.key === key) || getActiveElevenLabsVoice(settings);
+  if (!voice) return;
+
+  const nextSettings = {
+    ...settings,
+    activeVoiceKey: voice.key,
+    voiceId: voice.voiceId,
+  };
+  if (!options.skipPersist) {
+    localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(nextSettings));
+  }
+
+  if (settingsVoiceSelect) settingsVoiceSelect.value = voice.key;
+  if (settingsVoiceName) settingsVoiceName.value = voice.name;
+  if (settingsVoiceGender) settingsVoiceGender.value = voice.gender;
+  if (settingsVoiceId) settingsVoiceId.value = voice.voiceId;
+  updateVoiceIdHint(voice.voiceId);
+  renderVoiceProfileSelect(nextSettings);
+  renderSettingsControls();
+  if (options.forceControls) {
+    if (settingsVoiceSelect) settingsVoiceSelect.value = voice.key;
+    if (settingsVoiceName) settingsVoiceName.value = voice.name;
+    if (settingsVoiceGender) settingsVoiceGender.value = voice.gender;
+    if (settingsVoiceId) settingsVoiceId.value = voice.voiceId;
+    updateVoiceIdHint(voice.voiceId);
+  }
+  if (!options.skipCloud) {
+    saveCloudElevenLabsSettings(nextSettings, { silent: true })
+      .then(() => {
+        if (!options.silent && settingsState) {
+          settingsState.textContent = `Stimme aktiv und in Firebase gespeichert: ${voice.name}.`;
+        }
+      })
+      .catch(() => {
+        if (settingsState) settingsState.textContent = "Stimme lokal aktiv. Firebase-Speichern fehlgeschlagen.";
+      });
+  } else if (!options.silent && settingsState) {
+    settingsState.textContent = `Stimme aktiv: ${voice.name}.`;
+  }
+}
+
+function upsertVoiceProfile(voices, voice) {
+  const nextVoices = Array.isArray(voices) ? voices.filter((item) => item.key !== voice.key) : [];
+  nextVoices.push(voice);
+  return nextVoices;
+}
+
+function updateVoiceIdHint(voiceId = settingsVoiceId?.value || "") {
+  if (!settingsVoiceIdHint) return;
+  const id = String(voiceId || "").trim();
+  settingsVoiceIdHint.textContent = id ? `Aktive Voice-ID: ${id}` : "Aktive Voice-ID: keine";
+}
+
+function startNewVoiceProfile(options = {}) {
+  if (settingsVoiceSelect) settingsVoiceSelect.value = "";
+  if (settingsVoiceName) settingsVoiceName.value = "";
+  if (settingsVoiceGender) settingsVoiceGender.value = "female";
+  if (settingsVoiceId) settingsVoiceId.value = "";
+  if (settingsDeleteVoiceButton) settingsDeleteVoiceButton.disabled = true;
+  if (!options.silent && settingsState) {
+    settingsState.textContent = "Neue Stimme eintragen und speichern.";
+  }
+}
+
+function saveCurrentVoiceProfileFromControls() {
+  const settings = getElevenLabsSettings();
+  const name = settingsVoiceName?.value.trim() || "Neue Stimme";
+  const voiceId = settingsVoiceId?.value.trim() || "";
+  const gender = settingsVoiceGender?.value || "neutral";
+
+  if (!voiceId) {
+    if (settingsState) settingsState.textContent = "Bitte eine ElevenLabs Voice-ID eintragen.";
+    return;
+  }
+
+  const selectedKey = settingsVoiceSelect?.value || "";
+  const existingVoice = settings.voices.find((voice) => voice.key === selectedKey);
+  const key = existingVoice?.key || createVoiceProfileKey(name, voiceId);
+  const nextVoice = { key, name, gender, voiceId };
+  const duplicateVoice = settings.voices.find((voice) => voice.key !== key && voice.voiceId === voiceId);
+  const voices = settings.voices.filter((voice) => voice.key !== key);
+  voices.push(nextVoice);
+
+  const nextSettings = normalizeElevenLabsSettings({
+    ...settings,
+    activeVoiceKey: key,
+    voiceId,
+    voices,
+  });
+
+  localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(nextSettings));
+  renderVoiceProfileSelect(nextSettings);
+  loadSelectedVoiceProfileIntoControls(key, { settings: nextSettings, silent: true, skipCloud: true });
+  saveCloudElevenLabsSettings(nextSettings)
+    .then(() => {
+      if (settingsState) {
+        settingsState.textContent = duplicateVoice
+          ? `Stimme gespeichert: ${name}. Hinweis: gleiche Voice-ID wie ${duplicateVoice.name}.`
+          : `Stimme gespeichert: ${name}.`;
+      }
+    })
+    .catch(() => {
+      if (settingsState) settingsState.textContent = `Stimme lokal gespeichert: ${name}. Firebase fehlgeschlagen.`;
+    });
+}
+
+function deleteSelectedVoiceProfile() {
+  const settings = getElevenLabsSettings();
+  const selectedKey = settingsVoiceSelect?.value || settings.activeVoiceKey;
+  if (settings.voices.length <= 1) {
+    if (settingsState) settingsState.textContent = "Mindestens eine Stimme muss gespeichert bleiben.";
+    return;
+  }
+
+  const deletedVoice = settings.voices.find((voice) => voice.key === selectedKey);
+  const voices = settings.voices.filter((voice) => voice.key !== selectedKey);
+  const nextActiveVoice = voices[0];
+  const nextSettings = normalizeElevenLabsSettings({
+    ...settings,
+    activeVoiceKey: nextActiveVoice.key,
+    voiceId: nextActiveVoice.voiceId,
+    voices,
+  });
+
+  localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(nextSettings));
+  renderVoiceProfileSelect(nextSettings);
+  loadSelectedVoiceProfileIntoControls(nextSettings.activeVoiceKey, { settings: nextSettings, silent: true });
+  saveCloudElevenLabsSettings(nextSettings).catch(() => {
+    if (settingsState) settingsState.textContent = "Stimme lokal gelöscht. Firebase konnte nicht aktualisiert werden.";
+  });
+  if (settingsState) settingsState.textContent = `Stimme gelöscht: ${deletedVoice?.name || "Stimme"}.`;
+}
+
 function saveElevenLabsSettings() {
-  const settings = {
-    voiceId: settingsVoiceId?.value.trim() || getDefaultElevenLabsSettings().voiceId,
+  const currentSettings = getElevenLabsSettings();
+  const selectedKey = settingsVoiceSelect?.value || currentSettings.activeVoiceKey;
+  const currentVoice = currentSettings.voices.find((voice) => voice.key === selectedKey) ||
+    getActiveElevenLabsVoice(currentSettings);
+  const inlineVoice = {
+    key: currentVoice?.key || createVoiceProfileKey(settingsVoiceName?.value, settingsVoiceId?.value),
+    name: settingsVoiceName?.value.trim() || currentVoice?.name || "Stimme",
+    gender: settingsVoiceGender?.value || currentVoice?.gender || "neutral",
+    voiceId: settingsVoiceId?.value.trim() || currentVoice?.voiceId || getDefaultElevenLabsSettings().voiceId,
+  };
+  const voices = currentSettings.voices.map((voice) =>
+    voice.key === inlineVoice.key ? inlineVoice : voice,
+  );
+  if (!voices.some((voice) => voice.key === inlineVoice.key)) voices.push(inlineVoice);
+
+  const settings = normalizeElevenLabsSettings({
+    ...currentSettings,
+    activeVoiceKey: inlineVoice.key,
+    voiceId: inlineVoice.voiceId,
+    voices,
     stability: clampPercent(settingsVoiceStability?.value),
     similarity: clampPercent(settingsVoiceSimilarity?.value),
     style: clampPercent(settingsVoiceStyle?.value),
     speakerBoost: Boolean(settingsSpeakerBoost?.checked),
-  };
+  });
   localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(settings));
+  renderVoiceProfileSelect(settings);
+  saveCloudElevenLabsSettings(settings).catch(() => {
+    if (settingsState) settingsState.textContent = "Einstellungen lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
+  });
+}
+
+async function saveCloudElevenLabsSettings(settings = getElevenLabsSettings(), options = {}) {
+  const normalizedSettings = normalizeElevenLabsSettings(settings);
+  await setDoc(doc(firestore, "settings", ELEVENLABS_SETTINGS_DOC), {
+    ...normalizedSettings,
+    updatedAt: new Date().toISOString(),
+  });
+  if (!options.silent && settingsState) settingsState.textContent = "ElevenLabs-Stimmen in Firebase gespeichert.";
+}
+
+async function loadCloudElevenLabsSettings() {
+  try {
+    const snapshot = await getDoc(doc(firestore, "settings", ELEVENLABS_SETTINGS_DOC));
+    if (!snapshot.exists()) {
+      await saveCloudElevenLabsSettings(getElevenLabsSettings());
+      return;
+    }
+
+    const localSettings = getElevenLabsSettings();
+    const cloudSettings = normalizeElevenLabsSettings(snapshot.data());
+    const mergedSettings = mergeElevenLabsSettings(localSettings, cloudSettings);
+    localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(mergedSettings));
+    renderVoiceProfileSelect(mergedSettings);
+    loadSelectedVoiceProfileIntoControls(mergedSettings.activeVoiceKey, {
+      settings: mergedSettings,
+      silent: true,
+      skipPersist: true,
+      skipCloud: true,
+    });
+    renderSettingsControls();
+    if (settingsState) {
+      settingsState.textContent = `ElevenLabs-Stimmen aus Firebase geladen: ${mergedSettings.voices.length}.`;
+    }
+  } catch (error) {
+    if (settingsState) settingsState.textContent = "ElevenLabs-Stimmen lokal geladen. Firebase nicht erreichbar.";
+  }
+}
+
+function mergeElevenLabsSettings(localSettings, cloudSettings) {
+  const voicesByKey = new Map();
+  [...(localSettings.voices || []), ...(cloudSettings.voices || [])].forEach((voice) => {
+    if (!voice?.voiceId) return;
+    voicesByKey.set(voice.key || createVoiceProfileKey(voice.name, voice.voiceId), voice);
+  });
+
+  return normalizeElevenLabsSettings({
+    ...localSettings,
+    ...cloudSettings,
+    voices: [...voicesByKey.values()],
+    activeVoiceKey: cloudSettings.activeVoiceKey || localSettings.activeVoiceKey,
+  });
+}
+
+function saveChatGptSettings() {
+  const settings = {
+    enabled: Boolean(settingsChatGptEnabled?.checked),
+    apiKey: settingsChatGptApiKey?.value.trim() || "",
+    model: settingsChatGptModel?.value.trim() || getDefaultChatGptSettings().model,
+    systemPrompt: settingsChatGptPrompt?.value.trim() || getDefaultChatGptSettings().systemPrompt,
+  };
+  localStorage.setItem(CHATGPT_SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function saveAllAiSettings() {
+  saveElevenLabsSettings();
+  saveChatGptSettings();
+}
+
+async function testElevenLabsSettingsVoice() {
+  const text =
+    settingsVoiceDemoText?.value.trim() ||
+    "Das ist ein kurzer Test der LogoSound Stimme. Bitte sprechen Sie ruhig und deutlich.";
+
+  saveAllAiSettings();
+  if (settingsTestVoiceButton) settingsTestVoiceButton.disabled = true;
+  if (settingsState) settingsState.textContent = "ElevenLabs-Demo wird erstellt...";
+
+  try {
+    const response = await fetch(getApiUrl("/api/voice"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text,
+        store: false,
+        exerciseName: "Setup Demo",
+        ...getElevenLabsRequestSettingsFromControls(),
+      }),
+    });
+
+    if (!response.ok) {
+      const details = await response.text().catch(() => "");
+      throw new Error(`Audio-Fehler ${response.status}: ${details.slice(0, 90) || "keine Antwort"}`);
+    }
+
+    const audioBlob = await response.blob();
+    if (!audioBlob.size) throw new Error("Audio ist leer.");
+    if (settingsVoiceTestUrl) URL.revokeObjectURL(settingsVoiceTestUrl);
+    settingsVoiceTestUrl = URL.createObjectURL(audioBlob);
+    if (settingsVoicePreview) {
+      settingsVoicePreview.src = settingsVoiceTestUrl;
+      settingsVoicePreview.load();
+      await settingsVoicePreview.play().catch(() => {});
+    }
+    if (settingsState) {
+      settingsState.textContent = `Demo-Stimme erstellt: ${settingsVoiceName?.value.trim() || "Stimme"}.`;
+    }
+  } catch (error) {
+    if (settingsState) settingsState.textContent = error?.message || "Demo-Stimme konnte nicht erstellt werden.";
+  } finally {
+    if (settingsTestVoiceButton) settingsTestVoiceButton.disabled = false;
+  }
 }
 
 function updateSensitivitySetting(value) {
@@ -3230,6 +6118,57 @@ function updatePlaybackVolumeSetting(value) {
   if (settingsPlaybackVolumeValue) settingsPlaybackVolumeValue.textContent = `${nextValue}%`;
   localStorage.setItem(PLAYBACK_GAIN_KEY, String(nextValue));
   ensurePlaybackAudioBoost();
+  renderSettingsControls();
+}
+
+function applySavedStatisticsWaveformHeight() {
+  const savedHeight = Number(localStorage.getItem(STATISTICS_WAVEFORM_HEIGHT_KEY));
+  const nextHeight = Number.isFinite(savedHeight) ? clampStatisticsWaveformHeight(savedHeight) : 110;
+  setStatisticsWaveformHeight(nextHeight, { persist: false });
+}
+
+function startStatisticsWaveformResize(event) {
+  if (!statisticsWaveform) return;
+  event.preventDefault();
+  statisticsResizeState = {
+    pointerId: event.pointerId,
+    startY: event.clientY,
+    startHeight: statisticsWaveform.getBoundingClientRect().height || 110,
+  };
+  statisticsWaveformResizeHandle?.setPointerCapture?.(event.pointerId);
+  document.body.classList.add("is-resizing-statistics-waveform");
+  window.addEventListener("pointermove", resizeStatisticsWaveform);
+  window.addEventListener("pointerup", stopStatisticsWaveformResize, { once: true });
+  window.addEventListener("pointercancel", stopStatisticsWaveformResize, { once: true });
+}
+
+function resizeStatisticsWaveform(event) {
+  if (!statisticsResizeState) return;
+  const deltaY = event.clientY - statisticsResizeState.startY;
+  setStatisticsWaveformHeight(statisticsResizeState.startHeight + deltaY);
+}
+
+function stopStatisticsWaveformResize(event) {
+  if (statisticsResizeState && event?.pointerId != null) {
+    statisticsWaveformResizeHandle?.releasePointerCapture?.(statisticsResizeState.pointerId);
+  }
+  statisticsResizeState = null;
+  document.body.classList.remove("is-resizing-statistics-waveform");
+  window.removeEventListener("pointermove", resizeStatisticsWaveform);
+}
+
+function setStatisticsWaveformHeight(height, options = {}) {
+  if (!statisticsWaveform) return;
+  const nextHeight = clampStatisticsWaveformHeight(height);
+  statisticsWaveform.style.height = `${nextHeight}px`;
+  if (options.persist !== false) {
+    localStorage.setItem(STATISTICS_WAVEFORM_HEIGHT_KEY, String(Math.round(nextHeight)));
+  }
+  renderAudioAnalysis(getSelectedAnalysisRecording());
+}
+
+function clampStatisticsWaveformHeight(height) {
+  return Math.max(88, Math.min(320, Math.round(Number(height) || 110)));
 }
 
 function calculateStandardDeviation(values) {
@@ -3409,6 +6348,79 @@ function buildAudioAnalysis(metadata) {
   };
 }
 
+function getActiveElevenLabsVoice(settings = getElevenLabsSettings()) {
+  return settings.voices.find((voice) => voice.key === settings.activeVoiceKey) || settings.voices[0] || null;
+}
+
+function getAnalysisCalibration() {
+  const fallback = {
+    amplitudeGain: 100,
+    volumeGain: 70,
+    frequencyGain: 100,
+  };
+
+  try {
+    const stored = JSON.parse(localStorage.getItem(ANALYSIS_CALIBRATION_KEY) || "null");
+    return {
+      amplitudeGain: clampAnalysisGain(stored?.amplitudeGain, 5, 260, fallback.amplitudeGain),
+      volumeGain: clampAnalysisGain(stored?.volumeGain, 30, 180, fallback.volumeGain),
+      frequencyGain: clampAnalysisGain(stored?.frequencyGain, 40, 240, fallback.frequencyGain),
+    };
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function clampAnalysisGain(value, min, max, fallback) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(numericValue)));
+}
+
+function loadAnalysisCalibrationControls() {
+  const calibration = getAnalysisCalibration();
+  if (statisticsAmplitudeGain) statisticsAmplitudeGain.value = String(calibration.amplitudeGain);
+  if (statisticsVolumeGain) statisticsVolumeGain.value = String(calibration.volumeGain);
+  if (statisticsFrequencyGain) statisticsFrequencyGain.value = String(calibration.frequencyGain);
+  updateAnalysisCalibrationLabels(calibration);
+}
+
+function saveAnalysisCalibrationFromControls() {
+  const calibration = {
+    amplitudeGain: clampAnalysisGain(statisticsAmplitudeGain?.value, 5, 260, 100),
+    volumeGain: clampAnalysisGain(statisticsVolumeGain?.value, 30, 180, 70),
+    frequencyGain: clampAnalysisGain(statisticsFrequencyGain?.value, 40, 240, 100),
+  };
+  localStorage.setItem(ANALYSIS_CALIBRATION_KEY, JSON.stringify(calibration));
+  updateAnalysisCalibrationLabels(calibration);
+}
+
+function updateAnalysisCalibrationLabels(calibration = getAnalysisCalibration()) {
+  if (statisticsAmplitudeGainValue) statisticsAmplitudeGainValue.textContent = `${calibration.amplitudeGain}%`;
+  if (statisticsVolumeGainValue) statisticsVolumeGainValue.textContent = `${calibration.volumeGain}%`;
+  if (statisticsFrequencyGainValue) statisticsFrequencyGainValue.textContent = `${calibration.frequencyGain}%`;
+}
+
+function getCalibratedAnalysisMetadata(metadata) {
+  const calibration = getAnalysisCalibration();
+  return {
+    ...metadata,
+    amplituden: scaleAnalysisSeries(metadata.amplituden, calibration.amplitudeGain),
+    lautstaerken: scaleAnalysisSeries(metadata.lautstaerken, calibration.volumeGain),
+    lautstaerkePegel: scaleAnalysisSeries(
+      metadata.lautstaerkePegel || metadata.lautstaerken,
+      calibration.volumeGain,
+    ),
+    frequenzAmplituden: scaleAnalysisSeries(metadata.frequenzAmplituden, calibration.frequencyGain),
+    analyseKalibrierung: calibration,
+  };
+}
+
+function scaleAnalysisSeries(values = [], gainPercent = 100) {
+  const factor = Math.max(0.01, Number(gainPercent) / 100 || 1);
+  return values.map((value) => Math.max(0, Math.min(100, Math.round((Number(value) || 0) * factor))));
+}
+
 function renderAudioAnalysis(metadata = currentMetadata) {
   if (!audioAnalysisGrid || !audioAnalysisTitle || !audioAnalysisNote) return;
 
@@ -3418,21 +6430,27 @@ function renderAudioAnalysis(metadata = currentMetadata) {
     audioAnalysisNote.textContent = "Öffne eine Aufnahme aus dem Verlauf oder erstelle eine neue Aufnahme.";
     if (statisticsPositionSlider) statisticsPositionSlider.disabled = true;
     if (statisticsPositionValue) statisticsPositionValue.textContent = "00:00";
+    setAnalysisRangeControlsEnabled(false);
+    drawStatisticsWaveform(null);
     return;
   }
 
-  const analysis = metadata.audioAnalyse || buildAudioAnalysis(metadata);
-  const positionAnalysis = buildPositionAudioAnalysis(metadata, selectedAnalysisPosition);
-  metadata.audioAnalyse = analysis;
+  const calibratedMetadata = getCalibratedAnalysisMetadata(metadata);
+  const analysis = buildAudioAnalysis(calibratedMetadata);
+  const positionAnalysis = buildPositionAudioAnalysis(calibratedMetadata, selectedAnalysisPosition);
+  const rangeAnalysis = buildRangeAudioAnalysis(calibratedMetadata, selectedAnalysisStart, selectedAnalysisEnd);
   audioAnalysisTitle.textContent = `${metadata.uebung || "Aufnahme"} · ${formatTime(positionAnalysis.zeitSekunden)}`;
   audioAnalysisGrid.innerHTML = "";
   if (statisticsPositionSlider) {
     statisticsPositionSlider.disabled = false;
-    statisticsPositionSlider.value = String(Math.round(selectedAnalysisPosition * 1000));
+    syncAnalysisPositionSlider();
   }
   if (statisticsPositionValue) {
     statisticsPositionValue.textContent = formatTime(positionAnalysis.zeitSekunden);
   }
+  setAnalysisRangeControlsEnabled(true);
+  updateAnalysisRangeLabels(calibratedMetadata);
+  drawStatisticsWaveform(calibratedMetadata);
 
   const items = [
     ["Zeit", formatTime(positionAnalysis.zeitSekunden)],
@@ -3443,6 +6461,11 @@ function renderAudioAnalysis(metadata = currentMetadata) {
     ["Ø Frequenz dort", positionAnalysis.durchschnittlicheStimmfrequenzHz ? `${positionAnalysis.durchschnittlicheStimmfrequenzHz} Hz` : "0 Hz"],
     ["Frequenzenergie", positionAnalysis.frequenzAmplitude],
     ["Impulse im Fenster", positionAnalysis.impulse],
+    ["Bereich", rangeAnalysis.label],
+    ["Bereich Ø", rangeAnalysis.durchschnittlicheLautstaerke],
+    ["Bereich Max", rangeAnalysis.maximaleLautstaerke],
+    ["Bereich Frequenz", rangeAnalysis.durchschnittlicheStimmfrequenzHz ? `${rangeAnalysis.durchschnittlicheStimmfrequenzHz} Hz` : "0 Hz"],
+    ["Bereich Impulse", rangeAnalysis.impulse],
     ["Leseabschnitte", analysis.timing.leseAbschnitte?.length || 0],
     ["Pausen > 1s", analysis.timing.pausenUeberEineSekunde || 0],
     ["Dauer gesamt", formatTime(analysis.dauerSekunden || metadata.dauerSekunden || 0)],
@@ -3466,23 +6489,56 @@ function renderAudioAnalysis(metadata = currentMetadata) {
     : "Schieberegler bewegt die Analyseposition. Die Werte werden aus einem kurzen Fenster um diese Stelle berechnet.";
 }
 
+function getAnalysisPositionFromSlider(value) {
+  const sliderPosition = Math.max(0, Math.min(1, Number(value) / 1000 || 0));
+  if (!statisticsRangeZoomed) return sliderPosition;
+  const range = Math.max(0.001, selectedAnalysisEnd - selectedAnalysisStart);
+  return Math.max(0, Math.min(1, selectedAnalysisStart + sliderPosition * range));
+}
+
+function getSliderPositionFromAnalysis() {
+  if (!statisticsRangeZoomed) {
+    return Math.round(Math.max(0, Math.min(1, selectedAnalysisPosition)) * 1000);
+  }
+
+  const range = Math.max(0.001, selectedAnalysisEnd - selectedAnalysisStart);
+  const zoomedPosition = (selectedAnalysisPosition - selectedAnalysisStart) / range;
+  return Math.round(Math.max(0, Math.min(1, zoomedPosition)) * 1000);
+}
+
+function syncAnalysisPositionSlider() {
+  if (!statisticsPositionSlider) return;
+  statisticsPositionSlider.value = String(getSliderPositionFromAnalysis());
+}
+
+function clampSelectedAnalysisPositionToZoomRange() {
+  if (!statisticsRangeZoomed) return;
+  selectedAnalysisPosition = Math.max(
+    selectedAnalysisStart,
+    Math.min(selectedAnalysisEnd, selectedAnalysisPosition),
+  );
+}
+
 function buildPositionAudioAnalysis(metadata, positionPercent = 0) {
   const durationSeconds = Number(metadata.dauerSekunden || 0);
   const safePosition = Math.max(0, Math.min(1, Number(positionPercent) || 0));
   const timeSeconds = durationSeconds * safePosition;
+  const isEndSilence =
+    durationSeconds > 0 &&
+    (safePosition >= 0.995 || durationSeconds - timeSeconds <= END_ANALYSIS_SILENCE_SECONDS);
   const amplitudesForAnalysis = (metadata.amplituden || []).map(Number).filter(Number.isFinite);
   const volumeLevels = (metadata.lautstaerkePegel || metadata.lautstaerken || []).map(Number).filter(Number.isFinite);
   const pitchValues = (metadata.stimmfrequenzenHz || []).map(Number).filter(Number.isFinite);
   const frequencyAmplitudes = (metadata.frequenzAmplituden || []).map(Number).filter(Number.isFinite);
   const windowSeconds = 0.7;
-  const amplitudeWindow = getTimelineWindow(amplitudesForAnalysis, safePosition, durationSeconds, windowSeconds);
-  const volumeWindow = getTimelineWindow(volumeLevels, safePosition, durationSeconds, windowSeconds);
-  const pitchWindow = getTimelineWindow(pitchValues, safePosition, durationSeconds, windowSeconds);
-  const frequencyIndexValue = getTimelineValue(frequencyAmplitudes, safePosition);
+  const amplitudeWindow = isEndSilence ? [] : getTimelineWindow(amplitudesForAnalysis, safePosition, durationSeconds, windowSeconds);
+  const volumeWindow = isEndSilence ? [] : getTimelineWindow(volumeLevels, safePosition, durationSeconds, windowSeconds);
+  const pitchWindow = isEndSilence ? [] : getTimelineWindow(pitchValues, safePosition, durationSeconds, windowSeconds);
+  const frequencyIndexValue = isEndSilence ? 0 : getTimelineValue(frequencyAmplitudes, safePosition);
   const spokenPitchWindow = pitchWindow.filter((value) => value > 0);
-  const amplitudeIndexValue = getTimelineValue(amplitudesForAnalysis, safePosition);
-  const volumeIndexValue = getTimelineValue(volumeLevels, safePosition);
-  const pitchIndexValue = getTimelineValue(pitchValues, safePosition);
+  const amplitudeIndexValue = isEndSilence ? 0 : getTimelineValue(amplitudesForAnalysis, safePosition);
+  const volumeIndexValue = isEndSilence ? 0 : getTimelineValue(volumeLevels, safePosition);
+  const pitchIndexValue = isEndSilence ? 0 : getTimelineValue(pitchValues, safePosition);
 
   return {
     zeitSekunden: Number(timeSeconds.toFixed(2)),
@@ -3496,10 +6552,45 @@ function buildPositionAudioAnalysis(metadata, positionPercent = 0) {
   };
 }
 
+function buildRangeAudioAnalysis(metadata, startPercent = 0, endPercent = 1) {
+  const durationSeconds = Number(metadata.dauerSekunden || 0);
+  const safeStart = Math.max(0, Math.min(1, Number(startPercent) || 0));
+  const safeEnd = Math.max(safeStart, Math.min(1, Number(endPercent) || 0));
+  const startSeconds = durationSeconds * safeStart;
+  const endSeconds = durationSeconds * safeEnd;
+  const rangeSeconds = Math.max(0, endSeconds - startSeconds);
+  const amplitudesForAnalysis = (metadata.amplituden || []).map(Number).filter(Number.isFinite);
+  const volumeLevels = (metadata.lautstaerkePegel || metadata.lautstaerken || []).map(Number).filter(Number.isFinite);
+  const pitchValues = (metadata.stimmfrequenzenHz || []).map(Number).filter(Number.isFinite);
+  const amplitudeWindow = getTimelineRange(amplitudesForAnalysis, safeStart, safeEnd);
+  const volumeWindow = getTimelineRange(volumeLevels, safeStart, safeEnd);
+  const pitchWindow = getTimelineRange(pitchValues, safeStart, safeEnd).filter((value) => value > 0);
+  const levelWindow = volumeWindow.length ? volumeWindow : amplitudeWindow;
+  const levelStats = calculateAmplitudeStats(levelWindow);
+
+  return {
+    startSekunden: Number(startSeconds.toFixed(2)),
+    endeSekunden: Number(endSeconds.toFixed(2)),
+    dauerSekunden: Number(rangeSeconds.toFixed(2)),
+    label: `${formatTime(startSeconds)} - ${formatTime(endSeconds)}`,
+    durchschnittlicheLautstaerke: levelStats.average,
+    maximaleLautstaerke: levelStats.maximum,
+    durchschnittlicheStimmfrequenzHz: calculatePitchStats(pitchWindow).average,
+    impulse: countSpeechImpulses(amplitudeWindow, rangeSeconds || 1),
+  };
+}
+
 function getTimelineValue(values, positionPercent) {
   if (!values.length) return 0;
   const index = Math.max(0, Math.min(values.length - 1, Math.round(positionPercent * (values.length - 1))));
   return values[index] || 0;
+}
+
+function getTimelineRange(values, startPercent, endPercent) {
+  if (!values.length) return [];
+  const startIndex = Math.max(0, Math.min(values.length - 1, Math.floor(startPercent * values.length)));
+  const endIndex = Math.max(startIndex + 1, Math.min(values.length, Math.ceil(endPercent * values.length)));
+  return values.slice(startIndex, endIndex);
 }
 
 function getTimelineWindow(values, positionPercent, durationSeconds, windowSeconds) {
@@ -3510,11 +6601,272 @@ function getTimelineWindow(values, positionPercent, durationSeconds, windowSecon
   return values.slice(Math.max(0, centerIndex - radius), Math.min(values.length, centerIndex + radius + 1));
 }
 
+function setAnalysisRangeControlsEnabled(isEnabled) {
+  [statisticsStartSlider, statisticsEndSlider, statisticsPlayRangeButton, statisticsZoomRangeButton].forEach((control) => {
+    if (control) control.disabled = !isEnabled;
+  });
+}
+
+function updateAnalysisRangeLabels(metadata) {
+  const durationSeconds = Number(metadata?.dauerSekunden || 0);
+  const startSeconds = durationSeconds * selectedAnalysisStart;
+  const endSeconds = durationSeconds * selectedAnalysisEnd;
+  const startPercent = `${Math.round(selectedAnalysisStart * 100)}%`;
+  const endPercent = `${Math.round(selectedAnalysisEnd * 100)}%`;
+  statisticsRangeControl?.style.setProperty("--range-start", startPercent);
+  statisticsRangeControl?.style.setProperty("--range-end", endPercent);
+  if (statisticsStartSlider) statisticsStartSlider.value = String(Math.round(selectedAnalysisStart * 1000));
+  if (statisticsEndSlider) statisticsEndSlider.value = String(Math.round(selectedAnalysisEnd * 1000));
+  if (statisticsStartValue) statisticsStartValue.textContent = formatTime(startSeconds);
+  if (statisticsEndValue) statisticsEndValue.textContent = formatTime(endSeconds);
+  if (statisticsRangeValue) {
+    statisticsRangeValue.textContent = `${formatTime(startSeconds)} - ${formatTime(endSeconds)}`;
+  }
+  if (statisticsZoomRangeButton) {
+    statisticsZoomRangeButton.textContent = statisticsRangeZoomed ? "Gesamt" : "Zoom";
+  }
+}
+
+function drawStatisticsWaveform(metadata) {
+  if (!statisticsWaveform) return;
+  if (!metadata) {
+    drawWaveform(statisticsWaveform, [], { mode: "playback" });
+    drawStatisticsSignalTimelines(null);
+    return;
+  }
+
+  const sourceAmplitudes = metadata.amplituden || [];
+  const sourceLevels = metadata.lautstaerkePegel || metadata.lautstaerken || metadata.amplituden;
+  const displayAmplitudes = statisticsRangeZoomed
+    ? getTimelineRange(sourceAmplitudes, selectedAnalysisStart, selectedAnalysisEnd)
+    : sourceAmplitudes;
+  const displayLevels = statisticsRangeZoomed
+    ? getTimelineRange(sourceLevels || [], selectedAnalysisStart, selectedAnalysisEnd)
+    : sourceLevels;
+  const displayProgress = statisticsRangeZoomed
+    ? getZoomedAnalysisPosition()
+    : selectedAnalysisPosition;
+
+  drawWaveform(statisticsWaveform, displayAmplitudes, {
+    mode: "playback",
+    progress: displayProgress,
+    levelValues: displayLevels,
+    durationSeconds: Number(metadata.dauerSekunden || 0),
+    dynamicRange: statisticsRangeZoomed ? 0.78 : undefined,
+    minLocalPeak: statisticsRangeZoomed ? 2.4 : undefined,
+    visualCeiling: statisticsRangeZoomed ? 92 : undefined,
+    resampleMode: statisticsRangeZoomed ? "rms" : undefined,
+    pixelsPerBar: statisticsRangeZoomed ? 4.2 : undefined,
+    subtractFloor: statisticsRangeZoomed,
+    floorPercentile: 0.18,
+    compress: statisticsRangeZoomed ? 1.28 : undefined,
+    shapePower: statisticsRangeZoomed ? 0.58 : undefined,
+    barGap: statisticsRangeZoomed ? 2 : undefined,
+    minBarWidth: statisticsRangeZoomed ? 4 : undefined,
+    minSpeechBarHeight: statisticsRangeZoomed ? 12 : undefined,
+    minPauseBarHeight: statisticsRangeZoomed ? 2 : undefined,
+  });
+
+  const context = statisticsWaveform.getContext("2d");
+  if (!context) return;
+  const width = statisticsWaveform.width;
+  const height = statisticsWaveform.height;
+  const startX = statisticsRangeZoomed ? 0 : width * selectedAnalysisStart;
+  const endX = statisticsRangeZoomed ? width : width * selectedAnalysisEnd;
+  context.save();
+  context.fillStyle = "rgba(255, 122, 144, 0.12)";
+  context.fillRect(startX, 0, Math.max(2, endX - startX), height);
+  context.strokeStyle = "#ff7a90";
+  context.lineWidth = 4;
+  context.beginPath();
+  context.moveTo(startX, 10);
+  context.lineTo(startX, height - 10);
+  context.moveTo(endX, 10);
+  context.lineTo(endX, height - 10);
+  context.stroke();
+  context.restore();
+  drawStatisticsSignalTimelines(metadata);
+}
+
+function drawStatisticsSignalTimelines(metadata) {
+  if (!statisticsVolumeTimeline || !statisticsFrequencyTimeline) return;
+
+  if (!metadata) {
+    drawWaveform(statisticsVolumeTimeline, [], { mode: "playback" });
+    drawFrequencyTimeline(statisticsFrequencyTimeline, [], [], { limit: false });
+    return;
+  }
+
+  const sourceLevels = metadata.lautstaerkePegel || metadata.lautstaerken || metadata.amplituden || [];
+  const sourcePitch = metadata.stimmfrequenzenHz || [];
+  const sourceFrequencyStrength = metadata.frequenzAmplituden || sourceLevels;
+  const displayProgress = statisticsRangeZoomed ? getZoomedAnalysisPosition() : selectedAnalysisPosition;
+  const displayLevels = statisticsRangeZoomed
+    ? getTimelineRange(sourceLevels, selectedAnalysisStart, selectedAnalysisEnd)
+    : sourceLevels;
+  const displayPitch = statisticsRangeZoomed
+    ? getTimelineRange(sourcePitch, selectedAnalysisStart, selectedAnalysisEnd)
+    : sourcePitch;
+  const displayFrequencyStrength = statisticsRangeZoomed
+    ? getTimelineRange(sourceFrequencyStrength, selectedAnalysisStart, selectedAnalysisEnd)
+    : sourceFrequencyStrength;
+  const currentLevel = getTimelineValue(sourceLevels, selectedAnalysisPosition);
+
+  drawVolumeLevelTimeline(statisticsVolumeTimeline, displayLevels, {
+    progress: displayProgress,
+    durationSeconds: Number(metadata.dauerSekunden || 0),
+    currentLevel,
+    rangeStart: statisticsRangeZoomed ? 0 : selectedAnalysisStart,
+    rangeEnd: statisticsRangeZoomed ? 1 : selectedAnalysisEnd,
+  });
+
+  drawFrequencyTimeline(statisticsFrequencyTimeline, displayPitch, displayFrequencyStrength, {
+    limit: false,
+    progress: displayProgress,
+    rangeStart: statisticsRangeZoomed ? 0 : selectedAnalysisStart,
+    rangeEnd: statisticsRangeZoomed ? 1 : selectedAnalysisEnd,
+  });
+}
+
+function getZoomedAnalysisPosition() {
+  const range = Math.max(0.001, selectedAnalysisEnd - selectedAnalysisStart);
+  return Math.max(0, Math.min(1, (selectedAnalysisPosition - selectedAnalysisStart) / range));
+}
+
+async function playSelectedAnalysisRange() {
+  const metadata = getSelectedAnalysisRecording();
+  if (!metadata) return;
+
+  if (currentMetadata?.id !== metadata.id || (!currentVideoUrl && !recordingPlayer.currentSrc)) {
+    await openStoredRecording(metadata.id);
+    setActiveView("stats");
+  }
+
+  const durationSeconds = Number(metadata.dauerSekunden || recordingPlayer.duration || 0);
+  if (!durationSeconds) return;
+
+  selectedAnalysisPosition = selectedAnalysisStart;
+  syncAnalysisPositionSlider();
+  renderAudioAnalysis(metadata);
+
+  setActiveView("stats");
+  await playPlaybackFromTime(0, selectedAnalysisStart, selectedAnalysisEnd);
+  setStatisticsRangeButtonState("pause");
+}
+
+function toggleSelectedAnalysisRangePlayback() {
+  if (statisticsRangeStopTime != null && !recordingPlayer.paused) {
+    recordingPlayer.pause();
+    statisticsRangeStopTime = null;
+    setStatisticsRangeButtonState("play");
+    return;
+  }
+
+  playSelectedAnalysisRange();
+}
+
+async function playPlaybackFromTime(startTime, analysisProgress = null, stopProgress = null) {
+  if (!recordingPlayer.src && currentVideoUrl) {
+    recordingPlayer.src = currentVideoUrl;
+    recordingPlayer.load();
+  }
+
+  if (!recordingPlayer.src) {
+    message.textContent = "Kein Video zum Abspielen geladen.";
+    return;
+  }
+
+  playPauseButton.disabled = true;
+  setPlayPauseButtonState("loading");
+  recordingPlayer.muted = false;
+  recordingPlayer.defaultMuted = false;
+  recordingPlayer.volume = 1;
+  await ensurePlaybackAudioBoost();
+
+  await waitForPlaybackReady(recordingPlayer, 1800);
+  const targetTime = analysisProgress !== null
+    ? analysisProgressToMediaTime(analysisProgress, currentMetadata)
+    : Math.max(0, Number(startTime) || 0);
+  if (stopProgress !== null) {
+    statisticsRangeStopTime = analysisProgressToMediaTime(stopProgress, currentMetadata);
+  }
+  await setPlaybackCurrentTime(targetTime);
+  if (analysisProgress !== null) {
+    selectedAnalysisPosition = Math.max(0, Math.min(1, Number(analysisProgress) || 0));
+    syncAnalysisPositionSlider();
+  }
+  updatePlaybackVisuals(analysisProgress);
+
+  recordingPlayer.play().catch(() => {
+    message.textContent = "Zum Abspielen bitte noch einmal tippen.";
+  }).finally(() => {
+    playPauseButton.disabled = false;
+    setPlayPauseButtonState(recordingPlayer.paused ? "play" : "pause");
+  });
+}
+
+function setPlaybackCurrentTime(time) {
+  return new Promise((resolve) => {
+    const targetTime = Math.max(0, Number(time) || 0);
+    let resolved = false;
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      window.clearTimeout(timeoutId);
+      recordingPlayer.removeEventListener("seeked", finish);
+      resolve(true);
+    };
+    const timeoutId = window.setTimeout(finish, 450);
+
+    recordingPlayer.addEventListener("seeked", finish, { once: true });
+    try {
+      recordingPlayer.currentTime = targetTime;
+      if (Math.abs((recordingPlayer.currentTime || 0) - targetTime) < 0.05) finish();
+    } catch (error) {
+      finish();
+    }
+  });
+}
+
+function stopAtStatisticsRangeEnd() {
+  if (statisticsRangeStopTime == null || recordingPlayer.paused) return;
+  if ((recordingPlayer.currentTime || 0) < statisticsRangeStopTime) return;
+  recordingPlayer.pause();
+  statisticsRangeStopTime = null;
+  selectedAnalysisPosition = selectedAnalysisEnd;
+  syncAnalysisPositionSlider();
+  renderAudioAnalysis(getSelectedAnalysisRecording());
+  setStatisticsRangeButtonState("play");
+}
+
+function setStatisticsRangeButtonState(state) {
+  if (!statisticsPlayRangeButton) return;
+  const normalizedState = state === "pause" ? "pause" : "play";
+  statisticsPlayRangeButton.dataset.state = normalizedState;
+  statisticsPlayRangeButton.setAttribute(
+    "aria-label",
+    normalizedState === "pause" ? "Bereich pausieren" : "Bereich abspielen",
+  );
+}
+
 function scaleAmplitude(rawValue) {
   const sensitivityFactor = getSensitivityFactor();
   const scaledValue = Math.max(0, rawValue * sensitivityFactor);
   const softLimitedValue = 100 * (1 - Math.exp(-scaledValue / 72));
   return Math.min(100, Math.round(softLimitedValue));
+}
+
+function updateAdaptiveVolumeNoiseFloor(volumeSignal, currentFloor) {
+  if (!Number.isFinite(volumeSignal) || volumeSignal <= 0) return currentFloor || 0;
+  if (!currentFloor) return Math.min(8, volumeSignal * 0.75);
+
+  const signalLooksLikeNoise = volumeSignal <= currentFloor * 1.5 + VOLUME_NOISE_GATE;
+  const followSpeed = signalLooksLikeNoise ? VOLUME_NOISE_FOLLOW_SPEED : 0.006;
+  const floorTarget = signalLooksLikeNoise
+    ? volumeSignal
+    : Math.min(volumeSignal, currentFloor * 1.04 + VOLUME_NOISE_GATE);
+
+  return currentFloor * (1 - followSpeed) + floorTarget * followSpeed;
 }
 
 function scaleVolumeLevel(rawValue) {
@@ -3610,9 +6962,18 @@ function rescaleCurrentAmplitudes() {
     drawWaveform(playbackWaveform, currentMetadata.amplituden, {
       mode: "playback",
       progress: recordingPlayer.duration ? recordingPlayer.currentTime / recordingPlayer.duration : 0,
-      compress: 0.55,
+      compress: 1.7,
+      dynamicRange: 0.54,
+      minLocalPeak: 0.9,
+      visualCeiling: 100,
+      shapePower: 0.42,
       dim: true,
       levelValues: currentMetadata.lautstaerkePegel || currentMetadata.lautstaerken || currentMetadata.amplituden,
+      pixelsPerBar: 2.4,
+      barGap: 1,
+      minBarWidth: 2,
+      minSpeechBarHeight: 26,
+      minPauseBarHeight: 2,
     });
   }
 }
@@ -3723,6 +7084,10 @@ function selectPatient(name) {
   const cleanedName = name.trim() || "Ohne Name";
   patientName.value = cleanedName;
   localStorage.setItem(SELECTED_PATIENT_KEY, cleanedName);
+  if (editorMode?.value === "dialog") {
+    renderEditorDialogList();
+    renderEditorPreview(buildEditorExerciseFromForm());
+  }
   refreshRecordings();
   message.textContent = `Patient ausgewählt: ${cleanedName}`;
 }
@@ -3769,6 +7134,7 @@ function renderLibrary(preferredId = null) {
 
   recordingsList.innerHTML = "";
   updateStatisticsRecordingSelect(patientRecordings, preferredId);
+  renderPlaybackRecordingAccess(patientRecordings, preferredId);
   renderAudioAnalysis(getSelectedAnalysisRecording());
 
   if (!patientRecordings.length) {
@@ -3793,12 +7159,227 @@ function renderLibrary(preferredId = null) {
 
     const openButton = document.createElement("button");
     openButton.type = "button";
+    openButton.className = "recording-open-button";
     openButton.textContent = recording.id === preferredId ? "Offen" : "Öffnen";
     openButton.addEventListener("click", () => openStoredRecording(recording.id));
 
-    item.append(summary, openButton);
+    const deleteListButton = document.createElement("button");
+    deleteListButton.type = "button";
+    deleteListButton.className = "recording-delete-button";
+    deleteListButton.setAttribute("aria-label", "Aufnahme löschen");
+    deleteListButton.title = "Aufnahme löschen";
+    deleteListButton.addEventListener("click", async () => {
+      await deleteStoredRecordingById(recording.id);
+    });
+
+    item.append(summary, openButton, deleteListButton);
     recordingsList.append(item);
   });
+}
+
+function renderPlaybackRecordingAccessLegacy(patientRecordings, preferredId = null) {
+  if (!playbackRecordingSelect || !playbackSavedRecordingsList) return;
+
+  const currentId = preferredId || currentMetadata?.id || "";
+  playbackRecordingSelect.innerHTML = "";
+  playbackSavedRecordingsList.innerHTML = "";
+
+  if (!patientRecordings.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Keine gespeicherte Aufnahme";
+    playbackRecordingSelect.append(option);
+    playbackOpenRecordingButton && (playbackOpenRecordingButton.disabled = true);
+    const empty = document.createElement("p");
+    empty.className = "message";
+    empty.textContent = "Noch keine gespeicherte Aufnahme für diesen Patienten.";
+    playbackSavedRecordingsList.append(empty);
+    return;
+  }
+
+  playbackOpenRecordingButton && (playbackOpenRecordingButton.disabled = false);
+
+  patientRecordings.forEach((recording) => {
+    const option = document.createElement("option");
+    option.value = recording.id;
+    option.textContent = `${formatDateTime(recording.datum)} · ${recording.uebung || "Aufnahme"}`;
+    playbackRecordingSelect.append(option);
+  });
+  playbackRecordingSelect.value = patientRecordings.some((recording) => recording.id === currentId)
+    ? currentId
+    : patientRecordings[0].id;
+
+  patientRecordings.slice(0, 4).forEach((recording) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "playback-recording-chip";
+    button.classList.toggle("is-active", recording.id === currentId);
+    button.textContent = `${recording.uebung || "Aufnahme"} · ${formatTime(recording.dauerSekunden || 0)}`;
+    button.addEventListener("click", () => openStoredRecording(recording.id));
+    playbackSavedRecordingsList.append(button);
+  });
+}
+
+function createPlaybackRecordingListItem(recording, preferredId = null) {
+  const item = document.createElement("article");
+  item.className = "recording-item playback-recording-item";
+
+  const summary = document.createElement("div");
+  const title = document.createElement("strong");
+  title.textContent = recording.uebung || "Unbenannte Übung";
+  const details = document.createElement("span");
+  const analysis = recording.audioAnalyse || buildAudioAnalysis(recording);
+  details.textContent = `${formatDateTime(recording.datum)} · ${formatTime(recording.dauerSekunden)} · Ø ${analysis.lautstaerke.durchschnitt || recording.durchschnittlicheLautstaerke || 0} · ${analysis.frequenz.durchschnittHz || 0} Hz`;
+  summary.append(title, details);
+
+  const openButton = document.createElement("button");
+  openButton.type = "button";
+  openButton.className = "recording-open-button";
+  openButton.textContent = recording.id === preferredId ? "Offen" : "Öffnen";
+  openButton.addEventListener("click", () => openStoredRecording(recording.id));
+
+  const deleteListButton = document.createElement("button");
+  deleteListButton.type = "button";
+  deleteListButton.className = "recording-delete-button";
+  deleteListButton.setAttribute("aria-label", "Aufnahme löschen");
+  deleteListButton.title = "Aufnahme löschen";
+  deleteListButton.addEventListener("click", async () => {
+    await deleteStoredRecordingById(recording.id);
+  });
+
+  item.append(summary, openButton, deleteListButton);
+  return item;
+}
+
+function renderPlaybackRecordingAccess(patientRecordings, preferredId = null) {
+  if (!playbackRecordingSelect || !playbackSavedRecordingsList) return;
+
+  const currentId = preferredId || currentMetadata?.id || "";
+  const visibleRecordings = patientRecordings;
+
+  playbackRecordingSelect.innerHTML = "";
+  playbackSavedRecordingsList.innerHTML = "";
+
+  if (!visibleRecordings.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Keine gespeicherte Aufnahme";
+    playbackRecordingSelect.append(option);
+    if (playbackOpenRecordingButton) playbackOpenRecordingButton.disabled = true;
+
+    const empty = document.createElement("p");
+    empty.className = "message";
+    empty.textContent = "Noch keine gespeicherte Aufnahme für diesen Patienten.";
+    playbackSavedRecordingsList.append(empty);
+    return;
+  }
+
+  if (playbackOpenRecordingButton) playbackOpenRecordingButton.disabled = false;
+
+  visibleRecordings.forEach((recording) => {
+    const option = document.createElement("option");
+    option.value = recording.id;
+    option.textContent = `${formatDateTime(recording.datum)} · ${recording.uebung || "Aufnahme"}`;
+    playbackRecordingSelect.append(option);
+  });
+
+  playbackRecordingSelect.value = visibleRecordings.some((recording) => recording.id === currentId)
+    ? currentId
+    : visibleRecordings[0].id;
+
+  visibleRecordings.forEach((recording) => {
+    playbackSavedRecordingsList.append(createPlaybackRecordingListItem(recording, currentId));
+    return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "playback-recording-chip";
+    button.classList.toggle("is-active", recording.id === currentId);
+    button.textContent = `${formatDateTime(recording.datum)} · ${formatTime(recording.dauerSekunden || 0)}`;
+    button.addEventListener("click", () => openStoredRecording(recording.id));
+    playbackSavedRecordingsList.append(button);
+  });
+}
+
+function renderPlaybackExerciseSelect(patientRecordings, preferredExerciseName = "") {
+  if (!playbackExerciseSelect) return;
+
+  const currentValue = preferredExerciseName || playbackExerciseSelect.value || "";
+  const exerciseNames = new Set();
+
+  Array.from(exerciseName?.options || []).forEach((option) => {
+    const label = option.textContent?.trim() || option.value;
+    if (label && option.value !== "custom-editor") exerciseNames.add(label);
+  });
+
+  savedEditorExercises.forEach((exercise) => {
+    if (exercise.name) exerciseNames.add(exercise.name);
+  });
+
+  patientRecordings.forEach((recording) => {
+    if (recording.uebung) exerciseNames.add(recording.uebung);
+  });
+
+  playbackExerciseSelect.innerHTML = "";
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "Alle Übungen";
+  playbackExerciseSelect.append(allOption);
+
+  [...exerciseNames].sort((a, b) => a.localeCompare(b, "de")).forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    playbackExerciseSelect.append(option);
+  });
+
+  playbackExerciseSelect.value = Array.from(playbackExerciseSelect.options).some(
+    (option) => option.value === currentValue,
+  )
+    ? currentValue
+    : "";
+}
+
+async function openPlaybackExerciseSelection() {
+  const selectedExerciseName = playbackExerciseSelect?.value || "";
+  const patientRecordings = getPatientRecordings();
+  const matchingRecordings = selectedExerciseName
+    ? patientRecordings.filter(
+        (recording) =>
+          normalizeEditorExerciseName(recording.uebung) === normalizeEditorExerciseName(selectedExerciseName),
+      )
+    : patientRecordings;
+
+  renderPlaybackRecordingAccess(patientRecordings, selectedExerciseName);
+
+  if (matchingRecordings.length) {
+    await openStoredRecording(matchingRecordings[0].id);
+    return;
+  }
+
+  if (selectedExerciseName) {
+    selectRecordingExerciseByName(selectedExerciseName);
+    setActiveView("record");
+    message.textContent = `Übung geladen: ${selectedExerciseName}. Noch keine Aufzeichnung vorhanden.`;
+  } else {
+    message.textContent = "Bitte eine Übung oder Aufzeichnung im Player auswählen.";
+  }
+}
+
+function selectRecordingExerciseByName(name) {
+  if (!exerciseName || !name) return false;
+  renderRecordingExerciseOptions(name);
+  const matchingOption = Array.from(exerciseName.options).find(
+    (option) =>
+      option.value === name ||
+      normalizeEditorExerciseName(option.textContent) === normalizeEditorExerciseName(name),
+  );
+
+  if (!matchingOption) return false;
+  exerciseName.value = matchingOption.value;
+  loadRecordingKaraokeSpeedForCurrentExercise();
+  setupKaraokeText();
+  renderRecordingExerciseShortcuts();
+  return true;
 }
 
 function updateStatisticsRecordingSelect(patientRecordings, preferredId = null) {
@@ -3862,8 +7443,16 @@ async function openStoredRecording(id) {
   rawAmplitudes = metadata.rawAmplituden || [];
   currentVideoBlob = storedBlob;
   showResult(metadata, storedBlob);
+  renderPlaybackRecordingAccess(getPatientRecordings(), metadata.id);
   renderAudioAnalysis(metadata);
   message.textContent = "Aufnahme aus dem Verlauf geöffnet.";
+}
+
+function getPatientRecordings() {
+  const selectedPatient = getCurrentPatientName();
+  return allRecordings
+    .filter((recording) => (recording.patientName || "Demo Patient") === selectedPatient)
+    .sort((a, b) => b.datum.localeCompare(a.datum));
 }
 
 function getCurrentPatientName() {
@@ -3904,7 +7493,7 @@ function clearCurrentRecording() {
   setExerciseVisualsVisible(false);
   recordingPlayer.removeAttribute("src");
   recordingPlayer.load();
-  playPauseButton.textContent = "Play";
+  setPlayPauseButtonState("play");
   playbackSeek.value = "0";
   playbackTimeLabel.textContent = "00:00 / 00:00";
   resultPanel.classList.add("is-hidden");
@@ -3925,6 +7514,7 @@ function resetLiveAnalysisUi() {
   pitchHzValues = [];
   lastAmplitudeAt = 0;
   adaptiveNoiseFloor = 0;
+  adaptiveVolumeNoiseFloor = 0;
   silentSignalStartedAt = 0;
   recordingTime.textContent = "00:00";
   volumeValue.textContent = "0";
@@ -3952,6 +7542,7 @@ function restoreRecorderControls(statusText) {
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
   }
+  stopInstructionAudio();
 
   isRecording = false;
   window.clearTimeout(autoStopTimeoutId);
@@ -4065,6 +7656,7 @@ function updateTopBarTitle(viewName) {
     history: "Verlauf",
     stats: "Statistik",
     settings: "Einstellungen",
+    help: "Hilfe",
   };
   if (topBarTitle) topBarTitle.textContent = titles[viewName] || "LogoSound";
 }
@@ -4133,6 +7725,37 @@ async function deleteRecording(id) {
   return transactionDone(transaction);
 }
 
+async function deleteStoredRecordingById(id) {
+  const storedRecording = await getRecording(id);
+  const metadata = storedRecording ? (() => {
+    const { videoBlob, audioBlob, ...recordingMetadata } = storedRecording;
+    return recordingMetadata;
+  })() : allRecordings.find((recording) => recording.id === id);
+
+  await deleteRecording(id);
+
+  if (currentMetadata?.id === id) {
+    clearCurrentRecording();
+  }
+
+  if (selectedAnalysisRecordingId === id) {
+    selectedAnalysisRecordingId = "";
+    selectedAnalysisPosition = 0;
+    selectedAnalysisStart = 0;
+    selectedAnalysisEnd = 1;
+    statisticsRangeZoomed = false;
+  }
+
+  await refreshRecordings();
+  message.textContent = "Aufnahme gelöscht.";
+
+  if (metadata) {
+    deleteCloudRecording(metadata).catch(() => {
+      firebaseState.textContent = "Lokal gelöscht. Firebase-Löschen fehlgeschlagen.";
+    });
+  }
+}
+
 async function loadLatestRecording() {
   await refreshRecordings();
   const selectedPatient = getCurrentPatientName();
@@ -4153,3 +7776,4 @@ function transactionDone(transaction) {
     transaction.onabort = () => reject(transaction.error);
   });
 }
+

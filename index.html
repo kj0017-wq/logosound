@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="de">
   <head>
     <meta charset="utf-8" />
@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="LogoSound" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="canonical" href="https://logosound-19293.web.app/" />
-    <link rel="manifest" href="/manifest-20260801-amp54.webmanifest" />
+    <link rel="manifest" href="/manifest-20260801-amp142.webmanifest" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="shortcut icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260801-amp54" />
+    <link rel="stylesheet" href="styles.css?v=20260801-amp142" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp54</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp142</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -51,6 +51,7 @@
         <button type="button" data-menu-view="history">Verlauf</button>
         <button type="button" data-menu-view="stats">Statistik</button>
         <button type="button" data-menu-view="settings">Einstellungen</button>
+        <button type="button" data-menu-view="help">Hilfe</button>
       </div>
 
       <section class="camera-panel app-section" data-view="record" aria-label="Kameraansicht">
@@ -67,6 +68,7 @@
         <button id="toggleVideoButton" class="video-toggle-button" type="button">Video aus</button>
         <canvas id="liveWaveform" width="900" height="260" aria-label="Live-Wellenform"></canvas>
         <canvas id="frequencyTimeline" width="900" height="160" aria-label="Frequenz-Zeitleiste"></canvas>
+        <div id="repeatCounterOverlay" class="repeat-counter-overlay is-hidden" aria-label="Wiederholung">1 / 1</div>
         <div id="voiceFrequencyOverlay" class="voice-frequency-overlay" aria-label="Stimmfrequenz">
           <span id="voiceFrequencyText">0 Hz</span>
           <div class="voice-frequency-track">
@@ -87,37 +89,30 @@
         </div>
       </section>
 
-      <section class="patient-panel app-section" data-view="stats" aria-label="Patientenauswahl">
-        <label class="field-label" for="patientName">Patient</label>
-        <div class="patient-row">
-          <input id="patientName" type="text" value="Demo Patient" list="patientSuggestions" autocomplete="off" />
-          <button id="savePatientButton" class="secondary-action compact-action" type="button">Wählen</button>
-        </div>
-        <datalist id="patientSuggestions"></datalist>
-      </section>
-
       <section class="controls-panel app-section" data-view="record" aria-label="Aufnahmesteuerung">
-        <label class="field-label" for="exerciseName">Übung</label>
-        <select id="exerciseName" class="select-input">
-          <option value="Vokal A halten">Vokal A halten</option>
-          <option value="A E I O U">Vokale nacheinander</option>
-          <option
-            value="Pa Ta Ka"
-            data-script="1 Pa Ta Ka | 2 Pa Ta Ka | 3 Pa Ta Ka | 4 Pa Ta Ka | 5 Pa Ta Ka | 6 Pa Ta Ka | 7 Pa Ta Ka | 8 Pa Ta Ka | 9 Pa Ta Ka | 10 Pa Ta Ka"
-          >
-            Pa Ta Ka 10x
-          </option>
-          <option
-            value="Text lesen"
-            data-script="Heute üben wir eine ruhige Stimme. Ich lese langsam, spreche deutlich und achte darauf, dass jeder Satz klar klingt und mein Mund beim Sprechen locker bleibt und die Lippen gut arbeiten."
-          >
-            Text lesen
-          </option>
-          <option value="custom-editor">Gespeicherte Editor-Übung</option>
-        </select>
-        <div id="recordingExerciseShortcuts" class="recording-exercise-shortcuts"></div>
-
-        <button id="recordButton" class="primary-action" type="button">Übung starten</button>
+        <div class="recording-start-card">
+          <label class="field-label" for="exerciseName">Übung</label>
+          <select id="exerciseName" class="select-input">
+            <option value="Vokal A halten">Vokal A halten</option>
+            <option value="A E I O U">Vokale nacheinander</option>
+            <option
+              value="Pa Ta Ka"
+              data-script="1 Pa Ta Ka | 2 Pa Ta Ka | 3 Pa Ta Ka | 4 Pa Ta Ka | 5 Pa Ta Ka | 6 Pa Ta Ka | 7 Pa Ta Ka | 8 Pa Ta Ka | 9 Pa Ta Ka | 10 Pa Ta Ka"
+            >
+              Pa Ta Ka 10x
+            </option>
+            <option
+              value="Text lesen"
+              data-script="Heute üben wir eine ruhige Stimme. Ich lese langsam, spreche deutlich und achte darauf, dass jeder Satz klar klingt und mein Mund beim Sprechen locker bleibt und die Lippen gut arbeiten."
+            >
+              Text lesen
+            </option>
+            <option value="custom-editor">Gespeicherte Editor-Übung</option>
+          </select>
+          <div id="recordingExerciseShortcuts" class="recording-exercise-shortcuts"></div>
+          <button id="recordButton" class="primary-action recording-start-action" type="button">Übung starten</button>
+          <button id="previewExerciseButton" class="secondary-action preview-exercise-action" type="button">Vorführung</button>
+        </div>
 
         <div class="meters">
           <div>
@@ -134,10 +129,22 @@
           </div>
         </div>
 
-        <label class="field-label range-label" for="sensitivitySlider">
-          Empfindlichkeit <strong id="sensitivityValue">50</strong>
-        </label>
-        <input id="sensitivitySlider" class="range-input" type="range" min="1" max="200" step="1" value="30" />
+        <div class="recording-tuning-grid" aria-label="Übungseinstellungen">
+          <div class="recording-tuning-card">
+            <label class="field-label range-label karaoke-speed-label" for="recordingKaraokeSpeed">
+              Karaoke-Tempo <strong id="recordingKaraokeSpeedValue">Normal</strong>
+            </label>
+            <input id="recordingKaraokeSpeed" class="range-input" type="range" min="1" max="7" step="1" value="3" />
+            <p class="range-help">Regelt, wie schnell Wörter, Silben oder Sätze weiterlaufen.</p>
+          </div>
+          <div class="recording-tuning-card">
+            <label class="field-label range-label sensitivity-label" for="sensitivitySlider">
+              Empfindlichkeit <strong id="sensitivityValue">50</strong>
+            </label>
+            <input id="sensitivitySlider" class="range-input" type="range" min="1" max="200" step="1" value="30" />
+            <p class="range-help sensitivity-help">Niedrig = ruhiger bei Grundrauschen. Hoch = stärkerer Ausschlag bei leiser Stimme.</p>
+          </div>
+        </div>
         <button id="calibrationButton" class="secondary-action calibration-action" type="button">Kalibrieren</button>
 
         <p id="message" class="message" role="status">
@@ -149,11 +156,30 @@
       <section id="playbackEmptyState" class="playback-empty app-section is-hidden" data-view="playback" aria-label="Keine Aufnahme geladen">
         <p class="eyebrow">Playback</p>
         <h2>Noch keine Aufnahme</h2>
-        <p>Starte eine Übung oder öffne eine gespeicherte Aufnahme aus dem Verlauf.</p>
+        <p>Wähle unten eine gespeicherte Übung oder Aufzeichnung.</p>
         <div class="button-row">
           <button id="emptyRecordButton" class="secondary-action" type="button">Zur Aufnahme</button>
           <button id="emptyHistoryButton" class="quiet-action" type="button">Zum Verlauf</button>
         </div>
+      </section>
+
+      <section class="playback-library app-section" data-view="playback" aria-label="Player-Auswahl">
+        <p class="eyebrow">Player-Auswahl</p>
+        <label class="field-label" for="playbackExerciseSelect">Übung</label>
+        <div class="playback-library-row">
+          <select id="playbackExerciseSelect" class="select-input compact-select" hidden>
+            <option value="">Alle Übungen</option>
+          </select>
+          <button id="playbackOpenExerciseButton" class="secondary-action compact-action" type="button">Laden</button>
+        </div>
+        <label class="field-label" for="playbackRecordingSelect">Aufzeichnung</label>
+        <div class="playback-library-row">
+          <select id="playbackRecordingSelect" class="select-input compact-select">
+            <option value="">Keine gespeicherte Aufnahme</option>
+          </select>
+          <button id="playbackOpenRecordingButton" class="secondary-action compact-action" type="button">Öffnen</button>
+        </div>
+        <div id="playbackSavedRecordingsList" class="playback-recording-list"></div>
       </section>
 
       <section id="resultPanel" class="result-panel app-section is-hidden" data-view="playback" aria-label="Gespeicherte Aufnahme">
@@ -171,7 +197,15 @@
         </div>
 
         <div class="custom-playback-controls" aria-label="Playback-Steuerung">
-          <button id="playPauseButton" class="secondary-action compact-action" type="button">Play</button>
+          <button
+            id="playPauseButton"
+            class="secondary-action compact-action icon-toggle-button"
+            type="button"
+            data-state="play"
+            aria-label="Abspielen"
+          >
+            <span class="playback-icon" aria-hidden="true"></span>
+          </button>
           <span id="playbackTimeLabel">00:00</span>
           <input id="playbackSeek" class="range-input playback-seek" type="range" min="0" max="1000" value="0" />
         </div>
@@ -184,7 +218,7 @@
         ></canvas>
 
         <label class="field-label range-label playback-volume-label" for="playbackVolumeSlider">
-          Playback-Lautstärke <strong id="playbackVolumeValue">200%</strong>
+          Playback-Verstärkung <strong id="playbackVolumeValue">200%</strong>
         </label>
         <input
           id="playbackVolumeSlider"
@@ -196,7 +230,7 @@
           value="200"
         />
 
-        <dl class="stats-grid">
+        <dl class="stats-grid is-hidden">
           <div>
             <dt>Durchschnitt</dt>
             <dd id="averageVolume">0</dd>
@@ -211,15 +245,11 @@
           </div>
         </dl>
 
-        <div class="button-row">
+        <div class="button-row is-hidden">
           <button id="downloadAudioButton" class="secondary-action" type="button">Video laden</button>
           <button id="downloadJsonButton" class="secondary-action" type="button">JSON laden</button>
         </div>
 
-        <div class="button-row">
-          <button id="retakeButton" class="quiet-action" type="button">Neu aufnehmen</button>
-          <button id="deleteButton" class="danger-action" type="button">Aufnahme löschen</button>
-        </div>
       </section>
 
       <section class="editor-panel app-section" data-view="editor" aria-label="Übungseditor">
@@ -231,69 +261,93 @@
         </div>
 
         <div id="exerciseEditor" class="exercise-editor" aria-label="Übung bearbeiten">
-          <label class="field-label" for="editorSavedExercises">Gespeicherte Übung</label>
-          <div class="editor-load-row">
-            <select id="editorSavedExercises" class="select-input compact-select">
-              <option value="">Neue Übung erstellen</option>
-            </select>
-            <button id="newEditorExerciseButton" class="quiet-action compact-action" type="button">Neu</button>
-          </div>
-
-          <label class="field-label" for="editorExerciseName">Name der Übung</label>
-          <input id="editorExerciseName" type="text" value="Neue Silbenübung" inputmode="text" />
-
-          <label class="field-label" for="editorMode">Funktionsart</label>
-          <select id="editorMode" class="select-input compact-select">
-            <option value="syllables" selected>Silben / Laute</option>
-            <option value="sentences">Kurze Sätze</option>
-            <option value="text">Karaoke-Text</option>
-            <option value="vowels">Vokale</option>
-          </select>
-
-          <label class="field-label" for="editorContent">Text, Vokal oder Laute</label>
-          <textarea id="editorContent" rows="4">Pa Ta Ka</textarea>
-          <div id="editorSentenceBuilder" class="editor-sentence-builder is-hidden">
-            <p class="editor-sentence-rule">Ein oder mehrere kurze Sätze. Jede Länge ist erlaubt.</p>
-            <label class="field-label" for="editorSentenceInput">Kurzer Satz</label>
-            <div class="editor-sentence-row">
-              <input
-                id="editorSentenceInput"
-                type="text"
-                placeholder="Satz eingeben"
-                inputmode="text"
-              />
-              <button id="addEditorSentenceButton" class="secondary-action compact-action" type="button">+</button>
-            </div>
-            <div id="editorSentenceList" class="editor-sentence-list"></div>
-          </div>
-
-          <label class="field-label" for="editorVoiceInstruction">Voice-Begleitung</label>
-          <textarea id="editorVoiceInstruction" rows="3">Bitte sprechen Sie die eingeblendete Übung ruhig und deutlich nach.</textarea>
-          <div class="button-row editor-actions">
-            <button id="suggestVoiceButton" class="secondary-action" type="button">KI-Vorschlag</button>
-            <button id="generateVoiceAudioButton" class="secondary-action" type="button">Audio erstellen</button>
-          </div>
-          <audio id="editorVoicePreview" class="editor-audio-preview" controls></audio>
-          <p id="editorVoiceState" class="cloud-state">Voice-Audio optional.</p>
-
-          <div class="editor-grid">
-            <label class="editor-check" for="editorUseRepeats">
-              <input id="editorUseRepeats" type="checkbox" checked />
-              <span>Wiederholungen nutzen</span>
+          <div class="editor-switch">
+            <button id="newEditorExerciseButton" class="editor-switch-button is-active" type="button">Neue Übung</button>
+            <label class="editor-load-control" for="editorSavedExercises">
+              <span>Gespeicherte Übung</span>
+              <select id="editorSavedExercises" class="select-input compact-select">
+                <option value="">Gespeicherte Übung auswählen</option>
+              </select>
             </label>
-            <div id="repeatControl">
-              <label class="field-label" for="editorRepeats">Anzahl</label>
-              <input id="editorRepeats" type="number" min="1" max="30" value="10" inputmode="numeric" />
+          </div>
+          <div id="editorSavedExerciseList" class="editor-saved-exercise-list" aria-label="Gespeicherte Übungen löschen"></div>
+          <p id="editorModeState" class="editor-mode-state">Neue Übung</p>
+
+          <div class="editor-section editor-section-basic">
+            <label class="field-label" for="editorExerciseName">Name der Übung</label>
+            <input id="editorExerciseName" type="text" value="Neue Silbenübung" inputmode="text" />
+
+            <div class="editor-field-stack">
+              <label class="field-label" for="editorMode">Funktionsart</label>
+              <select id="editorMode" class="select-input compact-select">
+                <option value="syllables" selected>Silben / Laute</option>
+                <option value="sentences">Kurze Sätze</option>
+                <option value="text">Karaoke-Text</option>
+                <option value="vowels">Vokale</option>
+                <option value="dialog">Dialog</option>
+              </select>
             </div>
           </div>
 
-          <label class="field-label range-label" for="editorSpeed">
-            Geschwindigkeit <strong id="editorSpeedValue">Normal</strong>
-          </label>
-          <input id="editorSpeed" class="range-input" type="range" min="1" max="5" value="3" />
+          <div class="editor-section editor-section-content">
+            <label class="field-label" for="editorContent">Text, Vokal oder Laute</label>
+            <textarea id="editorContent" rows="4">Pa Ta Ka</textarea>
+            <div id="editorSentenceBuilder" class="editor-sentence-builder is-hidden">
+              <label class="field-label" for="editorSentenceInput">Kurzer Satz</label>
+              <div class="editor-sentence-row">
+                <input
+                  id="editorSentenceInput"
+                  type="text"
+                  placeholder="Satz eingeben"
+                  inputmode="text"
+                />
+                <button id="addEditorSentenceButton" class="secondary-action compact-action" type="button">+</button>
+              </div>
+              <div id="editorSentenceList" class="editor-sentence-list"></div>
+            </div>
+            <div id="editorDialogBuilder" class="editor-dialog-builder is-hidden">
+              <div id="editorDialogList" class="editor-dialog-list"></div>
+              <button id="addEditorDialogTurnButton" class="secondary-action editor-dialog-add" type="button">
+                Dialogzeile hinzufügen
+              </button>
+            </div>
 
-          <p id="editorPreview" class="editor-preview">1 Pa Ta Ka</p>
-          <button id="saveEditorExerciseButton" class="primary-action" type="button">Speichern</button>
+            <p id="editorPreview" class="editor-preview">1 Pa Ta Ka</p>
+          </div>
+
+          <div class="editor-section editor-section-options">
+            <div class="editor-grid">
+              <label class="editor-check" for="editorUseRepeats">
+                <input id="editorUseRepeats" type="checkbox" checked />
+                <span>Wiederholungen nutzen</span>
+              </label>
+              <div id="repeatControl">
+                <label class="field-label" for="editorRepeats">Anzahl</label>
+                <input id="editorRepeats" type="number" min="1" max="30" value="10" inputmode="numeric" />
+              </div>
+            </div>
+
+            <label class="field-label range-label" for="editorSpeed">
+              Geschwindigkeit <strong id="editorSpeedValue">Normal</strong>
+            </label>
+            <input id="editorSpeed" class="range-input" type="range" min="1" max="7" value="3" />
+            <button id="testEditorKaraokeButton" class="secondary-action editor-karaoke-test" type="button">
+              Karaoke-Tempo testen
+            </button>
+          </div>
+
+          <div class="editor-section editor-section-voice">
+            <label class="field-label" for="editorVoiceInstruction">Voice-Begleitung</label>
+            <textarea id="editorVoiceInstruction" rows="3">Bitte sprechen Sie die eingeblendete Übung ruhig und deutlich nach.</textarea>
+            <div class="button-row editor-actions">
+              <button id="suggestVoiceButton" class="secondary-action" type="button">KI-Vorschlag</button>
+              <button id="generateVoiceAudioButton" class="secondary-action" type="button">Audio erstellen</button>
+            </div>
+            <audio id="editorVoicePreview" class="editor-audio-preview" controls></audio>
+            <p id="editorVoiceState" class="cloud-state">Voice-Audio optional.</p>
+          </div>
+
+          <button id="saveEditorExerciseButton" class="primary-action editor-save-action" type="button">Speichern</button>
         </div>
       </section>
 
@@ -339,6 +393,80 @@
             value="0"
             disabled
           />
+          <canvas
+            id="statisticsWaveform"
+            class="statistics-waveform"
+            aria-label="Analyse-Wellenform mit markiertem Bereich"
+          ></canvas>
+          <button
+            id="statisticsWaveformResizeHandle"
+            class="statistics-waveform-resize"
+            type="button"
+            aria-label="Höhe der Analyse-Wellenform ziehen"
+          ></button>
+          <div id="statisticsRangeControl" class="analysis-range-control">
+            <div class="analysis-range-header">
+              <span>Start <strong id="statisticsStartValue">00:00</strong></span>
+              <span>Ende <strong id="statisticsEndValue">00:00</strong></span>
+            </div>
+            <div class="analysis-range-track" aria-label="Analysebereich festlegen">
+              <span class="analysis-range-fill" aria-hidden="true"></span>
+              <input id="statisticsStartSlider" class="analysis-range-input analysis-range-start" type="range" min="0" max="1000" value="0" disabled />
+              <input id="statisticsEndSlider" class="analysis-range-input analysis-range-end" type="range" min="0" max="1000" value="1000" disabled />
+            </div>
+          </div>
+          <div class="analysis-play-row">
+            <button
+              id="statisticsPlayRangeButton"
+              class="secondary-action compact-action icon-text-button"
+              type="button"
+              data-state="play"
+              disabled
+              aria-label="Bereich abspielen"
+            >
+              <span class="playback-icon" aria-hidden="true"></span>
+              <span>Bereich</span>
+            </button>
+            <button id="statisticsZoomRangeButton" class="secondary-action compact-action" type="button" disabled>
+              Zoom
+            </button>
+            <span id="statisticsRangeValue" class="analysis-range-value">00:00 - 00:00</span>
+          </div>
+          <div class="analysis-mini-grid">
+            <div>
+              <span>Lautstärkepegel</span>
+              <canvas
+                id="statisticsVolumeTimeline"
+                class="statistics-mini-canvas"
+                aria-label="Lautstärkepegel-Verlauf"
+              ></canvas>
+            </div>
+            <div>
+              <span>Frequenzband</span>
+              <canvas
+                id="statisticsFrequencyTimeline"
+                class="statistics-mini-canvas"
+                aria-label="Frequenzband-Verlauf"
+              ></canvas>
+            </div>
+          </div>
+          <details class="analysis-calibration-panel">
+            <summary>Analyse-Kalibrierung</summary>
+            <label class="field-label range-label" for="statisticsAmplitudeGain">
+              Amplitude <strong id="statisticsAmplitudeGainValue">100%</strong>
+            </label>
+            <input id="statisticsAmplitudeGain" class="range-input" type="range" min="5" max="260" step="5" value="100" />
+
+            <label class="field-label range-label" for="statisticsVolumeGain">
+              Lautstärkehub <strong id="statisticsVolumeGainValue">100%</strong>
+            </label>
+            <input id="statisticsVolumeGain" class="range-input" type="range" min="30" max="180" step="5" value="100" />
+
+            <label class="field-label range-label" for="statisticsFrequencyGain">
+              Frequenzhub <strong id="statisticsFrequencyGainValue">100%</strong>
+            </label>
+            <input id="statisticsFrequencyGain" class="range-input" type="range" min="40" max="240" step="5" value="100" />
+          </details>
           <h3 id="audioAnalysisTitle">Keine Aufnahme geöffnet</h3>
           <dl id="audioAnalysisGrid" class="analysis-grid"></dl>
           <p id="audioAnalysisNote" class="message">Öffne eine Aufnahme aus dem Verlauf oder erstelle eine neue Aufnahme.</p>
@@ -355,30 +483,96 @@
           </div>
         </div>
 
-        <div class="settings-group">
-          <p class="eyebrow">ElevenLabs</p>
-          <label class="field-label" for="settingsVoiceId">Sprecher / Voice-ID</label>
+        <div class="settings-group patient-settings-group">
+          <p class="eyebrow">Patient</p>
+          <div class="patient-row">
+            <input id="patientName" type="text" value="Demo Patient" list="patientSuggestions" autocomplete="off" aria-label="Patientenname" />
+            <button id="savePatientButton" class="secondary-action compact-action" type="button">Wählen</button>
+          </div>
+          <datalist id="patientSuggestions"></datalist>
+        </div>
+
+        <details class="settings-group settings-collapsible elevenlabs-settings-group" open>
+          <summary>
+            <span class="eyebrow">ElevenLabs</span>
+            <strong>Stimmen und Audio</strong>
+          </summary>
+          <div class="settings-collapsible-content">
+          <label class="field-label" for="settingsVoiceSelect">Gespeicherte Stimme</label>
+          <select id="settingsVoiceSelect" class="select-input compact-select">
+            <option value="">Standardstimme</option>
+          </select>
+
+          <div class="voice-profile-grid">
+            <div>
+              <label class="field-label" for="settingsVoiceName">Name</label>
+              <input id="settingsVoiceName" type="text" value="Standard" inputmode="text" />
+            </div>
+            <div>
+              <label class="field-label" for="settingsVoiceGender">Typ</label>
+              <select id="settingsVoiceGender" class="select-input compact-select">
+                <option value="female">Weiblich</option>
+                <option value="male">Männlich</option>
+                <option value="neutral">Neutral</option>
+              </select>
+            </div>
+          </div>
+
+          <label class="field-label" for="settingsVoiceId">Voice-ID</label>
           <input id="settingsVoiceId" type="text" value="21m00Tcm4TlvDq8ikWAM" inputmode="text" />
+          <p id="settingsVoiceIdHint" class="range-help">Aktive Voice-ID: 21m00Tcm4TlvDq8ikWAM</p>
+          <div class="voice-profile-actions">
+            <button id="settingsNewVoiceButton" class="quiet-action compact-action" type="button">Neue Stimme</button>
+            <button id="settingsSaveVoiceButton" class="secondary-action compact-action" type="button">Stimme speichern</button>
+            <button id="settingsDeleteVoiceButton" class="quiet-action compact-action" type="button">Löschen</button>
+          </div>
 
           <label class="field-label range-label" for="settingsVoiceStability">
             Stabilität <strong id="settingsVoiceStabilityValue">58%</strong>
           </label>
           <input id="settingsVoiceStability" class="range-input" type="range" min="0" max="100" value="58" />
+          <p class="range-help">Niedrig = lebendiger, aber schwankender. Hoch = ruhiger und gleichmäßiger.</p>
 
           <label class="field-label range-label" for="settingsVoiceSimilarity">
             Ähnlichkeit <strong id="settingsVoiceSimilarityValue">82%</strong>
           </label>
           <input id="settingsVoiceSimilarity" class="range-input" type="range" min="0" max="100" value="82" />
+          <p class="range-help">Höher hält die Stimme näher an der gewählten Voice-ID.</p>
 
           <label class="field-label range-label" for="settingsVoiceStyle">
             Stil <strong id="settingsVoiceStyleValue">12%</strong>
           </label>
           <input id="settingsVoiceStyle" class="range-input" type="range" min="0" max="100" value="12" />
+          <p class="range-help">Höher klingt ausdrucksstärker. Für Übungsanleitungen meist eher niedrig halten.</p>
 
           <label class="editor-check settings-check" for="settingsSpeakerBoost">
             <input id="settingsSpeakerBoost" type="checkbox" checked />
             <span>Speaker Boost</span>
           </label>
+          <p class="range-help">Speaker Boost macht die Stimme präsenter und klarer.</p>
+
+          <label class="field-label" for="settingsVoiceDemoText">Demo-Text</label>
+          <textarea id="settingsVoiceDemoText" rows="3">Das ist ein kurzer Test der LogoSound Stimme. Bitte sprechen Sie ruhig und deutlich.</textarea>
+          <button id="settingsTestVoiceButton" class="secondary-action" type="button">Demo-Stimme testen</button>
+          <audio id="settingsVoicePreview" class="editor-audio-preview" controls></audio>
+          </div>
+        </details>
+
+        <div class="settings-group">
+          <p class="eyebrow">ChatGPT</p>
+          <label class="editor-check settings-check" for="settingsChatGptEnabled">
+            <input id="settingsChatGptEnabled" type="checkbox" />
+            <span>ChatGPT für KI-Vorschläge nutzen</span>
+          </label>
+
+          <label class="field-label" for="settingsChatGptApiKey">OpenAI API-Key</label>
+          <input id="settingsChatGptApiKey" type="password" placeholder="sk-..." autocomplete="off" />
+
+          <label class="field-label" for="settingsChatGptModel">Modell</label>
+          <input id="settingsChatGptModel" type="text" value="gpt-5" inputmode="text" />
+
+          <label class="field-label" for="settingsChatGptPrompt">Prompt für Übungsleiter-Text</label>
+          <textarea id="settingsChatGptPrompt" rows="4">Erstelle eine kurze, freundliche logopädische Voice-Instruktion auf Deutsch. Sprich den Patienten direkt an. Maximal drei kurze Sätze. Keine Markdown-Zeichen.</textarea>
         </div>
 
         <div class="settings-group">
@@ -393,12 +587,54 @@
         <div class="settings-group">
           <p class="eyebrow">Playback</p>
           <label class="field-label range-label" for="settingsPlaybackVolume">
-            Wiedergabe-Lautstärke <strong id="settingsPlaybackVolumeValue">200%</strong>
+            Wiedergabe-Verstärkung <strong id="settingsPlaybackVolumeValue">200%</strong>
           </label>
           <input id="settingsPlaybackVolume" class="range-input" type="range" min="100" max="400" step="25" value="200" />
+          <p class="settings-help">100% ist normal. 200% und mehr verstärken die Wiedergabe zusätzlich.</p>
+          <div class="playback-gain-presets" aria-label="Playback-Verstärkung">
+            <button type="button" data-playback-gain="100">Normal</button>
+            <button type="button" data-playback-gain="200">Lauter</button>
+            <button type="button" data-playback-gain="300">Sehr laut</button>
+          </div>
         </div>
 
         <p id="settingsState" class="cloud-state">Einstellungen lokal gespeichert.</p>
+      </section>
+
+      <section class="help-panel app-section" data-view="help" aria-label="Hilfe und Erklärtexte">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Hilfe</p>
+            <h2>LogoSound kurz erklärt</h2>
+          </div>
+        </div>
+
+        <div class="help-list">
+          <article class="help-card">
+            <h3>Aufnahme</h3>
+            <p>Wähle eine Übung und starte die Aufnahme. Kamera und Mikrofon laufen erst, wenn die Übung beginnt. Die Amplitude zeigt Sprache orange und Pausen grün.</p>
+          </article>
+          <article class="help-card">
+            <h3>Karaoke</h3>
+            <p>Der aktuelle Text wird groß eingeblendet. Vorherige und nächste Wörter bleiben sichtbar, damit der Patient flüssiger lesen kann.</p>
+          </article>
+          <article class="help-card">
+            <h3>Editor</h3>
+            <p>Erstelle eigene Übungen mit Silben, Vokalen, kurzen Sätzen oder Karaoke-Text. Tempo, Wiederholungen und Voice-Begleitung werden mit der Übung gespeichert.</p>
+          </article>
+          <article class="help-card">
+            <h3>Playback</h3>
+            <p>Spiele die Aufnahme ab und verfolge die Position in der Wellenform. Der Play/Pause-Button schaltet zwischen Abspielen und Pausieren um.</p>
+          </article>
+          <article class="help-card">
+            <h3>Statistik</h3>
+            <p>Wähle eine Aufnahme, markiere einen Bereich und zoome hinein. Die Analyseposition folgt der Wiedergabe und aktualisiert Lautstärke, Frequenz und Impulse live.</p>
+          </article>
+          <article class="help-card">
+            <h3>Setup</h3>
+            <p>Lege Patient, ElevenLabs, ChatGPT, Empfindlichkeit und Wiedergabe-Lautstärke fest. Patient und Einstellungen gelten für die nächsten Aufnahmen.</p>
+          </article>
+        </div>
       </section>
 
       <nav class="bottom-nav" aria-label="App-Navigation">
@@ -411,7 +647,7 @@
       </nav>
     </main>
 
-    <script type="module" src="app.js?v=20260801-amp54"></script>
+    <script type="module" src="app.js?v=20260801-amp142"></script>
   </body>
 </html>
 

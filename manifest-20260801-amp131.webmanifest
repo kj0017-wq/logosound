@@ -1,0 +1,26 @@
+{
+  "id": "https://logosound-19293.web.app/",
+  "name": "LogoSound Sprachübung",
+  "short_name": "LogoSound",
+  "description": "Mobile Web-App für logopädische Sprachübungen mit Videoaufnahme, Karaoke-Text und Wellenform.",
+  "start_url": "https://logosound-19293.web.app/?app=homescreen-20260801-amp131",
+  "scope": "https://logosound-19293.web.app/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef3f6",
+  "theme_color": "#0f8b8d",
+  "icons": [
+    {
+      "src": "https://logosound-19293.web.app/icons/pwa-logo-192-20260801.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://logosound-19293.web.app/icons/pwa-logo-512-20260801.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

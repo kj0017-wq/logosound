@@ -345,6 +345,30 @@ function slugify(value) {
     .slice(0, 80) || "neue-uebung";
 }
 
+function getStoredVoiceDownloadUrl(path) {
+  const cleanPath = String(path || "").trim();
+  return cleanPath ? `/api/voice?path=${encodeURIComponent(cleanPath)}` : "";
+}
+
+function getGlobalVoiceAudioUrl(url = "", path = "") {
+  const storedPath = String(path || "").trim();
+  if (storedPath) return getStoredVoiceDownloadUrl(storedPath);
+
+  const audioUrl = String(url || "").trim();
+  if (!audioUrl) return "";
+  if (/^(blob:|data:)/i.test(audioUrl)) return audioUrl;
+
+  try {
+    const parsedUrl = new URL(audioUrl, "https://logosound-19293.web.app");
+    if (parsedUrl.pathname === "/api/voice") {
+      const voicePath = parsedUrl.searchParams.get("path") || "";
+      return voicePath ? getStoredVoiceDownloadUrl(voicePath) : audioUrl;
+    }
+  } catch (error) {}
+
+  return audioUrl;
+}
+
 function clampVoiceSetting(value, fallback) {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return fallback;
@@ -443,7 +467,7 @@ function normalizeEditorExercise(exercise) {
           .map((turn) => ({
             role: String(turn?.role || "system") === "patient" ? "patient" : "system",
             text: String(turn?.text || "").trim(),
-            audioUrl: String(turn?.audioUrl || ""),
+            audioUrl: getGlobalVoiceAudioUrl(turn?.audioUrl, turn?.audioPath),
             audioPath: String(turn?.audioPath || ""),
             audioVoiceId: String(turn?.audioVoiceId || ""),
             audioVoiceSettings: turn?.audioVoiceSettings || null,
@@ -456,8 +480,22 @@ function normalizeEditorExercise(exercise) {
     repeats: Math.max(1, Number(exercise.repeats || 1)),
     speed: Math.max(1, Math.min(7, Number(exercise.speed || 3))),
     voiceInstruction: String(exercise.voiceInstruction || ""),
-    voiceAudioUrl: String(exercise.voiceAudioUrl || ""),
+    voiceAudioUrl: getGlobalVoiceAudioUrl(exercise.voiceAudioUrl, exercise.voiceAudioPath),
     voiceAudioPath: String(exercise.voiceAudioPath || ""),
     voiceAudioDataUrl: String(exercise.voiceAudioDataUrl || ""),
+    demoAudioUrl: getGlobalVoiceAudioUrl(exercise.demoAudioUrl, exercise.demoAudioPath),
+    demoAudioPath: String(exercise.demoAudioPath || ""),
+    demoAudioSegments: Array.isArray(exercise.demoAudioSegments)
+      ? exercise.demoAudioSegments.map((segment, index) => ({
+          index: Number.isFinite(Number(segment?.index)) ? Number(segment.index) : index,
+          url: getGlobalVoiceAudioUrl(segment?.url, segment?.path),
+          path: String(segment?.path || ""),
+          voiceId: String(segment?.voiceId || ""),
+          voiceSettings: segment?.voiceSettings || null,
+          textHash: String(segment?.textHash || ""),
+          speed: Number(segment?.speed || 0),
+          updatedAt: String(segment?.updatedAt || ""),
+        }))
+      : [],
   };
 }

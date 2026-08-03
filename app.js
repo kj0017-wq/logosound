@@ -484,6 +484,31 @@ function resolveAppUrl(url) {
   return `${API_ORIGIN || window.location.origin}${url.startsWith("/") ? url : `/${url}`}`;
 }
 
+function getStoredVoiceDownloadUrl(path) {
+  const cleanPath = String(path || "").trim();
+  if (!cleanPath) return "";
+  return `/api/voice?path=${encodeURIComponent(cleanPath)}`;
+}
+
+function getGlobalVoiceAudioUrl(url = "", path = "") {
+  const storedPath = String(path || "").trim();
+  if (storedPath) return getStoredVoiceDownloadUrl(storedPath);
+
+  const audioUrl = String(url || "").trim();
+  if (!audioUrl) return "";
+  if (/^(blob:|data:)/i.test(audioUrl)) return audioUrl;
+
+  try {
+    const parsedUrl = new URL(audioUrl, window.location.origin);
+    if (parsedUrl.pathname === "/api/voice") {
+      const voicePath = parsedUrl.searchParams.get("path") || "";
+      return voicePath ? getStoredVoiceDownloadUrl(voicePath) : audioUrl;
+    }
+  } catch (error) {}
+
+  return audioUrl;
+}
+
 function positionAnalysisCalibrationPanel() {
   if (statisticsRangeControl && analysisMiniGrid) {
     analysisMiniGrid.before(statisticsRangeControl);
@@ -1052,7 +1077,7 @@ async function createStoredVoiceAudio(text, exerciseLabel) {
   const payload = await response.json();
   if (!payload.downloadUrl) throw new Error("Vorführung-Audio ohne URL.");
   return {
-    url: resolveAppUrl(payload.downloadUrl),
+    url: getGlobalVoiceAudioUrl(payload.downloadUrl, payload.path),
     path: payload.path || "",
     voiceId: requestSettings.voiceId,
     voiceSettings: requestSettings.voiceSettings,
@@ -1105,7 +1130,9 @@ function getExercisePreviewText() {
 
 async function getExercisePreviewAudio(text) {
   const activeExercise = getActiveRecordingExercise();
-  if (isStoredDemoAudioCurrent(activeExercise, text)) return activeExercise.demoAudioUrl;
+  if (isStoredDemoAudioCurrent(activeExercise, text)) {
+    return getGlobalVoiceAudioUrl(activeExercise.demoAudioUrl, activeExercise.demoAudioPath);
+  }
 
   const storedAudio = await createStoredVoiceAudio(text, `${getExerciseLabel()} Vorführung`);
   if (activeExercise?.name) {
@@ -1122,16 +1149,38 @@ async function getExercisePreviewAudioSegments(text) {
 
   const chunks = splitVoicePreviewText(text);
 
-  if (isStoredDemoAudioCurrent(activeExercise, text) && chunks.length <= 1) return [activeExercise.demoAudioUrl];
+  if (isStoredDemoAudioCurrent(activeExercise, text) && chunks.length <= 1) {
+    return [getGlobalVoiceAudioUrl(activeExercise.demoAudioUrl, activeExercise.demoAudioPath)];
+  }
   if (chunks.length <= 1) return [await getExercisePreviewAudio(text)];
 
+  if (isStoredDemoAudioSegmentsCurrent(activeExercise, text, chunks)) {
+    return activeExercise.demoAudioSegments.map((segment) =>
+      getGlobalVoiceAudioUrl(segment.url, segment.path),
+    );
+  }
+
   const urls = [];
+  const segments = [];
   for (let index = 0; index < chunks.length; index += 1) {
     if (!isPreviewingExercise) break;
     previewExerciseButton.textContent = `Vorführung lädt ${index + 1}/${chunks.length}`;
-    const audioUrl = await createTemporaryVoiceAudio(chunks[index]);
-    if (!audioUrl) throw new Error(`Vorführung-Teil ${index + 1} konnte nicht erzeugt werden.`);
-    urls.push(audioUrl);
+    const storedAudio = await createStoredVoiceAudio(chunks[index], `${getExerciseLabel()} Vorführung ${index + 1}`);
+    if (!storedAudio?.url) throw new Error(`Vorführung-Teil ${index + 1} konnte nicht erzeugt werden.`);
+    segments.push({
+      index,
+      url: storedAudio.url,
+      path: storedAudio.path,
+      voiceId: storedAudio.voiceId,
+      voiceSettings: storedAudio.voiceSettings,
+      textHash: storedAudio.textHash,
+      speed: storedAudio.speed,
+      updatedAt: new Date().toISOString(),
+    });
+    urls.push(storedAudio.url);
+  }
+  if (activeExercise?.name && segments.length === chunks.length) {
+    await saveDemoAudioSegmentsForActiveExercise(segments).catch(() => {});
   }
   return urls;
 }
@@ -1155,7 +1204,7 @@ async function getDialogPreviewAudioSegments(exercise) {
     systemIndex += 1;
     if (isDialogTurnAudioCurrent(turn)) {
       updatedTurns.push(turn);
-      urls.push(turn.audioUrl);
+      urls.push(getGlobalVoiceAudioUrl(turn.audioUrl, turn.audioPath));
       continue;
     }
 
@@ -1191,13 +1240,31 @@ async function getDialogPreviewAudioSegments(exercise) {
 }
 
 function isStoredDemoAudioCurrent(exercise, text) {
-  if (!exercise?.demoAudioUrl) return false;
+  if (!exercise?.demoAudioUrl && !exercise?.demoAudioPath) return false;
   const requestSettings = getElevenLabsRequestSettings();
   return (
     exercise.demoVoiceId === requestSettings.voiceId &&
     exercise.demoTextHash === hashText(text) &&
     Number(exercise.demoSpeed || 0) === clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3)
   );
+}
+
+function isStoredDemoAudioSegmentsCurrent(exercise, text, chunks = splitVoicePreviewText(text)) {
+  if (!exercise?.demoAudioSegments?.length) return false;
+  const requestSettings = getElevenLabsRequestSettings();
+  const speed = clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3);
+  if (exercise.demoAudioSegments.length !== chunks.length) return false;
+
+  return chunks.every((chunk, index) => {
+    const segment = exercise.demoAudioSegments[index];
+    return (
+      (segment?.url || segment?.path) &&
+      segment.voiceId === requestSettings.voiceId &&
+      JSON.stringify(segment.voiceSettings || {}) === JSON.stringify(requestSettings.voiceSettings || {}) &&
+      segment.textHash === hashText(chunk) &&
+      Number(segment.speed || 0) === speed
+    );
+  });
 }
 
 function hashText(text) {
@@ -1258,6 +1325,34 @@ async function saveDemoAudioForActiveExercise(storedAudio) {
     demoSpeed: storedAudio.speed,
     demoCreatedAt: new Date().toISOString(),
   });
+  savedEditorExercise = updatedExercise;
+  savedEditorExercises = upsertEditorExercise(savedEditorExercises, updatedExercise);
+  persistEditorExercises();
+  renderRecordingExerciseOptions(updatedExercise.name);
+  renderSavedEditorExercises();
+  await saveCloudEditorExercise(updatedExercise).catch(() => {});
+}
+
+async function saveDemoAudioSegmentsForActiveExercise(segments) {
+  const activeExercise = getActiveRecordingExercise();
+  if (!activeExercise?.name || !Array.isArray(segments) || !segments.length) return;
+
+  const normalizedSegments = segments.map((segment, index) => ({
+    index,
+    url: getGlobalVoiceAudioUrl(segment.url, segment.path),
+    path: String(segment.path || ""),
+    voiceId: String(segment.voiceId || ""),
+    voiceSettings: segment.voiceSettings || null,
+    textHash: String(segment.textHash || ""),
+    speed: Number(segment.speed || 0),
+    updatedAt: segment.updatedAt || new Date().toISOString(),
+  }));
+  const updatedExercise = hydrateEditorExercise({
+    ...activeExercise,
+    demoAudioSegments: normalizedSegments,
+    demoSegmentsCreatedAt: new Date().toISOString(),
+  });
+
   savedEditorExercise = updatedExercise;
   savedEditorExercises = upsertEditorExercise(savedEditorExercises, updatedExercise);
   persistEditorExercises();
@@ -2314,8 +2409,8 @@ function hydrateDialogTurnsWithAudio(turns, baseExercise) {
 
     return {
       ...normalizedTurn,
-      audioUrl: matchingPrevious.audioUrl || "",
-      audioPath: matchingPrevious.audioPath || "",
+      audioUrl: getGlobalVoiceAudioUrl(matchingPrevious.audioUrl, matchingPrevious.audioPath),
+      audioPath: String(matchingPrevious.audioPath || ""),
       audioVoiceId: matchingPrevious.audioVoiceId || "",
       audioVoiceSettings: matchingPrevious.audioVoiceSettings || null,
       audioTextHash: matchingPrevious.audioTextHash || "",
@@ -2326,7 +2421,7 @@ function hydrateDialogTurnsWithAudio(turns, baseExercise) {
 }
 
 function isDialogTurnAudioCurrent(turn, textOverride = "") {
-  if (!turn?.audioUrl) return false;
+  if (!turn?.audioUrl && !turn?.audioPath) return false;
   const requestSettings = getElevenLabsRequestSettings();
   return (
     turn.audioVoiceId === requestSettings.voiceId &&
@@ -2361,11 +2456,12 @@ function parseDialogLine(line, index = 0) {
 
 function normalizeDialogTurn(turn = {}) {
   const role = isPatientDialogRole(turn.role) ? "patient" : "system";
+  const audioPath = String(turn.audioPath || "");
   return {
     role,
     text: String(turn.text || turn.label || "").trim(),
-    audioUrl: String(turn.audioUrl || ""),
-    audioPath: String(turn.audioPath || ""),
+    audioUrl: getGlobalVoiceAudioUrl(turn.audioUrl, audioPath),
+    audioPath,
     audioVoiceId: String(turn.audioVoiceId || ""),
     audioVoiceSettings: turn.audioVoiceSettings || null,
     audioTextHash: String(turn.audioTextHash || ""),
@@ -2413,8 +2509,8 @@ function buildDialogTimeline(turns, secondsPerTurn = SENTENCE_MAX_SECONDS) {
     text: turn.text,
     role: turn.role,
     roleLabel: getDialogSpeakerLabel(turn.role),
-    audioUrl: turn.audioUrl || "",
-    audioPath: turn.audioPath || "",
+    audioUrl: getGlobalVoiceAudioUrl(turn.audioUrl, turn.audioPath),
+    audioPath: String(turn.audioPath || ""),
     audioVoiceId: turn.audioVoiceId || "",
     audioTextHash: turn.audioTextHash || "",
     isPause: false,
@@ -3027,6 +3123,16 @@ function hydrateEditorExercise(exercise) {
     contentLabel,
     sentences,
     dialogTurns,
+    voiceAudioUrl: getGlobalVoiceAudioUrl(exercise.voiceAudioUrl, exercise.voiceAudioPath),
+    demoAudioUrl: getGlobalVoiceAudioUrl(exercise.demoAudioUrl, exercise.demoAudioPath),
+    demoAudioSegments: Array.isArray(exercise.demoAudioSegments)
+      ? exercise.demoAudioSegments.map((segment, index) => ({
+          ...segment,
+          index: Number.isFinite(Number(segment?.index)) ? Number(segment.index) : index,
+          url: getGlobalVoiceAudioUrl(segment?.url, segment?.path),
+          path: String(segment?.path || ""),
+        }))
+      : [],
     repeats,
     script,
   };
@@ -3078,15 +3184,25 @@ function buildEditorExerciseFromForm() {
     sentences,
     dialogTurns,
     voiceInstruction,
-    voiceAudioUrl: editorVoiceAudioUrl,
+    voiceAudioUrl: getGlobalVoiceAudioUrl(editorVoiceAudioUrl, editorVoiceAudioPath),
     voiceAudioPath: editorVoiceAudioPath,
     voiceAudioDataUrl: editorVoiceAudioDataUrl,
     voiceAudioVoiceId: editorVoiceAudioVoiceId,
     voiceAudioVoiceSettings: editorVoiceAudioVoiceSettings,
     voiceAudioTextHash: editorVoiceAudioTextHash,
     voiceAudioUpdatedAt: editorVoiceAudioUpdatedAt,
-    demoAudioUrl: savedEditorExercise?.name === name ? savedEditorExercise.demoAudioUrl || "" : "",
+    demoAudioUrl: savedEditorExercise?.name === name
+      ? getGlobalVoiceAudioUrl(savedEditorExercise.demoAudioUrl, savedEditorExercise.demoAudioPath)
+      : "",
     demoAudioPath: savedEditorExercise?.name === name ? savedEditorExercise.demoAudioPath || "" : "",
+    demoAudioSegments: savedEditorExercise?.name === name
+      ? (savedEditorExercise.demoAudioSegments || []).map((segment, index) => ({
+          ...segment,
+          index: Number.isFinite(Number(segment?.index)) ? Number(segment.index) : index,
+          url: getGlobalVoiceAudioUrl(segment?.url, segment?.path),
+          path: String(segment?.path || ""),
+        }))
+      : [],
     demoVoiceId: savedEditorExercise?.name === name ? savedEditorExercise.demoVoiceId || "" : "",
     demoVoiceSettings: savedEditorExercise?.name === name ? savedEditorExercise.demoVoiceSettings || null : null,
     demoTextHash: savedEditorExercise?.name === name ? savedEditorExercise.demoTextHash || "" : "",
@@ -3240,13 +3356,13 @@ async function generateVoiceAudio() {
       throw new Error("Audio gespeichert, aber URL fehlt.");
     }
     editorVoiceAudioDataUrl = "";
-    editorVoiceAudioUrl = resolveAppUrl(cloudVoice.downloadUrl);
+    editorVoiceAudioUrl = getGlobalVoiceAudioUrl(cloudVoice.downloadUrl, cloudVoice.path);
     editorVoiceAudioPath = cloudVoice.path;
     editorVoiceAudioVoiceId = cloudVoice.voiceId || getElevenLabsRequestSettings().voiceId;
     editorVoiceAudioVoiceSettings = cloudVoice.voiceSettings || getElevenLabsRequestSettings().voiceSettings;
     editorVoiceAudioTextHash = cloudVoice.textHash || hashText(text);
     editorVoiceAudioUpdatedAt = new Date().toISOString();
-    editorVoicePreview.src = editorVoiceAudioUrl;
+    editorVoicePreview.src = resolveAppUrl(editorVoiceAudioUrl);
     editorVoiceState.textContent = "ElevenLabs-Audio erstellt und in Firebase gespeichert.";
     saveEditorDraft();
     saveEditorExercise();
@@ -3810,15 +3926,15 @@ function applyEditorExerciseToForm(exercise) {
   editorVoiceInstruction.value =
     exercise.voiceInstruction || getDefaultEditorVoiceInstruction(editorMode.value);
   editorVoiceAudioDataUrl = exercise.voiceAudioDataUrl || "";
-  editorVoiceAudioUrl = exercise.voiceAudioUrl || "";
   editorVoiceAudioPath = exercise.voiceAudioPath || "";
+  editorVoiceAudioUrl = getGlobalVoiceAudioUrl(exercise.voiceAudioUrl, editorVoiceAudioPath);
   editorVoiceAudioVoiceId = exercise.voiceAudioVoiceId || "";
   editorVoiceAudioVoiceSettings = exercise.voiceAudioVoiceSettings || null;
   editorVoiceAudioTextHash = exercise.voiceAudioTextHash || "";
   editorVoiceAudioUpdatedAt = exercise.voiceAudioUpdatedAt || "";
 
   if (editorVoiceAudioUrl || editorVoiceAudioDataUrl) {
-    editorVoicePreview.src = editorVoiceAudioUrl || editorVoiceAudioDataUrl;
+    editorVoicePreview.src = resolveAppUrl(editorVoiceAudioUrl || editorVoiceAudioDataUrl);
     editorVoiceState.textContent = editorVoiceAudioUrl
       ? "Voice-Audio in Firebase gespeichert."
       : "Voice-Audio im Entwurf vorhanden.";
@@ -3969,6 +4085,9 @@ function collectEditorExerciseAudioPaths(exercise) {
   [
     exercise.voiceAudioPath,
     exercise.demoAudioPath,
+    ...(Array.isArray(exercise.demoAudioSegments)
+      ? exercise.demoAudioSegments.map((segment) => segment?.path)
+      : []),
     ...(Array.isArray(exercise.dialogTurns)
       ? exercise.dialogTurns.map((turn) => turn?.audioPath)
       : []),
@@ -4017,15 +4136,15 @@ function loadEditorDraft() {
       editorMode.value = draft.mode || editorMode.value;
       editorContent.value = draft.content || editorContent.value;
       editorVoiceInstruction.value = draft.voiceInstruction || editorVoiceInstruction.value;
-      editorVoiceAudioUrl = draft.voiceAudioUrl || "";
       editorVoiceAudioPath = draft.voiceAudioPath || "";
+      editorVoiceAudioUrl = getGlobalVoiceAudioUrl(draft.voiceAudioUrl, editorVoiceAudioPath);
       editorVoiceAudioDataUrl = draft.voiceAudioDataUrl || "";
       editorVoiceAudioVoiceId = draft.voiceAudioVoiceId || "";
       editorVoiceAudioVoiceSettings = draft.voiceAudioVoiceSettings || null;
       editorVoiceAudioTextHash = draft.voiceAudioTextHash || "";
       editorVoiceAudioUpdatedAt = draft.voiceAudioUpdatedAt || "";
       if (editorVoiceAudioUrl || editorVoiceAudioDataUrl) {
-        editorVoicePreview.src = editorVoiceAudioUrl || editorVoiceAudioDataUrl;
+        editorVoicePreview.src = resolveAppUrl(editorVoiceAudioUrl || editorVoiceAudioDataUrl);
         editorVoiceState.textContent = editorVoiceAudioUrl
           ? "Voice-Audio in Firebase gespeichert."
           : "Voice-Audio im Entwurf vorhanden.";
@@ -7795,4 +7914,5 @@ function transactionDone(transaction) {
     transaction.onabort = () => reject(transaction.error);
   });
 }
+
 

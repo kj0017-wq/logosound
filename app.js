@@ -5858,6 +5858,9 @@ function renderSettingsControls() {
 function renderVoiceProfileSelect(settings = getElevenLabsSettings()) {
   if (!settingsVoiceSelect) return;
 
+  const activeKey = settings.voices.some((voice) => voice.key === settings.activeVoiceKey)
+    ? settings.activeVoiceKey
+    : settings.voices[0]?.key || "";
   settingsVoiceSelect.innerHTML = "";
   const newOption = document.createElement("option");
   newOption.value = "";
@@ -5873,7 +5876,7 @@ function renderVoiceProfileSelect(settings = getElevenLabsSettings()) {
     option.textContent = formatVoiceProfileOptionLabel(voice);
     settingsVoiceSelect.append(option);
   });
-  settingsVoiceSelect.value = settings.activeVoiceKey;
+  settingsVoiceSelect.value = activeKey;
 }
 
 function formatVoiceProfileOptionLabel(voice) {
@@ -5934,6 +5937,16 @@ function createVoiceProfileKey(name, voiceId) {
   return base || `stimme-${Date.now()}`;
 }
 
+function createUniqueVoiceProfileKey(voices, name, voiceId) {
+  const baseKey = createVoiceProfileKey(name, voiceId);
+  const existingKeys = new Set((Array.isArray(voices) ? voices : []).map((voice) => voice.key));
+  if (!existingKeys.has(baseKey)) return baseKey;
+
+  let index = 2;
+  while (existingKeys.has(`${baseKey}-${index}`)) index += 1;
+  return `${baseKey}-${index}`;
+}
+
 function loadSelectedVoiceProfileIntoControls(key, options = {}) {
   const settings = options.settings || getElevenLabsSettings();
   if (!key) {
@@ -5959,7 +5972,7 @@ function loadSelectedVoiceProfileIntoControls(key, options = {}) {
   if (settingsVoiceId) settingsVoiceId.value = voice.voiceId;
   updateVoiceIdHint(voice.voiceId);
   renderVoiceProfileSelect(nextSettings);
-  renderSettingsControls();
+  if (!options.preserveStatus) renderSettingsControls();
   if (options.forceControls) {
     if (settingsVoiceSelect) settingsVoiceSelect.value = voice.key;
     if (settingsVoiceName) settingsVoiceName.value = voice.name;
@@ -6018,7 +6031,7 @@ function saveCurrentVoiceProfileFromControls() {
 
   const selectedKey = settingsVoiceSelect?.value || "";
   const existingVoice = settings.voices.find((voice) => voice.key === selectedKey);
-  const key = existingVoice?.key || createVoiceProfileKey(name, voiceId);
+  const key = existingVoice?.key || createUniqueVoiceProfileKey(settings.voices, name, voiceId);
   const nextVoice = { key, name, gender, voiceId };
   const duplicateVoice = settings.voices.find((voice) => voice.key !== key && voice.voiceId === voiceId);
   const voices = settings.voices.filter((voice) => voice.key !== key);
@@ -6033,7 +6046,12 @@ function saveCurrentVoiceProfileFromControls() {
 
   localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(nextSettings));
   renderVoiceProfileSelect(nextSettings);
-  loadSelectedVoiceProfileIntoControls(key, { settings: nextSettings, silent: true, skipCloud: true });
+  loadSelectedVoiceProfileIntoControls(key, {
+    settings: nextSettings,
+    silent: true,
+    skipCloud: true,
+    preserveStatus: true,
+  });
   saveCloudElevenLabsSettings(nextSettings)
     .then(() => {
       if (settingsState) {
@@ -6076,14 +6094,18 @@ function deleteSelectedVoiceProfile() {
 
 function saveElevenLabsSettings() {
   const currentSettings = getElevenLabsSettings();
-  const selectedKey = settingsVoiceSelect?.value || currentSettings.activeVoiceKey;
-  const currentVoice = currentSettings.voices.find((voice) => voice.key === selectedKey) ||
-    getActiveElevenLabsVoice(currentSettings);
+  const selectedKey = settingsVoiceSelect?.value || "";
+  const isNewVoiceProfile = !selectedKey;
+  const currentVoice = isNewVoiceProfile
+    ? null
+    : currentSettings.voices.find((voice) => voice.key === selectedKey) || getActiveElevenLabsVoice(currentSettings);
+  const controlVoiceId = settingsVoiceId?.value.trim() || "";
+  const controlVoiceName = settingsVoiceName?.value.trim() || "";
   const inlineVoice = {
-    key: currentVoice?.key || createVoiceProfileKey(settingsVoiceName?.value, settingsVoiceId?.value),
-    name: settingsVoiceName?.value.trim() || currentVoice?.name || "Stimme",
+    key: currentVoice?.key || createUniqueVoiceProfileKey(currentSettings.voices, controlVoiceName, controlVoiceId),
+    name: controlVoiceName || currentVoice?.name || "Stimme",
     gender: settingsVoiceGender?.value || currentVoice?.gender || "neutral",
-    voiceId: settingsVoiceId?.value.trim() || currentVoice?.voiceId || getDefaultElevenLabsSettings().voiceId,
+    voiceId: controlVoiceId || currentVoice?.voiceId || getDefaultElevenLabsSettings().voiceId,
   };
   const voices = currentSettings.voices.map((voice) =>
     voice.key === inlineVoice.key ? inlineVoice : voice,

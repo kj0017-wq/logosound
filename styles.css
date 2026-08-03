@@ -1009,7 +1009,7 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
 
 .karaoke-overlay.is-three-line.is-forward-only,
 .playback-karaoke-overlay.is-three-line.is-forward-only {
-  grid-template-rows: minmax(0, 0.12fr) minmax(42px, 1.12fr) minmax(36px, 0.82fr);
+  grid-template-rows: minmax(42px, 1.1fr) minmax(34px, 0.86fr) minmax(30px, 0.7fr);
 }
 
 .karaoke-line {
@@ -1054,6 +1054,36 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
   transform-origin: center;
 }
 
+.karaoke-overlay.is-forward-only .karaoke-line-before,
+.playback-karaoke-overlay.is-forward-only .karaoke-line-before {
+  color: #f6b44b;
+  font-size: clamp(1.9rem, 7.6vw, 3.12rem);
+  font-weight: 950;
+  opacity: 1;
+  transform: translateY(0) translateZ(34px) rotateX(0deg) scale(1);
+  filter: none;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+.karaoke-overlay.is-forward-only .karaoke-line-current,
+.playback-karaoke-overlay.is-forward-only .karaoke-line-current {
+  color: rgba(255, 255, 255, 0.74);
+  font-size: clamp(1.18rem, 4.9vw, 1.9rem);
+  font-weight: 900;
+  opacity: 0.82;
+  transform: translateY(14px) translateZ(-110px) rotateX(28deg) scale(0.74);
+  text-shadow: none;
+}
+
+.karaoke-overlay.is-forward-only .karaoke-line-after,
+.playback-karaoke-overlay.is-forward-only .karaoke-line-after {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: clamp(0.98rem, 4vw, 1.52rem);
+  font-weight: 850;
+  opacity: 0.62;
+  transform: translateY(24px) translateZ(-190px) rotateX(42deg) scale(0.58);
+}
+
 .karaoke-line-before.is-entering {
   animation: karaokeFadeBack 360ms ease both;
 }
@@ -1063,6 +1093,18 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
 }
 
 .karaoke-line-after.is-entering {
+  animation: karaokeFloatUpcoming 520ms cubic-bezier(0.2, 0.8, 0.22, 1) both;
+}
+
+.karaoke-overlay.is-forward-only .karaoke-line-before.is-entering,
+.playback-karaoke-overlay.is-forward-only .karaoke-line-before.is-entering {
+  animation: karaokeFloatFocus 420ms cubic-bezier(0.2, 0.8, 0.22, 1) both;
+}
+
+.karaoke-overlay.is-forward-only .karaoke-line-current.is-entering,
+.playback-karaoke-overlay.is-forward-only .karaoke-line-current.is-entering,
+.karaoke-overlay.is-forward-only .karaoke-line-after.is-entering,
+.playback-karaoke-overlay.is-forward-only .karaoke-line-after.is-entering {
   animation: karaokeFloatUpcoming 520ms cubic-bezier(0.2, 0.8, 0.22, 1) both;
 }
 

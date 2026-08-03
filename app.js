@@ -5065,7 +5065,7 @@ function updateThreeLineKaraokeDisplay(overlay, timeline, activeIndex) {
   const lines = getThreeLineKaraokeLabels(timeline, activeIndex);
   overlay.classList.toggle("is-context-dense", Object.values(lines).some((line) => line.length > 18));
   overlay.classList.toggle("is-dialog-mode", timeline.some((item) => item.isDialog));
-  overlay.classList.toggle("is-forward-only", !lines.before && Boolean(lines.current || lines.after));
+  overlay.classList.toggle("is-forward-only", !timeline.some((item) => item.isSentence));
 
   [
     [".karaoke-line-before", lines.before],
@@ -5144,11 +5144,12 @@ function getThreeLineKaraokeLabels(timeline, activeIndex) {
   const groupSize = getKaraokeGroupSize(timeline, activeWordIndex);
   const groupStart = Math.floor(activeSpokenOrdinal / groupSize) * groupSize;
   const currentGroupEnd = groupStart + groupSize;
+  const secondGroupSize = Math.min(3, groupSize + 1);
 
   return {
-    before: "",
-    current: getSpokenGroupLabel(spokenIndexes, groupStart, groupSize),
-    after: getSpokenGroupLabel(spokenIndexes, currentGroupEnd, Math.min(3, groupSize + 1)),
+    before: getSpokenGroupLabel(spokenIndexes, groupStart, groupSize),
+    current: getSpokenGroupLabel(spokenIndexes, currentGroupEnd, secondGroupSize),
+    after: getSpokenGroupLabel(spokenIndexes, currentGroupEnd + secondGroupSize, secondGroupSize),
   };
 }
 

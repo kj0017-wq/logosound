@@ -7562,11 +7562,11 @@ function renderAudioAnalysis(metadata = currentMetadata) {
 
   const items = [
     ["Zeit", formatTime(positionAnalysis.zeitSekunden)],
-    ["Lautstärke dort", positionAnalysis.lautstaerke],
-    ["Ø Lautstärke dort", positionAnalysis.durchschnittlicheLautstaerke],
-    ["Amplitude dort", positionAnalysis.amplitude],
-    ["Frequenz dort", positionAnalysis.stimmfrequenzHz ? `${positionAnalysis.stimmfrequenzHz} Hz` : "0 Hz"],
-    ["Ø Frequenz dort", positionAnalysis.durchschnittlicheStimmfrequenzHz ? `${positionAnalysis.durchschnittlicheStimmfrequenzHz} Hz` : "0 Hz"],
+    ["Lautstärke an der Analyseposition", positionAnalysis.lautstaerke],
+    ["Ø Lautstärke an der Analyseposition", positionAnalysis.durchschnittlicheLautstaerke],
+    ["Amplitude an der Analyseposition", positionAnalysis.amplitude],
+    ["Frequenz an der Analyseposition", positionAnalysis.stimmfrequenzHz ? `${positionAnalysis.stimmfrequenzHz} Hz` : "0 Hz"],
+    ["Ø Frequenz an der Analyseposition", positionAnalysis.durchschnittlicheStimmfrequenzHz ? `${positionAnalysis.durchschnittlicheStimmfrequenzHz} Hz` : "0 Hz"],
     ["Frequenzenergie", positionAnalysis.frequenzAmplitude],
     ["Impulse im Fenster", positionAnalysis.impulse],
     ["Bereich", rangeAnalysis.label],
@@ -7586,7 +7586,7 @@ function renderAudioAnalysis(metadata = currentMetadata) {
     const item = document.createElement("div");
     const term = document.createElement("dt");
     const description = document.createElement("dd");
-    term.textContent = label;
+    term.textContent = getNormalizedAnalysisDisplayLabel(label);
     description.textContent = String(value);
     item.append(term, description);
     audioAnalysisGrid.append(item);
@@ -8385,7 +8385,7 @@ function renderVoiceBaselineValuesInto(container, values = {}) {
     item.className = "is-reference";
     const term = document.createElement("dt");
     const description = document.createElement("dd");
-    term.textContent = label;
+    term.textContent = getNormalizedAnalysisDisplayLabel(label);
     if (key === "frequenzDurchschnittHz") {
       description.textContent = values[key] ? `${Math.round(values[key])} Hz` : "0 Hz";
     } else if (key === "frequenzSchwankung") {

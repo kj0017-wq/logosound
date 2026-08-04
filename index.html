@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="LogoSound" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="canonical" href="https://logosound-19293.web.app/" />
-    <link rel="manifest" href="/manifest-20260801-amp193.webmanifest" />
+    <link rel="manifest" href="/manifest-20260801-amp194.webmanifest" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="shortcut icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260801-amp193" />
+    <link rel="stylesheet" href="styles.css?v=20260801-amp194" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp193</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp194</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -659,8 +659,12 @@
           </div>
         </details>
 
-        <div class="settings-group">
-          <p class="eyebrow">Kalibrierung</p>
+        <details class="settings-group settings-collapsible calibration-settings-group">
+          <summary>
+            <span class="eyebrow">Kalibrierung</span>
+            <strong>Empfindlichkeit und EQ</strong>
+          </summary>
+          <div class="settings-collapsible-content">
           <label class="field-label range-label" for="settingsSensitivity">
             Empfindlichkeit <strong id="settingsSensitivityValue">30%</strong>
           </label>
@@ -705,9 +709,6 @@
             </div>
             <p class="settings-help">EQ-Werte werden im Setup gespeichert und später für Klang- und Analysefunktionen genutzt.</p>
           </details>
-        </div>
-
-        <div class="settings-group">
           <div class="settings-eq-visuals" aria-label="Equalizer-Testanalyse">
             <div class="settings-eq-visual-head">
               <span>Amplitude</span>
@@ -720,6 +721,10 @@
             </div>
             <canvas id="settingsEqFrequencyCanvas" width="900" height="110" aria-label="EQ-Test Frequenz"></canvas>
           </div>
+          </div>
+        </details>
+
+        <div class="settings-group">
           <p class="eyebrow">Playback</p>
           <label class="field-label range-label" for="settingsPlaybackVolume">
             Wiedergabe-Verstärkung <strong id="settingsPlaybackVolumeValue">200%</strong>
@@ -782,7 +787,7 @@
       </nav>
     </main>
 
-    <script type="module" src="app.js?v=20260801-amp193"></script>
+    <script type="module" src="app.js?v=20260801-amp194"></script>
   </body>
 </html>
 

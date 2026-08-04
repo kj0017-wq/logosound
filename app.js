@@ -633,7 +633,10 @@ async function init() {
     align: "right",
     overlay: true,
     levelMeter: true,
+    stereoLevelMeter: true,
     currentLevel: 0,
+    currentLeftLevel: 0,
+    currentRightLevel: 0,
   });
   updateVoiceFrequencyDisplay(0, 0);
   drawFrequencyTimeline(frequencyTimeline, [], []);
@@ -1903,7 +1906,10 @@ async function startRecording() {
     align: "right",
     overlay: true,
     levelMeter: true,
+    stereoLevelMeter: true,
     currentLevel: 0,
+    currentLeftLevel: 0,
+    currentRightLevel: 0,
   });
   drawFrequencyTimeline(frequencyTimeline, [], []);
   updateVoiceFrequencyDisplay(0, 0);
@@ -2442,7 +2448,10 @@ function measureAudio() {
     align: "right",
     overlay: true,
     levelMeter: true,
+    stereoLevelMeter: isCalibrating,
     currentLevel: displayVolume,
+    currentLeftLevel: displayVolume,
+    currentRightLevel: displayVolume,
     levelValues: volumeValues.slice(-MAX_VISIBLE_SAMPLES),
   });
   drawFrequencyTimeline(

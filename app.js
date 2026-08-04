@@ -287,6 +287,23 @@ const STANDARD_EDITOR_EXERCISES = [
     speed: 4,
     voiceInstruction: EXERCISE_INSTRUCTIONS["Text lesen"],
   },
+  {
+    id: "langer-text",
+    name: "Langer Text",
+    mode: "long_text",
+    content:
+      "Heute lesen wir den ersten Abschnitt ruhig vor.\nDanach folgt ein zweiter Abschnitt mit klarer Stimme.\nZum Schluss bleibt der Blick entspannt und die Sprache deutlich.",
+    rawContent:
+      "Heute lesen wir den ersten Abschnitt ruhig vor.\nDanach folgt ein zweiter Abschnitt mit klarer Stimme.\nZum Schluss bleibt der Blick entspannt und die Sprache deutlich.",
+    textPassages: [
+      "Heute lesen wir den ersten Abschnitt ruhig vor.",
+      "Danach folgt ein zweiter Abschnitt mit klarer Stimme.",
+      "Zum Schluss bleibt der Blick entspannt und die Sprache deutlich.",
+    ],
+    repeats: 1,
+    speed: 3,
+    voiceInstruction: "Bitte lesen Sie jeden eingeblendeten Textabschnitt ruhig und deutlich vor.",
+  },
 ];
 const MIME_TYPES = [
   { type: "video/webm;codecs=vp8,opus", extension: "webm" },
@@ -2231,7 +2248,7 @@ function setupKaraokeText() {
   } else if (sentences.length) {
     karaokeWords = sentences;
     karaokeTimeline = buildSentenceTimeline(sentences);
-  } else if (activeExercise?.mode === "text") {
+  } else if (isLongTextMode(activeExercise?.mode)) {
     const passages = getExerciseTextPassages(activeExercise);
     karaokeWords = passages.length ? passages : getExerciseScript().split(/\s+/).filter(Boolean);
     karaokeTimeline = passages.length
@@ -2266,7 +2283,7 @@ function getExerciseSentences(exercise = getActiveRecordingExercise()) {
 }
 
 function getExerciseTextPassages(exercise = getActiveRecordingExercise()) {
-  if (!exercise || exercise.mode !== "text") return [];
+  if (!exercise || !isLongTextMode(exercise.mode)) return [];
 
   const configuredPassages = Array.isArray(exercise.textPassages)
     ? exercise.textPassages
@@ -2276,6 +2293,28 @@ function getExerciseTextPassages(exercise = getActiveRecordingExercise()) {
     : exercise.rawContent || exercise.content || exercise.script || "";
 
   return splitTextPassages(rawText);
+}
+
+function isLongTextMode(mode) {
+  return mode === "long_text";
+}
+
+function isTextLikeMode(mode) {
+  return mode === "text" || isLongTextMode(mode);
+}
+
+function normalizeEditorExerciseMode(exercise = {}) {
+  const mode = normalizeEditorExerciseMode(exercise);
+  if (mode !== "text") return mode;
+
+  const savedPassages = Array.isArray(exercise.textPassages)
+    ? exercise.textPassages.filter((passage) => String(passage || "").trim())
+    : [];
+  if (savedPassages.length > 1) return "long_text";
+
+  const rawText = String(exercise.rawContent || exercise.content || exercise.script || "").trim();
+  const repairedPassages = splitTextPassages(rawText);
+  return rawText.length >= 280 && repairedPassages.length > 3 ? "long_text" : "text";
 }
 
 function splitTextPassages(text) {
@@ -3086,6 +3125,10 @@ function getExerciseInstruction() {
     return `Bereiten Sie sich auf die kurzen Sätze vor. Lesen Sie jeden Satz im Tempo ${exercise.timing.label}. Machen Sie nach jedem Satz eine kurze Pause.`;
   }
 
+  if (exercise.mode === "long_text") {
+    return `Bitte lesen Sie den langen Text abschnittweise ruhig und deutlich vor. Das Tempo ist ${exercise.timing.label}.`;
+  }
+
   if (exercise.mode === "text") {
     return `Bitte lesen Sie den eingeblendeten Karaoke-Text ruhig und deutlich vor. Das Tempo ist ${exercise.timing.label}.`;
   }
@@ -3123,7 +3166,7 @@ function getExerciseConfiguration() {
     typ: exercise.mode,
     name: exercise.name,
     inhalt: exercise.content,
-    textAbschnitte: exercise.mode === "text" ? getExerciseTextPassages(exercise) : [],
+    textAbschnitte: isLongTextMode(exercise.mode) ? getExerciseTextPassages(exercise) : [],
     saetze: exercise.sentences || [],
     dialog: exercise.dialogTurns || [],
     wiederholungen: exercise.repeats,
@@ -3182,7 +3225,7 @@ function hydrateEditorExercise(exercise) {
   const repeats = Math.max(1, Number(exercise.repeats || 1));
   const parsedDialogTurns = mode === "dialog" ? getExerciseDialogTurns({ ...exercise, mode, content }) : [];
   const dialogTurns = mode === "dialog" ? hydrateDialogTurnsWithAudio(parsedDialogTurns, exercise) : [];
-  const script = mode !== "text" && mode !== "dialog" && repeats > 1
+  const script = !isTextLikeMode(mode) && mode !== "dialog" && repeats > 1
     ? buildRepeatedScript(content, repeats)
     : exercise.script || content;
   const sentences = exercise.sentences || (mode === "sentences" ? content.split("|").map((sentence) => sentence.trim()).filter(Boolean) : []);
@@ -3193,6 +3236,8 @@ function hydrateEditorExercise(exercise) {
       ? `${patientTurnCount || 1} Sprecherteil${patientTurnCount === 1 ? "" : "e"}`
       : mode === "sentences"
       ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
+      : isLongTextMode(mode)
+      ? `${getExerciseTextPassages({ ...exercise, mode, content }).length || 1} Textabschnitt${getExerciseTextPassages({ ...exercise, mode, content }).length === 1 ? "" : "e"}`
       : content.split(/\s+/).filter(Boolean).join(", ")) ||
     content;
 
@@ -3231,9 +3276,9 @@ function buildEditorExerciseFromForm() {
   const parsedDialogTurns = mode === "dialog" ? getEditorDialogTurns() : [];
   const dialogTurns = mode === "dialog" ? hydrateDialogTurnsWithAudio(parsedDialogTurns, baseExerciseForAudio) : [];
   const rawTextContent = editorContent.value.trim();
-  const textPassages = mode === "text" ? splitTextPassages(rawTextContent) : [];
+  const textPassages = isLongTextMode(mode) ? splitTextPassages(rawTextContent) : [];
   const tokens =
-    mode === "text"
+    isTextLikeMode(mode)
       ? rawTextContent.split(/\s+/).map((token) => token.trim()).filter(Boolean)
       : mode === "sentences" || mode === "dialog"
         ? []
@@ -3243,14 +3288,14 @@ function buildEditorExerciseFromForm() {
       ? editorContent.value.trim() || getDefaultEditorContent(mode)
       : mode === "sentences"
       ? sentences.join(" | ") || getDefaultEditorContent(mode)
-      : mode === "text"
+      : isTextLikeMode(mode)
       ? rawTextContent || getDefaultEditorContent(mode)
       : tokens.length
         ? tokens.join(" ")
         : getDefaultEditorContent(mode);
   const voiceInstruction =
     editorVoiceInstruction.value.trim() || getDefaultEditorVoiceInstruction(mode);
-  const useRepeats = editorUseRepeats.checked && mode !== "text" && mode !== "sentences" && mode !== "dialog";
+  const useRepeats = editorUseRepeats.checked && !isTextLikeMode(mode) && mode !== "sentences" && mode !== "dialog";
   const repeats = useRepeats ? getEditorRepeats() : 1;
   const script = useRepeats ? buildRepeatedScript(content, repeats) : content;
   const patientTurnCount = dialogTurns.filter((turn) => turn.role === "patient").length;
@@ -3261,14 +3306,14 @@ function buildEditorExerciseFromForm() {
     speed,
     timing,
     content,
-    rawContent: mode === "text" ? content : "",
+    rawContent: isTextLikeMode(mode) ? content : "",
     textPassages,
     contentLabel:
       mode === "dialog"
         ? `${patientTurnCount || 1} Sprecherteil${patientTurnCount === 1 ? "" : "e"}`
         : mode === "sentences"
         ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
-        : mode === "text" && textPassages.length
+        : isLongTextMode(mode) && textPassages.length
         ? `${textPassages.length} Karaoke-Abschnitt${textPassages.length === 1 ? "" : "e"}`
         : tokens.join(", ") || getDefaultEditorContent(mode),
     sentences,
@@ -3316,6 +3361,7 @@ function buildRepeatedScript(content, repeats) {
 function getDefaultEditorContent(mode) {
   if (mode === "sentences") return "";
   if (mode === "text") return "Heute lese ich langsam und deutlich.";
+  if (mode === "long_text") return "Es blaut die Nacht.\nDie Sternlein blinken.\nSchneeflöcklein leise niedersinken.";
   if (mode === "vowels") return "A E I O U";
   if (mode === "dialog") {
     const speakerName = getCurrentPatientName();
@@ -3328,6 +3374,7 @@ function getDefaultEditorVoiceInstruction(mode) {
   if (mode === "dialog") return "Bitte hören Sie auf die System-Sätze und sprechen Sie Ihren Teil ruhig und deutlich.";
   if (mode === "sentences") return "Bitte lesen Sie die kurzen Sätze nacheinander ruhig und deutlich vor. Machen Sie nach jedem Satz eine kurze Pause.";
   if (mode === "text") return "Bitte lesen Sie den eingeblendeten Text ruhig und deutlich vor.";
+  if (mode === "long_text") return "Bitte lesen Sie jeden eingeblendeten Textabschnitt ruhig und deutlich vor.";
   if (mode === "vowels") return "Bitte sprechen Sie die Vokale nacheinander deutlich aus.";
   return "Bitte sprechen Sie die einzelnen Silben ruhig und deutlich.";
 }
@@ -3346,6 +3393,10 @@ function buildVoiceInstructionSuggestion() {
 
   if (exercise.mode === "text") {
     return `Bereiten Sie sich auf den Text vor. Lesen Sie gleich Wort für Wort im Tempo ${speedText}. Sprechen Sie ruhig, deutlich und ohne Druck.`;
+  }
+
+  if (exercise.mode === "long_text") {
+    return `Bereiten Sie sich auf den langen Text vor. Lesen Sie jeden eingeblendeten Abschnitt im Tempo ${speedText}. Bleiben Sie ruhig und deutlich.`;
   }
 
   if (exercise.mode === "vowels") {
@@ -3484,10 +3535,12 @@ function blobToDataUrl(blob) {
 
 function updateEditorForm() {
   stopEditorKaraokeTest();
-  const isTextMode = editorMode.value === "text";
+  const isTextMode = isTextLikeMode(editorMode.value);
+  const isLongTextModeSelected = isLongTextMode(editorMode.value);
   const isSentenceMode = editorMode.value === "sentences";
   exerciseEditor?.classList.toggle("sentence-mode", isSentenceMode);
   exerciseEditor?.classList.toggle("text-mode", isTextMode);
+  exerciseEditor?.classList.toggle("long-text-mode", isLongTextModeSelected);
   const isDialogMode = editorMode.value === "dialog";
   exerciseEditor?.classList.toggle("dialog-mode", isDialogMode);
   if (isTextMode || isSentenceMode || isDialogMode) editorUseRepeats.checked = false;
@@ -3512,7 +3565,7 @@ function renderEditorPreview(exercise, activeIndex = -1) {
     return;
   }
 
-  const previewItems = exercise.mode === "text"
+  const previewItems = isTextLikeMode(exercise.mode)
     ? editorPreviewTimeline
     : editorPreviewTimeline.slice(0, 12);
 
@@ -3550,6 +3603,10 @@ function buildEditorPreviewTimeline(exercise = buildEditorExerciseFromForm()) {
     }));
   }
 
+  if (isLongTextMode(exercise.mode)) {
+    return buildTextPassageTimeline(getExerciseTextPassages(exercise), exercise.timing);
+  }
+
   const words = String(exercise.script || "")
     .split(/\s+/)
     .map((word) => word.trim())
@@ -3561,7 +3618,7 @@ function buildEditorPreviewTimeline(exercise = buildEditorExerciseFromForm()) {
 function startEditorKaraokeTest() {
   const exercise = buildEditorExerciseFromForm();
 
-  if (exercise.mode !== "text") {
+  if (!isTextLikeMode(exercise.mode)) {
     editorVoiceState.textContent = "Der Tempo-Test ist für Karaoke-Text gedacht.";
     return;
   }
@@ -5559,7 +5616,10 @@ function setupPlaybackKaraoke(metadata) {
           .filter(Boolean)
       : [];
   const textPassages =
-    metadata.uebungKonfiguration?.typ === "text"
+    metadata.uebungKonfiguration?.typ === "long_text" ||
+    (metadata.uebungKonfiguration?.typ === "text" &&
+      Array.isArray(metadata.uebungKonfiguration.textAbschnitte) &&
+      metadata.uebungKonfiguration.textAbschnitte.length)
       ? (Array.isArray(metadata.uebungKonfiguration.textAbschnitte) &&
           metadata.uebungKonfiguration.textAbschnitte.length
           ? metadata.uebungKonfiguration.textAbschnitte

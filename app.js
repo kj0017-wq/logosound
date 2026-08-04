@@ -3029,7 +3029,33 @@ function updateRecordingKaraokeSpeed(value) {
   if (recordingKaraokeSpeed) recordingKaraokeSpeed.value = String(nextValue);
   saveRecordingKaraokeSpeedForCurrentExercise(nextValue);
   updateRecordingKaraokeSpeedLabel();
-  if (!isRecording) setupKaraokeText();
+  retimeKaraokeAfterSpeedChange();
+}
+
+function retimeKaraokeAfterSpeedChange() {
+  if (!isRecording) {
+    setupKaraokeText();
+    return;
+  }
+
+  const oldDuration = getKaraokeTimelineDuration(karaokeTimeline);
+  const elapsedSeconds = startedAt ? Math.max(0, (performance.now() - startedAt) / 1000) : 0;
+  const progress = oldDuration > 0 ? Math.max(0, Math.min(1, elapsedSeconds / oldDuration)) : 0;
+
+  setupKaraokeText();
+
+  const newDuration = getKaraokeTimelineDuration(karaokeTimeline);
+  if (newDuration > 0) {
+    startedAt = performance.now() - progress * newDuration * 1000;
+  }
+
+  updateKaraokeHighlight();
+  scheduleAutoStop();
+}
+
+function getKaraokeTimelineDuration(timeline = karaokeTimeline) {
+  const lastItem = Array.isArray(timeline) ? timeline.at(-1) : null;
+  return Number(lastItem?.end || 0);
 }
 
 function updateRecordingKaraokeSpeedLabel() {

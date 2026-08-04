@@ -4347,7 +4347,7 @@ function buildKaraokeTimeline(words, timing = getCurrentKaraokeTiming()) {
 function getKaraokeWordSeconds(word, timing = getCurrentKaraokeTiming()) {
   const baseSeconds = Number(timing.wordSeconds) || DEFAULT_KARAOKE_WORD_SECONDS;
   const normalizedWord = String(word || "")
-    .replace(/^[^\wÃ€-Ã¿]+|[^\wÃ€-Ã¿]+$/g, "")
+    .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")
     .trim();
   const length = Math.max(1, normalizedWord.length);
   const lengthFactor = Math.pow(length / KARAOKE_REFERENCE_WORD_LENGTH, 0.38);

@@ -215,6 +215,8 @@ const RECORDING_KARAOKE_SPEEDS_KEY = "logosound-recording-karaoke-speeds-by-exer
 const PLAYBACK_GAIN_KEY = "logosound-playback-gain";
 const STATISTICS_WAVEFORM_HEIGHT_KEY = "logosound-statistics-waveform-height";
 const ANALYSIS_CALIBRATION_KEY = "logosound-analysis-calibration";
+const CALIBRATION_NOISE_KEY = "logosound-calibration-noise-floor";
+const CALIBRATION_NOISE_DOC = "noiseCalibration";
 const SETTINGS_EQ_KEY = "logosound-settings-eq";
 const SETTINGS_EQ_DOC = "equalizer";
 const ELEVENLABS_SETTINGS_KEY = "logosound-elevenlabs-settings";
@@ -231,6 +233,8 @@ const PEAK_SENSITIVITY = 2.2;
 const VOLUME_NOISE_GATE = 1.8;
 const VOLUME_NOISE_GATE_MULTIPLIER = 1.65;
 const VOLUME_NOISE_FOLLOW_SPEED = 0.08;
+const CALIBRATION_SILENCE_MS = 2000;
+const CALIBRATION_NOISE_GATE_MULTIPLIER = 1.85;
 const VOLUME_SOFT_LIMIT = 86;
 const WAVEFORM_VISUAL_CEILING = 82;
 const WAVEFORM_DYNAMIC_RANGE = 1.35;
@@ -424,6 +428,8 @@ let lastSilentSignalNoticeAt = 0;
 let silentSignalStartedAt = 0;
 let analyserRestartInProgress = false;
 let adaptiveVolumeNoiseFloor = 0;
+let calibrationNoiseFloor = loadCalibrationNoiseFloor();
+let calibrationNoiseState = null;
 let processorRms = 0;
 let processorPeak = 0;
 let lastProcessorSignalAt = 0;
@@ -653,6 +659,7 @@ async function init() {
   });
   loadCloudElevenLabsSettings();
   loadCloudEqualizerSettings();
+  loadCloudNoiseCalibration();
   await refreshRecordings();
 }
 
@@ -2328,6 +2335,115 @@ async function restartAudioAnalyser() {
   }
 }
 
+function getDefaultCalibrationNoiseFloor() {
+  return {
+    volumeGate: VOLUME_NOISE_GATE,
+    voiceFloor: 0,
+    frequencyGate: 0,
+    measuredSamples: 0,
+    updatedAt: "",
+  };
+}
+
+function normalizeCalibrationNoiseFloor(settings = {}) {
+  const defaults = getDefaultCalibrationNoiseFloor();
+  return {
+    volumeGate: Math.max(VOLUME_NOISE_GATE, Math.min(80, Number(settings.volumeGate) || defaults.volumeGate)),
+    voiceFloor: Math.max(0, Math.min(160, Number(settings.voiceFloor) || defaults.voiceFloor)),
+    frequencyGate: Math.max(0, Math.min(160, Number(settings.frequencyGate) || defaults.frequencyGate)),
+    measuredSamples: Math.max(0, Math.round(Number(settings.measuredSamples) || defaults.measuredSamples)),
+    updatedAt: settings.updatedAt || defaults.updatedAt,
+  };
+}
+
+function loadCalibrationNoiseFloor() {
+  try {
+    return normalizeCalibrationNoiseFloor(JSON.parse(localStorage.getItem(CALIBRATION_NOISE_KEY) || "null") || {});
+  } catch (error) {
+    return getDefaultCalibrationNoiseFloor();
+  }
+}
+
+function persistCalibrationNoiseFloor(settings) {
+  calibrationNoiseFloor = normalizeCalibrationNoiseFloor(settings);
+  localStorage.setItem(CALIBRATION_NOISE_KEY, JSON.stringify(calibrationNoiseFloor));
+  saveCloudNoiseCalibration(calibrationNoiseFloor).catch(() => {
+    if (settingsState) settingsState.textContent = "Kalibrierung lokal gespeichert. Firebase nicht erreichbar.";
+  });
+}
+
+async function saveCloudNoiseCalibration(settings = calibrationNoiseFloor) {
+  await setDoc(doc(firestore, "settings", CALIBRATION_NOISE_DOC), {
+    ...normalizeCalibrationNoiseFloor(settings),
+    updatedAt: settings.updatedAt || new Date().toISOString(),
+  });
+}
+
+async function loadCloudNoiseCalibration() {
+  try {
+    const snapshot = await getDoc(doc(firestore, "settings", CALIBRATION_NOISE_DOC));
+    if (!snapshot.exists()) {
+      await saveCloudNoiseCalibration(calibrationNoiseFloor);
+      return;
+    }
+
+    calibrationNoiseFloor = normalizeCalibrationNoiseFloor(snapshot.data());
+    localStorage.setItem(CALIBRATION_NOISE_KEY, JSON.stringify(calibrationNoiseFloor));
+  } catch (error) {
+    calibrationNoiseFloor = loadCalibrationNoiseFloor();
+  }
+}
+
+function startSilenceNoiseCalibration() {
+  calibrationNoiseState = {
+    startedAt: performance.now(),
+    samples: [],
+    completed: false,
+  };
+}
+
+function getPercentile(values, percentile) {
+  const sortedValues = values
+    .filter((value) => Number.isFinite(value))
+    .sort((a, b) => a - b);
+  if (!sortedValues.length) return 0;
+  const index = Math.min(sortedValues.length - 1, Math.max(0, Math.floor((sortedValues.length - 1) * percentile)));
+  return sortedValues[index];
+}
+
+function updateSilenceNoiseCalibration(sample, now) {
+  if (!isCalibrating || !calibrationNoiseState || calibrationNoiseState.completed) return false;
+
+  calibrationNoiseState.samples.push(sample);
+  const elapsed = now - calibrationNoiseState.startedAt;
+  const remainingMs = Math.max(0, CALIBRATION_SILENCE_MS - elapsed);
+  message.textContent = remainingMs
+    ? `Bitte still bleiben: ${Math.ceil(remainingMs / 1000)} s. Grundrauschen wird gemessen.`
+    : "Grundrauschen wird gespeichert.";
+
+  if (elapsed < CALIBRATION_SILENCE_MS) return true;
+
+  const volumeSamples = calibrationNoiseState.samples.map((entry) => entry.volumeSignal);
+  const voiceSamples = calibrationNoiseState.samples.map((entry) => Math.min(entry.voiceAverage, entry.backgroundAverage * 1.8));
+  const frequencySamples = calibrationNoiseState.samples.map((entry) => entry.frequencySignal);
+  const volumeNoise = getPercentile(volumeSamples, 0.86);
+  const voiceNoise = getPercentile(voiceSamples, 0.86);
+  const frequencyNoise = getPercentile(frequencySamples, 0.8);
+
+  calibrationNoiseState.completed = true;
+  persistCalibrationNoiseFloor({
+    volumeGate: Math.max(VOLUME_NOISE_GATE, volumeNoise * CALIBRATION_NOISE_GATE_MULTIPLIER + 0.8),
+    voiceFloor: voiceNoise,
+    frequencyGate: frequencyNoise * 1.25,
+    measuredSamples: calibrationNoiseState.samples.length,
+    updatedAt: new Date().toISOString(),
+  });
+  adaptiveNoiseFloor = Math.max(adaptiveNoiseFloor, calibrationNoiseFloor.voiceFloor);
+  adaptiveVolumeNoiseFloor = Math.max(adaptiveVolumeNoiseFloor, calibrationNoiseFloor.volumeGate / VOLUME_NOISE_GATE_MULTIPLIER);
+  message.textContent = "Grundrauschen gemessen. Jetzt sprechen und bei Bedarf Empfindlichkeit einstellen.";
+  return false;
+}
+
 function measureAudio() {
   if ((!isRecording && !isCalibrating) || !analyser) {
     if (isRecording || isCalibrating) {
@@ -2379,13 +2495,6 @@ function measureAudio() {
 
   const voiceAverage = voiceEnergy / Math.max(1, voiceBins);
   const backgroundAverage = noiseEnergy / Math.max(1, noiseBins);
-  adaptiveNoiseFloor = adaptiveNoiseFloor
-    ? adaptiveNoiseFloor * 0.94 + Math.min(voiceAverage, backgroundAverage * 1.8) * 0.06
-    : Math.min(voiceAverage, backgroundAverage * 1.8);
-  const voiceContrast = Math.max(0, voiceAverage - adaptiveNoiseFloor * 0.45 - backgroundAverage * 0.12);
-  const voicePeakContrast = Math.max(0, voicePeak - adaptiveNoiseFloor * 0.55);
-  let pitchHz = estimateVoicePitchHz(frequencySamples, binHz, voicePeakContrast);
-
   const analyserRms = Math.sqrt(sumSquares / samples.length);
   const now = performance.now();
   const processorIsFresh = now - lastProcessorSignalAt < 350;
@@ -2409,15 +2518,36 @@ function measureAudio() {
   }
 
   const volumeSignal = Math.max(rms * 28, effectivePeak * 1.15);
+  const rawNoiseFloor = Math.min(voiceAverage, backgroundAverage * 1.8);
+  adaptiveNoiseFloor = adaptiveNoiseFloor
+    ? adaptiveNoiseFloor * 0.94 + rawNoiseFloor * 0.06
+    : rawNoiseFloor;
+  const combinedNoiseFloor = Math.max(adaptiveNoiseFloor, calibrationNoiseFloor.voiceFloor || 0);
+  const voiceContrast = Math.max(0, voiceAverage - combinedNoiseFloor * 0.45 - backgroundAverage * 0.12);
+  const voicePeakContrast = Math.max(0, voicePeak - combinedNoiseFloor * 0.55);
+  let pitchHz = estimateVoicePitchHz(frequencySamples, binHz, voicePeakContrast);
+  const rawFrequencySignal = Math.max(voiceAverage * 0.95, voiceContrast * 2.1, voicePeakContrast * 0.72);
+  const isMeasuringSilence = updateSilenceNoiseCalibration(
+    {
+      volumeSignal,
+      voiceAverage,
+      backgroundAverage,
+      frequencySignal: rawFrequencySignal,
+    },
+    now,
+  );
   adaptiveVolumeNoiseFloor = updateAdaptiveVolumeNoiseFloor(volumeSignal, adaptiveVolumeNoiseFloor);
   const dynamicVolumeGate = Math.max(
     VOLUME_NOISE_GATE,
+    calibrationNoiseFloor.volumeGate || 0,
     adaptiveVolumeNoiseFloor * VOLUME_NOISE_GATE_MULTIPLIER,
   );
   const gatedVolumeSignal = Math.max(0, volumeSignal - dynamicVolumeGate);
-  let calibratedVolume = scaleVolumeLevel(gatedVolumeSignal);
-  const frequencySignal = Math.max(voiceAverage * 0.95, voiceContrast * 2.1, voicePeakContrast * 0.72);
-  let rawSignal = Math.max(gatedVolumeSignal * 1.35, frequencySignal * 0.72);
+  let calibratedVolume = isMeasuringSilence ? 0 : scaleVolumeLevel(gatedVolumeSignal);
+  const frequencySignal = isMeasuringSilence
+    ? 0
+    : Math.max(0, rawFrequencySignal - (calibrationNoiseFloor.frequencyGate || 0));
+  let rawSignal = isMeasuringSilence ? 0 : Math.max(gatedVolumeSignal * 1.35, frequencySignal * 0.72);
   let volume = scaleAmplitude(rawSignal);
   let displayVolume = calibratedVolume;
   let displayFrequency = scaleAmplitude(frequencySignal);
@@ -3156,18 +3286,22 @@ async function startCalibration(options = {}) {
   adaptiveNoiseFloor = 0;
   adaptiveVolumeNoiseFloor = 0;
   silentSignalStartedAt = 0;
+  startSilenceNoiseCalibration();
   document.body.classList.add("calibration-mode");
   setExerciseVisualsVisible(true);
   calibrationButton.textContent = "Kalibrierung stoppen";
   if (settingsCalibrationButton) settingsCalibrationButton.textContent = "Kalibrierung stoppen";
   calibrationBackButton?.classList.remove("is-hidden");
-  message.textContent = "Kalibrierung läuft. Stimme sprechen und Empfindlichkeit einstellen.";
+  message.textContent = "Bitte 2 Sekunden still sein. Grundrauschen wird gemessen.";
   drawWaveform(liveWaveform, [], {
     mode: "live",
     align: "right",
     overlay: true,
     levelMeter: true,
+    stereoLevelMeter: true,
     currentLevel: 0,
+    currentLeftLevel: 0,
+    currentRightLevel: 0,
   });
   drawFrequencyTimeline(frequencyTimeline, [], []);
   updateVoiceFrequencyDisplay(0, 0);
@@ -3178,6 +3312,7 @@ async function startCalibration(options = {}) {
 
 function stopCalibration(options = {}) {
   isCalibrating = false;
+  calibrationNoiseState = null;
   document.body.classList.remove("calibration-mode");
   setExerciseVisualsVisible(false);
   window.cancelAnimationFrame(animationFrame);
@@ -3185,7 +3320,9 @@ function stopCalibration(options = {}) {
   calibrationButton.textContent = "Kalibrieren";
   if (settingsCalibrationButton) settingsCalibrationButton.textContent = "Kalibrieren";
   calibrationBackButton?.classList.add("is-hidden");
-  message.textContent = `Kalibrierung gespeichert: Empfindlichkeit ${formatSensitivityLabel(sensitivitySlider.value)}.`;
+  message.textContent = `Kalibrierung gespeichert: Rauschschwelle ${Math.round(
+    calibrationNoiseFloor.volumeGate || VOLUME_NOISE_GATE,
+  )}, Empfindlichkeit ${formatSensitivityLabel(sensitivitySlider.value)}.`;
   if (options.restoreView && calibrationReturnView && calibrationReturnView !== document.body.dataset.activeView) {
     setActiveView(calibrationReturnView);
   }

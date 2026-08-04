@@ -620,11 +620,17 @@ textarea {
   font-weight: 950;
 }
 
-.avatar-button span {
+.avatar-button {
   display: grid;
+  padding: 0;
+  place-items: center;
+  overflow: hidden;
+}
+
+.avatar-button img {
   width: 42px;
   height: 42px;
-  place-items: center;
+  object-fit: cover;
 }
 
 .menu-button {

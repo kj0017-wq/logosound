@@ -58,6 +58,7 @@ const editorRepeatGroup = document.querySelector("#editorRepeatGroup");
 const editorRepeats = document.querySelector("#editorRepeats");
 const editorSpeed = document.querySelector("#editorSpeed");
 const editorSpeedValue = document.querySelector("#editorSpeedValue");
+const editorKaraokeTimingHint = document.querySelector("#editorKaraokeTimingHint");
 const editorPreview = document.querySelector("#editorPreview");
 const testEditorKaraokeButton = document.querySelector("#testEditorKaraokeButton");
 const saveEditorExerciseButton = document.querySelector("#saveEditorExerciseButton");
@@ -3134,9 +3135,9 @@ function updateRecordingKaraokeTimingHint() {
 }
 
 function getKaraokeTimingHint(exercise, timing) {
-  const speedLabel = EDITOR_SPEEDS[clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3)]?.label || "Normal";
+  const speedLabel = timing?.label || "Normal";
   if (!exercise) {
-    return `Standzeit: ca. ${formatSecondsShort(timing.wordSeconds)} pro Einheit (${speedLabel}).`;
+    return `Standzeit: ca. ${formatSecondsAndMilliseconds(timing.wordSeconds)} pro Einheit (${speedLabel}).`;
   }
 
   if (isLongTextMode(exercise.mode)) {
@@ -3149,7 +3150,7 @@ function getKaraokeTimingHint(exercise, timing) {
     const minSeconds = Math.min(...durations);
     const maxSeconds = Math.max(...durations);
     const avgSeconds = durations.reduce((sum, value) => sum + value, 0) / durations.length;
-    return `Standzeit: ${formatSecondsShort(minSeconds)}-${formatSecondsShort(maxSeconds)} pro Abschnitt, Ø ${formatSecondsShort(avgSeconds)} (${speedLabel}).`;
+    return `Standzeit: ${formatSecondsAndMilliseconds(minSeconds)}-${formatSecondsAndMilliseconds(maxSeconds)} pro Abschnitt, Ø ${formatSecondsAndMilliseconds(avgSeconds)} (${speedLabel}).`;
   }
 
   const words = String(exercise.script || exercise.content || "")
@@ -3165,12 +3166,18 @@ function getKaraokeTimingHint(exercise, timing) {
     return `Standzeit: kurze Sätze wechseln per Pause; Tempo ${speedLabel}.`;
   }
 
-  return `Standzeit: ${formatSecondsShort(minSeconds)}-${formatSecondsShort(maxSeconds)} pro Wort/Silbe (${speedLabel}).`;
+  return `Standzeit: ${formatSecondsAndMilliseconds(minSeconds)}-${formatSecondsAndMilliseconds(maxSeconds)} pro Wort/Silbe (${speedLabel}).`;
 }
 
 function formatSecondsShort(seconds) {
   const rounded = Math.max(0, Number(seconds) || 0);
   return `${rounded.toFixed(1).replace(".", ",")}s`;
+}
+
+function formatSecondsAndMilliseconds(seconds) {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const milliseconds = Math.round(safeSeconds * 1000);
+  return `${safeSeconds.toFixed(2).replace(".", ",")} s / ${milliseconds} ms`;
 }
 
 function getEditorTokens() {
@@ -3687,9 +3694,25 @@ function updateEditorForm() {
   editorSentenceBuilder?.classList.toggle("is-hidden", !isSentenceMode);
   editorDialogBuilder?.classList.toggle("is-hidden", !isDialogMode);
   editorSpeedValue.textContent = EDITOR_SPEEDS[editorSpeed.value]?.label || "Normal";
+  updateEditorKaraokeTimingHint();
   renderEditorPreview(buildEditorExerciseFromForm());
   renderEditorSentenceList();
   if (isDialogMode) renderEditorDialogList();
+}
+
+function updateEditorKaraokeTimingHint() {
+  if (!editorKaraokeTimingHint) return;
+
+  const exercise = buildEditorExerciseFromForm();
+  const timing = exercise.timing || EDITOR_SPEEDS[exercise.speed] || EDITOR_SPEEDS[3];
+  const speedLabel = timing.label || EDITOR_SPEEDS[3].label;
+
+  if (exercise.mode === "sentences") {
+    editorKaraokeTimingHint.textContent = `Standzeit: kurze Sätze wechseln nach erkannter Pause; Tempo ${speedLabel}.`;
+    return;
+  }
+
+  editorKaraokeTimingHint.textContent = getKaraokeTimingHint(exercise, timing);
 }
 
 function supportsEditorRepeats(mode) {

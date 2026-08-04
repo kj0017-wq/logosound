@@ -212,6 +212,9 @@ const RECORDING_HEIGHT = 1280;
 const COUNTDOWN_STEPS = ["3", "2", "1"];
 const DEFAULT_KARAOKE_WORD_SECONDS = 1.05;
 const DEFAULT_KARAOKE_PAUSE_SECONDS = 0.45;
+const KARAOKE_MIN_WORD_SECONDS = 0.26;
+const KARAOKE_MAX_WORD_SECONDS = 2.15;
+const KARAOKE_REFERENCE_WORD_LENGTH = 6;
 const SENTENCE_END_PAUSE_SECONDS = 0.75;
 const KARAOKE_CONTEXT_BEFORE = 2;
 const KARAOKE_CONTEXT_AFTER = 2;
@@ -4254,7 +4257,7 @@ function buildKaraokeTimeline(words, timing = getCurrentKaraokeTiming()) {
   words.forEach((word) => {
     const isPause = word === "|";
     const isSentenceEnd = !isPause && isSentenceEndWord(word);
-    const duration = isPause ? timing.pauseSeconds : timing.wordSeconds;
+    const duration = isPause ? timing.pauseSeconds : getKaraokeWordSeconds(word, timing);
     const item = {
       label: isPause ? "" : word,
       isPause,
@@ -4282,6 +4285,18 @@ function buildKaraokeTimeline(words, timing = getCurrentKaraokeTiming()) {
   });
 
   return timeline;
+}
+
+function getKaraokeWordSeconds(word, timing = getCurrentKaraokeTiming()) {
+  const baseSeconds = Number(timing.wordSeconds) || DEFAULT_KARAOKE_WORD_SECONDS;
+  const normalizedWord = String(word || "")
+    .replace(/^[^\wÃ€-Ã¿]+|[^\wÃ€-Ã¿]+$/g, "")
+    .trim();
+  const length = Math.max(1, normalizedWord.length);
+  const lengthFactor = Math.pow(length / KARAOKE_REFERENCE_WORD_LENGTH, 0.38);
+  const seconds = baseSeconds * lengthFactor;
+
+  return Math.max(KARAOKE_MIN_WORD_SECONDS, Math.min(KARAOKE_MAX_WORD_SECONDS, seconds));
 }
 
 function isSentenceEndWord(word) {

@@ -3250,7 +3250,7 @@ function updateEditorSentenceEditState() {
   addEditorSentenceButton.setAttribute("aria-label", isEditing ? "Satz speichern" : "Satz hinzuf\u00fcgen");
 }
 
-function renderEditorSentenceList() {
+function renderEditorSentenceListLegacy() {
   if (!editorSentenceList) return;
 
   const sentences = getEditorSentences();
@@ -3287,7 +3287,7 @@ function renderEditorSentenceList() {
   });
 }
 
-function renderEditorSentenceListLegacy() {
+function renderEditorSentenceList() {
   if (!editorSentenceList) return;
 
   const sentences = getEditorSentences();
@@ -3345,8 +3345,6 @@ function renderEditorSentenceListLegacy() {
     editorSentenceList.append(item);
   });
 }
-
-renderEditorSentenceList = renderEditorSentenceListLegacy;
 
 function getEditorRepeats() {
   const parsedValue = Number.parseInt(editorRepeats.value, 10);

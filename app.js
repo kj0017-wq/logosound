@@ -445,6 +445,8 @@ let previewAudioElement = null;
 let previewAnimationFrameId = 0;
 let previewAudioUrls = [];
 let previewPlaybackOffsetSeconds = 0;
+let previewFallbackStartedAt = 0;
+let previewFallbackDurationSeconds = 0;
 let playbackKaraokeTimeline = [];
 let activeKaraokeIndex = 0;
 let sentenceSilenceStartedAt = 0;
@@ -700,7 +702,7 @@ recordButton.addEventListener("click", async (event) => {
   }
 
   stopExercisePreview();
-  unlockInstructionAudio();
+  await unlockInstructionAudio();
   recordButton.disabled = true;
   recordButton.textContent = "Start wird vorbereitet";
   const streamReady = await ensureMediaStream();
@@ -1180,8 +1182,14 @@ downloadJsonButton?.addEventListener("click", () => {
 async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
   try {
     recordButton.disabled = true;
-    recordButton.textContent = "Instruktion läuft";
-    await speakExerciseInstruction();
+    const activeExercise = getActiveRecordingExercise();
+    if (activeExercise?.mode === "dialog") {
+      recordButton.textContent = "Dialog startet";
+      message.textContent = "Dialog startet direkt mit der gespeicherten ElevenLabs-Zeile.";
+    } else {
+      recordButton.textContent = "Instruktion läuft";
+      await speakExerciseInstruction();
+    }
     instructionPlaybackActive = false;
     await withTimeout(audioPreparation, 1800);
     await ensureRecordingAnalyserReady();
@@ -1353,8 +1361,7 @@ async function startExercisePreview() {
     const audioUrls = await getExercisePreviewAudioSegments(previewText);
     await playExercisePreviewAudio(audioUrls);
   } catch (error) {
-    message.textContent = error?.message || "Vorführung konnte nicht gestartet werden.";
-    stopExercisePreview();
+    await playExercisePreviewFallback(previewText, error);
   } finally {
     if (isPreviewingExercise && previewExerciseButton) {
       previewExerciseButton.disabled = false;
@@ -1666,13 +1673,45 @@ function animateExercisePreviewKaraoke() {
   previewAnimationFrameId = window.requestAnimationFrame(animateExercisePreviewKaraoke);
 }
 
+async function playExercisePreviewFallback(previewText, error) {
+  if (!isPreviewingExercise) return;
+
+  setExerciseVisualsVisible(true);
+  previewAudioUrls = [];
+  previewPlaybackOffsetSeconds = 0;
+  previewFallbackDurationSeconds = Math.max(
+    getKaraokeTimelineDuration(karaokeTimeline),
+    Math.min(60, Math.max(3, String(previewText || "").length * 0.055)),
+  );
+  previewFallbackStartedAt = performance.now();
+  previewExerciseButton.disabled = false;
+  previewExerciseButton.textContent = "Vorführung stoppen";
+  message.textContent = error?.message
+    ? `${error.message} Browser-Stimme läuft als Ersatz.`
+    : "Browser-Stimme läuft als Ersatz.";
+  animateExercisePreviewFallback();
+  await speakWithBrowserVoice(previewText);
+  if (isPreviewingExercise) stopExercisePreview();
+}
+
+function animateExercisePreviewFallback() {
+  if (!isPreviewingExercise || !previewFallbackStartedAt) return;
+  const elapsedSeconds = (performance.now() - previewFallbackStartedAt) / 1000;
+  const displaySeconds = previewFallbackDurationSeconds
+    ? Math.min(previewFallbackDurationSeconds, elapsedSeconds)
+    : elapsedSeconds;
+  updateKaraokeDisplayAtTime(karaokeOverlay, karaokeTimeline, displaySeconds);
+  previewAnimationFrameId = window.requestAnimationFrame(animateExercisePreviewFallback);
+}
+
 function stopExercisePreview() {
-  const wasPreviewing = isPreviewingExercise || Boolean(previewAudioElement);
+  const wasPreviewing = isPreviewingExercise || Boolean(previewAudioElement) || Boolean(previewFallbackStartedAt);
   if (!wasPreviewing) return;
 
   isPreviewingExercise = false;
   window.cancelAnimationFrame(previewAnimationFrameId);
   previewAnimationFrameId = 0;
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 
   if (previewAudioElement) {
     previewAudioElement.pause();
@@ -1685,6 +1724,8 @@ function stopExercisePreview() {
   });
   previewAudioUrls = [];
   previewPlaybackOffsetSeconds = 0;
+  previewFallbackStartedAt = 0;
+  previewFallbackDurationSeconds = 0;
 
   setExerciseVisualsVisible(false);
   if (previewExerciseButton) {

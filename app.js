@@ -22,6 +22,7 @@ const cameraStartButton = document.querySelector("#cameraStartButton");
 const avatarButton = document.querySelector("#avatarButton");
 const menuButton = document.querySelector("#menuButton");
 const appMenu = document.querySelector("#appMenu");
+const copyAppLinkButton = document.querySelector("#copyAppLinkButton");
 const topBarTitle = document.querySelector("#topBarTitle");
 const toggleVideoButton = document.querySelector("#toggleVideoButton");
 const permissionState = document.querySelector("#permissionState");
@@ -478,6 +479,20 @@ appMenu?.addEventListener("click", (event) => {
   if (!button) return;
   setActiveView(button.dataset.menuView);
   appMenu.classList.add("is-hidden");
+});
+
+copyAppLinkButton?.addEventListener("click", async () => {
+  const appLink = `${PRODUCTION_ORIGIN}/`;
+  try {
+    await navigator.clipboard?.writeText(appLink);
+    copyAppLinkButton.textContent = "Link kopiert";
+  } catch (error) {
+    copyAppLinkButton.textContent = "Link sichtbar";
+  }
+
+  window.setTimeout(() => {
+    copyAppLinkButton.textContent = "Link kopieren";
+  }, 1800);
 });
 
 emptyRecordButton?.addEventListener("click", () => {

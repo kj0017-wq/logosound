@@ -706,6 +706,43 @@ textarea {
   padding: 0 12px;
 }
 
+.menu-share-card {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  margin-top: 4px;
+  padding: 10px;
+  border: 1px solid rgba(15, 139, 141, 0.22);
+  border-radius: 8px;
+  background: #f7fcfc;
+  text-align: center;
+}
+
+.menu-share-card .eyebrow {
+  margin: 0;
+}
+
+.menu-share-card img {
+  width: min(132px, 46vw);
+  height: min(132px, 46vw);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.menu-share-card span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.app-menu .menu-copy-button {
+  width: 100%;
+  min-height: 36px;
+  background: #dceff0;
+  color: var(--accent-strong);
+  text-align: center;
+}
+
 .camera-panel {
   position: relative;
   width: 100%;

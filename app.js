@@ -32,6 +32,7 @@ const exerciseName = document.querySelector("#exerciseName");
 const recordingExerciseShortcuts = document.querySelector("#recordingExerciseShortcuts");
 const previewExerciseButton = document.querySelector("#previewExerciseButton");
 const editorSavedExercises = document.querySelector("#editorSavedExercises");
+const editorSavedModeFilter = document.querySelector("#editorSavedModeFilter");
 const editorSavedExerciseList = document.querySelector("#editorSavedExerciseList");
 const editorSavedListToggle = document.querySelector("#editorSavedListToggle");
 const newEditorExerciseButton = document.querySelector("#newEditorExerciseButton");
@@ -668,6 +669,10 @@ saveEditorExerciseButton.addEventListener("click", () => {
 
 editorSavedExercises.addEventListener("change", () => {
   loadEditorExerciseIntoForm(editorSavedExercises.value);
+});
+
+editorSavedModeFilter?.addEventListener("change", () => {
+  renderSavedEditorExercises();
 });
 
 newEditorExerciseButton.addEventListener("click", () => {
@@ -4027,6 +4032,7 @@ function updateEditorSavedListVisibility() {
   const hasSavedExercises = Boolean(savedEditorExercises.length);
   const shouldShow = hasSavedExercises && editorSavedListExpanded;
   editorSavedExerciseList.classList.toggle("is-hidden", !shouldShow);
+  editorSavedModeFilter?.closest(".editor-saved-filter")?.classList.toggle("is-hidden", !hasSavedExercises);
   editorSavedListToggle?.classList.toggle("is-hidden", !hasSavedExercises);
   if (editorSavedListToggle) {
     editorSavedListToggle.textContent = shouldShow ? "Vorlagen ausblenden" : "Vorlagen verwalten";
@@ -4062,6 +4068,7 @@ function resetEditorForm(options = {}) {
 function renderSavedEditorExercises() {
   const currentValue =
     editorSavedExercises.value || getEditorSelectValueForExerciseName(activeEditorExerciseName);
+  const visibleSavedExercises = getFilteredSavedEditorExercises();
   editorSavedExercises.innerHTML = "";
 
   const emptyOption = document.createElement("option");
@@ -4079,10 +4086,10 @@ function renderSavedEditorExercises() {
   });
   editorSavedExercises.append(templateGroup);
 
-  if (savedEditorExercises.length) {
+  if (visibleSavedExercises.length) {
     const savedGroup = document.createElement("optgroup");
     savedGroup.label = "Gespeicherte Editor-Übungen";
-    savedEditorExercises.forEach((exercise) => {
+    visibleSavedExercises.forEach((exercise) => {
       const option = document.createElement("option");
       option.value = exercise.name;
       option.textContent = exercise.name;
@@ -4103,10 +4110,30 @@ function renderSavedEditorExercises() {
   updateEditorModeState();
 }
 
+function getFilteredSavedEditorExercises() {
+  const selectedMode = editorSavedModeFilter?.value || "";
+  if (!selectedMode) return savedEditorExercises;
+
+  return savedEditorExercises.filter((exercise) =>
+    normalizeEditorExerciseModeValue(exercise?.mode) === selectedMode,
+  );
+}
+
+function normalizeEditorExerciseModeValue(mode) {
+  const normalizedMode = String(mode || "syllables").trim();
+  return normalizedMode || "syllables";
+}
+
+function getEditorModeLabel(mode) {
+  const option = Array.from(editorMode?.options || []).find((item) => item.value === mode);
+  return option?.textContent?.trim() || "Funktionsart";
+}
+
 function renderSavedEditorExerciseList() {
   if (!editorSavedExerciseList) return;
 
   editorSavedExerciseList.innerHTML = "";
+  const visibleSavedExercises = getFilteredSavedEditorExercises();
   if (!savedEditorExercises.length) {
     editorSavedListExpanded = false;
     editorSavedExerciseList.classList.add("is-empty");
@@ -4115,8 +4142,15 @@ function renderSavedEditorExerciseList() {
     return;
   }
 
+  if (!visibleSavedExercises.length) {
+    editorSavedExerciseList.classList.add("is-empty");
+    editorSavedExerciseList.textContent = `Keine gespeicherte \u00dcbung f\u00fcr ${getEditorModeLabel(editorSavedModeFilter?.value)}.`;
+    updateEditorSavedListVisibility();
+    return;
+  }
+
   editorSavedExerciseList.classList.remove("is-empty");
-  savedEditorExercises.forEach((exercise) => {
+  visibleSavedExercises.forEach((exercise) => {
     const item = document.createElement("div");
     item.className = "editor-saved-exercise-item";
 

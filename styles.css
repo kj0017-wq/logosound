@@ -254,8 +254,33 @@ textarea {
   outline: 3px solid rgba(15, 139, 141, 0.22);
 }
 
+#editorSavedModeFilter {
+  border-color: rgba(15, 139, 141, 0.36);
+  background: #f4fcfc;
+  color: var(--accent-strong);
+}
+
+#editorSavedModeFilter:focus {
+  outline: 3px solid rgba(15, 139, 141, 0.18);
+}
+
 #exerciseName:focus {
   outline: 3px solid rgba(15, 139, 141, 0.22);
+}
+
+.editor-saved-filter {
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid rgba(15, 139, 141, 0.18);
+  border-radius: 8px;
+  background: rgba(216, 242, 243, 0.45);
+}
+
+.editor-saved-filter span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
 }
 
 .editor-saved-exercise-list {

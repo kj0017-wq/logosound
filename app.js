@@ -3927,8 +3927,65 @@ function stopEditorKaraokeTest(options = {}) {
   }
 }
 
+function getCurrentEditorTextForModeChange() {
+  const rawText = editorContent.value.trim();
+  if (rawText) return rawText;
+
+  const sentences = getEditorSentences();
+  if (sentences.length) return sentences.join(" | ");
+
+  const turns = getEditorDialogTurns();
+  if (turns.length) return serializeDialogTurns(turns);
+
+  return "";
+}
+
+function convertEditorContentForMode(targetMode, sourceText) {
+  const cleanText = String(sourceText || "").trim();
+  if (!cleanText) return getDefaultEditorContent(targetMode);
+
+  if (targetMode === "sentences") {
+    return splitTextIntoEditableSentences(cleanText).join(" | ");
+  }
+
+  if (targetMode === "long_text") {
+    return splitTextPassages(cleanText).join("\n");
+  }
+
+  if (targetMode === "dialog") {
+    const turns = parseDialogTurns(cleanText);
+    return turns.length
+      ? serializeDialogTurns(turns)
+      : `System: ${cleanText}`;
+  }
+
+  return cleanText
+    .split(/\s*\|\s*|\n+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+function splitTextIntoEditableSentences(text) {
+  const explicitParts = String(text || "")
+    .split(/\s*\|\s*|\r?\n+/)
+    .map((part) => part.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  if (explicitParts.length > 1) return explicitParts;
+
+  const normalized = explicitParts[0] || String(text || "").replace(/\s+/g, " ").trim();
+  if (!normalized) return [];
+
+  const sentenceParts = normalized.match(/[^.!?\u2026]+(?:[.!?\u2026]+["\u00bb\u201c\u201d']?)?/g) || [];
+  return sentenceParts.length
+    ? sentenceParts.map((part) => part.trim()).filter(Boolean)
+    : [normalized];
+}
+
 function applyEditorModeDefaults() {
-  editorContent.value = getDefaultEditorContent(editorMode.value);
+  const nextMode = editorMode.value;
+  const previousText = getCurrentEditorTextForModeChange();
+  editorContent.value = convertEditorContentForMode(nextMode, previousText);
   editorVoiceInstruction.value = getDefaultEditorVoiceInstruction(editorMode.value);
   editorUseRepeats.checked =
     editorMode.value !== "text" &&

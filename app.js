@@ -418,6 +418,7 @@ let savedEditorExercise;
 let savedEditorExercises = [];
 let activeEditorExerciseName = "";
 let editorSavedListExpanded = false;
+let editingEditorSentenceIndex = -1;
 let editorVoiceAudioDataUrl = "";
 let editorVoiceAudioUrl = "";
 let editorVoiceAudioPath = "";
@@ -644,6 +645,8 @@ exerciseName.addEventListener("change", () => {
 });
 
 editorMode.addEventListener("change", () => {
+  editingEditorSentenceIndex = -1;
+  updateEditorSentenceEditState();
   applyEditorModeDefaults();
   saveEditorDraft();
   updateEditorForm();
@@ -678,6 +681,8 @@ editorSavedModeFilter?.addEventListener("change", () => {
 newEditorExerciseButton.addEventListener("click", () => {
   activeEditorExerciseName = "";
   editorSavedExercises.value = "";
+  editingEditorSentenceIndex = -1;
+  updateEditorSentenceEditState();
   editorSavedListExpanded = false;
   updateEditorSavedListVisibility();
   resetEditorForm({ blank: true });
@@ -3213,9 +3218,36 @@ function addEditorSentence() {
   const sentence = editorSentenceInput?.value.trim();
   if (!sentence) return;
 
-  syncEditorSentences([...getEditorSentences(), sentence]);
+  const sentences = getEditorSentences();
+  if (editingEditorSentenceIndex >= 0 && editingEditorSentenceIndex < sentences.length) {
+    sentences[editingEditorSentenceIndex] = sentence;
+  } else {
+    sentences.push(sentence);
+  }
+  editingEditorSentenceIndex = -1;
+  syncEditorSentences(sentences);
   editorSentenceInput.value = "";
+  updateEditorSentenceEditState();
   editorSentenceInput.focus();
+}
+
+function editEditorSentence(index) {
+  const sentences = getEditorSentences();
+  if (!editorSentenceInput || index < 0 || index >= sentences.length) return;
+
+  editingEditorSentenceIndex = index;
+  editorSentenceInput.value = sentences[index];
+  updateEditorSentenceEditState();
+  renderEditorSentenceList();
+  editorSentenceInput.focus();
+}
+
+function updateEditorSentenceEditState() {
+  if (!addEditorSentenceButton) return;
+  const isEditing = editingEditorSentenceIndex >= 0;
+  addEditorSentenceButton.textContent = isEditing ? "\u2713" : "+";
+  addEditorSentenceButton.title = isEditing ? "Satz speichern" : "Satz hinzuf\u00fcgen";
+  addEditorSentenceButton.setAttribute("aria-label", isEditing ? "Satz speichern" : "Satz hinzuf\u00fcgen");
 }
 
 function renderEditorSentenceList() {
@@ -3251,6 +3283,65 @@ function renderEditorSentenceList() {
     });
 
     item.append(label, removeButton);
+    editorSentenceList.append(item);
+  });
+}
+
+function renderEditorSentenceList() {
+  if (!editorSentenceList) return;
+
+  const sentences = getEditorSentences();
+  editorSentenceList.innerHTML = "";
+
+  if (!sentences.length) {
+    const empty = document.createElement("p");
+    empty.className = "editor-sentence-empty";
+    empty.textContent = "Noch keine S\u00e4tze hinzugef\u00fcgt.";
+    editorSentenceList.append(empty);
+    return;
+  }
+
+  sentences.forEach((sentence, index) => {
+    const wordCount = sentence.split(/\s+/).filter(Boolean).length;
+    const item = document.createElement("div");
+    item.className = "editor-sentence-item";
+    item.classList.toggle("is-editing", index === editingEditorSentenceIndex);
+
+    const label = document.createElement("span");
+    label.textContent = `${index + 1}. ${sentence} (${wordCount} ${wordCount === 1 ? "Wort" : "W\u00f6rter"})`;
+    label.addEventListener("click", () => {
+      editEditorSentence(index);
+    });
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "editor-sentence-edit-button";
+    editButton.textContent = "\u270e";
+    editButton.setAttribute("aria-label", `Satz ${index + 1} bearbeiten`);
+    editButton.title = "Satz bearbeiten";
+    editButton.addEventListener("click", () => {
+      editEditorSentence(index);
+    });
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "editor-sentence-remove-button";
+    removeButton.textContent = "\u00d7";
+    removeButton.setAttribute("aria-label", `Satz ${index + 1} entfernen`);
+    removeButton.addEventListener("click", () => {
+      const nextSentences = getEditorSentences();
+      nextSentences.splice(index, 1);
+      if (editingEditorSentenceIndex === index) {
+        editingEditorSentenceIndex = -1;
+        editorSentenceInput.value = "";
+        updateEditorSentenceEditState();
+      } else if (editingEditorSentenceIndex > index) {
+        editingEditorSentenceIndex -= 1;
+      }
+      syncEditorSentences(nextSentences);
+    });
+
+    item.append(label, editButton, removeButton);
     editorSentenceList.append(item);
   });
 }

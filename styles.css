@@ -402,7 +402,7 @@ textarea {
 
 .editor-sentence-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 38px;
+  grid-template-columns: minmax(0, 1fr) 38px 38px;
   align-items: center;
   gap: 8px;
   padding: 8px 9px;
@@ -414,6 +414,11 @@ textarea {
   font-weight: 800;
 }
 
+.editor-sentence-item.is-editing {
+  border-color: rgba(255, 184, 77, 0.82);
+  background: #fff5d8;
+}
+
 .editor-sentence-item.is-invalid {
   border-color: rgba(200, 61, 74, 0.42);
   background: #fff1f3;
@@ -422,6 +427,7 @@ textarea {
 .editor-sentence-item span {
   min-width: 0;
   overflow-wrap: anywhere;
+  cursor: text;
 }
 
 .editor-sentence-item button {
@@ -433,6 +439,16 @@ textarea {
   color: #992936;
   font-size: 1.25rem;
   font-weight: 900;
+}
+
+.editor-sentence-item .editor-sentence-edit-button {
+  background: #e8fbfb;
+  color: var(--accent-strong);
+}
+
+.editor-sentence-item .editor-sentence-remove-button {
+  background: #f7dde1;
+  color: #992936;
 }
 
 .editor-dialog-builder {

@@ -116,6 +116,14 @@ const recordingCountBadge = document.querySelector("#recordingCountBadge");
 const patientRecordingCount = document.querySelector("#patientRecordingCount");
 const patientAverageDuration = document.querySelector("#patientAverageDuration");
 const patientAverageVolume = document.querySelector("#patientAverageVolume");
+const voiceProgressPanel = document.querySelector("#voiceProgressPanel");
+const voiceProgressTitle = document.querySelector("#voiceProgressTitle");
+const voiceProgressScore = document.querySelector("#voiceProgressScore");
+const voiceProgressSummary = document.querySelector("#voiceProgressSummary");
+const voiceProgressHints = document.querySelector("#voiceProgressHints");
+const voiceProgressScores = document.querySelector("#voiceProgressScores");
+const voiceProgressChart = document.querySelector("#voiceProgressChart");
+const voiceProgressList = document.querySelector("#voiceProgressList");
 const statisticsRecordingSelect = document.querySelector("#statisticsRecordingSelect");
 const statisticsPositionSlider = document.querySelector("#statisticsPositionSlider");
 const statisticsPositionValue = document.querySelector("#statisticsPositionValue");
@@ -377,6 +385,7 @@ let statisticsResizeState = null;
 let lastAmplitudeAt = 0;
 let isRecording = false;
 let isCalibrating = false;
+let calibrationReturnView = "record";
 let allRecordings = [];
 let saveTimeoutId;
 let adaptiveNoiseFloor = 0;
@@ -755,22 +764,24 @@ testEditorKaraokeButton?.addEventListener("click", () => {
 
 calibrationButton.addEventListener("click", async () => {
   if (isCalibrating) {
-    stopCalibration();
+    stopCalibration({ restoreView: true });
   } else {
-    await startCalibration();
+    await startCalibration({ returnView: "record" });
   }
 });
 
 calibrationBackButton?.addEventListener("click", () => {
-  if (isCalibrating) stopCalibration();
+  if (isCalibrating) stopCalibration({ restoreView: true });
 });
 
 settingsCalibrationButton?.addEventListener("click", async () => {
-  setActiveView("record");
   if (isCalibrating) {
-    stopCalibration();
+    stopCalibration({ restoreView: true });
   } else {
-    await startCalibration();
+    calibrationReturnView = "settings";
+    setActiveView("record");
+    const started = await startCalibration({ returnView: "settings" });
+    if (!started) setActiveView("settings");
   }
 });
 
@@ -1891,6 +1902,7 @@ async function finishRecording() {
 
     currentMetadata = {
       id: fileStem,
+      testId: fileStem,
       datum: timestamp.toISOString(),
       uebung: getExerciseLabel(),
       uebungText: getExerciseScript(),
@@ -1918,6 +1930,8 @@ async function finishRecording() {
       aufnahme: `${fileStem}.${fileExtension}`,
     };
     currentMetadata.audioAnalyse = buildAudioAnalysis(currentMetadata);
+    currentMetadata.werte = getVoiceAnalysisValues(currentMetadata);
+    currentMetadata.bewertung = calculateVoiceEvaluation(currentMetadata, allRecordings);
     selectedAnalysisRecordingId = currentMetadata.id;
     currentVideoBlob = videoBlob;
 
@@ -2986,11 +3000,12 @@ function setExerciseVisualsVisible(isVisible) {
   document.body.classList.toggle("exercise-visuals-visible", Boolean(isVisible));
 }
 
-async function startCalibration() {
-  if (isRecording) return;
+async function startCalibration(options = {}) {
+  if (isRecording) return false;
+  calibrationReturnView = options.returnView || document.body.dataset.activeView || "record";
 
   const streamReady = await ensureMediaStream();
-  if (!streamReady) return;
+  if (!streamReady) return false;
 
   isCalibrating = true;
   amplitudes = [];
@@ -3006,6 +3021,8 @@ async function startCalibration() {
   document.body.classList.add("calibration-mode");
   setExerciseVisualsVisible(true);
   calibrationButton.textContent = "Kalibrierung stoppen";
+  if (settingsCalibrationButton) settingsCalibrationButton.textContent = "Kalibrierung stoppen";
+  calibrationBackButton?.classList.remove("is-hidden");
   message.textContent = "Kalibrierung läuft. Stimme sprechen und Empfindlichkeit einstellen.";
   drawWaveform(liveWaveform, [], {
     mode: "live",
@@ -3018,16 +3035,23 @@ async function startCalibration() {
   updateVoiceFrequencyDisplay(0, 0);
   await setupAudioAnalyser({ reuseExisting: false });
   measureAudio();
+  return true;
 }
 
-function stopCalibration() {
+function stopCalibration(options = {}) {
   isCalibrating = false;
   document.body.classList.remove("calibration-mode");
   setExerciseVisualsVisible(false);
   window.cancelAnimationFrame(animationFrame);
   disconnectAudioAnalyser();
   calibrationButton.textContent = "Kalibrieren";
+  if (settingsCalibrationButton) settingsCalibrationButton.textContent = "Kalibrieren";
+  calibrationBackButton?.classList.add("is-hidden");
   message.textContent = `Kalibrierung gespeichert: Empfindlichkeit ${formatSensitivityLabel(sensitivitySlider.value)}.`;
+  if (options.restoreView && calibrationReturnView && calibrationReturnView !== document.body.dataset.activeView) {
+    setActiveView(calibrationReturnView);
+  }
+  calibrationReturnView = "record";
 }
 
 function getExerciseLabel() {
@@ -6294,6 +6318,8 @@ function updateResultStats(metadata) {
   metadata.durchschnittlicheLautstaerke = stats.average;
   metadata.maximaleLautstaerke = stats.maximum;
   metadata.audioAnalyse = metadata.audioAnalyse || buildAudioAnalysis(metadata);
+  metadata.werte = metadata.werte || getVoiceAnalysisValues(metadata);
+  metadata.bewertung = metadata.bewertung || calculateVoiceEvaluation(metadata, allRecordings);
   if (averageVolume) averageVolume.textContent = String(stats.average);
   if (maxVolume) maxVolume.textContent = String(stats.maximum);
   if (sampleCount) sampleCount.textContent = String((metadata.amplituden || []).length);
@@ -7147,6 +7173,150 @@ function buildAudioAnalysis(metadata) {
   };
 }
 
+function getVoiceAnalysisValues(metadata) {
+  const analysis = metadata.audioAnalyse || buildAudioAnalysis(metadata);
+  const amplitudeUniformity = Math.round(
+    analysis.amplitude?.stabilitaet ?? Math.max(0, 100 - calculateStandardDeviation(metadata.amplituden || [])),
+  );
+
+  return {
+    lautstaerkeDurchschnitt: Math.round(Number(analysis.lautstaerke?.durchschnitt || metadata.durchschnittlicheLautstaerke || 0)),
+    lautstaerkeMaximum: Math.round(Number(analysis.lautstaerke?.maximum || metadata.maximaleLautstaerke || 0)),
+    frequenzDurchschnittHz: Math.round(Number(analysis.frequenz?.durchschnittHz || metadata.durchschnittlicheStimmfrequenzHz || 0)),
+    frequenzSchwankung: Math.round(Number(analysis.frequenz?.stabilitaetHz || 0)),
+    stimmenanteilProzent: Math.round(Number(analysis.frequenz?.stimmanteilProzent || 0)),
+    pausenUeberEineSekunde: Math.round(Number(analysis.timing?.pausenUeberEineSekunde || 0)),
+    sprechabschnitte: Math.round(Number(analysis.timing?.leseAbschnitte?.length || 0)),
+    amplitudenGleichmaessigkeit: Math.max(0, Math.min(100, amplitudeUniformity)),
+    gesamtdauer: Number(metadata.dauerSekunden || analysis.dauerSekunden || 0),
+  };
+}
+
+function isCompleteVoiceTest(metadata) {
+  const values = getVoiceAnalysisValues(metadata);
+  return values.gesamtdauer >= 2 && (metadata.amplituden || []).length >= 8;
+}
+
+function findVoiceBaseline(metadata, recordings = allRecordings) {
+  const patientName = metadata.patientName || getCurrentPatientName();
+  const exerciseName = metadata.uebung || "";
+  const candidates = [...recordings, metadata]
+    .filter((recording) =>
+      recording &&
+      (recording.patientName || "Demo Patient") === patientName &&
+      (recording.uebung || "") === exerciseName &&
+      isCompleteVoiceTest(recording)
+    )
+    .sort((a, b) => String(a.datum || "").localeCompare(String(b.datum || "")));
+
+  return candidates[0] || metadata;
+}
+
+function findPreviousVoiceTest(metadata, recordings = allRecordings) {
+  const patientName = metadata.patientName || getCurrentPatientName();
+  const exerciseName = metadata.uebung || "";
+  const currentDate = String(metadata.datum || "");
+  const candidates = recordings
+    .filter((recording) =>
+      recording &&
+      recording.id !== metadata.id &&
+      (recording.patientName || "Demo Patient") === patientName &&
+      (recording.uebung || "") === exerciseName &&
+      String(recording.datum || "") < currentDate &&
+      isCompleteVoiceTest(recording)
+    )
+    .sort((a, b) => String(b.datum || "").localeCompare(String(a.datum || "")));
+
+  return candidates[0] || null;
+}
+
+function calculateVoiceEvaluation(metadata, recordings = allRecordings) {
+  const values = getVoiceAnalysisValues(metadata);
+  const baseline = findVoiceBaseline(metadata, recordings);
+  const baselineValues = getVoiceAnalysisValues(baseline);
+  const previous = findPreviousVoiceTest(metadata, recordings);
+  const previousScore = previous?.bewertung?.gesamt ?? null;
+
+  const teilbewertungen = {
+    lautstaerke: Math.round((scoreStable(values.lautstaerkeDurchschnitt, baselineValues.lautstaerkeDurchschnitt, 1.45) + scoreStable(values.lautstaerkeMaximum, baselineValues.lautstaerkeMaximum, 1.25)) / 2),
+    stimmstabilitaet: Math.round((scoreStable(values.frequenzDurchschnittHz, baselineValues.frequenzDurchschnittHz, 1.2) + scoreLowerIsBetter(values.frequenzSchwankung, baselineValues.frequenzSchwankung, 1.35)) / 2),
+    sprechfluss: Math.round((scoreStable(values.sprechabschnitte, baselineValues.sprechabschnitte, 1.8) + scoreStable(values.gesamtdauer, baselineValues.gesamtdauer, 0.9)) / 2),
+    pausen: scoreLowerIsBetter(values.pausenUeberEineSekunde, baselineValues.pausenUeberEineSekunde, 1.8),
+    stimmanteil: scoreHigherIsBetter(values.stimmenanteilProzent, baselineValues.stimmenanteilProzent, 1.3),
+    gleichmaessigkeit: scoreHigherIsBetter(values.amplitudenGleichmaessigkeit, baselineValues.amplitudenGleichmaessigkeit, 1.25),
+  };
+
+  const gesamt = Math.round(
+    teilbewertungen.lautstaerke * 0.18 +
+    teilbewertungen.stimmstabilitaet * 0.18 +
+    teilbewertungen.sprechfluss * 0.17 +
+    teilbewertungen.pausen * 0.15 +
+    teilbewertungen.stimmanteil * 0.15 +
+    teilbewertungen.gleichmaessigkeit * 0.17,
+  );
+  const baselineScore = baseline.id === metadata.id ? gesamt : (baseline.bewertung?.gesamt || 70);
+  const veraenderungBaselineProzent = baseline.id === metadata.id ? 0 : Math.round(((gesamt - baselineScore) / Math.max(1, baselineScore)) * 100);
+  const veraenderungVorherigerTestProzent = previousScore == null ? 0 : Math.round(((gesamt - previousScore) / Math.max(1, previousScore)) * 100);
+  const entwicklung =
+    veraenderungBaselineProzent >= 5 ? "verbessert" :
+    veraenderungBaselineProzent <= -5 ? "verschlechtert" :
+    "stabil";
+
+  return {
+    gesamt,
+    teilbewertungen,
+    veraenderungBaselineProzent,
+    veraenderungVorherigerTestProzent,
+    entwicklung,
+    ampel: getTrafficLightClass(gesamt),
+    hinweise: buildVoiceEvaluationHints(values, baselineValues, teilbewertungen),
+    baseline: {
+      testId: baseline.id || metadata.id,
+      datum: baseline.datum || metadata.datum,
+      werte: baselineValues,
+    },
+  };
+}
+
+function scoreStable(current, baseline, tolerance = 1) {
+  if (!Number.isFinite(Number(current)) || !Number.isFinite(Number(baseline)) || baseline <= 0) return 70;
+  const deviation = Math.abs((current - baseline) / baseline) * 100;
+  return Math.max(35, Math.min(100, Math.round(100 - deviation * tolerance)));
+}
+
+function scoreHigherIsBetter(current, baseline, tolerance = 1) {
+  if (!Number.isFinite(Number(current)) || !Number.isFinite(Number(baseline)) || baseline <= 0) return 70;
+  const change = ((current - baseline) / baseline) * 100;
+  return Math.max(35, Math.min(100, Math.round(82 + change * tolerance)));
+}
+
+function scoreLowerIsBetter(current, baseline, tolerance = 1) {
+  if (!Number.isFinite(Number(current)) || !Number.isFinite(Number(baseline))) return 70;
+  const safeBaseline = Math.max(1, baseline);
+  const change = ((safeBaseline - current) / safeBaseline) * 100;
+  return Math.max(35, Math.min(100, Math.round(82 + change * tolerance)));
+}
+
+function getTrafficLightClass(score) {
+  if (score >= 75) return "is-good";
+  if (score >= 55) return "is-warning";
+  return "is-alert";
+}
+
+function buildVoiceEvaluationHints(values, baselineValues, scores) {
+  const strengths = [];
+  const notices = [];
+  if (values.amplitudenGleichmaessigkeit >= baselineValues.amplitudenGleichmaessigkeit + 4) strengths.push("gleichmäßigere Lautstärke");
+  if (values.pausenUeberEineSekunde < baselineValues.pausenUeberEineSekunde) strengths.push("weniger lange Pausen");
+  if (values.stimmenanteilProzent >= baselineValues.stimmenanteilProzent + 4) strengths.push("höherer Stimmenanteil");
+  if (values.frequenzSchwankung > baselineValues.frequenzSchwankung + 8) notices.push("Grundfrequenz schwankt stärker");
+  if (values.stimmenanteilProzent <= baselineValues.stimmenanteilProzent - 6) notices.push("Stimmenanteil ist geringer");
+  if (scores.lautstaerke < 58) notices.push("Lautstärke weicht deutlich von der Ausgangsmessung ab");
+  if (!strengths.length) strengths.push("Werte sind im persönlichen Verlauf stabil");
+  if (!notices.length) notices.push("keine deutliche Verschlechterung erkennbar");
+  return [...strengths.map((text) => `Stärke: ${text}`), ...notices.map((text) => `Auffällig: ${text}`)];
+}
+
 function getActiveElevenLabsVoice(settings = getElevenLabsSettings()) {
   return settings.voices.find((voice) => voice.key === settings.activeVoiceKey) || settings.voices[0] || null;
 }
@@ -7286,6 +7456,26 @@ function renderAudioAnalysis(metadata = currentMetadata) {
   audioAnalysisNote.textContent = analysis.qualitaet.zuLeise
     ? "Hinweis: Die Aufnahme wirkt sehr leise. Empfindlichkeit oder Abstand zum Mikrofon prüfen."
     : "Schieberegler bewegt die Analyseposition. Die Werte werden aus einem kurzen Fenster um diese Stelle berechnet.";
+}
+
+function normalizeAnalysisDisplayLabel(label) {
+  const text = String(label || "");
+  if (text.includes("Lautst") && text.includes("dort") && text.includes("Ø")) {
+    return "Ø Lautstärke an der Analyseposition";
+  }
+  if (text.includes("Lautst") && text.includes("dort")) {
+    return "Lautstärke an der Analyseposition";
+  }
+  if (text.includes("Amplitude") && text.includes("dort")) {
+    return "Amplitude an der Analyseposition";
+  }
+  if (text.includes("Frequenz") && text.includes("dort") && text.includes("Ø")) {
+    return "Ø Frequenz an der Analyseposition";
+  }
+  if (text.includes("Frequenz") && text.includes("dort")) {
+    return "Frequenz an der Analyseposition";
+  }
+  return text;
 }
 
 function getAnalysisPositionFromSlider(value) {
@@ -7926,6 +8116,7 @@ function renderLibrary(preferredId = null) {
   recordingsList.innerHTML = "";
   updateStatisticsRecordingSelect(patientRecordings, preferredId);
   renderPlaybackRecordingAccess(patientRecordings, preferredId);
+  renderVoiceProgress(patientRecordings, preferredId);
   renderAudioAnalysis(getSelectedAnalysisRecording());
 
   if (!patientRecordings.length) {
@@ -7965,6 +8156,161 @@ function renderLibrary(preferredId = null) {
 
     item.append(summary, openButton, deleteListButton);
     recordingsList.append(item);
+  });
+}
+
+function renderVoiceProgress(patientRecordings, preferredId = null) {
+  if (!voiceProgressPanel || !voiceProgressTitle || !voiceProgressScore || !voiceProgressSummary || !voiceProgressScores || !voiceProgressChart || !voiceProgressList) return;
+
+  const completeRecordings = patientRecordings
+    .filter(isCompleteVoiceTest)
+    .sort((a, b) => String(a.datum || "").localeCompare(String(b.datum || "")))
+    .map((recording) => {
+      const evaluation = recording.bewertung || calculateVoiceEvaluation(recording, patientRecordings);
+      return { ...recording, bewertung: evaluation, werte: recording.werte || getVoiceAnalysisValues(recording) };
+    });
+
+  if (!completeRecordings.length) {
+    voiceProgressTitle.textContent = "Noch keine Bewertung";
+    voiceProgressScore.textContent = "0";
+  voiceProgressScore.className = "voice-score-badge is-neutral";
+  voiceProgressSummary.textContent = "Nach dem ersten vollständigen Test wird eine persönliche Ausgangsmessung gespeichert.";
+    if (voiceProgressHints) voiceProgressHints.innerHTML = "";
+  voiceProgressScores.innerHTML = "";
+    voiceProgressList.innerHTML = "";
+    drawVoiceProgressChart([]);
+    return;
+  }
+
+  const selectedRecording =
+    completeRecordings.find((recording) => recording.id === preferredId || recording.id === selectedAnalysisRecordingId) ||
+    completeRecordings.at(-1);
+  const evaluation = selectedRecording.bewertung || calculateVoiceEvaluation(selectedRecording, patientRecordings);
+  const baselineText = evaluation.veraenderungBaselineProzent >= 0
+    ? `+${evaluation.veraenderungBaselineProzent}% gegenüber dem ersten Test`
+    : `${evaluation.veraenderungBaselineProzent}% gegenüber dem ersten Test`;
+  const previousText = evaluation.veraenderungVorherigerTestProzent >= 0
+    ? `+${evaluation.veraenderungVorherigerTestProzent}% zum vorherigen Test`
+    : `${evaluation.veraenderungVorherigerTestProzent}% zum vorherigen Test`;
+
+  voiceProgressTitle.textContent = `${evaluation.gesamt} von 100 Punkten`;
+  voiceProgressScore.textContent = String(evaluation.gesamt);
+  voiceProgressScore.className = `voice-score-badge ${getTrafficLightClass(evaluation.gesamt)}`;
+  voiceProgressSummary.textContent = `Entwicklung: ${evaluation.entwicklung}, ${baselineText}, ${previousText}.`;
+  renderVoiceProgressHints(evaluation.hinweise || []);
+  renderVoiceScoreGrid(evaluation.teilbewertungen);
+  drawVoiceProgressChart(completeRecordings);
+  renderVoiceProgressList(completeRecordings, selectedRecording.id);
+}
+
+function renderVoiceProgressHints(hints = []) {
+  if (!voiceProgressHints) return;
+  voiceProgressHints.innerHTML = "";
+  const strengths = hints
+    .filter((hint) => String(hint).startsWith("Stärke:"))
+    .map((hint) => String(hint).replace(/^Stärke:\s*/, ""));
+  const notices = hints
+    .filter((hint) => String(hint).startsWith("Auffällig:"))
+    .map((hint) => String(hint).replace(/^Auffällig:\s*/, ""));
+
+  [
+    ["Stärken", strengths],
+    ["Auffällig", notices],
+  ].forEach(([title, entries]) => {
+    if (!entries.length) return;
+    const group = document.createElement("div");
+    const heading = document.createElement("strong");
+    const list = document.createElement("ul");
+    heading.textContent = title;
+    entries.forEach((entry) => {
+      const item = document.createElement("li");
+      item.textContent = entry;
+      list.append(item);
+    });
+    group.append(heading, list);
+    voiceProgressHints.append(group);
+  });
+}
+
+function renderVoiceScoreGrid(scores = {}) {
+  const labels = [
+    ["lautstaerke", "Lautstärke"],
+    ["stimmstabilitaet", "Stimmstabilität"],
+    ["sprechfluss", "Sprechfluss"],
+    ["pausen", "Pausen"],
+    ["stimmanteil", "Stimmanteil"],
+    ["gleichmaessigkeit", "Gleichmäßigkeit"],
+  ];
+
+  voiceProgressScores.innerHTML = "";
+  labels.forEach(([key, label]) => {
+    const value = Math.round(Number(scores[key] || 0));
+    const item = document.createElement("div");
+    item.className = getTrafficLightClass(value);
+    const term = document.createElement("dt");
+    const description = document.createElement("dd");
+    term.textContent = normalizeAnalysisDisplayLabel(label);
+    description.textContent = String(value);
+    item.append(term, description);
+    voiceProgressScores.append(item);
+  });
+}
+
+function renderVoiceProgressList(recordings, activeId = "") {
+  voiceProgressList.innerHTML = "";
+  recordings.slice(-6).forEach((recording) => {
+    const evaluation = recording.bewertung || calculateVoiceEvaluation(recording, recordings);
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = `voice-progress-row ${recording.id === activeId ? "is-active" : ""}`;
+    row.textContent = `${formatDateTime(recording.datum)}: ${evaluation.gesamt} Punkte (${evaluation.veraenderungBaselineProzent >= 0 ? "+" : ""}${evaluation.veraenderungBaselineProzent}%)`;
+    row.addEventListener("click", () => openStoredRecording(recording.id));
+    voiceProgressList.append(row);
+  });
+}
+
+function drawVoiceProgressChart(recordings) {
+  const canvas = voiceProgressChart;
+  if (!canvas) return;
+  resizeCanvasToDisplay(canvas);
+  const context = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  const pixelRatio = window.devicePixelRatio || 1;
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#101820";
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = "rgba(255,255,255,0.12)";
+  context.lineWidth = pixelRatio;
+  [0.25, 0.5, 0.75].forEach((ratio) => {
+    const y = height * ratio;
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(width, y);
+    context.stroke();
+  });
+
+  const scores = recordings.map((recording) => recording.bewertung?.gesamt || calculateVoiceEvaluation(recording, recordings).gesamt);
+  if (!scores.length) return;
+  const padding = 12 * pixelRatio;
+  const step = scores.length > 1 ? (width - padding * 2) / (scores.length - 1) : 0;
+  context.beginPath();
+  scores.forEach((score, index) => {
+    const x = scores.length > 1 ? padding + index * step : width / 2;
+    const y = padding + (1 - Math.max(0, Math.min(100, score)) / 100) * (height - padding * 2);
+    if (!index) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  });
+  context.strokeStyle = "#38c172";
+  context.lineWidth = 3 * pixelRatio;
+  context.stroke();
+  scores.forEach((score, index) => {
+    const x = scores.length > 1 ? padding + index * step : width / 2;
+    const y = padding + (1 - Math.max(0, Math.min(100, score)) / 100) * (height - padding * 2);
+    context.fillStyle = score >= 75 ? "#38c172" : score >= 55 ? "#f6b44b" : "#e1495b";
+    context.beginPath();
+    context.arc(x, y, 4 * pixelRatio, 0, Math.PI * 2);
+    context.fill();
   });
 }
 

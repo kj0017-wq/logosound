@@ -2476,6 +2476,147 @@ body.is-resizing-statistics-waveform {
   font-weight: 900;
 }
 
+.voice-progress-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(15, 139, 141, 0.22);
+  border-radius: 8px;
+  background: #f8fcfd;
+}
+
+.voice-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.voice-progress-header h3 {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+
+.voice-score-badge {
+  display: grid;
+  place-items: center;
+  min-width: 54px;
+  min-height: 54px;
+  border-radius: 999px;
+  background: #e9eef2;
+  color: var(--ink);
+  font-size: 1.1rem;
+  font-weight: 950;
+}
+
+.voice-score-badge.is-good,
+.voice-score-grid .is-good {
+  background: #dff6e8;
+  color: #16794a;
+}
+
+.voice-score-badge.is-warning,
+.voice-score-grid .is-warning {
+  background: #fff3d5;
+  color: #8a5a00;
+}
+
+.voice-score-badge.is-alert,
+.voice-score-grid .is-alert {
+  background: #ffe2e7;
+  color: #a33242;
+}
+
+.voice-progress-summary,
+.voice-progress-disclaimer {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.voice-progress-hints {
+  display: grid;
+  gap: 7px;
+}
+
+.voice-progress-hints > div {
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.voice-progress-hints strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink);
+  font-size: 0.78rem;
+}
+
+.voice-progress-hints ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.voice-score-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0;
+}
+
+.voice-score-grid > div {
+  min-width: 0;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.voice-score-grid dt {
+  margin: 0 0 4px;
+  font-size: 0.68rem;
+}
+
+.voice-score-grid dd {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.voice-progress-chart {
+  width: 100%;
+  height: 92px;
+  border-radius: 8px;
+  background: #101820;
+}
+
+.voice-progress-list {
+  display: grid;
+  gap: 6px;
+}
+
+.voice-progress-row {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-align: left;
+}
+
+.voice-progress-row.is-active {
+  border-color: rgba(15, 139, 141, 0.48);
+  background: #e8fbfb;
+  color: var(--accent-strong);
+}
+
 dt {
   color: var(--muted);
   font-size: 0.66rem;

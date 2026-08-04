@@ -1345,7 +1345,7 @@ async function createStoredVoiceAudio(text, exerciseLabel) {
 async function startExercisePreview() {
   if (isRecording || mediaRecorder?.state === "recording") return;
 
-  unlockInstructionAudio();
+  await unlockInstructionAudio();
   setupKaraokeText();
   const previewText = getExercisePreviewText();
   if (!previewText) {
@@ -1360,7 +1360,7 @@ async function startExercisePreview() {
 
   try {
     const audioUrls = await getExercisePreviewAudioSegments(previewText);
-    await playExercisePreviewAudio(audioUrls);
+    await playExercisePreviewAudio(audioUrls, previewText);
   } catch (error) {
     await playExercisePreviewFallback(previewText, error);
   } finally {
@@ -1626,7 +1626,7 @@ async function saveDemoAudioSegmentsForActiveExercise(segments) {
   await saveCloudEditorExercise(updatedExercise).catch(() => {});
 }
 
-async function playExercisePreviewAudio(audioUrls) {
+async function playExercisePreviewAudio(audioUrls, fallbackText = "") {
   const urls = Array.isArray(audioUrls) ? audioUrls.filter(Boolean) : [audioUrls].filter(Boolean);
   if (!urls.length) throw new Error("Keine Vorführ-Audiodatei vorhanden.");
 
@@ -1634,10 +1634,10 @@ async function playExercisePreviewAudio(audioUrls) {
   message.textContent = "Vorführung läuft.";
   previewAudioUrls = urls;
   previewPlaybackOffsetSeconds = 0;
-  await playExercisePreviewSegment(0);
+  await playExercisePreviewSegment(0, fallbackText);
 }
 
-async function playExercisePreviewSegment(index) {
+async function playExercisePreviewSegment(index, fallbackText = "") {
   if (!isPreviewingExercise || index >= previewAudioUrls.length) {
     stopExercisePreview();
     return;
@@ -1649,11 +1649,10 @@ async function playExercisePreviewSegment(index) {
   previewAudioElement.addEventListener("ended", async () => {
     previewPlaybackOffsetSeconds += Number(previewAudioElement?.duration) || 0;
     previewAudioElement = null;
-    await playExercisePreviewSegment(index + 1);
+    await playExercisePreviewSegment(index + 1, fallbackText);
   }, { once: true });
-  previewAudioElement.addEventListener("error", () => {
-    message.textContent = "Vorführung-Audio konnte nicht abgespielt werden.";
-    stopExercisePreview();
+  previewAudioElement.addEventListener("error", async () => {
+    await playExercisePreviewFallback(fallbackText || getExercisePreviewText(), new Error("Vorführung-Audio konnte nicht abgespielt werden."));
   }, { once: true });
 
   previewExerciseButton.disabled = false;
@@ -1677,6 +1676,12 @@ function animateExercisePreviewKaraoke() {
 async function playExercisePreviewFallback(previewText, error) {
   if (!isPreviewingExercise) return;
 
+  if (previewAudioElement) {
+    previewAudioElement.pause();
+    previewAudioElement.removeAttribute("src");
+    previewAudioElement.load();
+    previewAudioElement = null;
+  }
   setExerciseVisualsVisible(true);
   previewAudioUrls = [];
   previewPlaybackOffsetSeconds = 0;

@@ -5003,6 +5003,28 @@ function drawWaveform(canvas, values, options = {}) {
   }
 }
 
+function getPlaybackWaveformDisplayOptions(metadata, progress = 0, durationSeconds = null) {
+  const values = metadata?.amplituden || [];
+  return {
+    mode: "playback",
+    progress,
+    durationSeconds: durationSeconds ?? metadata?.dauerSekunden,
+    compress: 1,
+    dynamicRange: 1.28,
+    minLocalPeak: 8,
+    visualCeiling: 88,
+    shapePower: 1.16,
+    dim: true,
+    levelValues: metadata?.lautstaerkePegel || metadata?.lautstaerken || values,
+    pixelsPerBar: 3.2,
+    resampleMode: "rms",
+    barGap: 2,
+    minBarWidth: 1.6,
+    minSpeechBarHeight: 5,
+    minPauseBarHeight: 2,
+  };
+}
+
 function drawFilledWaveformEnvelope(context, values, levels, options = {}) {
   const count = values.length;
   const width = options.waveformWidth || 1;
@@ -5662,23 +5684,7 @@ function showResult(metadata, videoBlob) {
   playbackSeek.value = "0";
   playbackTimeLabel.textContent = `00:00 / ${formatTime(metadata.dauerSekunden || 0)}`;
 
-  drawWaveform(playbackWaveform, metadata.amplituden, {
-    mode: "playback",
-    progress: 0,
-    durationSeconds: metadata.dauerSekunden,
-    compress: 1.7,
-    dynamicRange: 0.54,
-    minLocalPeak: 0.9,
-    visualCeiling: 100,
-    shapePower: 0.42,
-    dim: true,
-    levelValues: metadata.lautstaerkePegel || metadata.lautstaerken || metadata.amplituden,
-    pixelsPerBar: 2.4,
-    barGap: 1,
-    minBarWidth: 2,
-    minSpeechBarHeight: 26,
-    minPauseBarHeight: 2,
-  });
+  drawWaveform(playbackWaveform, metadata.amplituden, getPlaybackWaveformDisplayOptions(metadata, 0));
   playbackEmptyState?.classList.add("is-hidden");
   resultPanel.classList.remove("is-hidden");
   setActiveView("playback");
@@ -5867,23 +5873,11 @@ function updatePlaybackVisuals(forcedProgress = null) {
     forcedProgress ?? mediaTimeToAnalysisProgress(recordingPlayer.currentTime || 0, currentMetadata);
   const syncedCurrentTime = duration ? progress * duration : 0;
 
-  drawWaveform(playbackWaveform, playbackValues, {
-    mode: "playback",
-    progress,
-    durationSeconds: duration,
-    compress: 1.7,
-    dynamicRange: 0.54,
-    minLocalPeak: 0.9,
-    visualCeiling: 100,
-    shapePower: 0.42,
-    dim: true,
-    levelValues: currentMetadata.lautstaerkePegel || currentMetadata.lautstaerken || playbackValues,
-    pixelsPerBar: 2.4,
-    barGap: 1,
-    minBarWidth: 2,
-    minSpeechBarHeight: 26,
-    minPauseBarHeight: 2,
-  });
+  drawWaveform(
+    playbackWaveform,
+    playbackValues,
+    getPlaybackWaveformDisplayOptions(currentMetadata, progress, duration),
+  );
 
   playbackSeek.value = String(Math.round(progress * 1000));
   playbackTimeLabel.textContent = `${formatTime(syncedCurrentTime || 0)} / ${formatTime(duration || 0)}`;
@@ -7456,22 +7450,14 @@ function rescaleCurrentAmplitudes() {
 
   if (currentMetadata?.amplituden?.length) {
     updateResultStats(currentMetadata);
-    drawWaveform(playbackWaveform, currentMetadata.amplituden, {
-      mode: "playback",
-      progress: recordingPlayer.duration ? recordingPlayer.currentTime / recordingPlayer.duration : 0,
-      compress: 1.7,
-      dynamicRange: 0.54,
-      minLocalPeak: 0.9,
-      visualCeiling: 100,
-      shapePower: 0.42,
-      dim: true,
-      levelValues: currentMetadata.lautstaerkePegel || currentMetadata.lautstaerken || currentMetadata.amplituden,
-      pixelsPerBar: 2.4,
-      barGap: 1,
-      minBarWidth: 2,
-      minSpeechBarHeight: 26,
-      minPauseBarHeight: 2,
-    });
+    drawWaveform(
+      playbackWaveform,
+      currentMetadata.amplituden,
+      getPlaybackWaveformDisplayOptions(
+        currentMetadata,
+        recordingPlayer.duration ? recordingPlayer.currentTime / recordingPlayer.duration : 0,
+      ),
+    );
   }
 }
 

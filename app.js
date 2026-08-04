@@ -9403,12 +9403,12 @@ function drawVoiceProgressChart(recordings) {
   const pixelRatio = window.devicePixelRatio || 1;
   if (width <= 1 || height <= 1) return;
   context.clearRect(0, 0, width, height);
-  context.fillStyle = "#0e1920";
+  context.fillStyle = "#f8fcfd";
   context.fillRect(0, 0, width, height);
-  context.fillStyle = "rgba(255,255,255,0.75)";
+  context.fillStyle = "#5e6b7e";
   context.font = `${10 * pixelRatio}px system-ui, sans-serif`;
-  context.fillText("Verlauf", 10 * pixelRatio, 16 * pixelRatio);
-  context.strokeStyle = "rgba(255,255,255,0.12)";
+  context.fillText("Entwicklung", 10 * pixelRatio, 16 * pixelRatio);
+  context.strokeStyle = "rgba(15, 139, 141, 0.14)";
   context.lineWidth = pixelRatio;
   [0.25, 0.5, 0.75].forEach((ratio) => {
     const y = height * ratio;
@@ -9438,7 +9438,7 @@ function drawVoiceProgressChart(recordings) {
     if (!index) context.moveTo(x, y);
     else context.lineTo(x, y);
   });
-  context.strokeStyle = "#4bd4ff";
+  context.strokeStyle = "#0f8b8d";
   context.lineWidth = 4 * pixelRatio;
   context.lineJoin = "round";
   context.lineCap = "round";
@@ -9450,7 +9450,7 @@ function drawVoiceProgressChart(recordings) {
     context.beginPath();
     context.arc(x, y, 5 * pixelRatio, 0, Math.PI * 2);
     context.fill();
-    context.fillStyle = "rgba(255,255,255,0.9)";
+    context.fillStyle = "#101923";
     context.font = `${9 * pixelRatio}px system-ui, sans-serif`;
     context.textAlign = index === scores.length - 1 ? "right" : "center";
     context.fillText(String(score), x, Math.max(12 * pixelRatio, y - 8 * pixelRatio));

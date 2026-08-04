@@ -183,6 +183,7 @@ const settingsSensitivityValue = document.querySelector("#settingsSensitivityVal
 const settingsCalibrationButton = document.querySelector("#settingsCalibrationButton");
 const settingsEqSliders = document.querySelectorAll("[data-eq-band]");
 const settingsEqSummary = document.querySelector("#settingsEqSummary");
+const settingsEqTestButton = document.querySelector("#settingsEqTestButton");
 const settingsEqResetButton = document.querySelector("#settingsEqResetButton");
 const settingsPlaybackVolume = document.querySelector("#settingsPlaybackVolume");
 const settingsPlaybackVolumeValue = document.querySelector("#settingsPlaybackVolumeValue");
@@ -362,6 +363,9 @@ let audioContext;
 let instructionAudioContext;
 let instructionAudioSource;
 let playbackAudioContext;
+let settingsEqAudioContext;
+let settingsEqAudioSource;
+let settingsEqFilters = [];
 let analyser;
 let audioSource;
 let audioOnlyStream;
@@ -910,11 +914,17 @@ settingsEqSliders.forEach((slider) => {
   slider.addEventListener("input", () => {
     saveEqualizerSettingsFromControls();
     renderEqualizerControls();
+    applySettingsEqualizer();
   });
   slider.addEventListener("change", () => {
     saveEqualizerSettingsFromControls({ syncCloud: true });
     renderEqualizerControls();
+    applySettingsEqualizer();
   });
+});
+
+settingsEqTestButton?.addEventListener("click", async () => {
+  await playSettingsEqualizerTestAudio();
 });
 
 settingsEqResetButton?.addEventListener("click", () => {
@@ -6856,12 +6866,14 @@ function renderEqualizerControls(settings = getEqualizerSettings()) {
       ? `${activeBands} Band${activeBands === 1 ? "" : "s"} · max ${maxAbs} dB`
       : "0 dB";
   }
+  applySettingsEqualizer(settings);
 }
 
 function resetEqualizerSettings() {
   const settings = getDefaultEqualizerSettings();
   localStorage.setItem(SETTINGS_EQ_KEY, JSON.stringify(settings));
   renderEqualizerControls(settings);
+  applySettingsEqualizer(settings);
   saveCloudEqualizerSettings(settings).catch(() => {
     if (settingsState) settingsState.textContent = "Equalizer zurückgesetzt. Firebase-Speichern fehlgeschlagen.";
   });
@@ -6872,6 +6884,77 @@ async function saveCloudEqualizerSettings(settings = getEqualizerSettings()) {
   await setDoc(doc(firestore, "settings", SETTINGS_EQ_DOC), {
     ...settings,
     updatedAt: new Date().toISOString(),
+  });
+}
+
+async function playSettingsEqualizerTestAudio() {
+  if (!settingsVoicePreview) return;
+  if (settingsEqTestButton) settingsEqTestButton.disabled = true;
+
+  try {
+    if (!settingsVoicePreview.currentSrc && !settingsVoicePreview.src) {
+      const created = await testElevenLabsSettingsVoice({ autoPlay: false });
+      if (!created) return;
+    }
+
+    await ensureSettingsEqualizerAudio();
+    applySettingsEqualizer();
+    settingsVoicePreview.currentTime = 0;
+    settingsVoicePreview.volume = 1;
+    await settingsVoicePreview.play();
+    if (settingsState) settingsState.textContent = "EQ-Test läuft. Regler ändern den Klang live.";
+  } catch (error) {
+    if (settingsState) settingsState.textContent = error?.message || "EQ-Testaudio konnte nicht gestartet werden.";
+  } finally {
+    if (settingsEqTestButton) settingsEqTestButton.disabled = false;
+  }
+}
+
+async function ensureSettingsEqualizerAudio() {
+  if (!settingsVoicePreview) return false;
+  const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextConstructor) return false;
+
+  if (!settingsEqAudioContext || settingsEqAudioContext.state === "closed") {
+    settingsEqAudioContext = new AudioContextConstructor();
+  }
+
+  if (!settingsEqAudioSource) {
+    settingsEqAudioSource = settingsEqAudioContext.createMediaElementSource(settingsVoicePreview);
+    settingsEqFilters = Object.keys(getDefaultEqualizerSettings().bands).map((frequency) => {
+      const filter = settingsEqAudioContext.createBiquadFilter();
+      filter.type = "peaking";
+      filter.frequency.value = Number(frequency);
+      filter.Q.value = 1;
+      filter.gain.value = 0;
+      return filter;
+    });
+
+    let previousNode = settingsEqAudioSource;
+    settingsEqFilters.forEach((filter) => {
+      previousNode.connect(filter);
+      previousNode = filter;
+    });
+    previousNode.connect(settingsEqAudioContext.destination);
+  }
+
+  if (settingsEqAudioContext.state === "suspended") {
+    await settingsEqAudioContext.resume();
+  }
+
+  return true;
+}
+
+function applySettingsEqualizer(settings = getEqualizerSettings()) {
+  if (!settingsEqFilters.length || !settingsEqAudioContext) return;
+
+  const bands = settings.bands || {};
+  const frequencies = Object.keys(getDefaultEqualizerSettings().bands);
+  const now = settingsEqAudioContext.currentTime;
+  settingsEqFilters.forEach((filter, index) => {
+    const gain = Math.max(-12, Math.min(12, Number(bands[frequencies[index]]) || 0));
+    filter.gain.cancelScheduledValues(now);
+    filter.gain.setTargetAtTime(gain, now, 0.015);
   });
 }
 
@@ -7235,7 +7318,7 @@ function saveAllAiSettings() {
   saveChatGptSettings();
 }
 
-async function testElevenLabsSettingsVoice() {
+async function testElevenLabsSettingsVoice(options = {}) {
   const text =
     settingsVoiceDemoText?.value.trim() ||
     "Das ist ein kurzer Test der LogoSound Stimme. Bitte sprechen Sie ruhig und deutlich.";
@@ -7268,16 +7351,22 @@ async function testElevenLabsSettingsVoice() {
     if (settingsVoicePreview) {
       settingsVoicePreview.src = settingsVoiceTestUrl;
       settingsVoicePreview.load();
-      await settingsVoicePreview.play().catch(() => {});
+      await ensureSettingsEqualizerAudio();
+      applySettingsEqualizer();
+      if (options.autoPlay !== false) {
+        await settingsVoicePreview.play().catch(() => {});
+      }
     }
     if (settingsState) {
       settingsState.textContent = `Demo-Stimme erstellt: ${settingsVoiceName?.value.trim() || "Stimme"}.`;
     }
   } catch (error) {
     if (settingsState) settingsState.textContent = error?.message || "Demo-Stimme konnte nicht erstellt werden.";
+    return false;
   } finally {
     if (settingsTestVoiceButton) settingsTestVoiceButton.disabled = false;
   }
+  return true;
 }
 
 function updateSensitivitySetting(value) {

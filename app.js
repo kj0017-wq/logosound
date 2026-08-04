@@ -1374,7 +1374,7 @@ async function getExercisePreviewAudioSegments(text) {
     return getDialogPreviewAudioSegments(activeExercise);
   }
 
-  const chunks = splitVoicePreviewText(text);
+  const chunks = getExercisePreviewChunks(activeExercise, text);
 
   if (isStoredDemoAudioCurrent(activeExercise, text) && chunks.length <= 1) {
     return [getGlobalVoiceAudioUrl(activeExercise.demoAudioUrl, activeExercise.demoAudioPath)];
@@ -1492,6 +1492,16 @@ function isStoredDemoAudioSegmentsCurrent(exercise, text, chunks = splitVoicePre
       Number(segment.speed || 0) === speed
     );
   });
+}
+
+function getExercisePreviewChunks(exercise, text) {
+  if (exercise && isLongTextMode(exercise.mode)) {
+    const passages = getExerciseTextPassages(exercise);
+    const chunks = passages.flatMap((passage) => splitVoicePreviewText(passage, 620));
+    if (chunks.length) return chunks;
+  }
+
+  return splitVoicePreviewText(text);
 }
 
 function hashText(text) {
@@ -2685,7 +2695,7 @@ function isTextLikeMode(mode) {
 }
 
 function normalizeEditorExerciseMode(exercise = {}) {
-  const mode = normalizeEditorExerciseMode(exercise);
+  const mode = normalizeEditorExerciseModeValue(exercise?.mode || "text");
   if (mode !== "text") return mode;
 
   const savedPassages = Array.isArray(exercise.textPassages)

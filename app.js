@@ -3884,7 +3884,7 @@ async function generateVoiceAudio() {
     editorVoicePreview.src = resolveAppUrl(editorVoiceAudioUrl);
     editorVoiceState.textContent = "ElevenLabs-Audio erstellt und in Firebase gespeichert.";
     saveEditorDraft();
-    saveEditorExercise();
+    await saveEditorExercise();
     editorVoiceState.textContent = "ElevenLabs-Audio erstellt und in der Übung gespeichert.";
   } catch (error) {
     editorVoiceAudioDataUrl = "";
@@ -4217,7 +4217,7 @@ async function generateDialogVoiceAudio() {
 
 function saveEditorExercise() {
   const exercise = buildEditorExerciseFromForm();
-  saveEditorExerciseObject(exercise);
+  return saveEditorExerciseObject(exercise);
 }
 
 async function saveEditorExerciseObject(exercise) {
@@ -4226,7 +4226,9 @@ async function saveEditorExerciseObject(exercise) {
   savedEditorExercise = exercise;
   activeEditorExerciseName = exercise.name;
   persistEditorExercises();
-  saveCloudEditorExercise(exercise).catch(() => {
+  let cloudSaved = true;
+  await saveCloudEditorExercise(exercise).catch(() => {
+    cloudSaved = false;
     firebaseState.textContent = "Übung lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
   });
   renderSavedEditorExercises();
@@ -4240,7 +4242,7 @@ async function saveEditorExerciseObject(exercise) {
   setupKaraokeText();
   updateEditorForm();
   updateEditorModeState();
-  showEditorSaveFeedback(exercise.name);
+  showEditorSaveFeedback(exercise.name, { cloudSaved });
 }
 
 function upsertEditorExercise(exercises, exercise) {
@@ -4283,13 +4285,17 @@ function showAppNotice(text, type = "success") {
   }, 2600);
 }
 
-function showEditorSaveFeedback(exerciseLabel) {
+function showEditorSaveFeedback(exerciseLabel, options = {}) {
   window.clearTimeout(editorSaveFeedbackTimerId);
   saveEditorExerciseButton.textContent = "Gespeichert";
   saveEditorExerciseButton.classList.add("is-saved");
   saveEditorExerciseButton.disabled = true;
   editorVoiceState.textContent = "Übung gespeichert.";
   firebaseState.textContent = `Übung gespeichert und in Aufnahme auswählbar: ${exerciseLabel}`;
+
+  if (options.cloudSaved === false) {
+    firebaseState.textContent = `Übung lokal gespeichert, Firebase fehlgeschlagen: ${exerciseLabel}`;
+  }
 
   editorSaveFeedbackTimerId = window.setTimeout(() => {
     saveEditorExerciseButton.textContent = "Speichern";
@@ -5319,7 +5325,9 @@ function drawWaveform(canvas, values, options = {}) {
   const middle = height / 2;
   const progress = options.progress ?? null;
   const pixelRatio = window.devicePixelRatio || 1;
-  const levelMeterWidth = options.levelMeter ? Math.max(10 * pixelRatio, 10) : 0;
+  const levelMeterWidth = options.levelMeter
+    ? Math.max((options.stereoLevelMeter ? 18 : 10) * pixelRatio, options.stereoLevelMeter ? 18 : 10)
+    : 0;
   const levelMeterGap = options.levelMeter ? Math.max(6 * pixelRatio, 6) : 0;
   const waveformWidth = Math.max(1, width - levelMeterWidth - levelMeterGap);
 
@@ -5340,7 +5348,7 @@ function drawWaveform(canvas, values, options = {}) {
     context.textAlign = "center";
     context.fillText("Noch keine Wellenform", width / 2, middle + 10);
     if (options.levelMeter) {
-      drawLevelMeter(context, width - levelMeterWidth, 0, levelMeterWidth, height, options.currentLevel || 0);
+      drawWaveformLevelMeter(context, width - levelMeterWidth, 0, levelMeterWidth, height, options);
     }
     return;
   }
@@ -5375,7 +5383,7 @@ function drawWaveform(canvas, values, options = {}) {
       context.stroke();
     }
     if (options.levelMeter) {
-      drawLevelMeter(context, width - levelMeterWidth, 0, levelMeterWidth, height, options.currentLevel || 0);
+      drawWaveformLevelMeter(context, width - levelMeterWidth, 0, levelMeterWidth, height, options);
     }
     return;
   }
@@ -5400,7 +5408,7 @@ function drawWaveform(canvas, values, options = {}) {
       context.stroke();
     }
     if (options.levelMeter) {
-      drawLevelMeter(context, width - levelMeterWidth, 0, levelMeterWidth, height, options.currentLevel || 0);
+      drawWaveformLevelMeter(context, width - levelMeterWidth, 0, levelMeterWidth, height, options);
     }
     return;
   }
@@ -5441,15 +5449,22 @@ function drawWaveform(canvas, values, options = {}) {
   }
 
   if (options.levelMeter) {
-    drawLevelMeter(context, width - levelMeterWidth, 0, levelMeterWidth, height, options.currentLevel || 0);
+    drawWaveformLevelMeter(context, width - levelMeterWidth, 0, levelMeterWidth, height, options);
   }
 }
 
 function getPlaybackWaveformDisplayOptions(metadata, progress = 0, durationSeconds = null) {
   const values = metadata?.amplituden || [];
+  const levelValues = metadata?.lautstaerkePegel || metadata?.lautstaerken || values;
+  const currentLevel = getTimelineValue(levelValues, Math.max(0, Math.min(1, Number(progress) || 0)));
   return {
     mode: "playback",
     progress,
+    levelMeter: true,
+    stereoLevelMeter: true,
+    currentLevel,
+    currentLeftLevel: currentLevel,
+    currentRightLevel: currentLevel,
     durationSeconds: durationSeconds ?? metadata?.dauerSekunden,
     compress: 1,
     dynamicRange: 1.28,
@@ -5457,7 +5472,7 @@ function getPlaybackWaveformDisplayOptions(metadata, progress = 0, durationSecon
     visualCeiling: 88,
     shapePower: 1.16,
     dim: true,
-    levelValues: metadata?.lautstaerkePegel || metadata?.lautstaerken || values,
+    levelValues,
     pixelsPerBar: 3.2,
     resampleMode: "rms",
     barGap: 2,
@@ -5590,6 +5605,21 @@ function getWaveformBarColor(level, options = {}) {
 
 function isWaveformPause(level) {
   return Number(level || 0) <= SENTENCE_SILENCE_THRESHOLD;
+}
+
+function drawWaveformLevelMeter(context, x, y, width, height, options = {}) {
+  if (options.stereoLevelMeter) {
+    const left = Number.isFinite(options.currentLeftLevel)
+      ? options.currentLeftLevel
+      : options.currentLevel || 0;
+    const right = Number.isFinite(options.currentRightLevel)
+      ? options.currentRightLevel
+      : options.currentLevel || 0;
+    drawStereoLevelMeter(context, x, y, width, height, left, right);
+    return;
+  }
+
+  drawLevelMeter(context, x, y, width, height, options.currentLevel || 0);
 }
 
 function drawLevelMeter(context, x, y, width, height, level) {

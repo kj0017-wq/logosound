@@ -6402,14 +6402,7 @@ function updateResultStats(metadata) {
   if (averageVolume) averageVolume.textContent = String(stats.average);
   if (maxVolume) maxVolume.textContent = String(stats.maximum);
   if (sampleCount) sampleCount.textContent = String((metadata.amplituden || []).length);
-  renderVoiceEvaluationSummary(metadata, {
-    panel: resultEvaluationPanel,
-    title: resultEvaluationTitle,
-    score: resultEvaluationScore,
-    summary: resultEvaluationSummary,
-    hints: resultEvaluationHints,
-    scores: resultEvaluationScores,
-  });
+  resultEvaluationPanel?.classList.add("is-hidden");
   renderAudioAnalysis(metadata);
 }
 

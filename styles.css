@@ -2545,6 +2545,10 @@ body[data-active-view="stats"] #recordingsList {
   background: #f8fcfd;
 }
 
+#resultEvaluationPanel {
+  display: none !important;
+}
+
 .voice-progress-header {
   display: flex;
   align-items: center;

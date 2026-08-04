@@ -99,6 +99,7 @@ const playbackRecordingSelect = document.querySelector("#playbackRecordingSelect
 const playbackOpenRecordingButton = document.querySelector("#playbackOpenRecordingButton");
 const playbackSavedRecordingsList = document.querySelector("#playbackSavedRecordingsList");
 const calibrationButton = document.querySelector("#calibrationButton");
+const calibrationBackButton = document.querySelector("#calibrationBackButton");
 const averageVolume = document.querySelector("#averageVolume");
 const maxVolume = document.querySelector("#maxVolume");
 const sampleCount = document.querySelector("#sampleCount");
@@ -403,6 +404,8 @@ let sentenceActiveStartedAt = 0;
 let dialogVoiceInProgress = false;
 let dialogVoiceTurnIndex = -1;
 let dialogAdvanceLock = false;
+let dialogVoiceMeterUntil = 0;
+let dialogVoiceMeterStartedAt = 0;
 let playbackAnimationFrame;
 let autoStopTimeoutId;
 let hardStopTimeoutId;
@@ -717,6 +720,10 @@ calibrationButton.addEventListener("click", async () => {
   }
 });
 
+calibrationBackButton?.addEventListener("click", () => {
+  if (isCalibrating) stopCalibration();
+});
+
 settingsCalibrationButton?.addEventListener("click", async () => {
   setActiveView("record");
   if (isCalibrating) {
@@ -914,14 +921,11 @@ playPauseButton.addEventListener("click", () => {
 playbackSeek.addEventListener("input", () => {
   const measuredDuration = currentMetadata?.dauerSekunden || 0;
   const mediaDuration = Number.isFinite(recordingPlayer.duration) ? recordingPlayer.duration : 0;
-  const targetDuration = measuredDuration || mediaDuration || 0;
+  const targetDuration = mediaDuration || measuredDuration || 0;
   if (!targetDuration) return;
 
   const targetTime = (Number(playbackSeek.value) / 1000) * targetDuration;
-  recordingPlayer.currentTime =
-    mediaDuration && measuredDuration && Math.abs(mediaDuration - measuredDuration) >= 0.2
-      ? (targetTime / measuredDuration) * mediaDuration
-      : targetTime;
+  recordingPlayer.currentTime = targetTime;
   updatePlaybackVisuals();
 });
 
@@ -1567,6 +1571,7 @@ async function playVoiceAudioBuffer(audioUrl) {
         }
         if (instructionAudioSource === source) instructionAudioSource = null;
         source.onended = null;
+        stopDialogVoiceMeter();
         resolve(Boolean(played));
       };
 
@@ -1580,6 +1585,7 @@ async function playVoiceAudioBuffer(audioUrl) {
       source.onended = () => finish(true);
       instructionAudioSource = source;
       message.textContent = "Instruktion wird abgespielt.";
+      startDialogVoiceMeter(audioBuffer.duration || 0);
       source.start(0);
     });
   } catch (error) {
@@ -1589,6 +1595,30 @@ async function playVoiceAudioBuffer(audioUrl) {
 
 function shouldMixVoiceAudioIntoRecording() {
   return Boolean(isRecording && getActiveRecordingExercise()?.mode === "dialog");
+}
+
+function startDialogVoiceMeter(durationSeconds = 0) {
+  if (!shouldMixVoiceAudioIntoRecording()) return;
+  const durationMs = Math.max(500, Number(durationSeconds || 0) * 1000);
+  dialogVoiceMeterStartedAt = performance.now();
+  dialogVoiceMeterUntil = dialogVoiceMeterStartedAt + durationMs + 120;
+}
+
+function stopDialogVoiceMeter() {
+  dialogVoiceMeterUntil = 0;
+  dialogVoiceMeterStartedAt = 0;
+}
+
+function getDialogVoiceMeterSignal(now = performance.now()) {
+  if (!shouldMixVoiceAudioIntoRecording() || now > dialogVoiceMeterUntil) return null;
+  const elapsed = Math.max(0, now - dialogVoiceMeterStartedAt);
+  const pulse = 0.72 + Math.sin(elapsed / 78) * 0.12 + Math.sin(elapsed / 31) * 0.05;
+  return {
+    rawSignal: 22 * pulse,
+    volume: Math.round(38 * pulse),
+    frequency: Math.round(24 * pulse),
+    pitchHz: 175,
+  };
 }
 
 function playVoiceAudioElement(audioUrl) {
@@ -1616,11 +1646,15 @@ function playVoiceAudioElement(audioUrl) {
       window.clearTimeout(fallbackId);
       cleanup();
       instructionAudio.pause();
+      stopDialogVoiceMeter();
       resolve(Boolean(played));
     };
     const handleStarted = () => {
       started = true;
       message.textContent = "Instruktion wird abgespielt.";
+      if (Number.isFinite(instructionAudio.duration) && instructionAudio.duration > 0) {
+        startDialogVoiceMeter(Math.max(0, instructionAudio.duration - instructionAudio.currentTime));
+      }
     };
     const handleEnded = () => finish(true);
     const handleError = () => finish(false);
@@ -1653,6 +1687,7 @@ function stopInstructionAudio() {
     instructionAudioSource?.stop?.();
   } catch (error) {}
   instructionAudioSource = null;
+  stopDialogVoiceMeter();
 }
 async function startRecording() {
   if (!mediaStream) return;
@@ -1671,6 +1706,7 @@ async function startRecording() {
   lastSilentSignalNoticeAt = 0;
   silentSignalStartedAt = 0;
   analyserRestartInProgress = false;
+  stopDialogVoiceMeter();
   activeKaraokeIndex = 0;
   sentenceSilenceStartedAt = 0;
   sentenceHasSpeechSinceAdvance = false;
@@ -2158,7 +2194,7 @@ function measureAudio() {
     : Math.min(voiceAverage, backgroundAverage * 1.8);
   const voiceContrast = Math.max(0, voiceAverage - adaptiveNoiseFloor * 0.45 - backgroundAverage * 0.12);
   const voicePeakContrast = Math.max(0, voicePeak - adaptiveNoiseFloor * 0.55);
-  const pitchHz = estimateVoicePitchHz(frequencySamples, binHz, voicePeakContrast);
+  let pitchHz = estimateVoicePitchHz(frequencySamples, binHz, voicePeakContrast);
 
   const analyserRms = Math.sqrt(sumSquares / samples.length);
   const now = performance.now();
@@ -2189,13 +2225,22 @@ function measureAudio() {
     adaptiveVolumeNoiseFloor * VOLUME_NOISE_GATE_MULTIPLIER,
   );
   const gatedVolumeSignal = Math.max(0, volumeSignal - dynamicVolumeGate);
-  const calibratedVolume = scaleVolumeLevel(gatedVolumeSignal);
+  let calibratedVolume = scaleVolumeLevel(gatedVolumeSignal);
   const frequencySignal = Math.max(voiceAverage * 0.95, voiceContrast * 2.1, voicePeakContrast * 0.72);
-  const rawSignal = Math.max(gatedVolumeSignal * 1.35, frequencySignal * 0.72);
-  const volume = scaleAmplitude(rawSignal);
-  const displayVolume = calibratedVolume;
-  const displayFrequency = scaleAmplitude(frequencySignal);
-  const amplitude = Math.max(displayVolume > 0 || displayFrequency > 0 ? 2 : 0, volume);
+  let rawSignal = Math.max(gatedVolumeSignal * 1.35, frequencySignal * 0.72);
+  let volume = scaleAmplitude(rawSignal);
+  let displayVolume = calibratedVolume;
+  let displayFrequency = scaleAmplitude(frequencySignal);
+  let amplitude = Math.max(displayVolume > 0 || displayFrequency > 0 ? 2 : 0, volume);
+  const dialogVoiceSignal = getDialogVoiceMeterSignal(now);
+  if (dialogVoiceSignal) {
+    rawSignal = Math.max(rawSignal, dialogVoiceSignal.rawSignal);
+    displayVolume = Math.max(displayVolume, dialogVoiceSignal.volume);
+    displayFrequency = Math.max(displayFrequency, dialogVoiceSignal.frequency);
+    volume = Math.max(volume, scaleAmplitude(dialogVoiceSignal.rawSignal));
+    amplitude = Math.max(amplitude, volume, displayVolume);
+    pitchHz = pitchHz || dialogVoiceSignal.pitchHz;
+  }
 
   if (now - lastAmplitudeAt >= AMPLITUDE_SAMPLE_INTERVAL) {
     rawAmplitudes.push(rawSignal);
@@ -5868,7 +5913,7 @@ function updatePlaybackVisuals(forcedProgress = null) {
   const playbackValues = currentMetadata.amplituden || [];
   const measuredDuration = currentMetadata.dauerSekunden || 0;
   const mediaDuration = Number.isFinite(recordingPlayer.duration) ? recordingPlayer.duration : 0;
-  const duration = measuredDuration || mediaDuration || 0;
+  const duration = mediaDuration || measuredDuration || 0;
   const progress =
     forcedProgress ?? mediaTimeToAnalysisProgress(recordingPlayer.currentTime || 0, currentMetadata);
   const syncedCurrentTime = duration ? progress * duration : 0;

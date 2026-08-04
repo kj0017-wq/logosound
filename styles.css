@@ -1411,6 +1411,10 @@ h2 {
   margin-top: 8px;
 }
 
+.calibration-back-action {
+  margin-top: 0;
+}
+
 .result-panel {
   order: 20;
 }
@@ -2611,8 +2615,12 @@ body.calibration-mode .controls-panel {
   background: rgba(255, 255, 255, 0.92);
 }
 
-body.calibration-mode .controls-panel > :not(.meters):not(.recording-tuning-grid):not(.calibration-action) {
+body.calibration-mode .controls-panel > :not(.meters):not(.recording-tuning-grid):not(.calibration-action):not(.calibration-back-action) {
   display: none;
+}
+
+body.calibration-mode .calibration-back-action {
+  display: inline-flex !important;
 }
 
 body.calibration-mode .recording-tuning-grid {

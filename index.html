@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="LogoSound" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="canonical" href="https://logosound-19293.web.app/" />
-    <link rel="manifest" href="/manifest-20260801-amp174.webmanifest" />
+    <link rel="manifest" href="/manifest-20260801-amp175.webmanifest" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="shortcut icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260801-amp174" />
+    <link rel="stylesheet" href="styles.css?v=20260801-amp175" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp174</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp175</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -196,6 +196,22 @@
             <h2 id="resultTitle">Vokal A halten</h2>
           </div>
           <span id="durationBadge" class="status-pill">00:00</span>
+        </div>
+
+        <div id="resultEvaluationPanel" class="voice-evaluation-card is-hidden" aria-label="Stimmbewertung">
+          <div class="voice-progress-header">
+            <div>
+              <p class="eyebrow">Gesamtbewertung</p>
+              <h3 id="resultEvaluationTitle">Noch keine Bewertung</h3>
+            </div>
+            <span id="resultEvaluationScore" class="voice-score-badge is-neutral">0</span>
+          </div>
+          <p id="resultEvaluationSummary" class="voice-progress-summary"></p>
+          <div id="resultEvaluationHints" class="voice-progress-hints"></div>
+          <dl id="resultEvaluationScores" class="voice-score-grid"></dl>
+          <p class="voice-progress-disclaimer">
+            Die Analyse zeigt Veränderungen der Stimme im persönlichen Verlauf. Sie ersetzt keine medizinische oder logopädische Diagnose.
+          </p>
         </div>
 
         <div class="playback-stage">
@@ -695,7 +711,7 @@
       </nav>
     </main>
 
-    <script type="module" src="app.js?v=20260801-amp174"></script>
+    <script type="module" src="app.js?v=20260801-amp175"></script>
   </body>
 </html>
 

@@ -91,6 +91,12 @@ const emptyHistoryButton = document.querySelector("#emptyHistoryButton");
 const resultPanel = document.querySelector("#resultPanel");
 const resultTitle = document.querySelector("#resultTitle");
 const durationBadge = document.querySelector("#durationBadge");
+const resultEvaluationPanel = document.querySelector("#resultEvaluationPanel");
+const resultEvaluationTitle = document.querySelector("#resultEvaluationTitle");
+const resultEvaluationScore = document.querySelector("#resultEvaluationScore");
+const resultEvaluationSummary = document.querySelector("#resultEvaluationSummary");
+const resultEvaluationHints = document.querySelector("#resultEvaluationHints");
+const resultEvaluationScores = document.querySelector("#resultEvaluationScores");
 const recordingPlayer = document.querySelector("#recordingPlayer");
 const playbackKaraokeOverlay = document.querySelector("#playbackKaraokeOverlay");
 const playPauseButton = document.querySelector("#playPauseButton");
@@ -6334,10 +6340,18 @@ function updateResultStats(metadata) {
   metadata.maximaleLautstaerke = stats.maximum;
   metadata.audioAnalyse = metadata.audioAnalyse || buildAudioAnalysis(metadata);
   metadata.werte = metadata.werte || getVoiceAnalysisValues(metadata);
-  metadata.bewertung = metadata.bewertung || calculateVoiceEvaluation(metadata, allRecordings);
+  metadata.bewertung = calculateVoiceEvaluation(metadata, allRecordings);
   if (averageVolume) averageVolume.textContent = String(stats.average);
   if (maxVolume) maxVolume.textContent = String(stats.maximum);
   if (sampleCount) sampleCount.textContent = String((metadata.amplituden || []).length);
+  renderVoiceEvaluationSummary(metadata, {
+    panel: resultEvaluationPanel,
+    title: resultEvaluationTitle,
+    score: resultEvaluationScore,
+    summary: resultEvaluationSummary,
+    hints: resultEvaluationHints,
+    scores: resultEvaluationScores,
+  });
   renderAudioAnalysis(metadata);
 }
 
@@ -7250,7 +7264,38 @@ function calculateVoiceEvaluation(metadata, recordings = allRecordings) {
   const baseline = findVoiceBaseline(metadata, recordings);
   const baselineValues = getVoiceAnalysisValues(baseline);
   const previous = findPreviousVoiceTest(metadata, recordings);
-  const previousScore = previous?.bewertung?.gesamt ?? null;
+  const isBaselineTest = (baseline.id || metadata.id) === metadata.id;
+
+  if (isBaselineTest) {
+    const neutralScores = {
+      lautstaerke: 70,
+      stimmstabilitaet: 70,
+      sprechfluss: 70,
+      pausen: 70,
+      stimmanteil: 70,
+      gleichmaessigkeit: 70,
+    };
+
+    return {
+      gesamt: 70,
+      teilbewertungen: neutralScores,
+      veraenderungBaselineProzent: 0,
+      veraenderungVorherigerTestProzent: 0,
+      entwicklung: "Ausgangsmessung",
+      ampel: "is-warning",
+      hinweise: [
+        "Stärke: Ausgangsmessung gespeichert",
+        "Auffällig: Weitere Tests zeigen erst den persönlichen Verlauf",
+      ],
+      baseline: {
+        testId: metadata.id,
+        datum: metadata.datum,
+        istAusgangsmessung: true,
+        werte: baselineValues,
+      },
+    };
+  }
+  const previousScore = previous ? calculateVoiceEvaluation(previous, recordings).gesamt : null;
 
   const teilbewertungen = {
     lautstaerke: Math.round((scoreStable(values.lautstaerkeDurchschnitt, baselineValues.lautstaerkeDurchschnitt, 1.45) + scoreStable(values.lautstaerkeMaximum, baselineValues.lautstaerkeMaximum, 1.25)) / 2),
@@ -7269,8 +7314,8 @@ function calculateVoiceEvaluation(metadata, recordings = allRecordings) {
     teilbewertungen.stimmanteil * 0.15 +
     teilbewertungen.gleichmaessigkeit * 0.17,
   );
-  const baselineScore = baseline.id === metadata.id ? gesamt : (baseline.bewertung?.gesamt || 70);
-  const veraenderungBaselineProzent = baseline.id === metadata.id ? 0 : Math.round(((gesamt - baselineScore) / Math.max(1, baselineScore)) * 100);
+  const baselineScore = 70;
+  const veraenderungBaselineProzent = Math.round(((gesamt - baselineScore) / Math.max(1, baselineScore)) * 100);
   const veraenderungVorherigerTestProzent = previousScore == null ? 0 : Math.round(((gesamt - previousScore) / Math.max(1, previousScore)) * 100);
   const entwicklung =
     veraenderungBaselineProzent >= 5 ? "verbessert" :
@@ -7288,6 +7333,7 @@ function calculateVoiceEvaluation(metadata, recordings = allRecordings) {
     baseline: {
       testId: baseline.id || metadata.id,
       datum: baseline.datum || metadata.datum,
+      istAusgangsmessung: false,
       werte: baselineValues,
     },
   };
@@ -7330,6 +7376,33 @@ function buildVoiceEvaluationHints(values, baselineValues, scores) {
   if (!strengths.length) strengths.push("Werte sind im persönlichen Verlauf stabil");
   if (!notices.length) notices.push("keine deutliche Verschlechterung erkennbar");
   return [...strengths.map((text) => `Stärke: ${text}`), ...notices.map((text) => `Auffällig: ${text}`)];
+}
+
+function splitVoiceEvaluationHints(hints = []) {
+  const strengths = [];
+  const notices = [];
+
+  hints.forEach((hint) => {
+    const text = String(hint || "").trim();
+    if (!text) return;
+    const separatorIndex = text.indexOf(":");
+    const prefix = separatorIndex >= 0 ? text.slice(0, separatorIndex).toLowerCase() : "";
+    const body = separatorIndex >= 0 ? text.slice(separatorIndex + 1).trim() : text;
+
+    if (prefix.startsWith("st")) {
+      strengths.push(body);
+      return;
+    }
+
+    if (prefix.startsWith("auff")) {
+      notices.push(body);
+      return;
+    }
+
+    notices.push(body);
+  });
+
+  return { strengths, notices };
 }
 
 function getActiveElevenLabsVoice(settings = getElevenLabsSettings()) {
@@ -7471,6 +7544,27 @@ function renderAudioAnalysis(metadata = currentMetadata) {
   audioAnalysisNote.textContent = analysis.qualitaet.zuLeise
     ? "Hinweis: Die Aufnahme wirkt sehr leise. Empfindlichkeit oder Abstand zum Mikrofon prüfen."
     : "Schieberegler bewegt die Analyseposition. Die Werte werden aus einem kurzen Fenster um diese Stelle berechnet.";
+}
+
+function getNormalizedAnalysisDisplayLabel(label) {
+  const text = String(label || "");
+  const isAverageLabel = text.includes("\u00d8") || text.includes("Ã˜");
+  if (text.includes("Lautst") && text.includes("dort") && isAverageLabel) {
+    return "\u00d8 Lautst\u00e4rke an der Analyseposition";
+  }
+  if (text.includes("Lautst") && text.includes("dort")) {
+    return "Lautst\u00e4rke an der Analyseposition";
+  }
+  if (text.includes("Amplitude") && text.includes("dort")) {
+    return "Amplitude an der Analyseposition";
+  }
+  if (text.includes("Frequenz") && text.includes("dort") && isAverageLabel) {
+    return "\u00d8 Frequenz an der Analyseposition";
+  }
+  if (text.includes("Frequenz") && text.includes("dort")) {
+    return "Frequenz an der Analyseposition";
+  }
+  return text;
 }
 
 function normalizeAnalysisDisplayLabel(label) {
@@ -8174,6 +8268,84 @@ function renderLibrary(preferredId = null) {
   });
 }
 
+function renderVoiceHintsInto(container, hints = []) {
+  if (!container) return;
+  container.innerHTML = "";
+  const { strengths, notices } = splitVoiceEvaluationHints(hints);
+
+  [
+    ["St\u00e4rken", strengths],
+    ["Auff\u00e4llig", notices],
+  ].forEach(([title, entries]) => {
+    if (!entries.length) return;
+    const group = document.createElement("div");
+    const heading = document.createElement("strong");
+    const list = document.createElement("ul");
+    heading.textContent = title;
+    entries.forEach((entry) => {
+      const item = document.createElement("li");
+      item.textContent = entry;
+      list.append(item);
+    });
+    group.append(heading, list);
+    container.append(group);
+  });
+}
+
+function renderVoiceScoresInto(container, scores = {}) {
+  if (!container) return;
+  const labels = [
+    ["lautstaerke", "Lautst\u00e4rke"],
+    ["stimmstabilitaet", "Stimmstabilit\u00e4t"],
+    ["sprechfluss", "Sprechfluss"],
+    ["pausen", "Pausen"],
+    ["stimmanteil", "Stimmanteil"],
+    ["gleichmaessigkeit", "Gleichm\u00e4\u00dfigkeit"],
+  ];
+
+  container.innerHTML = "";
+  labels.forEach(([key, label]) => {
+    const value = Math.round(Number(scores[key] || 0));
+    const item = document.createElement("div");
+    item.className = getTrafficLightClass(value);
+    const term = document.createElement("dt");
+    const description = document.createElement("dd");
+    term.textContent = getNormalizedAnalysisDisplayLabel(label);
+    description.textContent = String(value);
+    item.append(term, description);
+    container.append(item);
+  });
+}
+
+function renderVoiceEvaluationSummary(metadata, target) {
+  if (!metadata || !target?.panel || !target.title || !target.score || !target.summary) return;
+  if (!isCompleteVoiceTest(metadata)) {
+    target.panel.classList.add("is-hidden");
+    return;
+  }
+
+  metadata.werte = metadata.werte || getVoiceAnalysisValues(metadata);
+  metadata.bewertung = calculateVoiceEvaluation(metadata, allRecordings);
+  const evaluation = metadata.bewertung;
+  const baselineChange = evaluation.veraenderungBaselineProzent >= 0
+    ? `+${evaluation.veraenderungBaselineProzent}%`
+    : `${evaluation.veraenderungBaselineProzent}%`;
+  const previousChange = evaluation.veraenderungVorherigerTestProzent >= 0
+    ? `+${evaluation.veraenderungVorherigerTestProzent}%`
+    : `${evaluation.veraenderungVorherigerTestProzent}%`;
+  const baselineText = evaluation.baseline?.istAusgangsmessung
+    ? "Diese Aufnahme ist die pers\u00f6nliche Ausgangsmessung."
+    : `Entwicklung: ${baselineChange} gegen\u00fcber dem ersten Test, ${previousChange} zum vorherigen Test.`;
+
+  target.title.textContent = `${evaluation.gesamt} von 100 Punkten`;
+  target.score.textContent = String(evaluation.gesamt);
+  target.score.className = `voice-score-badge ${getTrafficLightClass(evaluation.gesamt)}`;
+  target.summary.textContent = baselineText;
+  renderVoiceHintsInto(target.hints, evaluation.hinweise || []);
+  renderVoiceScoresInto(target.scores, evaluation.teilbewertungen || {});
+  target.panel.classList.remove("is-hidden");
+}
+
 function renderVoiceProgress(patientRecordings, preferredId = null) {
   if (!voiceProgressPanel || !voiceProgressTitle || !voiceProgressScore || !voiceProgressSummary || !voiceProgressScores || !voiceProgressChart || !voiceProgressList) return;
 
@@ -8181,7 +8353,7 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
     .filter(isCompleteVoiceTest)
     .sort((a, b) => String(a.datum || "").localeCompare(String(b.datum || "")))
     .map((recording) => {
-      const evaluation = recording.bewertung || calculateVoiceEvaluation(recording, patientRecordings);
+      const evaluation = calculateVoiceEvaluation(recording, patientRecordings);
       return { ...recording, bewertung: evaluation, werte: recording.werte || getVoiceAnalysisValues(recording) };
     });
 
@@ -8200,7 +8372,7 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
   const selectedRecording =
     completeRecordings.find((recording) => recording.id === preferredId || recording.id === selectedAnalysisRecordingId) ||
     completeRecordings.at(-1);
-  const evaluation = selectedRecording.bewertung || calculateVoiceEvaluation(selectedRecording, patientRecordings);
+  const evaluation = calculateVoiceEvaluation(selectedRecording, patientRecordings);
   const baselineText = evaluation.veraenderungBaselineProzent >= 0
     ? `+${evaluation.veraenderungBaselineProzent}% gegenüber dem ersten Test`
     : `${evaluation.veraenderungBaselineProzent}% gegenüber dem ersten Test`;
@@ -8212,8 +8384,8 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
   voiceProgressScore.textContent = String(evaluation.gesamt);
   voiceProgressScore.className = `voice-score-badge ${getTrafficLightClass(evaluation.gesamt)}`;
   voiceProgressSummary.textContent = `Entwicklung: ${evaluation.entwicklung}, ${baselineText}, ${previousText}.`;
-  renderVoiceProgressHints(evaluation.hinweise || []);
-  renderVoiceScoreGrid(evaluation.teilbewertungen);
+  renderVoiceHintsInto(voiceProgressHints, evaluation.hinweise || []);
+  renderVoiceScoresInto(voiceProgressScores, evaluation.teilbewertungen);
   drawVoiceProgressChart(completeRecordings);
   renderVoiceProgressList(completeRecordings, selectedRecording.id);
 }
@@ -8264,7 +8436,7 @@ function renderVoiceScoreGrid(scores = {}) {
     item.className = getTrafficLightClass(value);
     const term = document.createElement("dt");
     const description = document.createElement("dd");
-    term.textContent = normalizeAnalysisDisplayLabel(label);
+    term.textContent = getNormalizedAnalysisDisplayLabel(label);
     description.textContent = String(value);
     item.append(term, description);
     voiceProgressScores.append(item);
@@ -8274,11 +8446,13 @@ function renderVoiceScoreGrid(scores = {}) {
 function renderVoiceProgressList(recordings, activeId = "") {
   voiceProgressList.innerHTML = "";
   recordings.slice(-6).forEach((recording) => {
-    const evaluation = recording.bewertung || calculateVoiceEvaluation(recording, recordings);
+    const evaluation = calculateVoiceEvaluation(recording, recordings);
     const row = document.createElement("button");
     row.type = "button";
     row.className = `voice-progress-row ${recording.id === activeId ? "is-active" : ""}`;
-    row.textContent = `${formatDateTime(recording.datum)}: ${evaluation.gesamt} Punkte (${evaluation.veraenderungBaselineProzent >= 0 ? "+" : ""}${evaluation.veraenderungBaselineProzent}%)`;
+    const baselineChange = `${evaluation.veraenderungBaselineProzent >= 0 ? "+" : ""}${evaluation.veraenderungBaselineProzent}%`;
+    const previousChange = `${evaluation.veraenderungVorherigerTestProzent >= 0 ? "+" : ""}${evaluation.veraenderungVorherigerTestProzent}%`;
+    row.textContent = `${formatDateTime(recording.datum)}: ${evaluation.gesamt} Punkte · Baseline ${baselineChange} · Vorher ${previousChange}`;
     row.addEventListener("click", () => openStoredRecording(recording.id));
     voiceProgressList.append(row);
   });
@@ -8305,7 +8479,7 @@ function drawVoiceProgressChart(recordings) {
     context.stroke();
   });
 
-  const scores = recordings.map((recording) => recording.bewertung?.gesamt || calculateVoiceEvaluation(recording, recordings).gesamt);
+  const scores = recordings.map((recording) => calculateVoiceEvaluation(recording, recordings).gesamt);
   if (!scores.length) return;
   const padding = 12 * pixelRatio;
   const step = scores.length > 1 ? (width - padding * 2) / (scores.length - 1) : 0;

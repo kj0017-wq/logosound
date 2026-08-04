@@ -2519,6 +2519,13 @@ body[data-active-view="history"] #audioAnalysisPanel {
   display: none;
 }
 
+body[data-active-view="stats"] .library-panel > .section-header,
+body[data-active-view="stats"] .patient-stats,
+body[data-active-view="stats"] #voiceProgressPanel,
+body[data-active-view="stats"] #recordingsList {
+  display: none;
+}
+
 .voice-progress-panel {
   display: grid;
   gap: 10px;

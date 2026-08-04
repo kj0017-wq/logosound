@@ -8498,7 +8498,7 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
   }
   voiceProgressChart.classList.toggle("is-hidden", completeRecordings.length < 2);
   if (completeRecordings.length >= 2) {
-    drawVoiceProgressChart(completeRecordings);
+    requestAnimationFrame(() => drawVoiceProgressChart(completeRecordings));
   }
   renderVoiceProgressList(completeRecordings, selectedRecording.id);
 }
@@ -8577,14 +8577,25 @@ function renderVoiceProgressList(recordings, activeId = "") {
 function drawVoiceProgressChart(recordings) {
   const canvas = voiceProgressChart;
   if (!canvas) return;
+  const scores = recordings.map((recording) => calculateVoiceEvaluation(recording, recordings).gesamt);
+  if (scores.length < 2) {
+    canvas.classList.add("is-hidden");
+    return;
+  }
+  canvas.classList.remove("is-hidden");
   resizeCanvasToDisplay(canvas);
   const context = canvas.getContext("2d");
+  if (!context) return;
   const width = canvas.width;
   const height = canvas.height;
   const pixelRatio = window.devicePixelRatio || 1;
+  if (width <= 1 || height <= 1) return;
   context.clearRect(0, 0, width, height);
-  context.fillStyle = "#101820";
+  context.fillStyle = "#0e1920";
   context.fillRect(0, 0, width, height);
+  context.fillStyle = "rgba(255,255,255,0.75)";
+  context.font = `${10 * pixelRatio}px system-ui, sans-serif`;
+  context.fillText("Verlauf", 10 * pixelRatio, 16 * pixelRatio);
   context.strokeStyle = "rgba(255,255,255,0.12)";
   context.lineWidth = pixelRatio;
   [0.25, 0.5, 0.75].forEach((ratio) => {
@@ -8595,28 +8606,44 @@ function drawVoiceProgressChart(recordings) {
     context.stroke();
   });
 
-  const scores = recordings.map((recording) => calculateVoiceEvaluation(recording, recordings).gesamt);
-  if (!scores.length) return;
-  const padding = 12 * pixelRatio;
+  const minScore = Math.min(...scores);
+  const maxScore = Math.max(...scores);
+  const scalePadding = Math.max(6, Math.round((maxScore - minScore) * 0.35));
+  const lowScore = Math.max(0, minScore - scalePadding);
+  const highScore = Math.min(100, maxScore + scalePadding);
+  const scoreSpan = Math.max(1, highScore - lowScore);
+  const padding = 18 * pixelRatio;
   const step = scores.length > 1 ? (width - padding * 2) / (scores.length - 1) : 0;
+  const pointFor = (score, index) => {
+    const x = padding + index * step;
+    const y = padding + (1 - (Math.max(lowScore, Math.min(highScore, score)) - lowScore) / scoreSpan) * (height - padding * 2);
+    return { x, y };
+  };
+
   context.beginPath();
   scores.forEach((score, index) => {
-    const x = scores.length > 1 ? padding + index * step : width / 2;
-    const y = padding + (1 - Math.max(0, Math.min(100, score)) / 100) * (height - padding * 2);
+    const { x, y } = pointFor(score, index);
     if (!index) context.moveTo(x, y);
     else context.lineTo(x, y);
   });
-  context.strokeStyle = "#38c172";
-  context.lineWidth = 3 * pixelRatio;
+  context.strokeStyle = "#4bd4ff";
+  context.lineWidth = 4 * pixelRatio;
+  context.lineJoin = "round";
+  context.lineCap = "round";
   context.stroke();
+
   scores.forEach((score, index) => {
-    const x = scores.length > 1 ? padding + index * step : width / 2;
-    const y = padding + (1 - Math.max(0, Math.min(100, score)) / 100) * (height - padding * 2);
+    const { x, y } = pointFor(score, index);
     context.fillStyle = score >= 75 ? "#38c172" : score >= 55 ? "#f6b44b" : "#e1495b";
     context.beginPath();
-    context.arc(x, y, 4 * pixelRatio, 0, Math.PI * 2);
+    context.arc(x, y, 5 * pixelRatio, 0, Math.PI * 2);
     context.fill();
+    context.fillStyle = "rgba(255,255,255,0.9)";
+    context.font = `${9 * pixelRatio}px system-ui, sans-serif`;
+    context.textAlign = index === scores.length - 1 ? "right" : "center";
+    context.fillText(String(score), x, Math.max(12 * pixelRatio, y - 8 * pixelRatio));
   });
+  context.textAlign = "left";
 }
 
 function renderPlaybackRecordingAccessLegacy(patientRecordings, preferredId = null) {

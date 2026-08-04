@@ -254,13 +254,15 @@ textarea {
   outline: 3px solid rgba(15, 139, 141, 0.22);
 }
 
-#editorSavedModeFilter {
+#editorSavedModeFilter,
+#recordingModeFilter {
   border-color: rgba(15, 139, 141, 0.36);
   background: #f4fcfc;
   color: var(--accent-strong);
 }
 
-#editorSavedModeFilter:focus {
+#editorSavedModeFilter:focus,
+#recordingModeFilter:focus {
   outline: 3px solid rgba(15, 139, 141, 0.18);
 }
 

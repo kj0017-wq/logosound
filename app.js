@@ -29,6 +29,7 @@ const permissionState = document.querySelector("#permissionState");
 const patientName = document.querySelector("#patientName");
 const savePatientButton = document.querySelector("#savePatientButton");
 const patientSuggestions = document.querySelector("#patientSuggestions");
+const recordingModeFilter = document.querySelector("#recordingModeFilter");
 const exerciseName = document.querySelector("#exerciseName");
 const recordingExerciseShortcuts = document.querySelector("#recordingExerciseShortcuts");
 const previewExerciseButton = document.querySelector("#previewExerciseButton");
@@ -641,6 +642,12 @@ function repairStaticUiLabels() {
     }
   });
 
+  Array.from(recordingModeFilter?.options || []).forEach((option) => {
+    if (Object.prototype.hasOwnProperty.call(savedModeLabels, option.value)) {
+      option.textContent = savedModeLabels[option.value];
+    }
+  });
+
   calibrationBackButton && (calibrationBackButton.textContent = "Zur\u00fcck");
 }
 recordButton.addEventListener("click", async () => {
@@ -684,6 +691,16 @@ exerciseName.addEventListener("change", () => {
   setupKaraokeText();
   renderRecordingExerciseShortcuts();
   message.textContent = `Übung ausgewählt: ${getExerciseLabel()}`;
+});
+
+recordingModeFilter?.addEventListener("change", () => {
+  stopExercisePreview();
+  renderRecordingExerciseOptions(exerciseName.value);
+  loadRecordingKaraokeSpeedForCurrentExercise();
+  setupKaraokeText();
+  message.textContent = recordingModeFilter.value
+    ? `Funktionsart gefiltert: ${getEditorModeLabel(recordingModeFilter.value)}`
+    : "Alle Funktionsarten sichtbar.";
 });
 
 [editorExerciseName, editorMode, editorContent, editorVoiceInstruction, editorUseRepeats, editorRepeats, editorSpeed].forEach((input) => {
@@ -4394,23 +4411,39 @@ function renderSavedEditorExerciseList() {
 
 function renderRecordingExerciseOptions(preferredValue = exerciseName.value) {
   const currentValue = preferredValue;
+  const selectedMode = recordingModeFilter?.value || "";
   const fixedOptions = Array.from(exerciseName.querySelectorAll("option:not([data-editor-exercise])"));
   exerciseName.innerHTML = "";
-  fixedOptions.forEach((option) => exerciseName.append(option));
-  renderRecordingExerciseShortcuts();
+  fixedOptions.forEach((option) => {
+    const optionMode = normalizeEditorExerciseModeValue(option.dataset.mode || "");
+    if (!selectedMode || option.value === "custom-editor" || optionMode === selectedMode) {
+      exerciseName.append(option);
+    }
+  });
 
   if (savedEditorExercises.length) {
-    savedEditorExercises.forEach((exercise) => {
+    getFilteredRecordingEditorExercises().forEach((exercise) => {
       const option = document.createElement("option");
       option.value = exercise.name;
       option.textContent = exercise.name;
       option.dataset.editorExercise = "true";
+      option.dataset.mode = normalizeEditorExerciseModeValue(exercise.mode);
       exerciseName.append(option);
     });
   }
 
   const optionValues = Array.from(exerciseName.options).map((option) => option.value);
-  exerciseName.value = optionValues.includes(currentValue) ? currentValue : "custom-editor";
+  const fallbackValue = optionValues.find((value) => value !== "custom-editor") || "custom-editor";
+  exerciseName.value = optionValues.includes(currentValue) ? currentValue : fallbackValue;
+  renderRecordingExerciseShortcuts();
+}
+
+function getFilteredRecordingEditorExercises() {
+  const selectedMode = recordingModeFilter?.value || "";
+  if (!selectedMode) return savedEditorExercises;
+  return savedEditorExercises.filter((exercise) =>
+    normalizeEditorExerciseModeValue(exercise?.mode) === selectedMode,
+  );
 }
 
 function renderRecordingExerciseShortcuts() {

@@ -4349,6 +4349,15 @@ async function deleteSavedEditorExercise(name) {
   const confirmed = window.confirm(`Vorlage "${exercise.name}" wirklich löschen?`);
   if (!confirmed) return;
 
+  firebaseState.textContent = `Vorlage wird in Firebase gelöscht: ${exercise.name}`;
+
+  try {
+    await deleteCloudEditorExercise(exercise);
+  } catch (error) {
+    firebaseState.textContent = "Firebase-Löschen fehlgeschlagen. Vorlage bleibt erhalten.";
+    return;
+  }
+
   const normalizedName = normalizeEditorExerciseName(exercise.name);
   savedEditorExercises = savedEditorExercises.filter(
     (item) => normalizeEditorExerciseName(item.name) !== normalizedName,
@@ -4366,15 +4375,19 @@ async function deleteSavedEditorExercise(name) {
   renderSavedEditorExercises();
   renderRecordingExerciseOptions();
   renderPlaybackRecordingAccess(getPatientRecordings(), currentMetadata?.id || null);
-  firebaseState.textContent = `Vorlage gelöscht: ${exercise.name}`;
-
-  deleteCloudEditorExercise(exercise).catch(() => {
-    firebaseState.textContent = "Lokal gelöscht. Firebase-Löschen fehlgeschlagen.";
-  });
+  firebaseState.textContent = `Vorlage aus Firebase gelöscht: ${exercise.name}`;
 }
 
 async function deleteCloudEditorExercise(exercise) {
   if (!exercise?.name) return;
+  const response = await fetch(getApiUrl("/api/editor-exercises"), {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: exercise.name }),
+  });
+
+  if (response.ok) return;
+
   const deleteTasks = [deleteDoc(doc(firestore, "editorExercises", slugify(exercise.name)))];
 
   collectEditorExerciseAudioPaths(exercise).forEach((path) => {

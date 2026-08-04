@@ -112,6 +112,38 @@ exports.editorExercises = onRequest(
       return;
     }
 
+    if (request.method === "DELETE") {
+      const name = String(request.body?.name || request.query?.name || "").trim();
+
+      if (!name) {
+        response.status(400).json({ error: "missing-exercise-name" });
+        return;
+      }
+
+      try {
+        const documentRef = admin
+          .firestore()
+          .collection(EDITOR_EXERCISES_COLLECTION)
+          .doc(slugify(name));
+        const documentSnapshot = await documentRef.get();
+        const exercise = documentSnapshot.exists ? documentSnapshot.data() : { name };
+        const audioPaths = collectEditorExerciseAudioPaths(exercise);
+
+        await Promise.all([
+          documentRef.delete(),
+          ...audioPaths.map((path) =>
+            admin.storage().bucket(STORAGE_BUCKET).file(path).delete({ ignoreNotFound: true }),
+          ),
+        ]);
+
+        response.status(200).json({ ok: true, deleted: name, audioFiles: audioPaths.length });
+      } catch (error) {
+        console.error("Editor exercise delete failed", error);
+        response.status(500).json({ error: "editor-exercise-delete-failed" });
+      }
+      return;
+    }
+
     response.status(405).json({ error: "method-not-allowed" });
   },
 );
@@ -358,7 +390,7 @@ function handleCors(request, response) {
     response.set("Vary", "Origin");
   }
 
-  response.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  response.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   response.set("Access-Control-Allow-Headers", "Content-Type");
 
   if (request.method === "OPTIONS") {
@@ -466,6 +498,24 @@ function normalizeElevenLabsSettings(settings = {}) {
     style: Math.round(clampVoiceSetting(Number(settings.style) / 100, 0.12) * 100),
     speakerBoost: settings.speakerBoost !== false,
   };
+}
+
+function collectEditorExerciseAudioPaths(exercise) {
+  const paths = new Set();
+  [
+    exercise?.voiceAudioPath,
+    exercise?.demoAudioPath,
+    ...(Array.isArray(exercise?.demoAudioSegments)
+      ? exercise.demoAudioSegments.map((segment) => segment?.path)
+      : []),
+    ...(Array.isArray(exercise?.dialogTurns)
+      ? exercise.dialogTurns.map((turn) => turn?.audioPath)
+      : []),
+  ].forEach((path) => {
+    const cleanPath = String(path || "").trim();
+    if (cleanPath) paths.add(cleanPath);
+  });
+  return [...paths];
 }
 
 function buildChatGptExercisePrompt(exercise) {

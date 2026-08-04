@@ -3287,7 +3287,7 @@ function renderEditorSentenceList() {
   });
 }
 
-function renderEditorSentenceList() {
+function renderEditorSentenceListLegacy() {
   if (!editorSentenceList) return;
 
   const sentences = getEditorSentences();
@@ -3345,6 +3345,8 @@ function renderEditorSentenceList() {
     editorSentenceList.append(item);
   });
 }
+
+renderEditorSentenceList = renderEditorSentenceListLegacy;
 
 function getEditorRepeats() {
   const parsedValue = Number.parseInt(editorRepeats.value, 10);

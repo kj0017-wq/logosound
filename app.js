@@ -8465,7 +8465,7 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
     if (voiceProgressHints) voiceProgressHints.innerHTML = "";
   voiceProgressScores.innerHTML = "";
     voiceProgressList.innerHTML = "";
-    drawVoiceProgressChart([]);
+    voiceProgressChart.classList.add("is-hidden");
     return;
   }
 
@@ -8496,7 +8496,10 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
   } else {
     renderVoiceScoresInto(voiceProgressScores, evaluation.teilbewertungen);
   }
-  drawVoiceProgressChart(completeRecordings);
+  voiceProgressChart.classList.toggle("is-hidden", completeRecordings.length < 2);
+  if (completeRecordings.length >= 2) {
+    drawVoiceProgressChart(completeRecordings);
+  }
   renderVoiceProgressList(completeRecordings, selectedRecording.id);
 }
 
@@ -8563,6 +8566,9 @@ function renderVoiceProgressList(recordings, activeId = "") {
     const baselineChange = `${evaluation.veraenderungBaselineProzent >= 0 ? "+" : ""}${evaluation.veraenderungBaselineProzent}%`;
     const previousChange = `${evaluation.veraenderungVorherigerTestProzent >= 0 ? "+" : ""}${evaluation.veraenderungVorherigerTestProzent}%`;
     row.textContent = `${formatDateTime(recording.datum)}: ${evaluation.gesamt} Punkte · Baseline ${baselineChange} · Vorher ${previousChange}`;
+    if (evaluation.baseline?.istAusgangsmessung) {
+      row.textContent = `${formatDateTime(recording.datum)}: Ausgangsmessung`;
+    }
     row.addEventListener("click", () => openStoredRecording(recording.id));
     voiceProgressList.append(row);
   });

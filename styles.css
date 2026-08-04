@@ -2515,7 +2515,8 @@ body.is-resizing-statistics-waveform {
   font-weight: 900;
 }
 
-body[data-active-view="history"] #audioAnalysisPanel {
+body[data-active-view="history"] #audioAnalysisPanel,
+body[data-active-view="history"] .patient-stats {
   display: none;
 }
 

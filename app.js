@@ -1499,15 +1499,14 @@ function isStoredDemoAudioCurrent(exercise, text) {
   const requestSettings = getElevenLabsRequestSettings();
   return (
     exercise.demoVoiceId === requestSettings.voiceId &&
-    exercise.demoTextHash === hashText(text) &&
-    Number(exercise.demoSpeed || 0) === clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3)
+    JSON.stringify(exercise.demoVoiceSettings || {}) === JSON.stringify(requestSettings.voiceSettings || {}) &&
+    exercise.demoTextHash === hashText(text)
   );
 }
 
 function isStoredDemoAudioSegmentsCurrent(exercise, text, chunks = splitVoicePreviewText(text)) {
   if (!exercise?.demoAudioSegments?.length) return false;
   const requestSettings = getElevenLabsRequestSettings();
-  const speed = clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3);
   if (exercise.demoAudioSegments.length !== chunks.length) return false;
 
   return chunks.every((chunk, index) => {
@@ -1516,8 +1515,7 @@ function isStoredDemoAudioSegmentsCurrent(exercise, text, chunks = splitVoicePre
       (segment?.url || segment?.path) &&
       segment.voiceId === requestSettings.voiceId &&
       JSON.stringify(segment.voiceSettings || {}) === JSON.stringify(requestSettings.voiceSettings || {}) &&
-      segment.textHash === hashText(chunk) &&
-      Number(segment.speed || 0) === speed
+      segment.textHash === hashText(chunk)
     );
   });
 }
@@ -1643,8 +1641,13 @@ async function playExercisePreviewSegment(index, fallbackText = "") {
     return;
   }
 
+  const webAudioPlayed = await playExercisePreviewBufferSegment(index, fallbackText);
+  if (webAudioPlayed) return;
+
   previewAudioElement = new Audio(previewAudioUrls[index]);
   previewAudioElement.preload = "auto";
+  previewAudioElement.muted = false;
+  previewAudioElement.defaultMuted = false;
   previewAudioElement.volume = 1;
   previewAudioElement.addEventListener("ended", async () => {
     previewPlaybackOffsetSeconds += Number(previewAudioElement?.duration) || 0;
@@ -1661,6 +1664,73 @@ async function playExercisePreviewSegment(index, fallbackText = "") {
     : "Vorführung stoppen";
   await previewAudioElement.play();
   animateExercisePreviewKaraoke();
+}
+
+async function playExercisePreviewBufferSegment(index, fallbackText = "") {
+  try {
+    await unlockInstructionAudio();
+    if (!instructionAudioContext || instructionAudioContext.state === "closed") return false;
+    if (instructionAudioContext.state === "suspended") {
+      await instructionAudioContext.resume();
+    }
+
+    const audioUrl = previewAudioUrls[index];
+    const response = await fetch(resolveAppUrl(audioUrl), { cache: "force-cache" });
+    if (!response.ok) return false;
+    const audioData = await response.arrayBuffer();
+    if (!audioData.byteLength) return false;
+    const audioBuffer = await instructionAudioContext.decodeAudioData(audioData.slice(0));
+    const source = instructionAudioContext.createBufferSource();
+    const gain = instructionAudioContext.createGain();
+    const startedAt = instructionAudioContext.currentTime;
+    const duration = Number(audioBuffer.duration || 0);
+
+    instructionAudioSource?.stop?.();
+    instructionAudioSource = source;
+    source.buffer = audioBuffer;
+    gain.gain.value = 1;
+    source.connect(gain);
+    gain.connect(instructionAudioContext.destination);
+    previewExerciseButton.disabled = false;
+    previewExerciseButton.textContent = previewAudioUrls.length > 1
+      ? `Vorführung stoppen ${index + 1}/${previewAudioUrls.length}`
+      : "Vorführung stoppen";
+    message.textContent = "Vorführung läuft.";
+
+    const animate = () => {
+      if (!isPreviewingExercise || instructionAudioSource !== source) return;
+      const elapsedSeconds = Math.max(0, instructionAudioContext.currentTime - startedAt);
+      updateKaraokeDisplayAtTime(
+        karaokeOverlay,
+        karaokeTimeline,
+        previewPlaybackOffsetSeconds + Math.min(duration || elapsedSeconds, elapsedSeconds),
+      );
+      previewAnimationFrameId = window.requestAnimationFrame(animate);
+    };
+
+    await new Promise((resolve, reject) => {
+      source.onended = () => resolve(true);
+      try {
+        source.start(0);
+        animate();
+      } catch (error) {
+        reject(error);
+      }
+    });
+
+    if (instructionAudioSource === source) instructionAudioSource = null;
+    source.onended = null;
+    if (!isPreviewingExercise) return true;
+    previewPlaybackOffsetSeconds += duration;
+    await playExercisePreviewSegment(index + 1, fallbackText);
+    return true;
+  } catch (error) {
+    if (index === 0 && fallbackText) {
+      await playExercisePreviewFallback(fallbackText, error);
+      return true;
+    }
+    return false;
+  }
 }
 
 function animateExercisePreviewKaraoke() {
@@ -1718,6 +1788,10 @@ function stopExercisePreview() {
   window.cancelAnimationFrame(previewAnimationFrameId);
   previewAnimationFrameId = 0;
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  try {
+    instructionAudioSource?.stop?.();
+  } catch (error) {}
+  instructionAudioSource = null;
 
   if (previewAudioElement) {
     previewAudioElement.pause();

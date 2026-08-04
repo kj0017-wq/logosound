@@ -6915,8 +6915,12 @@ async function playSettingsEqualizerTestAudio() {
   if (settingsEqTestButton) settingsEqTestButton.disabled = true;
 
   try {
-    if (!settingsVoicePreview.currentSrc && !settingsVoicePreview.src) {
-      const created = await testElevenLabsSettingsVoice({ autoPlay: false });
+    const hasReusableTestAudio =
+      (settingsVoicePreview.currentSrc || settingsVoicePreview.src) &&
+      Number.isFinite(settingsVoicePreview.duration) &&
+      settingsVoicePreview.duration >= 12;
+    if (!hasReusableTestAudio) {
+      const created = await testElevenLabsSettingsVoice({ autoPlay: false, repeatForEq: true });
       if (!created) return;
     }
 
@@ -7425,9 +7429,10 @@ function saveAllAiSettings() {
 }
 
 async function testElevenLabsSettingsVoice(options = {}) {
-  const text =
+  const baseText =
     settingsVoiceDemoText?.value.trim() ||
-    "Das ist ein kurzer Test der LogoSound Stimme. Bitte sprechen Sie ruhig und deutlich.";
+    getDefaultSettingsDemoText();
+  const text = options.repeatForEq ? buildRepeatedDemoText(baseText) : baseText;
 
   saveAllAiSettings();
   if (settingsTestVoiceButton) settingsTestVoiceButton.disabled = true;
@@ -7473,6 +7478,27 @@ async function testElevenLabsSettingsVoice(options = {}) {
     if (settingsTestVoiceButton) settingsTestVoiceButton.disabled = false;
   }
   return true;
+}
+
+function getDefaultSettingsDemoText() {
+  return [
+    "Das ist ein Test der LogoSound Stimme.",
+    "Bitte hören Sie auf Klarheit, Wärme und Verständlichkeit.",
+    "Während das Testaudio läuft, können Sie Equalizer und Wiedergabe-Verstärkung verändern.",
+    "So prüfen Sie direkt, ob die Stimme im Übungsraum natürlich und deutlich klingt.",
+  ].join(" ");
+}
+
+function buildRepeatedDemoText(text, minimumWords = 78) {
+  const cleanText = String(text || getDefaultSettingsDemoText()).trim();
+  const words = cleanText.split(/\s+/).filter(Boolean);
+  if (words.length >= minimumWords) return cleanText;
+
+  const parts = [];
+  while (parts.join(" ").split(/\s+/).filter(Boolean).length < minimumWords) {
+    parts.push(cleanText);
+  }
+  return parts.join(" ");
 }
 
 function updateSensitivitySetting(value) {

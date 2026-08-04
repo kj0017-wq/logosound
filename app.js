@@ -574,20 +574,24 @@ function getGlobalVoiceAudioUrl(url = "", path = "") {
 }
 
 function positionAnalysisCalibrationPanel() {
+  if (analysisPlayRow && statisticsRecordingSelect) {
+    statisticsRecordingSelect.after(analysisPlayRow);
+  }
+
   if (statisticsRangeControl && analysisMiniGrid) {
-    analysisMiniGrid.before(statisticsRangeControl);
+    analysisMiniGrid.after(statisticsRangeControl);
   }
 
-  if (analysisPlayRow && statisticsRangeControl) {
-    statisticsRangeControl.after(analysisPlayRow);
+  if (analysisCalibrationPanel && statisticsRangeControl) {
+    statisticsRangeControl.after(analysisCalibrationPanel);
   }
 
-  if (analysisMiniGrid && analysisPlayRow) {
-    analysisPlayRow.after(analysisMiniGrid);
+  if (audioAnalysisTitle && analysisCalibrationPanel) {
+    analysisCalibrationPanel.after(audioAnalysisTitle);
   }
 
-  if (analysisCalibrationPanel && analysisMiniGrid) {
-    analysisMiniGrid.after(analysisCalibrationPanel);
+  if (audioAnalysisGrid && audioAnalysisTitle) {
+    audioAnalysisTitle.after(audioAnalysisGrid);
   }
 }
 

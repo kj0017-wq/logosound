@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="LogoSound" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="canonical" href="https://logosound-19293.web.app/" />
-    <link rel="manifest" href="/manifest-20260801-amp177.webmanifest" />
+    <link rel="manifest" href="/manifest-20260801-amp178.webmanifest" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="shortcut icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260801-amp177" />
+    <link rel="stylesheet" href="styles.css?v=20260801-amp178" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp177</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp178</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -48,8 +48,8 @@
         <button type="button" data-menu-view="record">Aufnahme</button>
         <button type="button" data-menu-view="editor">Editor</button>
         <button type="button" data-menu-view="playback">Playback</button>
-        <button type="button" data-menu-view="history">Verlauf</button>
-        <button type="button" data-menu-view="stats">Statistik</button>
+        <button type="button" data-menu-view="history">Auswertung</button>
+        <button type="button" data-menu-view="stats">Analyse</button>
         <button type="button" data-menu-view="settings">Einstellungen</button>
         <button type="button" data-menu-view="help">Hilfe</button>
         <div class="menu-share-card" aria-label="QR-Code zum Weitergeben der App">
@@ -178,7 +178,7 @@
         <p>Wähle unten eine gespeicherte Übung oder Aufzeichnung.</p>
         <div class="button-row">
           <button id="emptyRecordButton" class="secondary-action" type="button">Zur Aufnahme</button>
-          <button id="emptyHistoryButton" class="quiet-action" type="button">Zum Verlauf</button>
+          <button id="emptyHistoryButton" class="quiet-action" type="button">Zur Auswertung</button>
         </div>
       </section>
 
@@ -403,10 +403,10 @@
         </div>
       </section>
 
-      <section class="library-panel app-section" data-view="history stats" aria-label="Gespeicherte Patientenaufnahmen">
+      <section class="library-panel app-section" data-view="history stats" aria-label="Auswertung und Analyse gespeicherter Aufnahmen">
         <div class="section-header">
           <div>
-            <p class="eyebrow">Verlauf</p>
+            <p class="eyebrow">Auswertung</p>
             <h2 id="libraryTitle">Demo Patient</h2>
           </div>
           <span id="recordingCountBadge" class="status-pill">0</span>
@@ -545,7 +545,7 @@
           </details>
           <h3 id="audioAnalysisTitle">Keine Aufnahme geöffnet</h3>
           <dl id="audioAnalysisGrid" class="analysis-grid"></dl>
-          <p id="audioAnalysisNote" class="message">Öffne eine Aufnahme aus dem Verlauf oder erstelle eine neue Aufnahme.</p>
+          <p id="audioAnalysisNote" class="message">Öffne eine Aufnahme aus der Auswertung oder erstelle eine neue Aufnahme.</p>
         </div>
 
         <div id="recordingsList" class="recordings-list"></div>
@@ -703,7 +703,7 @@
             <p>Spiele die Aufnahme ab und verfolge die Position in der Wellenform. Der Play/Pause-Button schaltet zwischen Abspielen und Pausieren um.</p>
           </article>
           <article class="help-card">
-            <h3>Statistik</h3>
+            <h3>Analyse</h3>
             <p>Wähle eine Aufnahme, markiere einen Bereich und zoome hinein. Die Analyseposition folgt der Wiedergabe und aktualisiert Lautstärke, Frequenz und Impulse live.</p>
           </article>
           <article class="help-card">
@@ -717,13 +717,13 @@
         <button class="nav-button is-active" type="button" data-target-view="record">Aufnahme</button>
         <button class="nav-button" type="button" data-target-view="editor">Editor</button>
         <button class="nav-button" type="button" data-target-view="playback">Playback</button>
-        <button class="nav-button" type="button" data-target-view="history">Verlauf</button>
-        <button class="nav-button" type="button" data-target-view="stats">Statistik</button>
+        <button class="nav-button" type="button" data-target-view="history">Auswertung</button>
+        <button class="nav-button" type="button" data-target-view="stats">Analyse</button>
         <button class="nav-button" type="button" data-target-view="settings">Setup</button>
       </nav>
     </main>
 
-    <script type="module" src="app.js?v=20260801-amp177"></script>
+    <script type="module" src="app.js?v=20260801-amp178"></script>
   </body>
 </html>
 

@@ -2515,6 +2515,10 @@ body.is-resizing-statistics-waveform {
   font-weight: 900;
 }
 
+body[data-active-view="history"] #audioAnalysisPanel {
+  display: none;
+}
+
 .voice-progress-panel {
   display: grid;
   gap: 10px;

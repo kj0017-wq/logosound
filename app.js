@@ -7517,7 +7517,7 @@ function renderAudioAnalysis(metadata = currentMetadata) {
   if (!metadata) {
     audioAnalysisTitle.textContent = "Keine Aufnahme geöffnet";
     audioAnalysisGrid.innerHTML = "";
-    audioAnalysisNote.textContent = "Öffne eine Aufnahme aus dem Verlauf oder erstelle eine neue Aufnahme.";
+    audioAnalysisNote.textContent = "Öffne eine Aufnahme aus der Auswertung oder erstelle eine neue Aufnahme.";
     if (statisticsPositionSlider) statisticsPositionSlider.disabled = true;
     if (statisticsPositionValue) statisticsPositionValue.textContent = "00:00";
     setAnalysisRangeControlsEnabled(false);
@@ -8856,7 +8856,7 @@ async function openStoredRecording(id) {
   showResult(metadata, storedBlob);
   renderPlaybackRecordingAccess(getPatientRecordings(), metadata.id);
   renderAudioAnalysis(metadata);
-  message.textContent = "Aufnahme aus dem Verlauf geöffnet.";
+  message.textContent = "Aufnahme aus der Auswertung geöffnet.";
 }
 
 function getPatientRecordings() {
@@ -9064,8 +9064,8 @@ function updateTopBarTitle(viewName) {
     record: "Aufnahme",
     editor: "Editor",
     playback: "Playback",
-    history: "Verlauf",
-    stats: "Statistik",
+    history: "Auswertung",
+    stats: "Analyse",
     settings: "Einstellungen",
     help: "Hilfe",
   };

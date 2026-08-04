@@ -650,6 +650,31 @@ function repairStaticUiLabels() {
 
   calibrationBackButton && (calibrationBackButton.textContent = "Zur\u00fcck");
 }
+
+recordButton.addEventListener("click", async (event) => {
+  event.stopImmediatePropagation();
+
+  if (isRecording || mediaRecorder?.state === "recording") {
+    stopRecording();
+    return;
+  }
+
+  stopExercisePreview();
+  unlockInstructionAudio();
+  recordButton.disabled = true;
+  recordButton.textContent = "Start wird vorbereitet";
+  const streamReady = await ensureMediaStream();
+  if (!streamReady) {
+    recordButton.disabled = false;
+    recordButton.textContent = "\u00dcbung starten";
+    return;
+  }
+
+  await ensureCameraPreviewPlaying();
+  const audioPreparation = prepareRecordingAudio();
+  await runCountdownAndStart(audioPreparation);
+}, true);
+
 recordButton.addEventListener("click", async () => {
   if (isRecording || mediaRecorder?.state === "recording") {
     stopRecording();

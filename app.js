@@ -185,6 +185,10 @@ const settingsEqSliders = document.querySelectorAll("[data-eq-band]");
 const settingsEqSummary = document.querySelector("#settingsEqSummary");
 const settingsEqTestButton = document.querySelector("#settingsEqTestButton");
 const settingsEqResetButton = document.querySelector("#settingsEqResetButton");
+const settingsEqAmplitudeCanvas = document.querySelector("#settingsEqAmplitudeCanvas");
+const settingsEqFrequencyCanvas = document.querySelector("#settingsEqFrequencyCanvas");
+const settingsEqAmplitudeValue = document.querySelector("#settingsEqAmplitudeValue");
+const settingsEqFrequencyValue = document.querySelector("#settingsEqFrequencyValue");
 const settingsPlaybackVolume = document.querySelector("#settingsPlaybackVolume");
 const settingsPlaybackVolumeValue = document.querySelector("#settingsPlaybackVolumeValue");
 const playbackGainPresetButtons = document.querySelectorAll("[data-playback-gain]");
@@ -366,6 +370,12 @@ let playbackAudioContext;
 let settingsEqAudioContext;
 let settingsEqAudioSource;
 let settingsEqFilters = [];
+let settingsEqGain;
+let settingsEqAnalyser;
+let settingsEqAnimationFrame;
+let settingsEqAmplitudes = [];
+let settingsEqPitches = [];
+let settingsEqStrengths = [];
 let analyser;
 let audioSource;
 let audioOnlyStream;
@@ -813,6 +823,18 @@ generateVoiceAudioButton.addEventListener("click", async () => {
 
 settingsTestVoiceButton?.addEventListener("click", async () => {
   await testElevenLabsSettingsVoice();
+});
+
+settingsVoicePreview?.addEventListener("play", () => {
+  startSettingsEqVisuals();
+});
+
+settingsVoicePreview?.addEventListener("pause", () => {
+  stopSettingsEqVisuals();
+});
+
+settingsVoicePreview?.addEventListener("ended", () => {
+  stopSettingsEqVisuals();
 });
 
 settingsVoiceSelect?.addEventListener("change", () => {
@@ -2249,6 +2271,7 @@ function applyPlaybackGain() {
   playbackVolumeValue.textContent = `${Math.round(gainValue * 100)}%`;
   if (playbackGain) playbackGain.gain.value = gainValue;
   recordingPlayer.volume = 1;
+  applySettingsEqPlaybackGain(gainValue);
 }
 
 function disconnectAudioAnalyser() {
@@ -6902,6 +6925,7 @@ async function playSettingsEqualizerTestAudio() {
     settingsVoicePreview.currentTime = 0;
     settingsVoicePreview.volume = 1;
     await settingsVoicePreview.play();
+    startSettingsEqVisuals();
     if (settingsState) settingsState.textContent = "EQ-Test läuft. Regler ändern den Klang live.";
   } catch (error) {
     if (settingsState) settingsState.textContent = error?.message || "EQ-Testaudio konnte nicht gestartet werden.";
@@ -6921,6 +6945,10 @@ async function ensureSettingsEqualizerAudio() {
 
   if (!settingsEqAudioSource) {
     settingsEqAudioSource = settingsEqAudioContext.createMediaElementSource(settingsVoicePreview);
+    settingsEqGain = settingsEqAudioContext.createGain();
+    settingsEqAnalyser = settingsEqAudioContext.createAnalyser();
+    settingsEqAnalyser.fftSize = 2048;
+    settingsEqAnalyser.smoothingTimeConstant = 0.74;
     settingsEqFilters = Object.keys(getDefaultEqualizerSettings().bands).map((frequency) => {
       const filter = settingsEqAudioContext.createBiquadFilter();
       filter.type = "peaking";
@@ -6935,7 +6963,9 @@ async function ensureSettingsEqualizerAudio() {
       previousNode.connect(filter);
       previousNode = filter;
     });
-    previousNode.connect(settingsEqAudioContext.destination);
+    previousNode.connect(settingsEqGain);
+    settingsEqGain.connect(settingsEqAnalyser);
+    settingsEqAnalyser.connect(settingsEqAudioContext.destination);
   }
 
   if (settingsEqAudioContext.state === "suspended") {
@@ -6956,6 +6986,82 @@ function applySettingsEqualizer(settings = getEqualizerSettings()) {
     filter.gain.cancelScheduledValues(now);
     filter.gain.setTargetAtTime(gain, now, 0.015);
   });
+}
+
+function applySettingsEqPlaybackGain(value = null) {
+  if (!settingsEqGain) return;
+  const gainValue = Math.max(1, Math.min(4, value ?? ((Number(playbackVolumeSlider.value) || 200) / 100)));
+  settingsEqGain.gain.value = gainValue;
+}
+
+function startSettingsEqVisuals() {
+  stopSettingsEqVisuals();
+  settingsEqAmplitudes = [];
+  settingsEqPitches = [];
+  settingsEqStrengths = [];
+
+  const tick = () => {
+    updateSettingsEqVisuals();
+    if (settingsVoicePreview && !settingsVoicePreview.paused && !settingsVoicePreview.ended) {
+      settingsEqAnimationFrame = window.requestAnimationFrame(tick);
+    }
+  };
+
+  settingsEqAnimationFrame = window.requestAnimationFrame(tick);
+}
+
+function stopSettingsEqVisuals() {
+  window.cancelAnimationFrame(settingsEqAnimationFrame);
+  settingsEqAnimationFrame = null;
+}
+
+function updateSettingsEqVisuals() {
+  if (!settingsEqAnalyser) return;
+
+  const timeSamples = new Uint8Array(settingsEqAnalyser.fftSize);
+  const frequencySamples = new Uint8Array(settingsEqAnalyser.frequencyBinCount);
+  settingsEqAnalyser.getByteTimeDomainData(timeSamples);
+  settingsEqAnalyser.getByteFrequencyData(frequencySamples);
+
+  let sumSquares = 0;
+  let peak = 0;
+  timeSamples.forEach((sample) => {
+    const centered = (sample - 128) / 128;
+    sumSquares += centered * centered;
+    peak = Math.max(peak, Math.abs(centered));
+  });
+
+  const rms = Math.sqrt(sumSquares / Math.max(1, timeSamples.length));
+  const level = Math.max(0, Math.min(100, Math.round(Math.max(rms * 260, peak * 72))));
+  const binHz = (settingsEqAudioContext?.sampleRate || 44100) / settingsEqAnalyser.fftSize;
+  const pitchHz = estimateVoicePitchHz(frequencySamples, binHz, level);
+
+  settingsEqAmplitudes.push(level);
+  settingsEqPitches.push(pitchHz || 0);
+  settingsEqStrengths.push(level);
+  if (settingsEqAmplitudes.length > MAX_VISIBLE_SAMPLES) settingsEqAmplitudes.shift();
+  if (settingsEqPitches.length > MAX_VISIBLE_SAMPLES) settingsEqPitches.shift();
+  if (settingsEqStrengths.length > MAX_VISIBLE_SAMPLES) settingsEqStrengths.shift();
+
+  if (settingsEqAmplitudeValue) settingsEqAmplitudeValue.textContent = String(level);
+  if (settingsEqFrequencyValue) settingsEqFrequencyValue.textContent = pitchHz ? `${pitchHz} Hz` : "0 Hz";
+  if (settingsEqAmplitudeCanvas) {
+    drawWaveform(settingsEqAmplitudeCanvas, settingsEqAmplitudes, {
+      mode: "live",
+      levelMeter: true,
+      stereoLevelMeter: true,
+      currentLevel: level,
+      currentLeftLevel: level,
+      currentRightLevel: level,
+      minSpeechBarHeight: 4,
+      minPauseBarHeight: 2,
+      barGap: 2,
+      minBarWidth: 2,
+    });
+  }
+  if (settingsEqFrequencyCanvas) {
+    drawFrequencyTimeline(settingsEqFrequencyCanvas, settingsEqPitches, settingsEqStrengths, { limit: true });
+  }
 }
 
 function renderVoiceProfileSelect(settings = getElevenLabsSettings()) {

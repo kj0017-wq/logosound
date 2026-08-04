@@ -2713,6 +2713,17 @@ body[data-active-view="stats"] #recordingsList {
   color: var(--accent-strong);
 }
 
+.evaluation-reset-button {
+  min-height: 42px;
+  border-color: rgba(163, 50, 66, 0.18);
+  background: #fff1f3;
+  color: #a33242;
+}
+
+.evaluation-reset-button:disabled {
+  opacity: 0.72;
+}
+
 dt {
   color: var(--muted);
   font-size: 0.66rem;

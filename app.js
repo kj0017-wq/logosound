@@ -8,12 +8,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 import {
   collection,
+  deleteField,
   deleteDoc,
   doc,
   getDoc,
   getDocs,
   getFirestore,
   setDoc,
+  updateDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const cameraPreview = document.querySelector("#cameraPreview");
@@ -132,6 +134,7 @@ const voiceProgressHints = document.querySelector("#voiceProgressHints");
 const voiceProgressScores = document.querySelector("#voiceProgressScores");
 const voiceProgressChart = document.querySelector("#voiceProgressChart");
 const voiceProgressList = document.querySelector("#voiceProgressList");
+const resetEvaluationButton = document.querySelector("#resetEvaluationButton");
 const statisticsRecordingSelect = document.querySelector("#statisticsRecordingSelect");
 const statisticsPositionSlider = document.querySelector("#statisticsPositionSlider");
 const statisticsPositionValue = document.querySelector("#statisticsPositionValue");
@@ -944,6 +947,10 @@ statisticsZoomRangeButton?.addEventListener("click", () => {
   clampSelectedAnalysisPositionToZoomRange();
   syncAnalysisPositionSlider();
   renderAudioAnalysis(getSelectedAnalysisRecording());
+});
+
+resetEvaluationButton?.addEventListener("click", () => {
+  resetCurrentPatientEvaluationData();
 });
 
 statisticsWaveformResizeHandle?.addEventListener("pointerdown", startStatisticsWaveformResize);
@@ -7409,6 +7416,7 @@ function getVoiceAnalysisValues(metadata) {
 }
 
 function isCompleteVoiceTest(metadata) {
+  if (metadata?.auswertungIgnoriert) return false;
   const values = getVoiceAnalysisValues(metadata);
   return values.gesamtdauer >= 2 && (metadata.amplituden || []).length >= 8;
 }
@@ -8359,6 +8367,115 @@ async function deleteCloudRecording(metadata) {
   await Promise.all(deleteTasks);
 }
 
+function stripEvaluationData(metadata = {}) {
+  const {
+    audioAnalyse,
+    werte,
+    bewertung,
+    ...rest
+  } = metadata;
+
+  return {
+    ...rest,
+    auswertungIgnoriert: true,
+    auswertungZurueckgesetztAm: new Date().toISOString(),
+  };
+}
+
+async function resetCloudEvaluationData(metadata) {
+  const resetMetadata = stripEvaluationData(metadata);
+  const tasks = [
+    updateDoc(doc(firestore, "recordings", metadata.id), {
+      audioAnalyse: deleteField(),
+      werte: deleteField(),
+      bewertung: deleteField(),
+      auswertungIgnoriert: true,
+      auswertungZurueckgesetztAm: resetMetadata.auswertungZurueckgesetztAm,
+    }),
+  ];
+
+  if (metadata.firebaseJsonPath) {
+    const jsonBlob = new Blob([JSON.stringify(cleanMetadata(resetMetadata), null, 2)], {
+      type: "application/json",
+    });
+    tasks.push(uploadBytes(ref(storage, metadata.firebaseJsonPath), jsonBlob, {
+      contentType: "application/json",
+    }));
+  }
+
+  await Promise.all(tasks);
+}
+
+async function resetCurrentPatientEvaluationData() {
+  const patient = getCurrentPatientName();
+  const patientRecordings = allRecordings.filter(
+    (recording) => (recording.patientName || "Demo Patient") === patient,
+  );
+
+  if (!patientRecordings.length) {
+    message.textContent = "Keine Aufnahmen für diese Auswertung vorhanden.";
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Auswertung für ${patient} zurücksetzen? Die Aufnahmen bleiben erhalten, aber gespeicherte Analyse- und Bewertungsdaten werden gelöscht.`,
+  );
+  if (!confirmed) return;
+
+  resetEvaluationButton.disabled = true;
+  resetEvaluationButton.textContent = "Auswertung wird zurückgesetzt";
+  firebaseState.textContent = "Auswertung wird lokal und in Firebase zurückgesetzt.";
+
+  let cloudFailed = false;
+  const resetTimestamp = new Date().toISOString();
+  for (const recording of patientRecordings) {
+    const storedRecording = await getRecording(recording.id);
+    const fullRecording = storedRecording || recording;
+    const { videoBlob, audioBlob, ...storedMetadata } = fullRecording;
+    const resetMetadata = stripEvaluationData({
+      ...recording,
+      ...storedMetadata,
+    });
+
+    await saveRecording(resetMetadata, videoBlob || audioBlob || new Blob([], { type: "video/webm" }));
+
+    try {
+      await resetCloudEvaluationData(resetMetadata);
+    } catch (error) {
+      cloudFailed = true;
+      console.warn("Firebase-Auswertungsreset fehlgeschlagen", error);
+    }
+  }
+
+  try {
+    await setDoc(doc(firestore, "patientEvaluationResets", slugify(patient)), {
+      patientName: patient,
+      resetAt: resetTimestamp,
+      recordingCount: patientRecordings.length,
+    });
+  } catch (error) {
+    cloudFailed = true;
+    console.warn("Firebase-Auswertungsreset-Protokoll fehlgeschlagen", error);
+  }
+
+  if (currentMetadata && (currentMetadata.patientName || "Demo Patient") === patient) {
+    currentMetadata = stripEvaluationData(currentMetadata);
+  }
+  selectedAnalysisRecordingId = "";
+  selectedAnalysisPosition = 0;
+  selectedAnalysisStart = 0;
+  selectedAnalysisEnd = 1;
+  statisticsRangeZoomed = false;
+
+  await refreshRecordings();
+  resetEvaluationButton.disabled = false;
+  resetEvaluationButton.textContent = "Auswertung zurücksetzen";
+  message.textContent = "Auswertung zurückgesetzt. Neue Aufnahmen bilden wieder eine neue Ausgangsmessung.";
+  firebaseState.textContent = cloudFailed
+    ? "Auswertung lokal zurückgesetzt. Firebase teilweise fehlgeschlagen."
+    : "Auswertung lokal und in Firebase zurückgesetzt.";
+}
+
 function selectPatient(name) {
   const cleanedName = name.trim() || "Ohne Name";
   patientName.value = cleanedName;
@@ -8597,8 +8714,11 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
   voiceProgressScores.innerHTML = "";
     voiceProgressList.innerHTML = "";
     voiceProgressChart.classList.add("is-hidden");
+    if (resetEvaluationButton) resetEvaluationButton.disabled = true;
     return;
   }
+
+  if (resetEvaluationButton) resetEvaluationButton.disabled = false;
 
   const selectedRecording =
     completeRecordings.find((recording) => recording.id === preferredId || recording.id === selectedAnalysisRecordingId) ||

@@ -1141,12 +1141,13 @@ playPauseButton.addEventListener("click", () => {
 playbackSeek.addEventListener("input", () => {
   const measuredDuration = currentMetadata?.dauerSekunden || 0;
   const mediaDuration = Number.isFinite(recordingPlayer.duration) ? recordingPlayer.duration : 0;
-  const targetDuration = mediaDuration || measuredDuration || 0;
+  const targetDuration = measuredDuration || mediaDuration || 0;
   if (!targetDuration) return;
 
-  const targetTime = (Number(playbackSeek.value) / 1000) * targetDuration;
+  const targetProgress = Number(playbackSeek.value) / 1000;
+  const targetTime = analysisProgressToMediaTime(targetProgress, currentMetadata);
   recordingPlayer.currentTime = targetTime;
-  updatePlaybackVisuals();
+  updatePlaybackVisuals(targetProgress);
 });
 
 retakeButton?.addEventListener("click", () => {
@@ -6746,7 +6747,7 @@ function updatePlaybackVisuals(forcedProgress = null) {
   const playbackValues = currentMetadata.amplituden || [];
   const measuredDuration = currentMetadata.dauerSekunden || 0;
   const mediaDuration = Number.isFinite(recordingPlayer.duration) ? recordingPlayer.duration : 0;
-  const duration = mediaDuration || measuredDuration || 0;
+  const duration = measuredDuration || mediaDuration || 0;
   const progress =
     forcedProgress ?? mediaTimeToAnalysisProgress(recordingPlayer.currentTime || 0, currentMetadata);
   const syncedCurrentTime = duration ? progress * duration : 0;
@@ -6811,14 +6812,14 @@ function analysisProgressToMediaTime(progress, metadata = currentMetadata) {
   const { analysisDuration, mediaDuration } = getPlaybackDurations(metadata);
   const safeProgress = Math.max(0, Math.min(1, Number(progress) || 0));
   if (!analysisDuration || !mediaDuration) return 0;
-  return Math.max(0, Math.min(mediaDuration, safeProgress * mediaDuration));
+  return Math.max(0, Math.min(mediaDuration, safeProgress * analysisDuration));
 }
 
 function mediaTimeToAnalysisProgress(mediaTime, metadata = currentMetadata) {
   const { analysisDuration, mediaDuration } = getPlaybackDurations(metadata);
   const safeMediaTime = Math.max(0, Number(mediaTime) || 0);
   if (!analysisDuration && !mediaDuration) return 0;
-  if (!mediaDuration) return Math.max(0, Math.min(1, safeMediaTime / analysisDuration));
+  if (analysisDuration) return Math.max(0, Math.min(1, safeMediaTime / analysisDuration));
   return Math.max(0, Math.min(1, safeMediaTime / mediaDuration));
 }
 

@@ -2276,10 +2276,30 @@ function getExerciseTextPassages(exercise = getActiveRecordingExercise()) {
 }
 
 function splitTextPassages(text) {
-  return String(text || "")
+  const rawText = String(text || "").trim();
+  const explicitPassages = rawText
     .split(/\r?\n+/)
     .map((passage) => passage.replace(/\s+/g, " ").trim())
     .filter(Boolean);
+  const hasExplicitBreaks = /\r?\n/.test(rawText);
+
+  if (hasExplicitBreaks || explicitPassages.length !== 1 || rawText.length < 140) {
+    return explicitPassages;
+  }
+
+  return splitLongTextIntoSentencePassages(explicitPassages[0]);
+}
+
+function splitLongTextIntoSentencePassages(text) {
+  const normalizedText = String(text || "").replace(/\s+/g, " ").trim();
+  if (!normalizedText) return [];
+
+  const matches = normalizedText.match(/[^.!?…]+(?:[.!?…]+["»“”']?)?/g) || [normalizedText];
+  const sentences = matches
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  return sentences.length > 1 ? sentences : [normalizedText];
 }
 
 function getEditorDialogTurns() {
@@ -3989,10 +4009,7 @@ function getEditorSelectValueForExerciseName(name) {
 function applyEditorExerciseToForm(exercise) {
   editorExerciseName.value = exercise.name || "Neue Übung";
   editorMode.value = exercise.mode || "syllables";
-  editorContent.value =
-    exercise.mode === "text" && Array.isArray(exercise.textPassages) && exercise.textPassages.length
-      ? exercise.textPassages.join("\n")
-      : exercise.rawContent || exercise.content || getDefaultEditorContent(editorMode.value);
+  editorContent.value = getEditorContentForExercise(exercise);
   editorVoiceInstruction.value =
     exercise.voiceInstruction || getDefaultEditorVoiceInstruction(editorMode.value);
   editorVoiceAudioDataUrl = exercise.voiceAudioDataUrl || "";
@@ -4623,6 +4640,21 @@ function createRecordingAudioTrack() {
     recordingAudioMicGain = null;
     return null;
   }
+}
+
+function getEditorContentForExercise(exercise) {
+  const fallback = getDefaultEditorContent(exercise?.mode || editorMode.value);
+  if (!exercise || exercise.mode !== "text") {
+    return exercise?.content || fallback;
+  }
+
+  const savedPassages = Array.isArray(exercise.textPassages)
+    ? exercise.textPassages.map((passage) => String(passage || "").trim()).filter(Boolean)
+    : [];
+  if (savedPassages.length) return savedPassages.join("\n");
+
+  const rawText = exercise.rawContent || exercise.content || exercise.script || fallback;
+  return splitTextPassages(rawText).join("\n");
 }
 
 function drawComposedVideoFrame() {

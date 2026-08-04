@@ -3038,11 +3038,15 @@ body.calibration-mode .controls-panel {
   background: rgba(255, 255, 255, 0.92);
 }
 
-body.calibration-mode .controls-panel > :not(.meters):not(.recording-tuning-grid):not(.calibration-action):not(.calibration-back-action) {
+body.calibration-mode .controls-panel > :not(.meters):not(.recording-tuning-grid):not(.calibration-action):not(.calibration-test-audio-action):not(.calibration-back-action) {
   display: none;
 }
 
 body.calibration-mode .calibration-back-action {
+  display: inline-flex !important;
+}
+
+body.calibration-mode .calibration-test-audio-action {
   display: inline-flex !important;
 }
 

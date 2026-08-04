@@ -112,6 +112,7 @@ const playbackRecordingSelect = document.querySelector("#playbackRecordingSelect
 const playbackOpenRecordingButton = document.querySelector("#playbackOpenRecordingButton");
 const playbackSavedRecordingsList = document.querySelector("#playbackSavedRecordingsList");
 const calibrationButton = document.querySelector("#calibrationButton");
+const calibrationTestAudioButton = document.querySelector("#calibrationTestAudioButton");
 const calibrationBackButton = document.querySelector("#calibrationBackButton");
 const averageVolume = document.querySelector("#averageVolume");
 const maxVolume = document.querySelector("#maxVolume");
@@ -840,16 +841,19 @@ settingsTestVoiceButton?.addEventListener("click", async () => {
 
 settingsVoicePreview?.addEventListener("play", () => {
   if (settingsEqStopButton) settingsEqStopButton.disabled = false;
+  updateCalibrationTestAudioButton();
   startSettingsEqVisuals();
 });
 
 settingsVoicePreview?.addEventListener("pause", () => {
   if (settingsEqStopButton) settingsEqStopButton.disabled = true;
+  updateCalibrationTestAudioButton();
   stopSettingsEqVisuals();
 });
 
 settingsVoicePreview?.addEventListener("ended", () => {
   if (settingsEqStopButton) settingsEqStopButton.disabled = true;
+  updateCalibrationTestAudioButton();
   stopSettingsEqVisuals();
 });
 
@@ -889,6 +893,22 @@ calibrationButton.addEventListener("click", async () => {
 
 calibrationBackButton?.addEventListener("click", () => {
   if (isCalibrating) stopCalibration({ restoreView: true });
+});
+
+calibrationTestAudioButton?.addEventListener("click", async () => {
+  if (settingsVoicePreview && !settingsVoicePreview.paused && !settingsVoicePreview.ended) {
+    stopSettingsEqualizerTestAudio();
+    updateCalibrationTestAudioButton();
+    return;
+  }
+
+  if (calibrationNoiseState && !calibrationNoiseState.completed) {
+    message.textContent = "Bitte erst die 2 Sekunden Stille abwarten, dann Testaudio starten.";
+    return;
+  }
+
+  await playSettingsEqualizerTestAudio();
+  updateCalibrationTestAudioButton();
 });
 
 settingsCalibrationButton?.addEventListener("click", async () => {
@@ -2459,6 +2479,7 @@ function updateSilenceNoiseCalibration(sample, now) {
   adaptiveNoiseFloor = Math.max(adaptiveNoiseFloor, calibrationNoiseFloor.voiceFloor);
   adaptiveVolumeNoiseFloor = Math.max(adaptiveVolumeNoiseFloor, calibrationNoiseFloor.volumeGate / VOLUME_NOISE_GATE_MULTIPLIER);
   message.textContent = "Grundrauschen gemessen. Jetzt sprechen und bei Bedarf Empfindlichkeit einstellen.";
+  updateCalibrationTestAudioButton();
   return false;
 }
 
@@ -2561,11 +2582,14 @@ function measureAudio() {
     adaptiveVolumeNoiseFloor * VOLUME_NOISE_GATE_MULTIPLIER,
   );
   const gatedVolumeSignal = Math.max(0, volumeSignal - dynamicVolumeGate);
-  let calibratedVolume = isMeasuringSilence ? 0 : scaleVolumeLevel(gatedVolumeSignal);
+  const calibrationMeterBoost = isCalibrating ? 1.8 : 1;
+  let calibratedVolume = isMeasuringSilence ? 0 : scaleVolumeLevel(gatedVolumeSignal * calibrationMeterBoost);
   const frequencySignal = isMeasuringSilence
     ? 0
-    : Math.max(0, rawFrequencySignal - (calibrationNoiseFloor.frequencyGate || 0));
-  let rawSignal = isMeasuringSilence ? 0 : Math.max(gatedVolumeSignal * 1.35, frequencySignal * 0.72);
+    : Math.max(0, rawFrequencySignal - (calibrationNoiseFloor.frequencyGate || 0)) * calibrationMeterBoost;
+  let rawSignal = isMeasuringSilence
+    ? 0
+    : Math.max(gatedVolumeSignal * calibrationMeterBoost * 1.35, frequencySignal * 0.72);
   let volume = scaleAmplitude(rawSignal);
   let displayVolume = calibratedVolume;
   let displayFrequency = scaleAmplitude(frequencySignal);
@@ -3305,10 +3329,16 @@ async function startCalibration(options = {}) {
   adaptiveVolumeNoiseFloor = 0;
   silentSignalStartedAt = 0;
   startSilenceNoiseCalibration();
+  startedAt = performance.now();
+  recordingTime.textContent = "00:00";
+  window.clearInterval(timerId);
+  timerId = window.setInterval(updateRecordingTime, 250);
   document.body.classList.add("calibration-mode");
   setExerciseVisualsVisible(true);
   calibrationButton.textContent = "Kalibrierung stoppen";
   if (settingsCalibrationButton) settingsCalibrationButton.textContent = "Kalibrierung stoppen";
+  calibrationTestAudioButton?.classList.remove("is-hidden");
+  updateCalibrationTestAudioButton();
   calibrationBackButton?.classList.remove("is-hidden");
   message.textContent = "Bitte 2 Sekunden still sein. Grundrauschen wird gemessen.";
   drawWaveform(liveWaveform, [], {
@@ -3334,9 +3364,13 @@ function stopCalibration(options = {}) {
   document.body.classList.remove("calibration-mode");
   setExerciseVisualsVisible(false);
   window.cancelAnimationFrame(animationFrame);
+  window.clearInterval(timerId);
+  stopSettingsEqualizerTestAudio();
   disconnectAudioAnalyser();
   calibrationButton.textContent = "Kalibrieren";
   if (settingsCalibrationButton) settingsCalibrationButton.textContent = "Kalibrieren";
+  calibrationTestAudioButton?.classList.add("is-hidden");
+  updateCalibrationTestAudioButton();
   calibrationBackButton?.classList.add("is-hidden");
   message.textContent = `Kalibrierung gespeichert: Rauschschwelle ${Math.round(
     calibrationNoiseFloor.volumeGate || VOLUME_NOISE_GATE,
@@ -7153,7 +7187,16 @@ function stopSettingsEqualizerTestAudio() {
   settingsVoicePreview.currentTime = 0;
   stopSettingsEqVisuals();
   if (settingsEqStopButton) settingsEqStopButton.disabled = true;
+  updateCalibrationTestAudioButton();
   if (settingsState) settingsState.textContent = "EQ-Testaudio gestoppt.";
+}
+
+function updateCalibrationTestAudioButton() {
+  if (!calibrationTestAudioButton) return;
+  const audioIsPlaying = Boolean(settingsVoicePreview && !settingsVoicePreview.paused && !settingsVoicePreview.ended);
+  const silenceMeasurementRunning = Boolean(isCalibrating && calibrationNoiseState && !calibrationNoiseState.completed);
+  calibrationTestAudioButton.disabled = !isCalibrating || silenceMeasurementRunning;
+  calibrationTestAudioButton.textContent = audioIsPlaying ? "Testaudio stoppen" : "Testaudio";
 }
 
 async function ensureSettingsEqualizerAudio() {

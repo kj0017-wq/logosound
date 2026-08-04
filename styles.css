@@ -2577,6 +2577,11 @@ body.is-resizing-statistics-waveform {
   color: #a33242;
 }
 
+.voice-score-grid .is-reference {
+  background: #eef8f8;
+  color: var(--accent-strong);
+}
+
 .voice-progress-summary,
 .voice-progress-disclaimer {
   margin: 0;

@@ -8350,6 +8350,40 @@ function renderVoiceScoresInto(container, scores = {}) {
   });
 }
 
+function renderVoiceBaselineValuesInto(container, values = {}) {
+  if (!container) return;
+  const labels = [
+    ["lautstaerkeDurchschnitt", "\u00d8 Lautst\u00e4rke"],
+    ["lautstaerkeMaximum", "Max. Lautst\u00e4rke"],
+    ["frequenzDurchschnittHz", "\u00d8 Frequenz"],
+    ["frequenzSchwankung", "Frequenzschwankung"],
+    ["stimmenanteilProzent", "Stimmanteil"],
+    ["gesamtdauer", "Dauer"],
+  ];
+
+  container.innerHTML = "";
+  labels.forEach(([key, label]) => {
+    const item = document.createElement("div");
+    item.className = "is-reference";
+    const term = document.createElement("dt");
+    const description = document.createElement("dd");
+    term.textContent = label;
+    if (key === "frequenzDurchschnittHz") {
+      description.textContent = values[key] ? `${Math.round(values[key])} Hz` : "0 Hz";
+    } else if (key === "frequenzSchwankung") {
+      description.textContent = values[key] ? `${Math.round(values[key])} Hz` : "0 Hz";
+    } else if (key === "stimmenanteilProzent") {
+      description.textContent = `${Math.round(values[key] || 0)}%`;
+    } else if (key === "gesamtdauer") {
+      description.textContent = formatTime(values[key] || 0);
+    } else {
+      description.textContent = String(Math.round(values[key] || 0));
+    }
+    item.append(term, description);
+    container.append(item);
+  });
+}
+
 function renderVoiceEvaluationSummary(metadata, target) {
   if (!metadata || !target?.panel || !target.title || !target.score || !target.summary) return;
   if (!isCompleteVoiceTest(metadata)) {
@@ -8370,12 +8404,20 @@ function renderVoiceEvaluationSummary(metadata, target) {
     ? "Diese Aufnahme ist die pers\u00f6nliche Ausgangsmessung."
     : `Entwicklung: ${baselineChange} gegen\u00fcber dem ersten Test, ${previousChange} zum vorherigen Test.`;
 
-  target.title.textContent = `${evaluation.gesamt} von 100 Punkten`;
-  target.score.textContent = String(evaluation.gesamt);
-  target.score.className = `voice-score-badge ${getTrafficLightClass(evaluation.gesamt)}`;
+  target.title.textContent = evaluation.baseline?.istAusgangsmessung
+    ? "Ausgangsmessung gespeichert"
+    : `${evaluation.gesamt} von 100 Punkten`;
+  target.score.textContent = evaluation.baseline?.istAusgangsmessung ? "Ref" : String(evaluation.gesamt);
+  target.score.className = evaluation.baseline?.istAusgangsmessung
+    ? "voice-score-badge is-neutral"
+    : `voice-score-badge ${getTrafficLightClass(evaluation.gesamt)}`;
   target.summary.textContent = baselineText;
   renderVoiceHintsInto(target.hints, evaluation.hinweise || []);
-  renderVoiceScoresInto(target.scores, evaluation.teilbewertungen || {});
+  if (evaluation.baseline?.istAusgangsmessung) {
+    renderVoiceBaselineValuesInto(target.scores, metadata.werte);
+  } else {
+    renderVoiceScoresInto(target.scores, evaluation.teilbewertungen || {});
+  }
   target.panel.classList.remove("is-hidden");
 }
 
@@ -8413,12 +8455,22 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
     ? `+${evaluation.veraenderungVorherigerTestProzent}% zum vorherigen Test`
     : `${evaluation.veraenderungVorherigerTestProzent}% zum vorherigen Test`;
 
-  voiceProgressTitle.textContent = `${evaluation.gesamt} von 100 Punkten`;
-  voiceProgressScore.textContent = String(evaluation.gesamt);
-  voiceProgressScore.className = `voice-score-badge ${getTrafficLightClass(evaluation.gesamt)}`;
-  voiceProgressSummary.textContent = `Entwicklung: ${evaluation.entwicklung}, ${baselineText}, ${previousText}.`;
+  voiceProgressTitle.textContent = evaluation.baseline?.istAusgangsmessung
+    ? "Ausgangsmessung gespeichert"
+    : `${evaluation.gesamt} von 100 Punkten`;
+  voiceProgressScore.textContent = evaluation.baseline?.istAusgangsmessung ? "Ref" : String(evaluation.gesamt);
+  voiceProgressScore.className = evaluation.baseline?.istAusgangsmessung
+    ? "voice-score-badge is-neutral"
+    : `voice-score-badge ${getTrafficLightClass(evaluation.gesamt)}`;
+  voiceProgressSummary.textContent = evaluation.baseline?.istAusgangsmessung
+    ? "Diese Aufnahme ist die pers\u00f6nliche Ausgangsmessung. Ab der n\u00e4chsten Aufnahme wird die Entwicklung verglichen."
+    : `Entwicklung: ${evaluation.entwicklung}, ${baselineText}, ${previousText}.`;
   renderVoiceHintsInto(voiceProgressHints, evaluation.hinweise || []);
-  renderVoiceScoresInto(voiceProgressScores, evaluation.teilbewertungen);
+  if (evaluation.baseline?.istAusgangsmessung) {
+    renderVoiceBaselineValuesInto(voiceProgressScores, selectedRecording.werte || getVoiceAnalysisValues(selectedRecording));
+  } else {
+    renderVoiceScoresInto(voiceProgressScores, evaluation.teilbewertungen);
+  }
   drawVoiceProgressChart(completeRecordings);
   renderVoiceProgressList(completeRecordings, selectedRecording.id);
 }

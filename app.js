@@ -5761,6 +5761,116 @@ function drawFrequencyTimeline(canvas, pitchValues, strengthValues = [], options
   });
 }
 
+function drawFrequencyEqualizerTimeline(canvas, pitchValues, strengthValues = [], options = {}) {
+  const context = canvas.getContext("2d");
+  resizeCanvasToDisplay(canvas);
+
+  const width = canvas.width;
+  const height = canvas.height;
+  const pixelRatio = window.devicePixelRatio || 1;
+  const paddingX = 12 * pixelRatio;
+  const paddingY = 10 * pixelRatio;
+  const lowHz = PITCH_LOW_HZ;
+  const highHz = PITCH_HIGH_HZ;
+  const graphWidth = Math.max(1, width - paddingX * 2);
+  const graphHeight = Math.max(1, height - paddingY * 2);
+  const values = options.limit === false ? pitchValues : pitchValues.slice(-MAX_VISIBLE_SAMPLES);
+  const strengths = options.limit === false ? strengthValues.slice(0, values.length) : strengthValues.slice(-values.length);
+  const numericPitch = values.map((value) => Math.max(0, Number(value) || 0));
+  const numericStrength = strengths.map((value) => Math.max(0, Number(value) || 0));
+
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#0f1820";
+  context.fillRect(0, 0, width, height);
+
+  context.strokeStyle = "rgba(255,255,255,0.12)";
+  context.lineWidth = 1 * pixelRatio;
+  [0.25, 0.5, 0.75].forEach((ratio) => {
+    const y = paddingY + graphHeight * ratio;
+    context.beginPath();
+    context.moveTo(paddingX, y);
+    context.lineTo(width - paddingX, y);
+    context.stroke();
+  });
+
+  context.fillStyle = "rgba(255,255,255,0.68)";
+  context.font = `${9 * pixelRatio}px system-ui, sans-serif`;
+  context.fillText(`${highHz} Hz`, paddingX, paddingY + 9 * pixelRatio);
+  context.fillText(`${lowHz} Hz`, paddingX, height - paddingY);
+
+  if (!numericPitch.length) {
+    drawTimelineRangeMarkers(context, {
+      start: Number.isFinite(options.rangeStart) ? options.rangeStart : null,
+      end: Number.isFinite(options.rangeEnd) ? options.rangeEnd : null,
+      width,
+      height,
+      left: paddingX,
+      right: width - paddingX,
+    });
+    return;
+  }
+
+  const displayPitch = resamplePlaybackValues(numericPitch, graphWidth, {
+    durationSeconds: options.durationSeconds || 1,
+    pixelsPerBar: 5,
+    resampleMode: "average",
+  });
+  const displayStrength = resamplePlaybackValues(numericStrength.length ? numericStrength : numericPitch, graphWidth, {
+    durationSeconds: options.durationSeconds || 1,
+    pixelsPerBar: 5,
+    resampleMode: "rms",
+  });
+  const count = Math.max(1, displayPitch.length);
+  const gap = Math.min(2 * pixelRatio, (graphWidth / count) * 0.24);
+  const barWidth = Math.max(1.4 * pixelRatio, (graphWidth - gap * Math.max(0, count - 1)) / count);
+
+  displayPitch.forEach((pitch, index) => {
+    const strength = Math.max(0, Math.min(100, displayStrength[index] || 0));
+    const hasVoice = pitch > 0 && strength > 2;
+    const clampedPitch = Math.max(lowHz, Math.min(highHz, pitch || lowHz));
+    const pitchRatio = (clampedPitch - lowHz) / Math.max(1, highHz - lowHz);
+    const x = paddingX + index * (barWidth + gap);
+    const barHeight = hasVoice
+      ? Math.max(5 * pixelRatio, (0.18 + pitchRatio * 0.72) * graphHeight)
+      : 2 * pixelRatio;
+    const y = paddingY + graphHeight - barHeight;
+    const hue = 150 + pitchRatio * 58;
+    const alpha = hasVoice ? 0.42 + Math.min(0.46, strength / 180) : 0.24;
+
+    context.fillStyle = hasVoice
+      ? `hsla(${hue}, 78%, 58%, ${alpha})`
+      : "rgba(56, 193, 114, 0.26)";
+    roundRect(context, x, y, barWidth, barHeight, Math.min(5 * pixelRatio, barWidth / 2));
+    context.fill();
+
+    if (hasVoice && strength >= 55) {
+      context.fillStyle = "rgba(246, 180, 75, 0.72)";
+      context.beginPath();
+      context.arc(x + barWidth / 2, y, Math.max(2 * pixelRatio, barWidth * 0.35), 0, Math.PI * 2);
+      context.fill();
+    }
+  });
+
+  if (Number.isFinite(options.progress)) {
+    const x = paddingX + Math.max(0, Math.min(1, options.progress)) * graphWidth;
+    context.strokeStyle = "#ff7a90";
+    context.lineWidth = 3 * pixelRatio;
+    context.beginPath();
+    context.moveTo(x, paddingY);
+    context.lineTo(x, height - paddingY);
+    context.stroke();
+  }
+
+  drawTimelineRangeMarkers(context, {
+    start: Number.isFinite(options.rangeStart) ? options.rangeStart : null,
+    end: Number.isFinite(options.rangeEnd) ? options.rangeEnd : null,
+    width,
+    height,
+    left: paddingX,
+    right: width - paddingX,
+  });
+}
+
 function updateThreeLineKaraokeDisplay(overlay, timeline, activeIndex) {
   const lines = getThreeLineKaraokeLabels(timeline, activeIndex);
   overlay.classList.toggle("is-context-dense", Object.values(lines).some((line) => line.length > 18));
@@ -5964,6 +6074,10 @@ function drawVolumeLevelTimeline(canvas, values, options = {}) {
   const graphWidth = Math.max(1, width - meterWidth - meterGap);
   const padding = 10 * pixelRatio;
   const graphHeight = Math.max(1, height - padding * 2);
+  const isStereo = options.stereo === true;
+  const centerY = padding + graphHeight / 2;
+  const channelGap = 3 * pixelRatio;
+  const channelHeight = Math.max(1, (graphHeight - channelGap) / 2);
   const numericValues = values.map((value) => Math.max(0, Number(value) || 0));
   const progress = Number.isFinite(options.progress) ? Math.max(0, Math.min(1, options.progress)) : null;
   const currentLevel = Math.max(0, Math.min(100, Number(options.currentLevel) || 0));
@@ -5974,7 +6088,7 @@ function drawVolumeLevelTimeline(canvas, values, options = {}) {
 
   context.strokeStyle = "rgba(255,255,255,0.12)";
   context.lineWidth = 1 * pixelRatio;
-  [0.25, 0.5, 0.75].forEach((ratio) => {
+  (isStereo ? [0.5] : [0.25, 0.5, 0.75]).forEach((ratio) => {
     const y = padding + graphHeight * ratio;
     context.beginPath();
     context.moveTo(0, y);
@@ -5983,7 +6097,8 @@ function drawVolumeLevelTimeline(canvas, values, options = {}) {
   });
 
   if (!numericValues.length) {
-    drawLevelMeter(context, width - meterWidth, 0, meterWidth, height, currentLevel);
+    if (isStereo) drawStereoLevelMeter(context, width - meterWidth, 0, meterWidth, height, currentLevel, currentLevel);
+    else drawLevelMeter(context, width - meterWidth, 0, meterWidth, height, currentLevel);
     return;
   }
 
@@ -6006,12 +6121,21 @@ function drawVolumeLevelTimeline(canvas, values, options = {}) {
   normalizedValues.forEach((value, index) => {
     const level = Math.max(0, Math.min(100, value));
     const x = index * (barWidth + gap);
-    const fillHeight = Math.max(level > 0 ? 4 * pixelRatio : 0, (level / 100) * graphHeight);
-    const y = padding + graphHeight - fillHeight;
+    const fillHeight = Math.max(level > 0 ? 3 * pixelRatio : 0, (level / 100) * (isStereo ? channelHeight : graphHeight));
 
     context.fillStyle = getVolumeHubColor(level);
-    roundRect(context, x, y, barWidth, fillHeight, Math.min(5 * pixelRatio, barWidth / 2));
-    context.fill();
+    if (isStereo) {
+      const topY = centerY - channelGap / 2 - fillHeight;
+      const bottomY = centerY + channelGap / 2;
+      roundRect(context, x, topY, barWidth, fillHeight, Math.min(5 * pixelRatio, barWidth / 2));
+      context.fill();
+      roundRect(context, x, bottomY, barWidth, fillHeight, Math.min(5 * pixelRatio, barWidth / 2));
+      context.fill();
+    } else {
+      const y = padding + graphHeight - fillHeight;
+      roundRect(context, x, y, barWidth, fillHeight, Math.min(5 * pixelRatio, barWidth / 2));
+      context.fill();
+    }
   });
 
   if (progress !== null) {
@@ -6032,7 +6156,15 @@ function drawVolumeLevelTimeline(canvas, values, options = {}) {
     left: 0,
     right: graphWidth,
   });
-  drawLevelMeter(context, width - meterWidth, 0, meterWidth, height, currentLevel);
+  if (isStereo) drawStereoLevelMeter(context, width - meterWidth, 0, meterWidth, height, currentLevel, currentLevel);
+  else drawLevelMeter(context, width - meterWidth, 0, meterWidth, height, currentLevel);
+}
+
+function drawStereoLevelMeter(context, x, y, width, height, leftLevel, rightLevel) {
+  const gap = Math.max(3, width * 0.18);
+  const channelWidth = Math.max(2, (width - gap) / 2);
+  drawLevelMeter(context, x, y, channelWidth, height, leftLevel);
+  drawLevelMeter(context, x + channelWidth + gap, y, channelWidth, height, rightLevel);
 }
 
 function drawTimelineRangeMarkers(context, options = {}) {
@@ -7846,7 +7978,7 @@ function drawStatisticsSignalTimelines(metadata) {
 
   if (!metadata) {
     drawWaveform(statisticsVolumeTimeline, [], { mode: "playback" });
-    drawFrequencyTimeline(statisticsFrequencyTimeline, [], [], { limit: false });
+    drawFrequencyEqualizerTimeline(statisticsFrequencyTimeline, [], [], { limit: false });
     return;
   }
 
@@ -7869,13 +8001,15 @@ function drawStatisticsSignalTimelines(metadata) {
     progress: displayProgress,
     durationSeconds: Number(metadata.dauerSekunden || 0),
     currentLevel,
+    stereo: true,
     rangeStart: statisticsRangeZoomed ? 0 : selectedAnalysisStart,
     rangeEnd: statisticsRangeZoomed ? 1 : selectedAnalysisEnd,
   });
 
-  drawFrequencyTimeline(statisticsFrequencyTimeline, displayPitch, displayFrequencyStrength, {
+  drawFrequencyEqualizerTimeline(statisticsFrequencyTimeline, displayPitch, displayFrequencyStrength, {
     limit: false,
     progress: displayProgress,
+    durationSeconds: Number(metadata.dauerSekunden || 0),
     rangeStart: statisticsRangeZoomed ? 0 : selectedAnalysisStart,
     rangeEnd: statisticsRangeZoomed ? 1 : selectedAnalysisEnd,
   });

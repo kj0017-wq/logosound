@@ -2228,6 +2228,12 @@ function setupKaraokeText() {
   } else if (sentences.length) {
     karaokeWords = sentences;
     karaokeTimeline = buildSentenceTimeline(sentences);
+  } else if (activeExercise?.mode === "text") {
+    const passages = getExerciseTextPassages(activeExercise);
+    karaokeWords = passages.length ? passages : getExerciseScript().split(/\s+/).filter(Boolean);
+    karaokeTimeline = passages.length
+      ? buildTextPassageTimeline(passages, getCurrentKaraokeTiming())
+      : buildKaraokeTimeline(karaokeWords, getCurrentKaraokeTiming());
   } else {
     karaokeWords = getExerciseScript().split(/\s+/).filter(Boolean);
     karaokeTimeline = applyRepeatMetadata(
@@ -2254,6 +2260,26 @@ function getExerciseSentences(exercise = getActiveRecordingExercise()) {
         .filter(Boolean);
 
   return sentences.map((sentence) => sentence.trim()).filter(Boolean);
+}
+
+function getExerciseTextPassages(exercise = getActiveRecordingExercise()) {
+  if (!exercise || exercise.mode !== "text") return [];
+
+  const configuredPassages = Array.isArray(exercise.textPassages)
+    ? exercise.textPassages
+    : [];
+  const rawText = configuredPassages.length
+    ? configuredPassages.join("\n")
+    : exercise.rawContent || exercise.content || exercise.script || "";
+
+  return splitTextPassages(rawText);
+}
+
+function splitTextPassages(text) {
+  return String(text || "")
+    .split(/\r?\n+/)
+    .map((passage) => passage.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
 }
 
 function getEditorDialogTurns() {
@@ -2501,6 +2527,38 @@ function buildSentenceTimeline(sentences, secondsPerSentence = SENTENCE_MAX_SECO
     start: index * secondsPerSentence,
     end: (index + 1) * secondsPerSentence,
   }));
+}
+
+function buildTextPassageTimeline(passages, timing = getCurrentKaraokeTiming()) {
+  let cursor = 0;
+  const wordSeconds = Number(timing.wordSeconds) || DEFAULT_KARAOKE_WORD_SECONDS;
+  const pauseSeconds = Number(timing.pauseSeconds) || DEFAULT_KARAOKE_PAUSE_SECONDS;
+
+  return passages.map((passage, index) => {
+    const duration = getTextPassageSeconds(passage, wordSeconds, pauseSeconds);
+    const item = {
+      label: passage,
+      text: passage,
+      isPause: false,
+      isTextPassage: true,
+      passageIndex: index,
+      start: cursor,
+      end: cursor + duration,
+    };
+    cursor += duration;
+    return item;
+  });
+}
+
+function getTextPassageSeconds(passage, wordSeconds, pauseSeconds) {
+  const normalized = String(passage || "").replace(/\s+/g, " ").trim();
+  if (!normalized) return Math.max(1, pauseSeconds);
+
+  const wordCount = normalized.split(/\s+/).filter(Boolean).length;
+  const charCount = normalized.replace(/\s/g, "").length;
+  const wordBasedSeconds = wordCount * wordSeconds * 1.15;
+  const charBasedSeconds = charCount * 0.055;
+  return Math.max(1.35, Math.min(9, wordBasedSeconds + charBasedSeconds + pauseSeconds));
 }
 
 function buildDialogTimeline(turns, secondsPerTurn = SENTENCE_MAX_SECONDS) {
@@ -3042,6 +3100,7 @@ function getExerciseConfiguration() {
     typ: exercise.mode,
     name: exercise.name,
     inhalt: exercise.content,
+    textAbschnitte: exercise.mode === "text" ? getExerciseTextPassages(exercise) : [],
     saetze: exercise.sentences || [],
     dialog: exercise.dialogTurns || [],
     wiederholungen: exercise.repeats,
@@ -3148,9 +3207,11 @@ function buildEditorExerciseFromForm() {
     (savedEditorExercise?.name === name ? savedEditorExercise : null);
   const parsedDialogTurns = mode === "dialog" ? getEditorDialogTurns() : [];
   const dialogTurns = mode === "dialog" ? hydrateDialogTurnsWithAudio(parsedDialogTurns, baseExerciseForAudio) : [];
+  const rawTextContent = editorContent.value.trim();
+  const textPassages = mode === "text" ? splitTextPassages(rawTextContent) : [];
   const tokens =
     mode === "text"
-      ? editorContent.value.split(/\s+/).map((token) => token.trim()).filter(Boolean)
+      ? rawTextContent.split(/\s+/).map((token) => token.trim()).filter(Boolean)
       : mode === "sentences" || mode === "dialog"
         ? []
         : getEditorTokens();
@@ -3159,6 +3220,8 @@ function buildEditorExerciseFromForm() {
       ? editorContent.value.trim() || getDefaultEditorContent(mode)
       : mode === "sentences"
       ? sentences.join(" | ") || getDefaultEditorContent(mode)
+      : mode === "text"
+      ? rawTextContent || getDefaultEditorContent(mode)
       : tokens.length
         ? tokens.join(" ")
         : getDefaultEditorContent(mode);
@@ -3175,11 +3238,15 @@ function buildEditorExerciseFromForm() {
     speed,
     timing,
     content,
+    rawContent: mode === "text" ? content : "",
+    textPassages,
     contentLabel:
       mode === "dialog"
         ? `${patientTurnCount || 1} Sprecherteil${patientTurnCount === 1 ? "" : "e"}`
         : mode === "sentences"
         ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
+        : mode === "text" && textPassages.length
+        ? `${textPassages.length} Karaoke-Abschnitt${textPassages.length === 1 ? "" : "e"}`
         : tokens.join(", ") || getDefaultEditorContent(mode),
     sentences,
     dialogTurns,
@@ -3922,7 +3989,10 @@ function getEditorSelectValueForExerciseName(name) {
 function applyEditorExerciseToForm(exercise) {
   editorExerciseName.value = exercise.name || "Neue Übung";
   editorMode.value = exercise.mode || "syllables";
-  editorContent.value = exercise.content || getDefaultEditorContent(editorMode.value);
+  editorContent.value =
+    exercise.mode === "text" && Array.isArray(exercise.textPassages) && exercise.textPassages.length
+      ? exercise.textPassages.join("\n")
+      : exercise.rawContent || exercise.content || getDefaultEditorContent(editorMode.value);
   editorVoiceInstruction.value =
     exercise.voiceInstruction || getDefaultEditorVoiceInstruction(editorMode.value);
   editorVoiceAudioDataUrl = exercise.voiceAudioDataUrl || "";
@@ -4216,6 +4286,7 @@ function updateKaraokeHighlight() {
 function renderKaraokeOverlay(overlay, timeline) {
   overlay.innerHTML = "";
   overlay.classList.toggle("is-sentence-mode", timeline.some((item) => item.isSentence));
+  overlay.classList.toggle("is-text-passage-mode", timeline.some((item) => item.isTextPassage));
   overlay.classList.add("is-three-line");
 
   ["before", "current", "after"].forEach((lineName) => {
@@ -5065,6 +5136,7 @@ function updateThreeLineKaraokeDisplay(overlay, timeline, activeIndex) {
   const lines = getThreeLineKaraokeLabels(timeline, activeIndex);
   overlay.classList.toggle("is-context-dense", Object.values(lines).some((line) => line.length > 18));
   overlay.classList.toggle("is-dialog-mode", timeline.some((item) => item.isDialog));
+  overlay.classList.toggle("is-text-passage-mode", timeline.some((item) => item.isTextPassage));
   overlay.classList.toggle("is-forward-only", !timeline.some((item) => item.isSentence));
 
   [
@@ -5120,6 +5192,19 @@ function getThreeLineKaraokeLabels(timeline, activeIndex) {
   if (!timeline.length) return { before: "", current: "", after: "" };
 
   const boundedIndex = Math.max(0, Math.min(activeIndex, timeline.length - 1));
+  if (timeline.some((item) => item.isTextPassage)) {
+    const currentIndex = timeline[boundedIndex]?.isPause
+      ? getPreviousSpokenIndex(timeline, boundedIndex) ?? getNextSpokenIndex(timeline, boundedIndex) ?? boundedIndex
+      : boundedIndex;
+    const nextIndex = getNextSpokenIndex(timeline, currentIndex);
+    const followingIndex = nextIndex == null ? null : getNextSpokenIndex(timeline, nextIndex);
+    return {
+      before: getTimelineLabelAt(timeline, currentIndex),
+      current: getTimelineLabelAt(timeline, nextIndex),
+      after: getTimelineLabelAt(timeline, followingIndex),
+    };
+  }
+
   if (timeline.some((item) => item.isSentence)) {
     const currentIndex = timeline[boundedIndex]?.isPause
       ? getPreviousSpokenIndex(timeline, boundedIndex) ?? getNextSpokenIndex(timeline, boundedIndex) ?? boundedIndex
@@ -5426,6 +5511,13 @@ function setupPlaybackKaraoke(metadata) {
           .map((sentence) => String(sentence).trim())
           .filter(Boolean)
       : [];
+  const textPassages =
+    metadata.uebungKonfiguration?.typ === "text"
+      ? (Array.isArray(metadata.uebungKonfiguration.textAbschnitte) &&
+          metadata.uebungKonfiguration.textAbschnitte.length
+          ? metadata.uebungKonfiguration.textAbschnitte
+          : splitTextPassages(metadata.uebungKonfiguration.inhalt || script))
+      : [];
 
   const playbackSentenceSeconds = sentences.length
     ? Math.max(1.4, (Number(metadata.dauerSekunden) || sentences.length * 3) / sentences.length)
@@ -5438,6 +5530,8 @@ function setupPlaybackKaraoke(metadata) {
     ? buildDialogTimeline(dialogTurns.map((turn) => normalizeDialogTurn(turn)), playbackDialogSeconds)
     : sentences.length
     ? buildSentenceTimeline(sentences, playbackSentenceSeconds)
+    : textPassages.length
+    ? buildTextPassageTimeline(textPassages, getPlaybackKaraokeTiming(metadata))
     : applyRepeatMetadata(
         buildKaraokeTimeline(
           script.split(/\s+/).filter(Boolean),

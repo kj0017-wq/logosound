@@ -1084,6 +1084,42 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
   transform: translateY(22px) translateZ(-132px) rotateX(24deg) scale(0.66);
 }
 
+.karaoke-overlay.is-text-passage-mode,
+.playback-karaoke-overlay.is-text-passage-mode {
+  grid-template-rows: minmax(76px, 1.5fr) minmax(32px, 0.68fr) minmax(24px, 0.52fr);
+  min-height: 170px;
+  max-height: min(42dvh, 290px);
+  padding: 12px 14px;
+}
+
+.karaoke-overlay.is-text-passage-mode .karaoke-line,
+.playback-karaoke-overlay.is-text-passage-mode .karaoke-line {
+  white-space: normal;
+  overflow: hidden;
+  text-wrap: pretty;
+}
+
+.karaoke-overlay.is-text-passage-mode .karaoke-line-before,
+.playback-karaoke-overlay.is-text-passage-mode .karaoke-line-before {
+  font-size: clamp(1.5rem, 5.6vw, 2.75rem);
+  line-height: 1.08;
+  max-height: 5.4em;
+}
+
+.karaoke-overlay.is-text-passage-mode .karaoke-line-current,
+.playback-karaoke-overlay.is-text-passage-mode .karaoke-line-current {
+  font-size: clamp(0.92rem, 3.4vw, 1.28rem);
+  line-height: 1.12;
+  max-height: 2.35em;
+}
+
+.karaoke-overlay.is-text-passage-mode .karaoke-line-after,
+.playback-karaoke-overlay.is-text-passage-mode .karaoke-line-after {
+  font-size: clamp(0.78rem, 2.8vw, 1.05rem);
+  line-height: 1.12;
+  max-height: 2.2em;
+}
+
 .karaoke-line-before.is-entering {
   animation: karaokeFadeBack 620ms ease both;
 }

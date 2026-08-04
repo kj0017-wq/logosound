@@ -184,6 +184,7 @@ const settingsCalibrationButton = document.querySelector("#settingsCalibrationBu
 const settingsEqSliders = document.querySelectorAll("[data-eq-band]");
 const settingsEqSummary = document.querySelector("#settingsEqSummary");
 const settingsEqTestButton = document.querySelector("#settingsEqTestButton");
+const settingsEqStopButton = document.querySelector("#settingsEqStopButton");
 const settingsEqResetButton = document.querySelector("#settingsEqResetButton");
 const settingsEqAmplitudeCanvas = document.querySelector("#settingsEqAmplitudeCanvas");
 const settingsEqFrequencyCanvas = document.querySelector("#settingsEqFrequencyCanvas");
@@ -838,14 +839,17 @@ settingsTestVoiceButton?.addEventListener("click", async () => {
 });
 
 settingsVoicePreview?.addEventListener("play", () => {
+  if (settingsEqStopButton) settingsEqStopButton.disabled = false;
   startSettingsEqVisuals();
 });
 
 settingsVoicePreview?.addEventListener("pause", () => {
+  if (settingsEqStopButton) settingsEqStopButton.disabled = true;
   stopSettingsEqVisuals();
 });
 
 settingsVoicePreview?.addEventListener("ended", () => {
+  if (settingsEqStopButton) settingsEqStopButton.disabled = true;
   stopSettingsEqVisuals();
 });
 
@@ -959,6 +963,10 @@ settingsEqSliders.forEach((slider) => {
 
 settingsEqTestButton?.addEventListener("click", async () => {
   await playSettingsEqualizerTestAudio();
+});
+
+settingsEqStopButton?.addEventListener("click", () => {
+  stopSettingsEqualizerTestAudio();
 });
 
 settingsEqResetButton?.addEventListener("click", () => {
@@ -7119,6 +7127,7 @@ async function playSettingsEqualizerTestAudio() {
     settingsVoicePreview.currentTime = 0;
     settingsVoicePreview.volume = 1;
     await settingsVoicePreview.play();
+    if (settingsEqStopButton) settingsEqStopButton.disabled = false;
     startSettingsEqVisuals();
     if (settingsState) settingsState.textContent = "EQ-Test läuft. Regler ändern den Klang live.";
   } catch (error) {
@@ -7126,6 +7135,15 @@ async function playSettingsEqualizerTestAudio() {
   } finally {
     if (settingsEqTestButton) settingsEqTestButton.disabled = false;
   }
+}
+
+function stopSettingsEqualizerTestAudio() {
+  if (!settingsVoicePreview) return;
+  settingsVoicePreview.pause();
+  settingsVoicePreview.currentTime = 0;
+  stopSettingsEqVisuals();
+  if (settingsEqStopButton) settingsEqStopButton.disabled = true;
+  if (settingsState) settingsState.textContent = "EQ-Testaudio gestoppt.";
 }
 
 async function ensureSettingsEqualizerAudio() {

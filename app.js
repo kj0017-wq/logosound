@@ -7681,7 +7681,7 @@ function deleteSelectedVoiceProfile() {
   localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(nextSettings));
   renderVoiceProfileSelect(nextSettings);
   loadSelectedVoiceProfileIntoControls(nextSettings.activeVoiceKey, { settings: nextSettings, silent: true });
-  saveCloudElevenLabsSettings(nextSettings).catch(() => {
+  saveCloudElevenLabsSettings(nextSettings, { replace: true }).catch(() => {
     if (settingsState) settingsState.textContent = "Stimme lokal gelöscht. Firebase konnte nicht aktualisiert werden.";
   });
   if (settingsState) settingsState.textContent = `Stimme gelöscht: ${deletedVoice?.name || "Stimme"}.`;
@@ -7726,38 +7726,36 @@ function saveElevenLabsSettings() {
 
 async function saveCloudElevenLabsSettings(settings = getElevenLabsSettings(), options = {}) {
   const normalizedSettings = normalizeElevenLabsSettings(settings);
+  const settingsToSave = options.replace
+    ? normalizedSettings
+    : mergeElevenLabsSettings(await loadExistingCloudElevenLabsSettings().catch(() => null), normalizedSettings);
   const response = await fetch(getApiUrl("/api/settings"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ settings: normalizedSettings }),
+    body: JSON.stringify({ settings: settingsToSave }),
   });
 
   if (!response.ok) {
     await setDoc(doc(firestore, "settings", ELEVENLABS_SETTINGS_DOC), {
-      ...normalizedSettings,
+      ...settingsToSave,
       updatedAt: new Date().toISOString(),
     });
   }
+  localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(settingsToSave));
+  renderVoiceProfileSelect(settingsToSave);
 
   if (!options.silent && settingsState) settingsState.textContent = "ElevenLabs-Stimmen in Firebase gespeichert.";
 }
 
 async function loadCloudElevenLabsSettings() {
   try {
-    const response = await fetch(getApiUrl("/api/settings"), { cache: "no-store" });
-    let cloudSettings = null;
-    if (response.ok) {
-      const payload = await response.json();
-      cloudSettings = payload.settings ? normalizeElevenLabsSettings(payload.settings) : null;
-    }
+    const cloudSettings = await loadExistingCloudElevenLabsSettings();
 
     if (!cloudSettings) {
-      const snapshot = await getDoc(doc(firestore, "settings", ELEVENLABS_SETTINGS_DOC));
-      cloudSettings = snapshot.exists() ? normalizeElevenLabsSettings(snapshot.data()) : null;
-    }
-
-    if (!cloudSettings) {
-      await saveCloudElevenLabsSettings(getElevenLabsSettings());
+      const localSettings = getElevenLabsSettings();
+      if ((localSettings.voices || []).length > 1) {
+        await saveCloudElevenLabsSettings(localSettings, { replace: true });
+      }
       return;
     }
 
@@ -7780,18 +7778,39 @@ async function loadCloudElevenLabsSettings() {
   }
 }
 
+async function loadExistingCloudElevenLabsSettings() {
+  const response = await fetch(getApiUrl("/api/settings"), { cache: "no-store" }).catch(() => null);
+  if (response?.ok) {
+    const payload = await response.json();
+    if (payload.settings) return normalizeElevenLabsSettings(payload.settings);
+  }
+
+  const snapshot = await getDoc(doc(firestore, "settings", ELEVENLABS_SETTINGS_DOC));
+  return snapshot.exists() ? normalizeElevenLabsSettings(snapshot.data()) : null;
+}
+
 function mergeElevenLabsSettings(localSettings, cloudSettings) {
+  const normalizedLocal = normalizeElevenLabsSettings(localSettings || {});
+  const normalizedCloud = cloudSettings ? normalizeElevenLabsSettings(cloudSettings) : null;
   const voicesByKey = new Map();
-  [...(localSettings.voices || []), ...(cloudSettings.voices || [])].forEach((voice) => {
+  const keyByVoiceId = new Map();
+
+  [...(normalizedLocal.voices || []), ...(normalizedCloud?.voices || [])].forEach((voice) => {
     if (!voice?.voiceId) return;
-    voicesByKey.set(voice.key || createVoiceProfileKey(voice.name, voice.voiceId), voice);
+    const key = voice.key || createVoiceProfileKey(voice.name, voice.voiceId);
+    const existingKeyForId = keyByVoiceId.get(voice.voiceId);
+    if (existingKeyForId && existingKeyForId !== key) {
+      voicesByKey.delete(existingKeyForId);
+    }
+    voicesByKey.set(key, { ...voice, key });
+    keyByVoiceId.set(voice.voiceId, key);
   });
 
   return normalizeElevenLabsSettings({
-    ...localSettings,
-    ...cloudSettings,
+    ...normalizedLocal,
+    ...(normalizedCloud || {}),
     voices: [...voicesByKey.values()],
-    activeVoiceKey: cloudSettings.activeVoiceKey || localSettings.activeVoiceKey,
+    activeVoiceKey: normalizedCloud?.activeVoiceKey || normalizedLocal.activeVoiceKey,
   });
 }
 

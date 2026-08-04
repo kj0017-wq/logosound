@@ -568,6 +568,7 @@ function positionPlaybackLibrary() {
 }
 
 async function init() {
+  repairStaticUiLabels();
   positionAnalysisCalibrationPanel();
   positionPlaybackLibrary();
   drawWaveform(liveWaveform, [], {
@@ -591,6 +592,26 @@ async function init() {
   });
   loadCloudElevenLabsSettings();
   await refreshRecordings();
+}
+
+function repairStaticUiLabels() {
+  const savedModeLabels = {
+    "": "Alle Funktionsarten",
+    syllables: "Silben / Laute",
+    sentences: "Kurze S\u00e4tze",
+    text: "Karaoke-Text",
+    long_text: "Langer Text",
+    vowels: "Vokale",
+    dialog: "Dialog",
+  };
+
+  Array.from(editorSavedModeFilter?.options || []).forEach((option) => {
+    if (Object.prototype.hasOwnProperty.call(savedModeLabels, option.value)) {
+      option.textContent = savedModeLabels[option.value];
+    }
+  });
+
+  calibrationBackButton && (calibrationBackButton.textContent = "Zur\u00fcck");
 }
 recordButton.addEventListener("click", async () => {
   if (isRecording || mediaRecorder?.state === "recording") {

@@ -376,6 +376,7 @@ let settingsEqAnimationFrame;
 let settingsEqAmplitudes = [];
 let settingsEqPitches = [];
 let settingsEqStrengths = [];
+let settingsEqCloudSaveTimerId;
 let analyser;
 let audioSource;
 let audioOnlyStream;
@@ -651,6 +652,7 @@ async function init() {
     setupKaraokeText();
   });
   loadCloudElevenLabsSettings();
+  loadCloudEqualizerSettings();
   await refreshRecordings();
 }
 
@@ -937,12 +939,12 @@ playbackGainPresetButtons.forEach((button) => {
 
 settingsEqSliders.forEach((slider) => {
   slider.addEventListener("input", () => {
-    saveEqualizerSettingsFromControls();
+    saveEqualizerSettingsFromControls({ syncCloud: true });
     renderEqualizerControls();
     applySettingsEqualizer();
   });
   slider.addEventListener("change", () => {
-    saveEqualizerSettingsFromControls({ syncCloud: true });
+    saveEqualizerSettingsFromControls({ syncCloud: true, immediate: true });
     renderEqualizerControls();
     applySettingsEqualizer();
   });
@@ -6877,10 +6879,24 @@ function saveEqualizerSettingsFromControls(options = {}) {
   localStorage.setItem(SETTINGS_EQ_KEY, JSON.stringify(settings));
   if (settingsState) settingsState.textContent = "Equalizer lokal gespeichert.";
   if (options.syncCloud) {
+    queueCloudEqualizerSave(settings, options.immediate);
+  }
+}
+
+function queueCloudEqualizerSave(settings = getEqualizerSettings(), immediate = false) {
+  window.clearTimeout(settingsEqCloudSaveTimerId);
+  const runSave = () => {
     saveCloudEqualizerSettings(settings).catch(() => {
       if (settingsState) settingsState.textContent = "Equalizer lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
     });
+  };
+
+  if (immediate) {
+    runSave();
+    return;
   }
+
+  settingsEqCloudSaveTimerId = window.setTimeout(runSave, 650);
 }
 
 function renderEqualizerControls(settings = getEqualizerSettings()) {
@@ -6917,6 +6933,34 @@ async function saveCloudEqualizerSettings(settings = getEqualizerSettings()) {
     ...settings,
     updatedAt: new Date().toISOString(),
   });
+  if (settingsState) settingsState.textContent = "Equalizer in Firebase gespeichert.";
+}
+
+async function loadCloudEqualizerSettings() {
+  try {
+    const snapshot = await getDoc(doc(firestore, "settings", SETTINGS_EQ_DOC));
+    if (!snapshot.exists()) {
+      await saveCloudEqualizerSettings(getEqualizerSettings());
+      return;
+    }
+
+    const cloudSettings = normalizeEqualizerSettings(snapshot.data());
+    localStorage.setItem(SETTINGS_EQ_KEY, JSON.stringify(cloudSettings));
+    renderEqualizerControls(cloudSettings);
+    if (settingsState) settingsState.textContent = "Equalizer aus Firebase geladen.";
+  } catch (error) {
+    renderEqualizerControls();
+    if (settingsState) settingsState.textContent = "Equalizer lokal geladen. Firebase nicht erreichbar.";
+  }
+}
+
+function normalizeEqualizerSettings(settings = {}) {
+  const defaults = getDefaultEqualizerSettings();
+  const bands = { ...defaults.bands };
+  Object.keys(bands).forEach((frequency) => {
+    bands[frequency] = Math.max(-12, Math.min(12, Number(settings.bands?.[frequency]) || 0));
+  });
+  return { bands };
 }
 
 async function playSettingsEqualizerTestAudio() {

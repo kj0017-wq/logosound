@@ -70,6 +70,7 @@ const sensitivitySlider = document.querySelector("#sensitivitySlider");
 const sensitivityValue = document.querySelector("#sensitivityValue");
 const recordingKaraokeSpeed = document.querySelector("#recordingKaraokeSpeed");
 const recordingKaraokeSpeedValue = document.querySelector("#recordingKaraokeSpeedValue");
+const recordingKaraokeTimingHint = document.querySelector("#recordingKaraokeTimingHint");
 const playbackVolumeSlider = document.querySelector("#playbackVolumeSlider");
 const playbackVolumeValue = document.querySelector("#playbackVolumeValue");
 const liveWaveform = document.querySelector("#liveWaveform");
@@ -212,7 +213,7 @@ const RECORDING_HEIGHT = 1280;
 const COUNTDOWN_STEPS = ["3", "2", "1"];
 const DEFAULT_KARAOKE_WORD_SECONDS = 1.05;
 const DEFAULT_KARAOKE_PAUSE_SECONDS = 0.45;
-const KARAOKE_MIN_WORD_SECONDS = 0.26;
+const KARAOKE_MIN_WORD_SECONDS = 0.12;
 const KARAOKE_MAX_WORD_SECONDS = 2.15;
 const KARAOKE_REFERENCE_WORD_LENGTH = 6;
 const SENTENCE_END_PAUSE_SECONDS = 0.75;
@@ -238,6 +239,9 @@ const EDITOR_SPEEDS = {
   5: { label: "Sehr schnell", wordSeconds: 0.62, pauseSeconds: 0.22 },
   6: { label: "Extra schnell", wordSeconds: 0.48, pauseSeconds: 0.16 },
   7: { label: "Maximal", wordSeconds: 0.36, pauseSeconds: 0.1 },
+  8: { label: "Turbo", wordSeconds: 0.28, pauseSeconds: 0.08 },
+  9: { label: "Sehr turbo", wordSeconds: 0.22, pauseSeconds: 0.06 },
+  10: { label: "Sprint", wordSeconds: 0.16, pauseSeconds: 0.04 },
 };
 const EXERCISE_INSTRUCTIONS = {
   "Vokal A halten":
@@ -3021,7 +3025,7 @@ function saveRecordingKaraokeSpeedForExerciseName(nameOrKey, speed) {
 function clampRecordingKaraokeSpeed(value) {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return 3;
-  return Math.max(1, Math.min(7, Math.round(numericValue)));
+  return Math.max(1, Math.min(10, Math.round(numericValue)));
 }
 
 function updateRecordingKaraokeSpeed(value) {
@@ -3062,7 +3066,58 @@ function updateRecordingKaraokeSpeedLabel() {
   if (!recordingKaraokeSpeedValue) return;
   const speed = clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3);
   recordingKaraokeSpeedValue.textContent = EDITOR_SPEEDS[speed]?.label || "Normal";
+  updateRecordingKaraokeTimingHint();
 }
+
+function updateRecordingKaraokeTimingHint() {
+  if (!recordingKaraokeTimingHint) return;
+
+  const timing = getCurrentKaraokeTiming();
+  const activeExercise = getActiveRecordingExercise();
+  const hint = getKaraokeTimingHint(activeExercise, timing);
+  recordingKaraokeTimingHint.textContent = hint;
+}
+
+function getKaraokeTimingHint(exercise, timing) {
+  const speedLabel = EDITOR_SPEEDS[clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3)]?.label || "Normal";
+  if (!exercise) {
+    return `Standzeit: ca. ${formatSecondsShort(timing.wordSeconds)} pro Einheit (${speedLabel}).`;
+  }
+
+  if (isLongTextMode(exercise.mode)) {
+    const passages = getExerciseTextPassages(exercise);
+    const durations = passages.map((passage) =>
+      getTextPassageSeconds(passage, timing.wordSeconds, timing.pauseSeconds),
+    );
+    if (!durations.length) return `Standzeit: nach Abschnittslänge (${speedLabel}).`;
+
+    const minSeconds = Math.min(...durations);
+    const maxSeconds = Math.max(...durations);
+    const avgSeconds = durations.reduce((sum, value) => sum + value, 0) / durations.length;
+    return `Standzeit: ${formatSecondsShort(minSeconds)}-${formatSecondsShort(maxSeconds)} pro Abschnitt, Ø ${formatSecondsShort(avgSeconds)} (${speedLabel}).`;
+  }
+
+  const words = String(exercise.script || exercise.content || "")
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter((word) => word && word !== "|");
+  const sampleWords = words.length ? words : ["Pa", "Ta", "Ka"];
+  const durations = sampleWords.map((word) => getKaraokeWordSeconds(word, timing));
+  const minSeconds = Math.min(...durations);
+  const maxSeconds = Math.max(...durations);
+
+  if (exercise.mode === "sentences") {
+    return `Standzeit: kurze Sätze wechseln per Pause; Tempo ${speedLabel}.`;
+  }
+
+  return `Standzeit: ${formatSecondsShort(minSeconds)}-${formatSecondsShort(maxSeconds)} pro Wort/Silbe (${speedLabel}).`;
+}
+
+function formatSecondsShort(seconds) {
+  const rounded = Math.max(0, Number(seconds) || 0);
+  return `${rounded.toFixed(1).replace(".", ",")}s`;
+}
+
 function getEditorTokens() {
   return editorContent.value
     .split(/[\s,;]+/)

@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="LogoSound" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="canonical" href="https://logosound-19293.web.app/" />
-    <link rel="manifest" href="/manifest-20260801-amp156.webmanifest" />
+    <link rel="manifest" href="/manifest-20260801-amp157.webmanifest" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="shortcut icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260801-amp156" />
+    <link rel="stylesheet" href="styles.css?v=20260801-amp157" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp156</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp157</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -134,8 +134,8 @@
             <label class="field-label range-label karaoke-speed-label" for="recordingKaraokeSpeed">
               Karaoke-Tempo <strong id="recordingKaraokeSpeedValue">Normal</strong>
             </label>
-            <input id="recordingKaraokeSpeed" class="range-input" type="range" min="1" max="7" step="1" value="3" />
-            <p class="range-help">Regelt, wie schnell Wörter, Silben oder Sätze weiterlaufen.</p>
+            <input id="recordingKaraokeSpeed" class="range-input" type="range" min="1" max="10" step="1" value="3" />
+            <p id="recordingKaraokeTimingHint" class="range-help">Standzeit wird nach der Übung berechnet.</p>
           </div>
           <div class="recording-tuning-card">
             <label class="field-label range-label sensitivity-label" for="sensitivitySlider">
@@ -331,7 +331,7 @@
             <label class="field-label range-label" for="editorSpeed">
               Geschwindigkeit <strong id="editorSpeedValue">Normal</strong>
             </label>
-            <input id="editorSpeed" class="range-input" type="range" min="1" max="7" value="3" />
+            <input id="editorSpeed" class="range-input" type="range" min="1" max="10" value="3" />
             <button id="testEditorKaraokeButton" class="secondary-action editor-karaoke-test" type="button">
               Karaoke-Tempo testen
             </button>
@@ -648,7 +648,7 @@
       </nav>
     </main>
 
-    <script type="module" src="app.js?v=20260801-amp156"></script>
+    <script type="module" src="app.js?v=20260801-amp157"></script>
   </body>
 </html>
 

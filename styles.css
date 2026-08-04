@@ -204,6 +204,11 @@ textarea {
   gap: 10px;
 }
 
+.editor-repeat-group {
+  display: grid;
+  gap: 10px;
+}
+
 .editor-check {
   display: flex;
   align-items: center;

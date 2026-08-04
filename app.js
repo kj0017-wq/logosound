@@ -53,6 +53,7 @@ const editorVoicePreview = document.querySelector("#editorVoicePreview");
 const editorVoiceState = document.querySelector("#editorVoiceState");
 const editorUseRepeats = document.querySelector("#editorUseRepeats");
 const repeatControl = document.querySelector("#repeatControl");
+const editorRepeatGroup = document.querySelector("#editorRepeatGroup");
 const editorRepeats = document.querySelector("#editorRepeats");
 const editorSpeed = document.querySelector("#editorSpeed");
 const editorSpeedValue = document.querySelector("#editorSpeedValue");
@@ -3376,7 +3377,7 @@ function buildEditorExerciseFromForm() {
         : getDefaultEditorContent(mode);
   const voiceInstruction =
     editorVoiceInstruction.value.trim() || getDefaultEditorVoiceInstruction(mode);
-  const useRepeats = editorUseRepeats.checked && !isTextLikeMode(mode) && mode !== "sentences" && mode !== "dialog";
+  const useRepeats = editorUseRepeats.checked && supportsEditorRepeats(mode);
   const repeats = useRepeats ? getEditorRepeats() : 1;
   const script = useRepeats ? buildRepeatedScript(content, repeats) : content;
   const patientTurnCount = dialogTurns.filter((turn) => turn.role === "patient").length;
@@ -3624,15 +3625,21 @@ function updateEditorForm() {
   exerciseEditor?.classList.toggle("long-text-mode", isLongTextModeSelected);
   const isDialogMode = editorMode.value === "dialog";
   exerciseEditor?.classList.toggle("dialog-mode", isDialogMode);
-  if (isTextMode || isSentenceMode || isDialogMode) editorUseRepeats.checked = false;
-  repeatControl.classList.toggle("is-hidden", isTextMode || isSentenceMode || isDialogMode || !editorUseRepeats.checked);
-  editorUseRepeats.disabled = isTextMode || isSentenceMode || isDialogMode;
+  const canUseRepeats = supportsEditorRepeats(editorMode.value);
+  if (!canUseRepeats) editorUseRepeats.checked = false;
+  editorRepeatGroup?.classList.toggle("is-hidden", !canUseRepeats);
+  repeatControl.classList.toggle("is-hidden", !canUseRepeats || !editorUseRepeats.checked);
+  editorUseRepeats.disabled = !canUseRepeats;
   editorSentenceBuilder?.classList.toggle("is-hidden", !isSentenceMode);
   editorDialogBuilder?.classList.toggle("is-hidden", !isDialogMode);
   editorSpeedValue.textContent = EDITOR_SPEEDS[editorSpeed.value]?.label || "Normal";
   renderEditorPreview(buildEditorExerciseFromForm());
   renderEditorSentenceList();
   if (isDialogMode) renderEditorDialogList();
+}
+
+function supportsEditorRepeats(mode) {
+  return mode === "syllables" || mode === "vowels";
 }
 
 function renderEditorPreview(exercise, activeIndex = -1) {

@@ -263,6 +263,11 @@ textarea {
   gap: 7px;
 }
 
+.editor-saved-list-toggle {
+  min-height: 40px;
+  margin-top: -2px;
+}
+
 .editor-saved-exercise-list.is-empty {
   display: none;
 }

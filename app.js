@@ -33,6 +33,7 @@ const recordingExerciseShortcuts = document.querySelector("#recordingExerciseSho
 const previewExerciseButton = document.querySelector("#previewExerciseButton");
 const editorSavedExercises = document.querySelector("#editorSavedExercises");
 const editorSavedExerciseList = document.querySelector("#editorSavedExerciseList");
+const editorSavedListToggle = document.querySelector("#editorSavedListToggle");
 const newEditorExerciseButton = document.querySelector("#newEditorExerciseButton");
 const exerciseEditor = document.querySelector("#exerciseEditor");
 const editorModeState = document.querySelector("#editorModeState");
@@ -414,6 +415,7 @@ let cameraStartRetryId;
 let savedEditorExercise;
 let savedEditorExercises = [];
 let activeEditorExerciseName = "";
+let editorSavedListExpanded = false;
 let editorVoiceAudioDataUrl = "";
 let editorVoiceAudioUrl = "";
 let editorVoiceAudioPath = "";
@@ -670,8 +672,15 @@ editorSavedExercises.addEventListener("change", () => {
 newEditorExerciseButton.addEventListener("click", () => {
   activeEditorExerciseName = "";
   editorSavedExercises.value = "";
+  editorSavedListExpanded = false;
+  updateEditorSavedListVisibility();
   resetEditorForm({ blank: true });
   saveEditorDraft();
+});
+
+editorSavedListToggle?.addEventListener("click", () => {
+  editorSavedListExpanded = !editorSavedListExpanded;
+  updateEditorSavedListVisibility();
 });
 
 suggestVoiceButton.addEventListener("click", async () => {
@@ -3982,10 +3991,22 @@ function updateEditorModeState() {
   const isEditingSaved = Boolean(activeEditorExerciseName);
   newEditorExerciseButton.classList.toggle("is-active", !isEditingSaved);
   editorSavedExercises.classList.toggle("is-editing", isEditingSaved);
+  updateEditorSavedListVisibility();
   if (editorModeState) {
     editorModeState.textContent = isEditingSaved
       ? `Gespeicherte Übung bearbeiten: ${activeEditorExerciseName}`
       : "Neue Übung";
+  }
+}
+
+function updateEditorSavedListVisibility() {
+  if (!editorSavedExerciseList) return;
+  const hasSavedExercises = Boolean(savedEditorExercises.length);
+  const shouldShow = hasSavedExercises && editorSavedListExpanded;
+  editorSavedExerciseList.classList.toggle("is-hidden", !shouldShow);
+  editorSavedListToggle?.classList.toggle("is-hidden", !hasSavedExercises);
+  if (editorSavedListToggle) {
+    editorSavedListToggle.textContent = shouldShow ? "Vorlagen ausblenden" : "Vorlagen verwalten";
   }
 }
 
@@ -4064,8 +4085,10 @@ function renderSavedEditorExerciseList() {
 
   editorSavedExerciseList.innerHTML = "";
   if (!savedEditorExercises.length) {
+    editorSavedListExpanded = false;
     editorSavedExerciseList.classList.add("is-empty");
     editorSavedExerciseList.textContent = "Keine gespeicherten Editor-Übungen.";
+    updateEditorSavedListVisibility();
     return;
   }
 
@@ -4095,6 +4118,7 @@ function renderSavedEditorExerciseList() {
     item.append(summary, deleteListButton);
     editorSavedExerciseList.append(item);
   });
+  updateEditorSavedListVisibility();
 }
 
 function renderRecordingExerciseOptions(preferredValue = exerciseName.value) {

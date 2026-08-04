@@ -1086,10 +1086,12 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
 
 .karaoke-overlay.is-text-passage-mode,
 .playback-karaoke-overlay.is-text-passage-mode {
-  grid-template-rows: minmax(76px, 1.5fr) minmax(32px, 0.68fr) minmax(24px, 0.52fr);
-  min-height: 170px;
+  grid-template-rows: minmax(98px, 1.35fr) minmax(40px, 0.58fr) minmax(28px, 0.42fr);
+  align-items: center;
+  min-height: 190px;
   max-height: min(42dvh, 290px);
-  padding: 12px 14px;
+  padding: 16px 18px 14px;
+  gap: 4px;
 }
 
 .karaoke-overlay.is-text-passage-mode .karaoke-line,
@@ -1101,23 +1103,43 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
 
 .karaoke-overlay.is-text-passage-mode .karaoke-line-before,
 .playback-karaoke-overlay.is-text-passage-mode .karaoke-line-before {
-  font-size: clamp(1.5rem, 5.6vw, 2.75rem);
-  line-height: 1.08;
-  max-height: 5.4em;
+  color: #f6b44b;
+  font-size: clamp(1.35rem, 4.8vw, 2.28rem);
+  line-height: 1.1;
+  max-height: 4.4em;
+  opacity: 1;
+  transform: none;
+  filter: none;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
 }
 
 .karaoke-overlay.is-text-passage-mode .karaoke-line-current,
 .playback-karaoke-overlay.is-text-passage-mode .karaoke-line-current {
+  color: rgba(255, 255, 255, 0.68);
   font-size: clamp(0.92rem, 3.4vw, 1.28rem);
   line-height: 1.12;
   max-height: 2.35em;
+  opacity: 0.82;
+  transform: none;
 }
 
 .karaoke-overlay.is-text-passage-mode .karaoke-line-after,
 .playback-karaoke-overlay.is-text-passage-mode .karaoke-line-after {
+  color: rgba(255, 255, 255, 0.42);
   font-size: clamp(0.78rem, 2.8vw, 1.05rem);
   line-height: 1.12;
   max-height: 2.2em;
+  opacity: 0.64;
+  transform: none;
+}
+
+.karaoke-overlay.is-text-passage-mode .karaoke-line-before.is-entering,
+.playback-karaoke-overlay.is-text-passage-mode .karaoke-line-before.is-entering,
+.karaoke-overlay.is-text-passage-mode .karaoke-line-current.is-entering,
+.playback-karaoke-overlay.is-text-passage-mode .karaoke-line-current.is-entering,
+.karaoke-overlay.is-text-passage-mode .karaoke-line-after.is-entering,
+.playback-karaoke-overlay.is-text-passage-mode .karaoke-line-after.is-entering {
+  animation: karaokePassageFade 520ms ease both;
 }
 
 .karaoke-line-before.is-entering {
@@ -1208,6 +1230,19 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
   100% {
     opacity: 0.62;
     transform: translateY(-10px) translateZ(-90px) rotateX(18deg) scale(0.78);
+  }
+}
+
+@keyframes karaokePassageFade {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(0.8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
 }
 

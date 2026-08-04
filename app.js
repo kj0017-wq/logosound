@@ -181,6 +181,9 @@ const settingsChatGptPrompt = document.querySelector("#settingsChatGptPrompt");
 const settingsSensitivity = document.querySelector("#settingsSensitivity");
 const settingsSensitivityValue = document.querySelector("#settingsSensitivityValue");
 const settingsCalibrationButton = document.querySelector("#settingsCalibrationButton");
+const settingsEqSliders = document.querySelectorAll("[data-eq-band]");
+const settingsEqSummary = document.querySelector("#settingsEqSummary");
+const settingsEqResetButton = document.querySelector("#settingsEqResetButton");
 const settingsPlaybackVolume = document.querySelector("#settingsPlaybackVolume");
 const settingsPlaybackVolumeValue = document.querySelector("#settingsPlaybackVolumeValue");
 const playbackGainPresetButtons = document.querySelectorAll("[data-playback-gain]");
@@ -207,6 +210,8 @@ const RECORDING_KARAOKE_SPEEDS_KEY = "logosound-recording-karaoke-speeds-by-exer
 const PLAYBACK_GAIN_KEY = "logosound-playback-gain";
 const STATISTICS_WAVEFORM_HEIGHT_KEY = "logosound-statistics-waveform-height";
 const ANALYSIS_CALIBRATION_KEY = "logosound-analysis-calibration";
+const SETTINGS_EQ_KEY = "logosound-settings-eq";
+const SETTINGS_EQ_DOC = "equalizer";
 const ELEVENLABS_SETTINGS_KEY = "logosound-elevenlabs-settings";
 const ELEVENLABS_SETTINGS_DOC = "elevenLabsVoices";
 const CHATGPT_SETTINGS_KEY = "logosound-chatgpt-settings";
@@ -899,6 +904,21 @@ playbackGainPresetButtons.forEach((button) => {
     saveAllAiSettings();
     renderSettingsControls();
   });
+});
+
+settingsEqSliders.forEach((slider) => {
+  slider.addEventListener("input", () => {
+    saveEqualizerSettingsFromControls();
+    renderEqualizerControls();
+  });
+  slider.addEventListener("change", () => {
+    saveEqualizerSettingsFromControls({ syncCloud: true });
+    renderEqualizerControls();
+  });
+});
+
+settingsEqResetButton?.addEventListener("click", () => {
+  resetEqualizerSettings();
 });
 
 statisticsRecordingSelect?.addEventListener("change", () => {
@@ -6740,7 +6760,89 @@ function renderSettingsControls() {
   playbackGainPresetButtons.forEach((button) => {
     button.classList.toggle("is-active", button.dataset.playbackGain === String(playbackVolumeSlider.value));
   });
+  renderEqualizerControls();
   if (settingsState) settingsState.textContent = "Einstellungen lokal gespeichert.";
+}
+
+function getDefaultEqualizerSettings() {
+  return {
+    bands: {
+      160: 0,
+      400: 0,
+      800: 0,
+      3200: 0,
+      6400: 0,
+      12000: 0,
+    },
+  };
+}
+
+function getEqualizerSettings() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(SETTINGS_EQ_KEY) || "null");
+    const defaults = getDefaultEqualizerSettings();
+    return {
+      bands: {
+        ...defaults.bands,
+        ...(stored?.bands || {}),
+      },
+    };
+  } catch (error) {
+    return getDefaultEqualizerSettings();
+  }
+}
+
+function readEqualizerSettingsFromControls() {
+  const settings = getDefaultEqualizerSettings();
+  settingsEqSliders.forEach((slider) => {
+    settings.bands[slider.dataset.eqBand] = Math.max(-12, Math.min(12, Number(slider.value) || 0));
+  });
+  return settings;
+}
+
+function saveEqualizerSettingsFromControls(options = {}) {
+  const settings = readEqualizerSettingsFromControls();
+  localStorage.setItem(SETTINGS_EQ_KEY, JSON.stringify(settings));
+  if (settingsState) settingsState.textContent = "Equalizer lokal gespeichert.";
+  if (options.syncCloud) {
+    saveCloudEqualizerSettings(settings).catch(() => {
+      if (settingsState) settingsState.textContent = "Equalizer lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
+    });
+  }
+}
+
+function renderEqualizerControls(settings = getEqualizerSettings()) {
+  settingsEqSliders.forEach((slider) => {
+    const value = Math.max(-12, Math.min(12, Number(settings.bands?.[slider.dataset.eqBand]) || 0));
+    if (document.activeElement !== slider) slider.value = String(value);
+    slider.style.setProperty("--eq-value", `${((value + 12) / 24) * 100}%`);
+  });
+
+  if (settingsEqSummary) {
+    const values = Object.values(settings.bands || {}).map(Number).filter(Number.isFinite);
+    const activeBands = values.filter((value) => value !== 0).length;
+    const maxAbs = values.length ? Math.max(...values.map((value) => Math.abs(value))) : 0;
+    settingsEqSummary.textContent = activeBands
+      ? `${activeBands} Band${activeBands === 1 ? "" : "s"} · max ${maxAbs} dB`
+      : "0 dB";
+  }
+}
+
+function resetEqualizerSettings() {
+  const settings = getDefaultEqualizerSettings();
+  localStorage.setItem(SETTINGS_EQ_KEY, JSON.stringify(settings));
+  renderEqualizerControls(settings);
+  saveCloudEqualizerSettings(settings).catch(() => {
+    if (settingsState) settingsState.textContent = "Equalizer zurückgesetzt. Firebase-Speichern fehlgeschlagen.";
+  });
+  if (settingsState) settingsState.textContent = "Equalizer zurückgesetzt.";
+}
+
+async function saveCloudEqualizerSettings(settings = getEqualizerSettings()) {
+  await setDoc(doc(firestore, "settings", SETTINGS_EQ_DOC), {
+    ...settings,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 function renderVoiceProfileSelect(settings = getElevenLabsSettings()) {

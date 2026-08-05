@@ -6744,24 +6744,11 @@ function getThreeLineKaraokeIndexes(timeline, activeIndex) {
   const activeWordIndex = timeline[boundedIndex]?.isPause
     ? getPreviousSpokenIndex(timeline, boundedIndex) ?? getNextSpokenIndex(timeline, boundedIndex) ?? boundedIndex
     : boundedIndex;
-  const spokenIndexes = timeline
-    .map((item, index) => ({ item, index }))
-    .filter(({ item }) => !item.isPause);
-  const lineGroups = buildKaraokeLineGroups(spokenIndexes);
-  const activeGroupIndex = Math.max(
-    0,
-    lineGroups.findIndex((group) =>
-      group.some(({ index }) => index === activeWordIndex),
-    ),
-  );
 
   return {
-    before: lineGroups[activeGroupIndex]?.[0]?.index,
-    current: lineGroups[activeGroupIndex + 1]?.[0]?.index,
-    after: lineGroups[activeGroupIndex + 2]?.[0]?.index,
-    beforeGroup: lineGroups[activeGroupIndex],
-    currentGroup: lineGroups[activeGroupIndex + 1],
-    afterGroup: lineGroups[activeGroupIndex + 2],
+    before: getPreviousSpokenIndex(timeline, activeWordIndex),
+    current: activeWordIndex,
+    after: getNextSpokenIndex(timeline, activeWordIndex),
   };
 }
 

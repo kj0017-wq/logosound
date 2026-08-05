@@ -1496,8 +1496,8 @@ async function getDialogPreviewAudioSegments(exercise) {
     const updatedExercise = hydrateEditorExercise({
       ...exercise,
       dialogTurns: updatedTurns,
-      content: serializeDialogTurns(updatedTurns),
-      script: serializeDialogTurns(updatedTurns),
+      content: serializeDialogTurns(updatedTurns, getDialogSystemSpeakerLabel(exercise)),
+      script: serializeDialogTurns(updatedTurns, getDialogSystemSpeakerLabel(exercise)),
       dialogAudioUpdatedAt: new Date().toISOString(),
     });
     await saveEditorExerciseObject(updatedExercise);
@@ -2895,19 +2895,20 @@ function getEditorDialogTurns() {
 }
 
 function syncEditorDialogTurns(turns, options = {}) {
-  editorContent.value = serializeDialogTurns(turns);
+  editorContent.value = serializeDialogTurns(turns, getEditorVoiceLabel());
   saveEditorDraft();
   renderEditorPreview(buildEditorExerciseFromForm());
   if (!options.skipListRender) renderEditorDialogList();
   if (exerciseName.value === "custom-editor") setupKaraokeText();
 }
 
-function serializeDialogTurns(turns) {
+function serializeDialogTurns(turns, systemLabel = getActiveVoiceLabel()) {
   return turns
     .map((turn) => {
       const normalizedTurn = normalizeDialogTurn(turn);
       if (!normalizedTurn.text) return "";
-      return `${getDialogSpeakerLabel(normalizedTurn.role)}: ${normalizedTurn.text}`;
+      const speakerLabel = normalizedTurn.role === "patient" ? getCurrentPatientName() : systemLabel;
+      return `${speakerLabel}: ${normalizedTurn.text}`;
     })
     .filter(Boolean)
     .join("\n");
@@ -2938,7 +2939,7 @@ function renderEditorDialogList() {
       { role: "patient", text: "Mir geht es heute gut." },
     ];
     editorContent.value = turns
-      .map((turn) => `${getDialogSpeakerLabel(turn.role)}: ${turn.text}`)
+      .map((turn) => `${turn.role === "patient" ? getCurrentPatientName() : getEditorVoiceLabel()}: ${turn.text}`)
       .join("\n");
     saveEditorDraft();
     renderEditorPreview(buildEditorExerciseFromForm());
@@ -2954,7 +2955,7 @@ function renderEditorDialogList() {
     const select = document.createElement("select");
     select.className = "select-input compact-select";
     [
-      ["system", getActiveVoiceLabel()],
+      ["system", getEditorVoiceLabel()],
       ["patient", getCurrentPatientName()],
     ].forEach(([value, label]) => {
       const option = document.createElement("option");
@@ -3008,6 +3009,10 @@ function getActiveVoiceLabel() {
   const settings = getElevenLabsSettings();
   const voice = getActiveElevenLabsVoice(settings);
   return voice?.name || "ElevenLabs";
+}
+
+function getEditorVoiceLabel() {
+  return getEditorSelectedVoice(getElevenLabsSettings())?.name || getActiveVoiceLabel();
 }
 
 function getExerciseDialogTurns(exercise = getActiveRecordingExercise()) {
@@ -3337,8 +3342,8 @@ async function createAndStoreDialogTurnAudio(timelineIndex) {
   const updatedExercise = hydrateEditorExercise({
     ...exercise,
     dialogTurns: updatedTurns,
-    content: serializeDialogTurns(updatedTurns),
-    script: serializeDialogTurns(updatedTurns),
+    content: serializeDialogTurns(updatedTurns, getDialogSystemSpeakerLabel(exercise)),
+    script: serializeDialogTurns(updatedTurns, getDialogSystemSpeakerLabel(exercise)),
     dialogAudioUpdatedAt: new Date().toISOString(),
   });
   await saveEditorExerciseObject(updatedExercise);
@@ -4367,8 +4372,9 @@ function renderEditorPreview(exercise, activeIndex = -1) {
 
 function buildEditorPreviewTimeline(exercise = buildEditorExerciseFromForm()) {
   if (exercise.mode === "dialog") {
+    const systemSpeakerLabel = getDialogSystemSpeakerLabel(exercise);
     return getExerciseDialogTurns(exercise).map((turn, index) => ({
-      label: `${getDialogSpeakerLabel(turn.role)}: ${turn.text}`,
+      label: `${turn.role === "patient" ? getCurrentPatientName() : systemSpeakerLabel}: ${turn.text}`,
       role: turn.role,
       isPause: false,
       isSentence: true,
@@ -4585,8 +4591,8 @@ async function generateDialogVoiceAudio(options = {}) {
     const updatedExercise = hydrateEditorExercise({
       ...exercise,
       dialogTurns: updatedTurns,
-      content: serializeDialogTurns(updatedTurns),
-      script: serializeDialogTurns(updatedTurns),
+      content: serializeDialogTurns(updatedTurns, getEditorVoiceLabel()),
+      script: serializeDialogTurns(updatedTurns, getEditorVoiceLabel()),
       dialogAudioUpdatedAt: new Date().toISOString(),
     });
 
@@ -7601,6 +7607,15 @@ function updateEditorVoiceSelectHint() {
 function handleEditorVoiceSelectionChange() {
   const voice = getEditorSelectedVoice();
   updateEditorVoiceSelectHint();
+  if (editorMode?.value === "dialog") {
+    const turns = getEditorDialogTurns();
+    if (turns.length) {
+      editorContent.value = serializeDialogTurns(turns, getEditorVoiceLabel());
+      renderEditorPreview(buildEditorExerciseFromForm());
+      renderEditorDialogList();
+      if (exerciseName.value === "custom-editor") setupKaraokeText();
+    }
+  }
   if (!voice) return;
   if (editorVoiceAudioVoiceId && editorVoiceAudioVoiceId !== voice.voiceId) {
     editorVoiceState.textContent = "Andere Übungsstimme gewählt. Audio bitte neu erstellen.";

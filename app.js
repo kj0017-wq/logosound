@@ -479,6 +479,7 @@ let savedEditorExercises = [];
 let patientProfiles = [];
 let patientProfileSaveTimerId = 0;
 let isApplyingPatientProfile = false;
+let editorDialogTurnsState = [];
 let activeEditorExerciseName = "";
 let editorSavedListExpanded = false;
 let editingEditorSentenceIndex = -1;
@@ -787,6 +788,9 @@ recordingModeFilter?.addEventListener("change", () => {
 [editorExerciseName, editorMode, editorContent, editorVoiceInstruction, editorUseRepeats, editorRepeats, editorSpeed, editorVoiceSelect].forEach((input) => {
   input?.addEventListener("input", () => {
     if (input === editorVoiceSelect) handleEditorVoiceSelectionChange();
+    if (input === editorContent && editorMode.value === "dialog") {
+      editorDialogTurnsState = parseDialogTurns(editorContent.value);
+    }
     saveEditorDraft();
     updateEditorForm();
     if (input === editorContent) renderEditorSentenceList();
@@ -3104,11 +3108,17 @@ function splitLongTextIntoSentencePassages(text) {
 }
 
 function getEditorDialogTurns() {
-  return parseDialogTurns(editorContent.value);
+  if (editorMode?.value === "dialog" && editorDialogTurnsState.length) {
+    return editorDialogTurnsState.map((turn) => normalizeDialogTurn(turn)).filter((turn) => turn.text);
+  }
+  const parsedTurns = parseDialogTurns(editorContent.value);
+  if (editorMode?.value === "dialog") editorDialogTurnsState = parsedTurns;
+  return parsedTurns;
 }
 
 function syncEditorDialogTurns(turns, options = {}) {
-  editorContent.value = serializeDialogTurns(turns, getEditorVoiceLabel());
+  editorDialogTurnsState = turns.map((turn) => normalizeDialogTurn(turn)).filter((turn) => turn.text);
+  editorContent.value = serializeDialogTurns(editorDialogTurnsState, getEditorVoiceLabel());
   saveEditorDraft();
   renderEditorPreview(buildEditorExerciseFromForm());
   if (!options.skipListRender) renderEditorDialogList();
@@ -3151,9 +3161,8 @@ function renderEditorDialogList() {
       { role: "system", text: "Guten Morgen, wie geht es Ihnen?" },
       { role: "patient", text: "Mir geht es heute gut." },
     ];
-    editorContent.value = turns
-      .map((turn) => `${turn.role === "patient" ? getCurrentPatientName() : getEditorVoiceLabel()}: ${turn.text}`)
-      .join("\n");
+    editorDialogTurnsState = turns.map((turn) => normalizeDialogTurn(turn));
+    editorContent.value = serializeDialogTurns(editorDialogTurnsState, getEditorVoiceLabel());
     saveEditorDraft();
     renderEditorPreview(buildEditorExerciseFromForm());
   }
@@ -3329,7 +3338,7 @@ function isPatientDialogRole(role) {
   const normalizedPatient = normalizeEditorExerciseName(getCurrentPatientName());
   const patientNameParts = normalizedPatient.split(/\s+/).filter(Boolean);
   return (
-    /^(patient|patientin|nutzer|ich)$/i.test(String(role || "").trim()) ||
+    /^(patient|patientin|nutzer|sprecher|sprecherin|speaker|ich)$/i.test(String(role || "").trim()) ||
     Boolean(normalizedPatient && normalizedRole === normalizedPatient) ||
     Boolean(patientNameParts.length && normalizedRole === patientNameParts[0]) ||
     Boolean(normalizedRole && normalizedPatient.startsWith(`${normalizedRole} `))
@@ -4886,6 +4895,7 @@ function applyEditorModeDefaults() {
   const nextMode = editorMode.value;
   const previousText = getCurrentEditorTextForModeChange();
   editorContent.value = convertEditorContentForMode(nextMode, previousText);
+  editorDialogTurnsState = nextMode === "dialog" ? parseDialogTurns(editorContent.value) : [];
   editorVoiceInstruction.value = getDefaultEditorVoiceInstruction(editorMode.value);
   editorUseRepeats.checked =
     editorMode.value !== "text" &&
@@ -5027,16 +5037,17 @@ async function saveEditorExerciseObject(exercise, options = {}) {
 }
 
 function upsertEditorExercise(exercises, exercise) {
-  const normalizedName = normalizeEditorExerciseName(exercise.name);
+  const hydratedExercise = hydrateEditorExercise(exercise);
+  const normalizedName = normalizeEditorExerciseName(hydratedExercise.name);
   const existingIndex = exercises.findIndex(
     (item) => normalizeEditorExerciseName(item.name) === normalizedName,
   );
   const nextExercises = [...exercises];
 
   if (existingIndex >= 0) {
-    nextExercises[existingIndex] = exercise;
+    nextExercises[existingIndex] = hydratedExercise;
   } else {
-    nextExercises.push(exercise);
+    nextExercises.push(hydratedExercise);
   }
 
   return nextExercises.sort((a, b) => a.name.localeCompare(b.name, "de"));
@@ -5116,6 +5127,7 @@ function updateEditorSavedListVisibility() {
 function resetEditorForm(options = {}) {
   editorExerciseName.value = "";
   editorMode.value = options.blank ? "syllables" : "sentences";
+  editorDialogTurnsState = [];
   editorContent.value = options.blank ? "" : "";
   if (editorSentenceInput) editorSentenceInput.value = "";
   editorVoiceInstruction.value = options.blank ? "" : getDefaultEditorVoiceInstruction(editorMode.value);
@@ -5374,7 +5386,13 @@ function getEditorSelectValueForExerciseName(name) {
 function applyEditorExerciseToForm(exercise) {
   editorExerciseName.value = exercise.name || "Neue Übung";
   editorMode.value = exercise.mode || "syllables";
-  editorContent.value = getEditorContentForExercise(exercise);
+  if (editorMode.value === "dialog") {
+    editorDialogTurnsState = getExerciseDialogTurns(exercise);
+    editorContent.value = serializeDialogTurns(editorDialogTurnsState, getDialogSystemSpeakerLabel(exercise));
+  } else {
+    editorDialogTurnsState = [];
+    editorContent.value = getEditorContentForExercise(exercise);
+  }
   editorVoiceInstruction.value =
     exercise.voiceInstruction || getDefaultEditorVoiceInstruction(editorMode.value);
   const exerciseVoiceSettings = getElevenLabsSettings();
@@ -5417,6 +5435,7 @@ function saveEditorDraft() {
     activeExerciseName: activeEditorExerciseName,
     mode: editorMode.value,
     content: editorContent.value,
+    dialogTurns: editorMode.value === "dialog" ? getEditorDialogTurns() : [],
     voiceInstruction: editorVoiceInstruction.value,
     voiceProfileKey: editorVoiceSelect?.value || "",
     voiceAudioUrl: editorVoiceAudioUrl,
@@ -5659,7 +5678,15 @@ function loadEditorDraft() {
     } else {
       editorExerciseName.value = draft.name || editorExerciseName.value;
       editorMode.value = draft.mode || editorMode.value;
-      editorContent.value = draft.content || editorContent.value;
+      if (editorMode.value === "dialog") {
+        editorDialogTurnsState = Array.isArray(draft.dialogTurns) && draft.dialogTurns.length
+          ? draft.dialogTurns.map((turn) => normalizeDialogTurn(turn)).filter((turn) => turn.text)
+          : parseDialogTurns(draft.content || editorContent.value);
+        editorContent.value = serializeDialogTurns(editorDialogTurnsState, getEditorVoiceLabel());
+      } else {
+        editorDialogTurnsState = [];
+        editorContent.value = draft.content || editorContent.value;
+      }
       editorVoiceInstruction.value = draft.voiceInstruction || editorVoiceInstruction.value;
       renderEditorVoiceSelect(getElevenLabsSettings(), draft.voiceProfileKey || "");
       editorVoiceAudioPath = draft.voiceAudioPath || "";
@@ -10012,7 +10039,7 @@ async function loadCloudPatientProfiles() {
     const activeSnapshot = await getDoc(doc(firestore, "settings", ACTIVE_PATIENT_DOC)).catch(() => null);
     const cloudActiveName = activeSnapshot?.exists?.() ? activeSnapshot.data()?.name : "";
     const localSelected = localStorage.getItem(SELECTED_PATIENT_KEY) || "";
-    const nextPatientName = localSelected || cloudActiveName || patientName.value;
+    const nextPatientName = cloudActiveName || localSelected || patientName.value;
     patientName.value = nextPatientName;
     localStorage.setItem(SELECTED_PATIENT_KEY, nextPatientName);
 

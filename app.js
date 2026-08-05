@@ -2790,7 +2790,7 @@ function setupKaraokeText() {
 
   if (dialogTurns.length) {
     karaokeWords = dialogTurns.map((turn) => turn.text);
-    karaokeTimeline = buildDialogTimeline(dialogTurns);
+    karaokeTimeline = buildDialogTimeline(dialogTurns, SENTENCE_MAX_SECONDS, activeExercise);
   } else if (sentences.length) {
     karaokeWords = sentences;
     karaokeTimeline = buildSentenceTimeline(sentences);
@@ -3077,7 +3077,7 @@ function parseDialogLine(line, index = 0) {
   if (match) {
     const roleName = match[1].trim();
     return normalizeDialogTurn({
-      role: isSystemDialogRole(roleName) ? "system" : "patient",
+      role: isPatientDialogRole(roleName) ? "patient" : "system",
       text: match[2],
     });
   }
@@ -3115,16 +3115,22 @@ function isPatientDialogRole(role) {
 
 function isSystemDialogRole(role) {
   const normalizedRole = normalizeEditorExerciseName(role);
-  const activeVoice = getActiveElevenLabsVoice(getElevenLabsSettings());
+  const settings = getElevenLabsSettings();
+  const activeVoice = getActiveElevenLabsVoice(settings);
   return (
     /^(system|therapeut|therapeutin|app|ki|elevenlabs)$/i.test(String(role || "").trim()) ||
     Boolean(normalizedRole && normalizedRole === normalizeEditorExerciseName(getActiveVoiceLabel())) ||
-    Boolean(activeVoice?.name && normalizedRole === normalizeEditorExerciseName(activeVoice.name))
+    Boolean(activeVoice?.name && normalizedRole === normalizeEditorExerciseName(activeVoice.name)) ||
+    settings.voices.some((voice) => normalizedRole === normalizeEditorExerciseName(voice.name))
   );
 }
 
 function getDialogSpeakerLabel(role) {
   return role === "patient" ? getCurrentPatientName() : getActiveVoiceLabel();
+}
+
+function getDialogSystemSpeakerLabel(exercise = getActiveRecordingExercise()) {
+  return getExerciseSelectedVoice(exercise)?.name || getActiveVoiceLabel();
 }
 
 function buildSentenceTimeline(sentences, secondsPerSentence = SENTENCE_MAX_SECONDS) {
@@ -3169,12 +3175,13 @@ function getTextPassageSeconds(passage, wordSeconds, pauseSeconds) {
   return Math.max(1.35, Math.min(9, wordBasedSeconds + charBasedSeconds + pauseSeconds));
 }
 
-function buildDialogTimeline(turns, secondsPerTurn = SENTENCE_MAX_SECONDS) {
+function buildDialogTimeline(turns, secondsPerTurn = SENTENCE_MAX_SECONDS, exercise = getActiveRecordingExercise()) {
+  const systemSpeakerLabel = getDialogSystemSpeakerLabel(exercise);
   return turns.map((turn, index) => ({
-    label: `${getDialogSpeakerLabel(turn.role)}: ${turn.text}`,
+    label: `${turn.role === "patient" ? getCurrentPatientName() : systemSpeakerLabel}: ${turn.text}`,
     text: turn.text,
     role: turn.role,
-    roleLabel: getDialogSpeakerLabel(turn.role),
+    roleLabel: turn.role === "patient" ? getCurrentPatientName() : systemSpeakerLabel,
     audioUrl: getGlobalVoiceAudioUrl(turn.audioUrl, turn.audioPath),
     audioPath: String(turn.audioPath || ""),
     audioVoiceId: turn.audioVoiceId || "",
@@ -3967,7 +3974,9 @@ function hydrateEditorExercise(exercise) {
   const timing = exercise.timing || EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
   const content = exercise.content || getDefaultEditorContent(mode);
   const repeats = Math.max(1, Number(exercise.repeats || 1));
-  const parsedDialogTurns = mode === "dialog" ? getExerciseDialogTurns({ ...exercise, mode, content }) : [];
+  const parsedDialogTurns = mode === "dialog"
+    ? (content ? parseDialogTurns(content) : getExerciseDialogTurns({ ...exercise, mode, content }))
+    : [];
   const dialogTurns = mode === "dialog" ? hydrateDialogTurnsWithAudio(parsedDialogTurns, exercise) : [];
   const script = !isTextLikeMode(mode) && mode !== "dialog" && repeats > 1
     ? buildRepeatedScript(content, repeats)

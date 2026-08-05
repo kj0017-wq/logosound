@@ -3250,18 +3250,45 @@ body.recording-focus:not(.recording-overview) .karaoke-overlay {
 
 body.recording-focus:not(.recording-overview) .karaoke-overlay.is-three-line,
 body.recording-focus:not(.recording-overview) .karaoke-overlay.is-text-passage-mode {
-  min-height: 128px;
-  max-height: min(33dvh, 250px);
-  padding: 12px 14px;
+  min-height: 156px;
+  max-height: min(38dvh, 310px);
+  padding: 14px 16px;
+}
+
+body.recording-focus:not(.recording-overview) .karaoke-line-current {
+  font-size: clamp(2.35rem, 9.8vw, 4.15rem);
+  line-height: 1.03;
+}
+
+body.recording-focus:not(.recording-overview) .karaoke-line-before {
+  font-size: clamp(1.22rem, 4.9vw, 1.95rem);
+}
+
+body.recording-focus:not(.recording-overview) .karaoke-line-after {
+  font-size: clamp(1.45rem, 6vw, 2.35rem);
+}
+
+body.recording-focus:not(.recording-overview) .karaoke-overlay.is-forward-only .karaoke-line-before {
+  font-size: clamp(2.45rem, 10.2vw, 4.3rem);
+  line-height: 1.03;
 }
 
 body.recording-focus:not(.recording-overview) .karaoke-overlay.is-text-passage-mode .karaoke-line-before {
-  font-size: clamp(1.05rem, 4.1vw, 1.9rem);
-  max-height: 5.6em;
+  font-size: clamp(1.55rem, 6.2vw, 2.8rem);
+  line-height: 1.08;
+  max-height: 6.4em;
+}
+
+body.recording-focus:not(.recording-overview) .karaoke-overlay.is-text-passage-mode .karaoke-line-current {
+  font-size: clamp(1.05rem, 4.2vw, 1.65rem);
+}
+
+body.recording-focus:not(.recording-overview) .karaoke-overlay.is-text-passage-mode .karaoke-line-after {
+  font-size: clamp(0.9rem, 3.4vw, 1.25rem);
 }
 
 body.recording-focus:not(.recording-overview) .karaoke-overlay.is-three-line.is-context-dense .karaoke-line-current {
-  font-size: clamp(1.35rem, 5.7vw, 2.35rem);
+  font-size: clamp(1.75rem, 7vw, 2.9rem);
 }
 
 body.recording-focus.recording-overview #liveWaveform {

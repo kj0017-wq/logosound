@@ -2321,7 +2321,7 @@ async function startRecording() {
   mediaRecorder.start(250);
   startedAt = performance.now();
   isRecording = true;
-  startRecordingKaraokeEvent(activeKaraokeIndex);
+  startRecordingKaraokeEventIfPatient(activeKaraokeIndex);
   enterRecordingFocus();
 
   recordButton.textContent = "Übung stoppen";
@@ -3567,12 +3567,13 @@ function updateDialogPromptProgress(displayVolume) {
   if (!karaokeTimeline.length || sentenceStopScheduled) return;
 
   const currentItem = karaokeTimeline[activeKaraokeIndex] || karaokeTimeline[0];
-  updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
 
   if (currentItem?.isSystemTurn) {
     playCurrentDialogSystemTurn();
     return;
   }
+
+  updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
 
   if (currentItem?.isPatientTurn) {
     updateSentencePromptBySilence(displayVolume);
@@ -3605,6 +3606,10 @@ function startRecordingKaraokeEvent(index) {
   activeRecordingKaraokeEvent = event;
 }
 
+function startRecordingKaraokeEventIfPatient(index) {
+  if (karaokeTimeline[index]?.isPatientTurn) startRecordingKaraokeEvent(index);
+}
+
 function closeRecordingKaraokeEvent(fallbackEndSeconds = null) {
   if (!activeRecordingKaraokeEvent) return;
   const endSeconds = getRecordingElapsedSeconds(fallbackEndSeconds);
@@ -3627,10 +3632,16 @@ async function playCurrentDialogSystemTurn() {
     const audioUrl = currentItem.audioUrl || await createAndStoreDialogTurnAudio(activeKaraokeIndex);
     if (audioUrl) {
       message.textContent = `${currentItem.roleLabel} spricht.`;
+      updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
+      startRecordingKaraokeEvent(activeKaraokeIndex);
       await playVoiceAudio(audioUrl);
+      closeRecordingKaraokeEvent();
     } else {
       message.textContent = `${currentItem.roleLabel}: ${currentItem.text || currentItem.label}`;
+      updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
+      startRecordingKaraokeEvent(activeKaraokeIndex);
       await wait(Math.max(900, Math.min(3200, String(currentItem.text || currentItem.label || "").length * 55)));
+      closeRecordingKaraokeEvent();
     }
   } finally {
     dialogVoiceInProgress = false;
@@ -3693,7 +3704,7 @@ function advanceDialogPrompt() {
   if (activeKaraokeIndex < karaokeTimeline.length - 1) {
     activeKaraokeIndex += 1;
     resetSentenceSilenceState();
-    startRecordingKaraokeEvent(activeKaraokeIndex);
+    startRecordingKaraokeEventIfPatient(activeKaraokeIndex);
     updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
     const item = karaokeTimeline[activeKaraokeIndex];
     message.textContent = item?.isPatientTurn
@@ -3761,7 +3772,7 @@ function advanceSentencePrompt() {
 
   if (activeKaraokeIndex < karaokeTimeline.length - 1) {
     activeKaraokeIndex += 1;
-    startRecordingKaraokeEvent(activeKaraokeIndex);
+    startRecordingKaraokeEventIfPatient(activeKaraokeIndex);
     updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
     message.textContent = `Nächster Satz ${activeKaraokeIndex + 1} von ${karaokeTimeline.length}.`;
     return;

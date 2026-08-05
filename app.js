@@ -3289,9 +3289,12 @@ function normalizeDialogTurn(turn = {}) {
 function isPatientDialogRole(role) {
   const normalizedRole = normalizeEditorExerciseName(role);
   const normalizedPatient = normalizeEditorExerciseName(getCurrentPatientName());
+  const patientNameParts = normalizedPatient.split(/\s+/).filter(Boolean);
   return (
     /^(patient|patientin|nutzer|ich)$/i.test(String(role || "").trim()) ||
-    Boolean(normalizedPatient && normalizedRole === normalizedPatient)
+    Boolean(normalizedPatient && normalizedRole === normalizedPatient) ||
+    Boolean(patientNameParts.length && normalizedRole === patientNameParts[0]) ||
+    Boolean(normalizedRole && normalizedPatient.startsWith(`${normalizedRole} `))
   );
 }
 
@@ -4205,8 +4208,15 @@ function hydrateEditorExercise(exercise) {
   const timing = exercise.timing || EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
   const content = exercise.content || getDefaultEditorContent(mode);
   const repeats = Math.max(1, Number(exercise.repeats || 1));
+  const savedDialogTurns = Array.isArray(exercise.dialogTurns)
+    ? exercise.dialogTurns.map((turn) => normalizeDialogTurn(turn)).filter((turn) => turn.text)
+    : [];
   const parsedDialogTurns = mode === "dialog"
-    ? (content ? parseDialogTurns(content) : getExerciseDialogTurns({ ...exercise, mode, content }))
+    ? (savedDialogTurns.length
+        ? savedDialogTurns
+        : content
+          ? parseDialogTurns(content)
+          : getExerciseDialogTurns({ ...exercise, mode, content }))
     : [];
   const dialogTurns = mode === "dialog" ? hydrateDialogTurnsWithAudio(parsedDialogTurns, exercise) : [];
   const script = !isTextLikeMode(mode) && mode !== "dialog" && repeats > 1

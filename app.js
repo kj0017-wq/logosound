@@ -810,8 +810,8 @@ editorSentenceInput?.addEventListener("keydown", (event) => {
   addEditorSentence();
 });
 
-saveEditorExerciseButton.addEventListener("click", () => {
-  saveEditorExercise();
+saveEditorExerciseButton.addEventListener("click", async () => {
+  await saveEditorExercise();
 });
 
 editorSavedExercises.addEventListener("change", () => {
@@ -1277,7 +1277,7 @@ async function getCurrentInstructionAudio(exercise, instruction) {
     voiceAudioUpdatedAt: new Date().toISOString(),
   });
 
-  await saveEditorExerciseObject(updatedExercise);
+  await saveEditorExerciseObject(updatedExercise, { refreshUi: false });
   return storedAudio.url;
 }
 
@@ -1382,6 +1382,10 @@ async function startExercisePreview() {
 
 function getExercisePreviewText() {
   const exercise = getActiveRecordingExercise();
+  return getExercisePreviewTextForExercise(exercise);
+}
+
+function getExercisePreviewTextForExercise(exercise) {
   if (exercise?.mode === "dialog") {
     return getExerciseDialogTurns(exercise)
       .filter((turn) => turn.role !== "patient")
@@ -1390,6 +1394,175 @@ function getExercisePreviewText() {
   }
   if (exercise?.mode === "sentences") return getExerciseSentences(exercise).join(". ");
   return String(exercise?.script || getExerciseScript() || "").replace(/\s*\|\s*/g, ". ").trim();
+}
+
+async function prepareExerciseAudioForEditorSave(exercise) {
+  let updatedExercise = hydrateEditorExercise(exercise);
+  if (!updatedExercise?.name) return exercise;
+
+  const requestSettings = getExerciseVoiceRequestSettings(updatedExercise);
+  const instruction = String(updatedExercise.voiceInstruction || "").trim();
+  let changed = false;
+
+  if (instruction && !isInstructionVoiceAudioCurrent(updatedExercise, instruction)) {
+    editorVoiceState.textContent = "Intro-Audio wird erstellt und gespeichert...";
+    const storedIntro = await createStoredVoiceAudio(instruction, `${updatedExercise.name} Intro`, requestSettings);
+    updatedExercise = hydrateEditorExercise({
+      ...updatedExercise,
+      voiceAudioUrl: storedIntro.url,
+      voiceAudioPath: storedIntro.path,
+      voiceAudioDataUrl: "",
+      voiceAudioVoiceId: storedIntro.voiceId,
+      voiceAudioVoiceSettings: storedIntro.voiceSettings,
+      voiceAudioTextHash: storedIntro.textHash,
+      voiceAudioSpeed: storedIntro.speed,
+      voiceAudioUpdatedAt: new Date().toISOString(),
+    });
+    changed = true;
+  }
+
+  if (updatedExercise.mode === "dialog") {
+    const dialogResult = await prepareDialogAudioForExercise(updatedExercise, requestSettings);
+    updatedExercise = dialogResult.exercise;
+    changed = changed || dialogResult.changed;
+  } else {
+    const demoResult = await prepareDemoAudioForExercise(updatedExercise, requestSettings);
+    updatedExercise = demoResult.exercise;
+    changed = changed || demoResult.changed;
+  }
+
+  if (changed) {
+    editorVoiceAudioDataUrl = updatedExercise.voiceAudioDataUrl || "";
+    editorVoiceAudioUrl = getGlobalVoiceAudioUrl(updatedExercise.voiceAudioUrl, updatedExercise.voiceAudioPath);
+    editorVoiceAudioPath = updatedExercise.voiceAudioPath || "";
+    editorVoiceAudioVoiceId = updatedExercise.voiceAudioVoiceId || "";
+    editorVoiceAudioVoiceSettings = updatedExercise.voiceAudioVoiceSettings || null;
+    editorVoiceAudioTextHash = updatedExercise.voiceAudioTextHash || "";
+    editorVoiceAudioUpdatedAt = updatedExercise.voiceAudioUpdatedAt || "";
+    if (editorVoicePreview && editorVoiceAudioUrl) {
+      editorVoicePreview.src = resolveAppUrl(editorVoiceAudioUrl);
+    }
+  }
+
+  return updatedExercise;
+}
+
+async function prepareDemoAudioForExercise(exercise, requestSettings) {
+  const previewText = getExercisePreviewTextForExercise(exercise);
+  if (!previewText) return { exercise, changed: false };
+
+  const chunks = getExercisePreviewChunks(exercise, previewText);
+  if (!chunks.length) return { exercise, changed: false };
+
+  if (chunks.length <= 1) {
+    if (isStoredDemoAudioCurrent(exercise, previewText, requestSettings)) {
+      return { exercise, changed: false };
+    }
+
+    editorVoiceState.textContent = "Vorführ-Audio wird erstellt und gespeichert...";
+    const storedDemo = await createStoredVoiceAudio(previewText, `${exercise.name} Vorführung`, requestSettings);
+    return {
+      changed: true,
+      exercise: hydrateEditorExercise({
+        ...exercise,
+        demoAudioUrl: storedDemo.url,
+        demoAudioPath: storedDemo.path,
+        demoVoiceId: storedDemo.voiceId,
+        demoVoiceSettings: storedDemo.voiceSettings,
+        demoTextHash: storedDemo.textHash,
+        demoSpeed: storedDemo.speed,
+        demoCreatedAt: new Date().toISOString(),
+        demoAudioSegments: [],
+      }),
+    };
+  }
+
+  if (isStoredDemoAudioSegmentsCurrent(exercise, previewText, chunks, requestSettings)) {
+    return { exercise, changed: false };
+  }
+
+  const segments = [];
+  for (let index = 0; index < chunks.length; index += 1) {
+    editorVoiceState.textContent = `Vorführ-Audio wird erstellt: ${index + 1}/${chunks.length}`;
+    const storedAudio = await createStoredVoiceAudio(
+      chunks[index],
+      `${exercise.name} Vorführung ${index + 1}`,
+      requestSettings,
+    );
+    segments.push({
+      index,
+      url: storedAudio.url,
+      path: storedAudio.path,
+      voiceId: storedAudio.voiceId,
+      voiceSettings: storedAudio.voiceSettings,
+      textHash: storedAudio.textHash,
+      speed: storedAudio.speed,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  return {
+    changed: true,
+    exercise: hydrateEditorExercise({
+      ...exercise,
+      demoAudioSegments: segments,
+      demoSegmentsCreatedAt: new Date().toISOString(),
+    }),
+  };
+}
+
+async function prepareDialogAudioForExercise(exercise, requestSettings) {
+  const turns = getExerciseDialogTurns(exercise);
+  const systemTurns = turns.filter((turn) => turn.role !== "patient" && turn.text);
+  if (!systemTurns.length) return { exercise, changed: false };
+
+  let changed = false;
+  let systemIndex = 0;
+  const updatedTurns = [];
+
+  for (const turn of turns) {
+    if (turn.role === "patient" || !turn.text) {
+      updatedTurns.push(normalizeDialogTurn(turn));
+      continue;
+    }
+
+    systemIndex += 1;
+    if (isDialogTurnAudioCurrent(turn, "", requestSettings)) {
+      updatedTurns.push(normalizeDialogTurn(turn));
+      continue;
+    }
+
+    editorVoiceState.textContent = `Dialog-Audio wird erstellt: ${systemIndex}/${systemTurns.length}`;
+    const storedAudio = await createStoredVoiceAudio(
+      turn.text,
+      `${exercise.name} Dialog ${systemIndex}`,
+      requestSettings,
+    );
+    changed = true;
+    updatedTurns.push({
+      ...normalizeDialogTurn(turn),
+      audioUrl: storedAudio.url,
+      audioPath: storedAudio.path,
+      audioVoiceId: storedAudio.voiceId,
+      audioVoiceSettings: storedAudio.voiceSettings,
+      audioTextHash: storedAudio.textHash,
+      audioSpeed: storedAudio.speed,
+      audioUpdatedAt: new Date().toISOString(),
+    });
+  }
+
+  if (!changed) return { exercise, changed: false };
+
+  return {
+    changed: true,
+    exercise: hydrateEditorExercise({
+      ...exercise,
+      dialogTurns: updatedTurns,
+      content: serializeDialogTurns(updatedTurns, getDialogSystemSpeakerLabel(exercise)),
+      script: serializeDialogTurns(updatedTurns, getDialogSystemSpeakerLabel(exercise)),
+      dialogAudioUpdatedAt: new Date().toISOString(),
+    }),
+  };
 }
 
 async function getExercisePreviewAudio(text) {
@@ -4408,7 +4581,7 @@ function buildEditorPreviewTimeline(exercise = buildEditorExerciseFromForm()) {
 function startEditorKaraokeTest() {
   const exercise = buildEditorExerciseFromForm();
 
-  if (!isTextLikeMode(exercise.mode)) {
+  if (!supportsEditorKaraokeTempoTest(exercise.mode)) {
     editorVoiceState.textContent = "Der Tempo-Test ist für Karaoke-Text gedacht.";
     return;
   }
@@ -4423,6 +4596,10 @@ function startEditorKaraokeTest() {
   testEditorKaraokeButton.textContent = "Test stoppen";
   editorVoiceState.textContent = `Karaoke-Test läuft: ${exercise.timing.label}.`;
   runEditorKaraokeFrame(performance.now(), exercise);
+}
+
+function supportsEditorKaraokeTempoTest(mode) {
+  return isTextLikeMode(mode) || mode === "sentences" || mode === "dialog";
 }
 
 function runEditorKaraokeFrame(startTime, exercise) {
@@ -4609,12 +4786,27 @@ async function generateDialogVoiceAudio(options = {}) {
   }
 }
 
-function saveEditorExercise() {
+async function saveEditorExercise() {
   const exercise = buildEditorExerciseFromForm();
-  return saveEditorExerciseObject(exercise);
+  saveEditorExerciseButton.disabled = true;
+  saveEditorExerciseButton.textContent = "Speichern...";
+  editorVoiceState.textContent = "Übung wird vorbereitet...";
+
+  try {
+    const exerciseWithAudio = await prepareExerciseAudioForEditorSave(exercise);
+    await saveEditorExerciseObject(exerciseWithAudio);
+    applyEditorExerciseToForm(exerciseWithAudio);
+    editorVoiceState.textContent = "Übung mit Audio in Firebase gespeichert.";
+  } catch (error) {
+    editorVoiceState.textContent =
+      error?.message || "Audio konnte nicht erstellt werden. Übung wird lokal gespeichert.";
+    await saveEditorExerciseObject(exercise);
+  } finally {
+    saveEditorExerciseButton.disabled = false;
+  }
 }
 
-async function saveEditorExerciseObject(exercise) {
+async function saveEditorExerciseObject(exercise, options = {}) {
   saveRecordingKaraokeSpeedForExerciseName(exercise.name, exercise.speed);
   savedEditorExercises = upsertEditorExercise(savedEditorExercises, exercise);
   savedEditorExercise = exercise;
@@ -4625,6 +4817,7 @@ async function saveEditorExerciseObject(exercise) {
     cloudSaved = false;
     firebaseState.textContent = "Übung lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
   });
+  if (options.refreshUi === false) return;
   renderSavedEditorExercises();
   renderPlaybackRecordingAccess(getPatientRecordings(), currentMetadata?.id || null);
   editorSavedExercises.value = exercise.name;
@@ -6333,20 +6526,23 @@ function drawFrequencyEqualizerTimeline(canvas, pitchValues, strengthValues = []
 
 function updateThreeLineKaraokeDisplay(overlay, timeline, activeIndex) {
   const lines = getThreeLineKaraokeLabels(timeline, activeIndex);
+  const lineIndexes = getThreeLineKaraokeIndexes(timeline, activeIndex);
   overlay.classList.toggle("is-context-dense", Object.values(lines).some((line) => line.length > 18));
   overlay.classList.toggle("is-dialog-mode", timeline.some((item) => item.isDialog));
   overlay.classList.toggle("is-text-passage-mode", timeline.some((item) => item.isTextPassage));
   overlay.classList.toggle("is-forward-only", !timeline.some((item) => item.isSentence));
 
   [
-    [".karaoke-line-before", lines.before],
-    [".karaoke-line-current", lines.current],
-    [".karaoke-line-after", lines.after],
-  ].forEach(([selector, text]) => {
+    [".karaoke-line-before", lines.before, lineIndexes.before],
+    [".karaoke-line-current", lines.current, lineIndexes.current],
+    [".karaoke-line-after", lines.after, lineIndexes.after],
+  ].forEach(([selector, text, itemIndex]) => {
     const line = overlay.querySelector(selector);
     if (!line) return;
     updateAnimatedKaraokeLine(line, text, timeline.some((item) => item.isDialog));
     line.classList.toggle("is-empty", !text);
+    line.classList.toggle("is-system-turn", Boolean(timeline[itemIndex]?.isSystemTurn));
+    line.classList.toggle("is-patient-turn", Boolean(timeline[itemIndex]?.isPatientTurn));
   });
 }
 
@@ -6388,6 +6584,21 @@ function renderKaraokeLineContent(line, text, isDialog = false) {
 }
 
 function getThreeLineKaraokeLabels(timeline, activeIndex) {
+  const indexes = getThreeLineKaraokeIndexes(timeline, activeIndex);
+  return {
+    before: indexes.beforeGroup
+      ? getSpokenGroupLabel(indexes.beforeGroup)
+      : getTimelineLabelAt(timeline, indexes.before),
+    current: indexes.currentGroup
+      ? getSpokenGroupLabel(indexes.currentGroup)
+      : getTimelineLabelAt(timeline, indexes.current),
+    after: indexes.afterGroup
+      ? getSpokenGroupLabel(indexes.afterGroup)
+      : getTimelineLabelAt(timeline, indexes.after),
+  };
+}
+
+function getThreeLineKaraokeIndexes(timeline, activeIndex) {
   if (!timeline.length) return { before: "", current: "", after: "" };
 
   const boundedIndex = Math.max(0, Math.min(activeIndex, timeline.length - 1));
@@ -6398,9 +6609,9 @@ function getThreeLineKaraokeLabels(timeline, activeIndex) {
     const nextIndex = getNextSpokenIndex(timeline, currentIndex);
     const followingIndex = nextIndex == null ? null : getNextSpokenIndex(timeline, nextIndex);
     return {
-      before: getTimelineLabelAt(timeline, currentIndex),
-      current: getTimelineLabelAt(timeline, nextIndex),
-      after: getTimelineLabelAt(timeline, followingIndex),
+      before: currentIndex,
+      current: nextIndex,
+      after: followingIndex,
     };
   }
 
@@ -6409,9 +6620,9 @@ function getThreeLineKaraokeLabels(timeline, activeIndex) {
       ? getPreviousSpokenIndex(timeline, boundedIndex) ?? getNextSpokenIndex(timeline, boundedIndex) ?? boundedIndex
       : boundedIndex;
     return {
-      before: getTimelineLabelAt(timeline, getPreviousSpokenIndex(timeline, currentIndex)),
-      current: getTimelineLabelAt(timeline, currentIndex),
-      after: getUpcomingKaraokeLabel(timeline, currentIndex, 2),
+      before: getPreviousSpokenIndex(timeline, currentIndex),
+      current: currentIndex,
+      after: getNextSpokenIndex(timeline, currentIndex),
     };
   }
 
@@ -6430,9 +6641,12 @@ function getThreeLineKaraokeLabels(timeline, activeIndex) {
   );
 
   return {
-    before: getSpokenGroupLabel(lineGroups[activeGroupIndex]),
-    current: getSpokenGroupLabel(lineGroups[activeGroupIndex + 1]),
-    after: getSpokenGroupLabel(lineGroups[activeGroupIndex + 2]),
+    before: lineGroups[activeGroupIndex]?.[0]?.index,
+    current: lineGroups[activeGroupIndex + 1]?.[0]?.index,
+    after: lineGroups[activeGroupIndex + 2]?.[0]?.index,
+    beforeGroup: lineGroups[activeGroupIndex],
+    currentGroup: lineGroups[activeGroupIndex + 1],
+    afterGroup: lineGroups[activeGroupIndex + 2],
   };
 }
 

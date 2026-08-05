@@ -575,7 +575,10 @@ textarea {
   min-height: 48px;
 }
 
-.exercise-editor.text-mode .editor-karaoke-test {
+.exercise-editor.text-mode .editor-karaoke-test,
+.exercise-editor.long-text-mode .editor-karaoke-test,
+.exercise-editor.sentence-mode .editor-karaoke-test,
+.exercise-editor.dialog-mode .editor-karaoke-test {
   display: block;
 }
 
@@ -1139,6 +1142,14 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview) .c
   opacity: 1;
   transform: translateY(0) translateZ(34px) rotateX(0deg) scale(1);
   text-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+.karaoke-line.is-system-turn {
+  color: #38c172;
+}
+
+.karaoke-line.is-patient-turn {
+  color: #f6b44b;
 }
 
 .karaoke-line-after {

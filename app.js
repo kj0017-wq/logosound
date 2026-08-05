@@ -31,6 +31,9 @@ const permissionState = document.querySelector("#permissionState");
 const patientName = document.querySelector("#patientName");
 const savePatientButton = document.querySelector("#savePatientButton");
 const patientSuggestions = document.querySelector("#patientSuggestions");
+const patientManagerName = document.querySelector("#patientManagerName");
+const patientManagerSaveButton = document.querySelector("#patientManagerSaveButton");
+const patientManagerList = document.querySelector("#patientManagerList");
 const recordingModeFilter = document.querySelector("#recordingModeFilter");
 const exerciseName = document.querySelector("#exerciseName");
 const recordingExerciseShortcuts = document.querySelector("#recordingExerciseShortcuts");
@@ -766,6 +769,14 @@ savePatientButton.addEventListener("click", async () => {
 
 patientName.addEventListener("change", async () => {
   await selectPatient(patientName.value);
+});
+
+patientManagerSaveButton?.addEventListener("click", async () => {
+  await selectPatient(patientManagerName?.value || patientName.value);
+});
+
+patientManagerName?.addEventListener("change", async () => {
+  await selectPatient(patientManagerName.value);
 });
 
 exerciseName.addEventListener("change", () => {
@@ -9912,6 +9923,7 @@ async function resetCurrentPatientEvaluationData() {
 async function selectPatient(name, options = {}) {
   const cleanedName = name.trim() || "Ohne Name";
   patientName.value = cleanedName;
+  if (patientManagerName) patientManagerName.value = cleanedName;
   localStorage.setItem(SELECTED_PATIENT_KEY, cleanedName);
   await setActiveCloudPatient(cleanedName).catch(() => {});
   const profile = await ensurePatientProfile(cleanedName).catch(() => null);
@@ -9922,6 +9934,7 @@ async function selectPatient(name, options = {}) {
     renderEditorDialogList();
     renderEditorPreview(buildEditorExerciseFromForm());
   }
+  renderPatientManagementList();
   await refreshRecordings();
   message.textContent = `Patient ausgewählt: ${cleanedName}`;
 }
@@ -9945,8 +9958,36 @@ function renderPatientOptions(recordings) {
     option.value = name;
     patientSuggestions.append(option);
   });
+  if (patientManagerName) patientManagerName.value = getCurrentPatientName();
+  renderPatientManagementList([...names].sort((a, b) => a.localeCompare(b, "de")));
   renderEditorPatientScopeOptions();
   renderRecordingExerciseOptions();
+}
+
+function renderPatientManagementList(names = getKnownPatientNames()) {
+  if (!patientManagerList) return;
+
+  patientManagerList.innerHTML = "";
+  const selectedPatient = getCurrentPatientName();
+  const visibleNames = names.length ? names : [selectedPatient];
+
+  visibleNames.forEach((name) => {
+    const recordingCount = allRecordings.filter(
+      (recording) => (recording.patientName || "Demo Patient") === name,
+    ).length;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "patient-manager-item";
+    button.classList.toggle(
+      "is-active",
+      normalizeEditorExerciseName(name) === normalizeEditorExerciseName(selectedPatient),
+    );
+    button.innerHTML = `<span>${name}</span><small>${recordingCount} Aufnahme${recordingCount === 1 ? "" : "n"}</small>`;
+    button.addEventListener("click", async () => {
+      await selectPatient(name);
+    });
+    patientManagerList.append(button);
+  });
 }
 
 function getKnownPatientNames() {
@@ -11030,6 +11071,7 @@ function updateTopBarTitle(viewName) {
     playback: "Playback",
     history: "Auswertung",
     stats: "Analyse",
+    patients: "Patienten",
     settings: "Einstellungen",
     help: "Hilfe",
   };

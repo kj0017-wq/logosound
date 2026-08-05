@@ -1566,6 +1566,10 @@ h2 {
   order: 35;
 }
 
+.patients-panel {
+  order: 34;
+}
+
 .help-panel {
   order: 36;
 }
@@ -1586,6 +1590,44 @@ h2 {
 
 .patient-settings-group .patient-row {
   margin-top: 4px;
+}
+
+.patient-manager-list {
+  display: grid;
+  gap: 8px;
+}
+
+.patient-manager-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--ink);
+  text-align: left;
+}
+
+.patient-manager-item.is-active {
+  border-color: rgba(15, 139, 141, 0.55);
+  background: #dff5f6;
+  color: var(--accent-strong);
+}
+
+.patient-manager-item span {
+  overflow: hidden;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.patient-manager-item small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .compact-action {

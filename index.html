@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="LogoSound" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="canonical" href="https://logosound-19293.web.app/" />
-    <link rel="manifest" href="/manifest-20260801-amp230.webmanifest" />
+    <link rel="manifest" href="/manifest-20260801-amp231.webmanifest" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="shortcut icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260801-amp230" />
+    <link rel="stylesheet" href="styles.css?v=20260801-amp231" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp230</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp231</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -50,6 +50,7 @@
         <button type="button" data-menu-view="playback">Playback</button>
         <button type="button" data-menu-view="history">Auswertung</button>
         <button type="button" data-menu-view="stats">Analyse</button>
+        <button type="button" data-menu-view="patients">Patientenverwaltung</button>
         <button type="button" data-menu-view="settings">Einstellungen</button>
         <button type="button" data-menu-view="help">Hilfe</button>
         <div class="menu-share-card" aria-label="QR-Code zum Weitergeben der App">
@@ -761,6 +762,29 @@
         <p id="settingsState" class="cloud-state">Einstellungen lokal gespeichert.</p>
       </section>
 
+      <section class="patients-panel app-section" data-view="patients" aria-label="Patientenverwaltung">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Patientenverwaltung</p>
+            <h2>Patient anlegen oder wechseln</h2>
+          </div>
+        </div>
+
+        <div class="settings-group patient-settings-group">
+          <label class="field-label" for="patientManagerName">Name</label>
+          <div class="patient-row">
+            <input id="patientManagerName" type="text" value="Demo Patient" list="patientSuggestions" autocomplete="off" aria-label="Patientenname verwalten" />
+            <button id="patientManagerSaveButton" class="secondary-action compact-action" type="button">Speichern</button>
+          </div>
+          <p class="field-help">Speichern legt den Patienten an und macht ihn sofort aktiv. Messwerte werden ab dann diesem Patienten zugeordnet.</p>
+        </div>
+
+        <div class="settings-group">
+          <p class="eyebrow">Vorhandene Patienten</p>
+          <div id="patientManagerList" class="patient-manager-list"></div>
+        </div>
+      </section>
+
       <section class="help-panel app-section" data-view="help" aria-label="Hilfe und Erklärtexte">
         <div class="section-header">
           <div>
@@ -807,7 +831,7 @@
       </nav>
     </main>
 
-    <script type="module" src="app.js?v=20260801-amp230"></script>
+    <script type="module" src="app.js?v=20260801-amp231"></script>
   </body>
 </html>
 

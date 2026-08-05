@@ -459,6 +459,8 @@ let sentenceHasSpeechSinceAdvance = false;
 let sentenceStopScheduled = false;
 let sentencePeakVolumeSinceAdvance = 0;
 let sentenceActiveStartedAt = 0;
+let recordingKaraokeEvents = [];
+let activeRecordingKaraokeEvent = null;
 let dialogVoiceInProgress = false;
 let dialogVoiceTurnIndex = -1;
 let dialogAdvanceLock = false;
@@ -2247,6 +2249,8 @@ async function startRecording() {
   analyserRestartInProgress = false;
   stopDialogVoiceMeter();
   activeKaraokeIndex = 0;
+  recordingKaraokeEvents = [];
+  activeRecordingKaraokeEvent = null;
   sentenceSilenceStartedAt = 0;
   sentenceHasSpeechSinceAdvance = false;
   sentenceStopScheduled = false;
@@ -2298,6 +2302,7 @@ async function startRecording() {
   mediaRecorder.start(250);
   startedAt = performance.now();
   isRecording = true;
+  startRecordingKaraokeEvent(activeKaraokeIndex);
   enterRecordingFocus();
 
   recordButton.textContent = "Übung stoppen";
@@ -2363,6 +2368,7 @@ async function finishRecording() {
   try {
     const stoppedRecorder = mediaRecorder;
     const durationSeconds = Math.max(0.1, (performance.now() - startedAt) / 1000);
+    closeRecordingKaraokeEvent(durationSeconds);
     const mimeType = stoppedRecorder?.mimeType || "video/webm";
     if (!mediaChunks.length) {
       stopComposedVideoStream();
@@ -2397,6 +2403,12 @@ async function finishRecording() {
       uebung: getExerciseLabel(),
       uebungText: getExerciseScript(),
       uebungKonfiguration: getExerciseConfiguration(),
+      karaokeEreignisse: recordingKaraokeEvents
+        .filter((event) => Number.isFinite(event.start))
+        .map((event) => ({
+          ...event,
+          end: Number.isFinite(event.end) ? event.end : Number(durationSeconds.toFixed(3)),
+        })),
       dauerSekunden: Number(durationSeconds.toFixed(1)),
       patientName: getCurrentPatientName(),
       empfindlichkeit: Number(sensitivitySlider.value),
@@ -3394,7 +3406,6 @@ function buildPlaybackDialogTimeline(turns, totalSeconds, timing = getPlaybackKa
 
   const fallbackTotal = normalizedTurns.length * 2.4;
   const targetTotal = Math.max(1, Number(totalSeconds) || fallbackTotal);
-  const fastTargetTotal = Math.max(1, targetTotal * 0.9);
   const wordSeconds = Number(timing.wordSeconds) || DEFAULT_KARAOKE_WORD_SECONDS;
   const pauseSeconds = Number(timing.pauseSeconds) || DEFAULT_KARAOKE_PAUSE_SECONDS;
   const rawDurations = normalizedTurns.map((turn) => {
@@ -3403,7 +3414,7 @@ function buildPlaybackDialogTimeline(turns, totalSeconds, timing = getPlaybackKa
     return Math.max(0.65, base * roleFactor);
   });
   const rawTotal = rawDurations.reduce((sum, value) => sum + value, 0) || fallbackTotal;
-  const scale = fastTargetTotal / rawTotal;
+  const scale = targetTotal / rawTotal;
   let cursor = 0;
 
   return buildDialogTimeline(normalizedTurns, 1, exercise).map((item, index) => {
@@ -3415,6 +3426,48 @@ function buildPlaybackDialogTimeline(turns, totalSeconds, timing = getPlaybackKa
     };
     cursor += duration;
     return nextItem;
+  });
+}
+
+function buildPlaybackDialogTimelineFromEvents(events, turns, totalSeconds, exercise = null) {
+  const normalizedEvents = (Array.isArray(events) ? events : [])
+    .map((event) => ({
+      ...event,
+      index: Number(event.index),
+      start: Number(event.start),
+      end: Number(event.end),
+      text: String(event.text || ""),
+    }))
+    .filter((event) => Number.isFinite(event.start) && event.text);
+  if (!normalizedEvents.length) return [];
+
+  const normalizedTurns = turns.map((turn) => normalizeDialogTurn(turn)).filter((turn) => turn.text);
+  const baseItems = buildDialogTimeline(normalizedTurns.length ? normalizedTurns : normalizedEvents, 1, exercise);
+  const naturalEnd = Math.max(
+    ...normalizedEvents.map((event) => Number.isFinite(event.end) && event.end > event.start ? event.end : event.start + 0.8),
+    1,
+  );
+  const targetTotal = Math.max(1, Number(totalSeconds) || naturalEnd);
+  const scale = Math.abs(naturalEnd - targetTotal) > 0.25 ? targetTotal / naturalEnd : 1;
+
+  return normalizedEvents.map((event, fallbackIndex) => {
+    const baseItem = baseItems[event.index] || baseItems[fallbackIndex] || {};
+    const start = Math.max(0, event.start * scale);
+    const endSource = Number.isFinite(event.end) && event.end > event.start ? event.end : event.start + 0.8;
+    return {
+      ...baseItem,
+      label: event.label || baseItem.label || `${event.roleLabel || event.role || ""}: ${event.text}`.trim(),
+      text: event.text || baseItem.text || "",
+      role: event.role || baseItem.role || "patient",
+      roleLabel: event.roleLabel || baseItem.roleLabel || getCurrentPatientName(),
+      isPause: false,
+      isSentence: true,
+      isDialog: true,
+      isPatientTurn: Boolean(event.isPatientTurn ?? baseItem.isPatientTurn),
+      isSystemTurn: Boolean(event.isSystemTurn ?? baseItem.isSystemTurn),
+      start,
+      end: Math.max(start + 0.25, endSource * scale),
+    };
   });
 }
 
@@ -3498,6 +3551,39 @@ function updateDialogPromptProgress(displayVolume) {
   }
 }
 
+function getRecordingElapsedSeconds(fallbackSeconds = null) {
+  if (Number.isFinite(fallbackSeconds)) return Math.max(0, fallbackSeconds);
+  if (!startedAt) return 0;
+  return Math.max(0, (performance.now() - startedAt) / 1000);
+}
+
+function startRecordingKaraokeEvent(index) {
+  const item = karaokeTimeline[index];
+  if (!item?.isDialog) return;
+
+  closeRecordingKaraokeEvent();
+  const event = {
+    index,
+    start: Number(getRecordingElapsedSeconds().toFixed(3)),
+    end: null,
+    role: item.role,
+    roleLabel: item.roleLabel,
+    text: item.text || item.label || "",
+    label: item.label || "",
+    isPatientTurn: Boolean(item.isPatientTurn),
+    isSystemTurn: Boolean(item.isSystemTurn),
+  };
+  recordingKaraokeEvents.push(event);
+  activeRecordingKaraokeEvent = event;
+}
+
+function closeRecordingKaraokeEvent(fallbackEndSeconds = null) {
+  if (!activeRecordingKaraokeEvent) return;
+  const endSeconds = getRecordingElapsedSeconds(fallbackEndSeconds);
+  activeRecordingKaraokeEvent.end = Number(Math.max(activeRecordingKaraokeEvent.start, endSeconds).toFixed(3));
+  activeRecordingKaraokeEvent = null;
+}
+
 async function playCurrentDialogSystemTurn() {
   if (dialogVoiceInProgress || dialogVoiceTurnIndex === activeKaraokeIndex || dialogAdvanceLock) return;
 
@@ -3570,6 +3656,7 @@ async function createAndStoreDialogTurnAudio(timelineIndex) {
 function advanceDialogPrompt() {
   if (dialogAdvanceLock || sentenceStopScheduled) return;
   dialogAdvanceLock = true;
+  closeRecordingKaraokeEvent();
 
   window.setTimeout(() => {
     dialogAdvanceLock = false;
@@ -3578,6 +3665,7 @@ function advanceDialogPrompt() {
   if (activeKaraokeIndex < karaokeTimeline.length - 1) {
     activeKaraokeIndex += 1;
     resetSentenceSilenceState();
+    startRecordingKaraokeEvent(activeKaraokeIndex);
     updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
     const item = karaokeTimeline[activeKaraokeIndex];
     message.textContent = item?.isPatientTurn
@@ -3586,6 +3674,7 @@ function advanceDialogPrompt() {
     return;
   }
 
+  closeRecordingKaraokeEvent();
   scheduleSentenceFinalStop();
 }
 
@@ -3644,6 +3733,7 @@ function advanceSentencePrompt() {
 
   if (activeKaraokeIndex < karaokeTimeline.length - 1) {
     activeKaraokeIndex += 1;
+    startRecordingKaraokeEvent(activeKaraokeIndex);
     updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
     message.textContent = `Nächster Satz ${activeKaraokeIndex + 1} von ${karaokeTimeline.length}.`;
     return;
@@ -7060,7 +7150,17 @@ function setupPlaybackKaraoke(metadata) {
   const playbackSentenceSeconds = sentences.length
     ? Math.max(1.4, (Number(metadata.dauerSekunden) || sentences.length * 3) / sentences.length)
     : SENTENCE_MAX_SECONDS;
-  playbackKaraokeTimeline = dialogTurns.length
+  const dialogEventTimeline =
+    dialogTurns.length && Array.isArray(metadata.karaokeEreignisse) && metadata.karaokeEreignisse.length
+      ? buildPlaybackDialogTimelineFromEvents(
+          metadata.karaokeEreignisse,
+          dialogTurns,
+          Number(metadata.dauerSekunden) || 0,
+        )
+      : [];
+  playbackKaraokeTimeline = dialogEventTimeline.length
+    ? dialogEventTimeline
+    : dialogTurns.length
     ? buildPlaybackDialogTimeline(
         dialogTurns,
         Number(metadata.dauerSekunden) || 0,

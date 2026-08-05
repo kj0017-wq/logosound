@@ -213,6 +213,9 @@ instructionAudio.crossOrigin = "anonymous";
 const DB_NAME = "logosound-local";
 const STORE_NAME = "recordings";
 const SELECTED_PATIENT_KEY = "logosound-selected-patient";
+const PATIENT_PROFILES_KEY = "logosound-patient-profiles";
+const PATIENT_PROFILES_COLLECTION = "patientProfiles";
+const ACTIVE_PATIENT_DOC = "activePatient";
 const SENSITIVITY_KEY = "logosound-sensitivity";
 const RECORDING_KARAOKE_SPEED_KEY = "logosound-recording-karaoke-speed";
 const RECORDING_KARAOKE_SPEEDS_KEY = "logosound-recording-karaoke-speeds-by-exercise";
@@ -468,6 +471,9 @@ let responsiveRefreshId;
 let cameraStartRetryId;
 let savedEditorExercise;
 let savedEditorExercises = [];
+let patientProfiles = [];
+let patientProfileSaveTimerId = 0;
+let isApplyingPatientProfile = false;
 let activeEditorExerciseName = "";
 let editorSavedListExpanded = false;
 let editingEditorSentenceIndex = -1;
@@ -663,9 +669,10 @@ async function init() {
     updateEditorForm();
     setupKaraokeText();
   });
-  loadCloudElevenLabsSettings();
-  loadCloudEqualizerSettings();
-  loadCloudNoiseCalibration();
+  await loadCloudElevenLabsSettings();
+  await loadCloudEqualizerSettings();
+  await loadCloudNoiseCalibration();
+  await loadCloudPatientProfiles();
   await refreshRecordings();
 }
 
@@ -746,12 +753,12 @@ previewExerciseButton?.addEventListener("click", async () => {
   await startExercisePreview();
 });
 
-savePatientButton.addEventListener("click", () => {
-  selectPatient(patientName.value);
+savePatientButton.addEventListener("click", async () => {
+  await selectPatient(patientName.value);
 });
 
-patientName.addEventListener("change", () => {
-  selectPatient(patientName.value);
+patientName.addEventListener("change", async () => {
+  await selectPatient(patientName.value);
 });
 
 exerciseName.addEventListener("change", () => {
@@ -7614,6 +7621,7 @@ function saveEqualizerSettingsFromControls(options = {}) {
   const settings = readEqualizerSettingsFromControls();
   localStorage.setItem(SETTINGS_EQ_KEY, JSON.stringify(settings));
   if (settingsState) settingsState.textContent = "Equalizer lokal gespeichert.";
+  queuePatientProfileSave();
   if (options.syncCloud) {
     queueCloudEqualizerSave(settings, options.immediate);
   }
@@ -7658,6 +7666,7 @@ function resetEqualizerSettings() {
   localStorage.setItem(SETTINGS_EQ_KEY, JSON.stringify(settings));
   renderEqualizerControls(settings);
   applySettingsEqualizer(settings);
+  queuePatientProfileSave({ immediate: true });
   saveCloudEqualizerSettings(settings).catch(() => {
     if (settingsState) settingsState.textContent = "Equalizer zurückgesetzt. Firebase-Speichern fehlgeschlagen.";
   });
@@ -8031,6 +8040,9 @@ function loadSelectedVoiceProfileIntoControls(key, options = {}) {
   if (!options.skipPersist) {
     localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(nextSettings));
   }
+  if (!options.skipPatientSave) {
+    queuePatientProfileSave();
+  }
 
   if (settingsVoiceSelect) settingsVoiceSelect.value = voice.key;
   if (settingsVoiceName) settingsVoiceName.value = voice.name;
@@ -8375,7 +8387,7 @@ function buildRepeatedDemoText(text, minimumWords = 78) {
   return parts.join(" ");
 }
 
-function updateSensitivitySetting(value) {
+function updateSensitivitySetting(value, options = {}) {
   const nextValue = clampSensitivity(value);
   sensitivitySlider.value = String(nextValue);
   if (settingsSensitivity) settingsSensitivity.value = String(nextValue);
@@ -8383,9 +8395,10 @@ function updateSensitivitySetting(value) {
   if (settingsSensitivityValue) settingsSensitivityValue.textContent = formatSensitivityLabel(nextValue);
   localStorage.setItem(SENSITIVITY_KEY, String(nextValue));
   rescaleCurrentAmplitudes();
+  if (!options.skipPatientSave) queuePatientProfileSave();
 }
 
-function updatePlaybackVolumeSetting(value) {
+function updatePlaybackVolumeSetting(value, options = {}) {
   const nextValue = Math.max(100, Math.min(400, Math.round(Number(value) || 200)));
   playbackVolumeSlider.value = String(nextValue);
   if (settingsPlaybackVolume) settingsPlaybackVolume.value = String(nextValue);
@@ -8394,6 +8407,7 @@ function updatePlaybackVolumeSetting(value) {
   localStorage.setItem(PLAYBACK_GAIN_KEY, String(nextValue));
   ensurePlaybackAudioBoost();
   renderSettingsControls();
+  if (!options.skipPatientSave) queuePatientProfileSave();
 }
 
 function applySavedStatisticsWaveformHeight() {
@@ -9703,15 +9717,20 @@ async function resetCurrentPatientEvaluationData() {
     : "Auswertung lokal und in Firebase zurückgesetzt.";
 }
 
-function selectPatient(name) {
+async function selectPatient(name, options = {}) {
   const cleanedName = name.trim() || "Ohne Name";
   patientName.value = cleanedName;
   localStorage.setItem(SELECTED_PATIENT_KEY, cleanedName);
+  await setActiveCloudPatient(cleanedName).catch(() => {});
+  const profile = await ensurePatientProfile(cleanedName).catch(() => null);
+  if (profile && options.applySettings !== false) {
+    applyPatientProfileSettings(profile);
+  }
   if (editorMode?.value === "dialog") {
     renderEditorDialogList();
     renderEditorPreview(buildEditorExerciseFromForm());
   }
-  refreshRecordings();
+  await refreshRecordings();
   message.textContent = `Patient ausgewählt: ${cleanedName}`;
 }
 
@@ -9723,6 +9742,9 @@ async function refreshRecordings(preferredId = null) {
 
 function renderPatientOptions(recordings) {
   const names = new Set(recordings.map((recording) => recording.patientName).filter(Boolean));
+  patientProfiles.forEach((profile) => {
+    if (profile?.name) names.add(profile.name);
+  });
   names.add(getCurrentPatientName());
 
   patientSuggestions.innerHTML = "";
@@ -9731,6 +9753,174 @@ function renderPatientOptions(recordings) {
     option.value = name;
     patientSuggestions.append(option);
   });
+}
+
+function buildPatientProfile(name = getCurrentPatientName()) {
+  const cleanedName = String(name || "").trim() || "Ohne Name";
+  return {
+    id: slugify(cleanedName),
+    name: cleanedName,
+    settings: {
+      sensitivity: clampSensitivity(sensitivitySlider.value),
+      playbackGain: Math.max(100, Math.min(400, Math.round(Number(playbackVolumeSlider.value) || 200))),
+      equalizer: getEqualizerSettings(),
+      calibrationNoiseFloor: normalizeCalibrationNoiseFloor(calibrationNoiseFloor),
+      activeVoiceKey: getElevenLabsSettings().activeVoiceKey || "",
+    },
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function upsertPatientProfile(profile) {
+  const normalizedName = normalizeEditorExerciseName(profile?.name);
+  if (!normalizedName) return;
+
+  const normalizedProfile = {
+    ...profile,
+    id: profile.id || slugify(profile.name),
+    updatedAt: profile.updatedAt || new Date().toISOString(),
+  };
+  const existingIndex = patientProfiles.findIndex(
+    (item) => normalizeEditorExerciseName(item.name) === normalizedName,
+  );
+  if (existingIndex >= 0) {
+    patientProfiles[existingIndex] = { ...patientProfiles[existingIndex], ...normalizedProfile };
+  } else {
+    patientProfiles.push(normalizedProfile);
+  }
+  patientProfiles.sort((a, b) => a.name.localeCompare(b.name, "de"));
+  localStorage.setItem(PATIENT_PROFILES_KEY, JSON.stringify(patientProfiles));
+}
+
+function findPatientProfileByName(name) {
+  const normalizedName = normalizeEditorExerciseName(name);
+  return patientProfiles.find((profile) => normalizeEditorExerciseName(profile.name) === normalizedName) || null;
+}
+
+function applyPatientProfileSettings(profile) {
+  const settings = profile?.settings || {};
+  isApplyingPatientProfile = true;
+  try {
+    if (settings.sensitivity) updateSensitivitySetting(settings.sensitivity, { skipPatientSave: true });
+    if (settings.playbackGain) updatePlaybackVolumeSetting(settings.playbackGain, { skipPatientSave: true });
+    if (settings.equalizer) {
+      const eqSettings = normalizeEqualizerSettings(settings.equalizer);
+      localStorage.setItem(SETTINGS_EQ_KEY, JSON.stringify(eqSettings));
+      renderEqualizerControls(eqSettings);
+    }
+    if (settings.calibrationNoiseFloor) {
+      calibrationNoiseFloor = normalizeCalibrationNoiseFloor(settings.calibrationNoiseFloor);
+      localStorage.setItem(CALIBRATION_NOISE_KEY, JSON.stringify(calibrationNoiseFloor));
+    }
+    if (settings.activeVoiceKey) {
+      const voiceSettings = getElevenLabsSettings();
+      if (voiceSettings.voices.some((voice) => voice.key === settings.activeVoiceKey)) {
+        loadSelectedVoiceProfileIntoControls(settings.activeVoiceKey, {
+          settings: voiceSettings,
+          silent: true,
+          skipPersist: false,
+          skipCloud: true,
+          skipPatientSave: true,
+        });
+      }
+    }
+  } finally {
+    isApplyingPatientProfile = false;
+  }
+}
+
+async function ensurePatientProfile(name = getCurrentPatientName()) {
+  const cleanedName = String(name || "").trim() || "Ohne Name";
+  const localProfile = findPatientProfileByName(cleanedName);
+  if (localProfile) {
+    saveCloudPatientProfile(localProfile).catch(() => {});
+    return localProfile;
+  }
+
+  const cloudProfile = await loadCloudPatientProfile(cleanedName).catch(() => null);
+  if (cloudProfile) {
+    upsertPatientProfile(cloudProfile);
+    return cloudProfile;
+  }
+
+  const createdProfile = buildPatientProfile(cleanedName);
+  upsertPatientProfile(createdProfile);
+  await saveCloudPatientProfile(createdProfile);
+  return createdProfile;
+}
+
+async function saveCloudPatientProfile(profile = buildPatientProfile()) {
+  const normalizedProfile = {
+    ...profile,
+    id: profile.id || slugify(profile.name),
+    updatedAt: new Date().toISOString(),
+  };
+  await setDoc(doc(firestore, PATIENT_PROFILES_COLLECTION, normalizedProfile.id), normalizedProfile, { merge: true });
+  upsertPatientProfile(normalizedProfile);
+  await setActiveCloudPatient(normalizedProfile.name).catch(() => {});
+}
+
+async function loadCloudPatientProfile(name) {
+  const snapshot = await getDoc(doc(firestore, PATIENT_PROFILES_COLLECTION, slugify(name)));
+  return snapshot.exists() ? snapshot.data() : null;
+}
+
+async function loadCloudPatientProfiles() {
+  try {
+    const snapshot = await getDocs(collection(firestore, PATIENT_PROFILES_COLLECTION));
+    patientProfiles = snapshot.docs.map((profileDoc) => profileDoc.data()).filter((profile) => profile?.name);
+    if (!patientProfiles.length) {
+      patientProfiles = JSON.parse(localStorage.getItem(PATIENT_PROFILES_KEY) || "[]") || [];
+    }
+
+    const activeSnapshot = await getDoc(doc(firestore, "settings", ACTIVE_PATIENT_DOC)).catch(() => null);
+    const cloudActiveName = activeSnapshot?.exists?.() ? activeSnapshot.data()?.name : "";
+    const localSelected = localStorage.getItem(SELECTED_PATIENT_KEY) || "";
+    const nextPatientName = localSelected || cloudActiveName || patientName.value;
+    patientName.value = nextPatientName;
+    localStorage.setItem(SELECTED_PATIENT_KEY, nextPatientName);
+
+    const activeProfile = findPatientProfileByName(nextPatientName) || (await ensurePatientProfile(nextPatientName));
+    if (activeProfile) applyPatientProfileSettings(activeProfile);
+    localStorage.setItem(PATIENT_PROFILES_KEY, JSON.stringify(patientProfiles));
+    if (settingsState) settingsState.textContent = `Patienten aus Firebase geladen: ${patientProfiles.length}.`;
+  } catch (error) {
+    try {
+      patientProfiles = JSON.parse(localStorage.getItem(PATIENT_PROFILES_KEY) || "[]") || [];
+    } catch (parseError) {
+      patientProfiles = [];
+    }
+    await ensurePatientProfile(getCurrentPatientName()).catch(() => {});
+    if (settingsState) settingsState.textContent = "Patienten lokal geladen. Firebase nicht erreichbar.";
+  }
+}
+
+async function setActiveCloudPatient(name = getCurrentPatientName()) {
+  const cleanedName = String(name || "").trim() || "Ohne Name";
+  await setDoc(doc(firestore, "settings", ACTIVE_PATIENT_DOC), {
+    name: cleanedName,
+    patientId: slugify(cleanedName),
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+function queuePatientProfileSave(options = {}) {
+  if (isApplyingPatientProfile) return;
+  window.clearTimeout(patientProfileSaveTimerId);
+  const save = () => {
+    const profile = buildPatientProfile();
+    upsertPatientProfile(profile);
+    saveCloudPatientProfile(profile).catch(() => {
+      if (settingsState) settingsState.textContent = "Patient lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
+    });
+  };
+
+  if (options.immediate) {
+    save();
+    return;
+  }
+
+  patientProfileSaveTimerId = window.setTimeout(save, 700);
 }
 
 function renderLibrary(preferredId = null) {

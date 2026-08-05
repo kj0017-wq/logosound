@@ -5944,17 +5944,26 @@ function createRecordingAudioTrack() {
 
 function getEditorContentForExercise(exercise) {
   const fallback = getDefaultEditorContent(exercise?.mode || editorMode.value);
-  if (!exercise || exercise.mode !== "text") {
+  if (!exercise) {
+    return fallback;
+  }
+
+  if (isLongTextMode(exercise.mode)) {
+    const savedPassages = Array.isArray(exercise.textPassages)
+      ? exercise.textPassages.map((passage) => String(passage || "").trim()).filter(Boolean)
+      : [];
+    if (savedPassages.length) return savedPassages.join("\n");
+
+    const rawText = exercise.rawContent || exercise.content || exercise.script || fallback;
+    return splitTextPassages(rawText).join("\n");
+  }
+
+  if (exercise.mode !== "text") {
     return exercise?.content || fallback;
   }
 
-  const savedPassages = Array.isArray(exercise.textPassages)
-    ? exercise.textPassages.map((passage) => String(passage || "").trim()).filter(Boolean)
-    : [];
-  if (savedPassages.length) return savedPassages.join("\n");
-
   const rawText = exercise.rawContent || exercise.content || exercise.script || fallback;
-  return splitTextPassages(rawText).join("\n");
+  return String(rawText || "").replace(/\s+/g, " ").trim();
 }
 
 function drawComposedVideoFrame() {
@@ -7027,10 +7036,7 @@ function setupPlaybackKaraoke(metadata) {
           .filter(Boolean)
       : [];
   const textPassages =
-    metadata.uebungKonfiguration?.typ === "long_text" ||
-    (metadata.uebungKonfiguration?.typ === "text" &&
-      Array.isArray(metadata.uebungKonfiguration.textAbschnitte) &&
-      metadata.uebungKonfiguration.textAbschnitte.length)
+    metadata.uebungKonfiguration?.typ === "long_text"
       ? (Array.isArray(metadata.uebungKonfiguration.textAbschnitte) &&
           metadata.uebungKonfiguration.textAbschnitte.length
           ? metadata.uebungKonfiguration.textAbschnitte

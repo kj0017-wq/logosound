@@ -52,6 +52,8 @@ const editorSentenceList = document.querySelector("#editorSentenceList");
 const editorDialogBuilder = document.querySelector("#editorDialogBuilder");
 const editorDialogList = document.querySelector("#editorDialogList");
 const addEditorDialogTurnButton = document.querySelector("#addEditorDialogTurnButton");
+const editorVoiceSelect = document.querySelector("#editorVoiceSelect");
+const editorVoiceSelectHint = document.querySelector("#editorVoiceSelectHint");
 const editorVoiceInstruction = document.querySelector("#editorVoiceInstruction");
 const suggestVoiceButton = document.querySelector("#suggestVoiceButton");
 const generateVoiceAudioButton = document.querySelector("#generateVoiceAudioButton");
@@ -770,13 +772,20 @@ recordingModeFilter?.addEventListener("change", () => {
     : "Alle Funktionsarten sichtbar.";
 });
 
-[editorExerciseName, editorMode, editorContent, editorVoiceInstruction, editorUseRepeats, editorRepeats, editorSpeed].forEach((input) => {
-  input.addEventListener("input", () => {
+[editorExerciseName, editorMode, editorContent, editorVoiceInstruction, editorUseRepeats, editorRepeats, editorSpeed, editorVoiceSelect].forEach((input) => {
+  input?.addEventListener("input", () => {
+    if (input === editorVoiceSelect) handleEditorVoiceSelectionChange();
     saveEditorDraft();
     updateEditorForm();
     if (input === editorContent) renderEditorSentenceList();
     if (exerciseName.value === "custom-editor") setupKaraokeText();
   });
+});
+
+editorVoiceSelect?.addEventListener("change", () => {
+  handleEditorVoiceSelectionChange();
+  saveEditorDraft();
+  updateEditorForm();
 });
 
 editorMode.addEventListener("change", () => {
@@ -1251,7 +1260,8 @@ async function getCurrentInstructionAudio(exercise, instruction) {
   if (isStandardEditorExerciseName(exercise?.name)) return "";
   if (!exercise?.name) return "";
 
-  const storedAudio = await createStoredVoiceAudio(instruction, `${exercise.name} Intro`).catch(() => null);
+  const requestSettings = getExerciseVoiceRequestSettings(exercise);
+  const storedAudio = await createStoredVoiceAudio(instruction, `${exercise.name} Intro`, requestSettings).catch(() => null);
   if (!storedAudio?.url) return "";
 
   const updatedExercise = hydrateEditorExercise({
@@ -1281,7 +1291,7 @@ function isStandardEditorExerciseName(name) {
 function isInstructionVoiceAudioCurrent(exercise, instruction) {
   if (!exercise?.voiceAudioUrl && !exercise?.voiceAudioDataUrl) return false;
   if (!exercise.voiceAudioVoiceId || !exercise.voiceAudioTextHash) return false;
-  const requestSettings = getElevenLabsRequestSettings();
+  const requestSettings = getExerciseVoiceRequestSettings(exercise);
   return (
     exercise.voiceAudioVoiceId === requestSettings.voiceId &&
     JSON.stringify(exercise.voiceAudioVoiceSettings || {}) === JSON.stringify(requestSettings.voiceSettings || {}) &&
@@ -1311,8 +1321,7 @@ async function createTemporaryVoiceAudio(text) {
   }
 }
 
-async function createStoredVoiceAudio(text, exerciseLabel) {
-  const requestSettings = getElevenLabsRequestSettings();
+async function createStoredVoiceAudio(text, exerciseLabel, requestSettings = getElevenLabsRequestSettings()) {
   const response = await fetch(getApiUrl("/api/voice"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1385,11 +1394,12 @@ function getExercisePreviewText() {
 
 async function getExercisePreviewAudio(text) {
   const activeExercise = getActiveRecordingExercise();
-  if (isStoredDemoAudioCurrent(activeExercise, text)) {
+  const requestSettings = getExerciseVoiceRequestSettings(activeExercise);
+  if (isStoredDemoAudioCurrent(activeExercise, text, requestSettings)) {
     return getGlobalVoiceAudioUrl(activeExercise.demoAudioUrl, activeExercise.demoAudioPath);
   }
 
-  const storedAudio = await createStoredVoiceAudio(text, `${getExerciseLabel()} Vorführung`);
+  const storedAudio = await createStoredVoiceAudio(text, `${getExerciseLabel()} Vorführung`, requestSettings);
   if (activeExercise?.name) {
     await saveDemoAudioForActiveExercise(storedAudio);
   }
@@ -1402,14 +1412,15 @@ async function getExercisePreviewAudioSegments(text) {
     return getDialogPreviewAudioSegments(activeExercise);
   }
 
+  const requestSettings = getExerciseVoiceRequestSettings(activeExercise);
   const chunks = getExercisePreviewChunks(activeExercise, text);
 
-  if (isStoredDemoAudioCurrent(activeExercise, text) && chunks.length <= 1) {
+  if (isStoredDemoAudioCurrent(activeExercise, text, requestSettings) && chunks.length <= 1) {
     return [getGlobalVoiceAudioUrl(activeExercise.demoAudioUrl, activeExercise.demoAudioPath)];
   }
   if (chunks.length <= 1) return [await getExercisePreviewAudio(text)];
 
-  if (isStoredDemoAudioSegmentsCurrent(activeExercise, text, chunks)) {
+  if (isStoredDemoAudioSegmentsCurrent(activeExercise, text, chunks, requestSettings)) {
     return activeExercise.demoAudioSegments.map((segment) =>
       getGlobalVoiceAudioUrl(segment.url, segment.path),
     );
@@ -1420,7 +1431,7 @@ async function getExercisePreviewAudioSegments(text) {
   for (let index = 0; index < chunks.length; index += 1) {
     if (!isPreviewingExercise) break;
     previewExerciseButton.textContent = `Vorführung lädt ${index + 1}/${chunks.length}`;
-    const storedAudio = await createStoredVoiceAudio(chunks[index], `${getExerciseLabel()} Vorführung ${index + 1}`);
+    const storedAudio = await createStoredVoiceAudio(chunks[index], `${getExerciseLabel()} Vorführung ${index + 1}`, requestSettings);
     if (!storedAudio?.url) throw new Error(`Vorführung-Teil ${index + 1} konnte nicht erzeugt werden.`);
     segments.push({
       index,
@@ -1445,6 +1456,7 @@ async function getDialogPreviewAudioSegments(exercise) {
   const systemTurns = turns.filter((turn) => turn.role !== "patient" && turn.text);
   if (!systemTurns.length) return [];
 
+  const requestSettings = getExerciseVoiceRequestSettings(exercise);
   const updatedTurns = [];
   const urls = [];
   let systemIndex = 0;
@@ -1457,14 +1469,14 @@ async function getDialogPreviewAudioSegments(exercise) {
     }
 
     systemIndex += 1;
-    if (isDialogTurnAudioCurrent(turn)) {
+    if (isDialogTurnAudioCurrent(turn, "", requestSettings)) {
       updatedTurns.push(turn);
       urls.push(getGlobalVoiceAudioUrl(turn.audioUrl, turn.audioPath));
       continue;
     }
 
     previewExerciseButton.textContent = `Dialog-Audio lädt ${systemIndex}/${systemTurns.length}`;
-    const storedAudio = await createStoredVoiceAudio(turn.text, `${exercise.name} Dialog ${systemIndex}`);
+    const storedAudio = await createStoredVoiceAudio(turn.text, `${exercise.name} Dialog ${systemIndex}`, requestSettings);
     const updatedTurn = {
       ...normalizeDialogTurn(turn),
       audioUrl: storedAudio.url,
@@ -1494,9 +1506,8 @@ async function getDialogPreviewAudioSegments(exercise) {
   return urls;
 }
 
-function isStoredDemoAudioCurrent(exercise, text) {
+function isStoredDemoAudioCurrent(exercise, text, requestSettings = getExerciseVoiceRequestSettings(exercise)) {
   if (!exercise?.demoAudioUrl && !exercise?.demoAudioPath) return false;
-  const requestSettings = getElevenLabsRequestSettings();
   return (
     exercise.demoVoiceId === requestSettings.voiceId &&
     JSON.stringify(exercise.demoVoiceSettings || {}) === JSON.stringify(requestSettings.voiceSettings || {}) &&
@@ -1504,9 +1515,8 @@ function isStoredDemoAudioCurrent(exercise, text) {
   );
 }
 
-function isStoredDemoAudioSegmentsCurrent(exercise, text, chunks = splitVoicePreviewText(text)) {
+function isStoredDemoAudioSegmentsCurrent(exercise, text, chunks = splitVoicePreviewText(text), requestSettings = getExerciseVoiceRequestSettings(exercise)) {
   if (!exercise?.demoAudioSegments?.length) return false;
-  const requestSettings = getElevenLabsRequestSettings();
   if (exercise.demoAudioSegments.length !== chunks.length) return false;
 
   return chunks.every((chunk, index) => {
@@ -2963,7 +2973,7 @@ function renderEditorDialogList() {
     badge.className = "editor-dialog-role-badge";
     badge.textContent = turn.role === "patient"
       ? "Sprecher"
-      : isDialogTurnAudioCurrent(turn)
+      : isDialogTurnAudioCurrent(turn, "", getEditorVoiceRequestSettings())
         ? "KI Audio"
         : "KI neu";
 
@@ -3012,6 +3022,7 @@ function getExerciseDialogTurns(exercise = getActiveRecordingExercise()) {
 
 function hydrateDialogTurnsWithAudio(turns, baseExercise) {
   const previousTurns = Array.isArray(baseExercise?.dialogTurns) ? baseExercise.dialogTurns : [];
+  const requestSettings = baseExercise ? getExerciseVoiceRequestSettings(baseExercise) : getElevenLabsRequestSettings();
   return turns.map((turn, index) => {
     const normalizedTurn = normalizeDialogTurn(turn);
     if (normalizedTurn.role === "patient") return normalizedTurn;
@@ -3024,10 +3035,10 @@ function hydrateDialogTurnsWithAudio(turns, baseExercise) {
             (candidate) =>
               candidate?.role === "system" &&
               hashText(candidate?.text) === hashText(normalizedTurn.text) &&
-              isDialogTurnAudioCurrent(candidate),
+              isDialogTurnAudioCurrent(candidate, "", requestSettings),
           );
 
-    if (!matchingPrevious || !isDialogTurnAudioCurrent(matchingPrevious, normalizedTurn.text)) {
+    if (!matchingPrevious || !isDialogTurnAudioCurrent(matchingPrevious, normalizedTurn.text, requestSettings)) {
       return normalizedTurn;
     }
 
@@ -3044,9 +3055,8 @@ function hydrateDialogTurnsWithAudio(turns, baseExercise) {
   });
 }
 
-function isDialogTurnAudioCurrent(turn, textOverride = "") {
+function isDialogTurnAudioCurrent(turn, textOverride = "", requestSettings = getElevenLabsRequestSettings()) {
   if (!turn?.audioUrl && !turn?.audioPath) return false;
-  const requestSettings = getElevenLabsRequestSettings();
   return (
     turn.audioVoiceId === requestSettings.voiceId &&
     JSON.stringify(turn.audioVoiceSettings || {}) === JSON.stringify(requestSettings.voiceSettings || {}) &&
@@ -3292,9 +3302,11 @@ async function createAndStoreDialogTurnAudio(timelineIndex) {
   const exercise = getActiveRecordingExercise();
   if (exercise?.mode !== "dialog") return "";
 
+  const requestSettings = getExerciseVoiceRequestSettings(exercise);
   const storedAudio = await createStoredVoiceAudio(
     currentItem.text,
     `${exercise.name || getExerciseLabel()} Dialog ${timelineIndex + 1}`,
+    requestSettings,
   ).catch(() => null);
   if (!storedAudio?.url) return "";
 
@@ -4027,6 +4039,9 @@ function buildEditorExerciseFromForm() {
         : getDefaultEditorContent(mode);
   const voiceInstruction =
     editorVoiceInstruction.value.trim() || getDefaultEditorVoiceInstruction(mode);
+  const editorVoiceSettings = getElevenLabsSettings();
+  const editorVoice = getEditorSelectedVoice(editorVoiceSettings);
+  const editorVoiceRequestSettings = getVoiceRequestSettingsForVoice(editorVoice, editorVoiceSettings);
   const useRepeats = editorUseRepeats.checked && supportsEditorRepeats(mode);
   const repeats = useRepeats ? getEditorRepeats() : 1;
   const script = useRepeats ? buildRepeatedScript(content, repeats) : content;
@@ -4051,6 +4066,11 @@ function buildEditorExerciseFromForm() {
     sentences,
     dialogTurns,
     voiceInstruction,
+    voiceProfileKey: editorVoice?.key || "",
+    voiceProfileName: editorVoice?.name || "",
+    voiceProfileGender: editorVoice?.gender || "neutral",
+    voiceProfileVoiceId: editorVoiceRequestSettings.voiceId,
+    voiceProfileSettings: editorVoiceRequestSettings.voiceSettings,
     voiceAudioUrl: getGlobalVoiceAudioUrl(editorVoiceAudioUrl, editorVoiceAudioPath),
     voiceAudioPath: editorVoiceAudioPath,
     voiceAudioDataUrl: editorVoiceAudioDataUrl,
@@ -4207,13 +4227,14 @@ async function generateVoiceAudio() {
   editorVoiceState.textContent = "ElevenLabs-Audio wird erstellt...";
 
   try {
+    const requestSettings = getEditorVoiceRequestSettings();
     const response = await fetch(getApiUrl("/api/voice"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text,
         store: true,
-        ...getElevenLabsRequestSettings(),
+        ...requestSettings,
         exerciseName: editorExerciseName.value.trim() || "Neue Übung",
       }),
     });
@@ -4231,8 +4252,8 @@ async function generateVoiceAudio() {
     editorVoiceAudioDataUrl = "";
     editorVoiceAudioUrl = getGlobalVoiceAudioUrl(cloudVoice.downloadUrl, cloudVoice.path);
     editorVoiceAudioPath = cloudVoice.path;
-    editorVoiceAudioVoiceId = cloudVoice.voiceId || getElevenLabsRequestSettings().voiceId;
-    editorVoiceAudioVoiceSettings = cloudVoice.voiceSettings || getElevenLabsRequestSettings().voiceSettings;
+    editorVoiceAudioVoiceId = cloudVoice.voiceId || requestSettings.voiceId;
+    editorVoiceAudioVoiceSettings = cloudVoice.voiceSettings || requestSettings.voiceSettings;
     editorVoiceAudioTextHash = cloudVoice.textHash || hashText(text);
     editorVoiceAudioUpdatedAt = new Date().toISOString();
     editorVoicePreview.src = resolveAppUrl(editorVoiceAudioUrl);
@@ -4499,6 +4520,7 @@ function applyEditorModeDefaults() {
 
 async function generateDialogVoiceAudio() {
   const exercise = buildEditorExerciseFromForm();
+  const requestSettings = getEditorVoiceRequestSettings();
   const turns = Array.isArray(exercise.dialogTurns) ? exercise.dialogTurns : [];
   const systemTurns = turns.filter((turn) => turn.role !== "patient" && turn.text);
 
@@ -4523,7 +4545,7 @@ async function generateDialogVoiceAudio() {
       }
 
       systemIndex += 1;
-      if (isDialogTurnAudioCurrent(turn)) {
+      if (isDialogTurnAudioCurrent(turn, "", requestSettings)) {
         reusedCount += 1;
         updatedTurns.push(turn);
         editorVoiceState.textContent = `Dialog-Audio aktuell: ${systemIndex}/${systemTurns.length}`;
@@ -4534,6 +4556,7 @@ async function generateDialogVoiceAudio() {
       const storedAudio = await createStoredVoiceAudio(
         turn.text,
         `${exercise.name} Dialog ${systemIndex}`,
+        requestSettings,
       );
       createdCount += 1;
       updatedTurns.push({
@@ -4699,6 +4722,7 @@ function resetEditorForm(options = {}) {
   editorVoiceAudioVoiceSettings = null;
   editorVoiceAudioTextHash = "";
   editorVoiceAudioUpdatedAt = "";
+  renderEditorVoiceSelect(getElevenLabsSettings(), getElevenLabsSettings().activeVoiceKey);
   editorVoicePreview.removeAttribute("src");
   editorVoicePreview.load();
   editorVoiceState.textContent = "Voice-Audio optional.";
@@ -4949,6 +4973,12 @@ function applyEditorExerciseToForm(exercise) {
   editorContent.value = getEditorContentForExercise(exercise);
   editorVoiceInstruction.value =
     exercise.voiceInstruction || getDefaultEditorVoiceInstruction(editorMode.value);
+  const exerciseVoiceSettings = getElevenLabsSettings();
+  const exerciseVoiceKey =
+    exercise.voiceProfileKey ||
+    exerciseVoiceSettings.voices.find((voice) => voice.voiceId === exercise.voiceProfileVoiceId)?.key ||
+    "";
+  renderEditorVoiceSelect(exerciseVoiceSettings, exerciseVoiceKey);
   editorVoiceAudioDataUrl = exercise.voiceAudioDataUrl || "";
   editorVoiceAudioPath = exercise.voiceAudioPath || "";
   editorVoiceAudioUrl = getGlobalVoiceAudioUrl(exercise.voiceAudioUrl, editorVoiceAudioPath);
@@ -4984,6 +5014,7 @@ function saveEditorDraft() {
     mode: editorMode.value,
     content: editorContent.value,
     voiceInstruction: editorVoiceInstruction.value,
+    voiceProfileKey: editorVoiceSelect?.value || "",
     voiceAudioUrl: editorVoiceAudioUrl,
     voiceAudioPath: editorVoiceAudioPath,
     voiceAudioDataUrl: editorVoiceAudioDataUrl,
@@ -5173,6 +5204,7 @@ function loadEditorDraft() {
       editorMode.value = draft.mode || editorMode.value;
       editorContent.value = draft.content || editorContent.value;
       editorVoiceInstruction.value = draft.voiceInstruction || editorVoiceInstruction.value;
+      renderEditorVoiceSelect(getElevenLabsSettings(), draft.voiceProfileKey || "");
       editorVoiceAudioPath = draft.voiceAudioPath || "";
       editorVoiceAudioUrl = getGlobalVoiceAudioUrl(draft.voiceAudioUrl, editorVoiceAudioPath);
       editorVoiceAudioDataUrl = draft.voiceAudioDataUrl || "";
@@ -7067,6 +7099,59 @@ function getElevenLabsRequestSettings() {
   };
 }
 
+function getVoiceRequestSettingsForVoice(voice, settings = getElevenLabsSettings()) {
+  return {
+    voiceId: String(voice?.voiceId || settings.voiceId || "").trim() || getDefaultElevenLabsSettings().voiceId,
+    voiceSettings: {
+      stability: clampPercent(settings.stability) / 100,
+      similarity_boost: clampPercent(settings.similarity) / 100,
+      style: clampPercent(settings.style) / 100,
+      use_speaker_boost: Boolean(settings.speakerBoost),
+    },
+  };
+}
+
+function getEditorSelectedVoice(settings = getElevenLabsSettings()) {
+  const selectedKey = editorVoiceSelect?.value || "";
+  return settings.voices.find((voice) => voice.key === selectedKey) || getActiveElevenLabsVoice(settings);
+}
+
+function getEditorVoiceRequestSettings() {
+  const settings = getElevenLabsSettings();
+  const voice = getEditorSelectedVoice(settings);
+  return getVoiceRequestSettingsForVoice(voice, settings);
+}
+
+function getExerciseSelectedVoice(exercise, settings = getElevenLabsSettings()) {
+  const voiceKey = exercise?.voiceProfileKey || exercise?.voiceKey || "";
+  const voiceId = exercise?.voiceProfileVoiceId || exercise?.voiceAudioVoiceId || "";
+  return (
+    settings.voices.find((voice) => voice.key === voiceKey) ||
+    settings.voices.find((voice) => voice.voiceId === voiceId) ||
+    (voiceId
+      ? {
+          key: voiceKey || createVoiceProfileKey(exercise?.voiceProfileName || "Übungsstimme", voiceId),
+          name: exercise?.voiceProfileName || "Übungsstimme",
+          gender: exercise?.voiceProfileGender || "neutral",
+          voiceId,
+        }
+      : null) ||
+    getActiveElevenLabsVoice(settings)
+  );
+}
+
+function getExerciseVoiceRequestSettings(exercise) {
+  const settings = getElevenLabsSettings();
+  const voice = getExerciseSelectedVoice(exercise, settings);
+  if (exercise?.voiceProfileSettings) {
+    return {
+      voiceId: String(voice?.voiceId || exercise.voiceProfileVoiceId || settings.voiceId || "").trim() || getDefaultElevenLabsSettings().voiceId,
+      voiceSettings: exercise.voiceProfileSettings,
+    };
+  }
+  return getVoiceRequestSettingsForVoice(voice, settings);
+}
+
 function getElevenLabsRequestSettingsFromControls() {
   return {
     voiceId:
@@ -7112,6 +7197,7 @@ function loadSettingsControls() {
   const elevenSettings = getElevenLabsSettings();
   const chatGptSettings = getChatGptSettings();
   renderVoiceProfileSelect(elevenSettings);
+  renderEditorVoiceSelect(elevenSettings, savedEditorExercise?.voiceProfileKey || "");
   loadSelectedVoiceProfileIntoControls(elevenSettings.activeVoiceKey, { settings: elevenSettings, silent: true });
   if (settingsVoiceStability) settingsVoiceStability.value = String(clampPercent(elevenSettings.stability));
   if (settingsVoiceSimilarity) settingsVoiceSimilarity.value = String(clampPercent(elevenSettings.similarity));
@@ -7474,6 +7560,42 @@ function renderVoiceProfileSelect(settings = getElevenLabsSettings()) {
   settingsVoiceSelect.value = activeKey;
 }
 
+function renderEditorVoiceSelect(settings = getElevenLabsSettings(), preferredKey = editorVoiceSelect?.value || "") {
+  if (!editorVoiceSelect) return;
+
+  const activeKey = preferredKey && settings.voices.some((voice) => voice.key === preferredKey)
+    ? preferredKey
+    : settings.activeVoiceKey || settings.voices[0]?.key || "";
+  editorVoiceSelect.innerHTML = "";
+  settings.voices.forEach((voice) => {
+    const option = document.createElement("option");
+    option.value = voice.key;
+    option.dataset.voiceId = voice.voiceId;
+    option.textContent = formatVoiceProfileOptionLabel(voice);
+    editorVoiceSelect.append(option);
+  });
+  editorVoiceSelect.value = activeKey;
+  updateEditorVoiceSelectHint();
+}
+
+function updateEditorVoiceSelectHint() {
+  if (!editorVoiceSelectHint) return;
+  const voice = getEditorSelectedVoice();
+  const shortId = String(voice?.voiceId || "").slice(-6) || "keine ID";
+  editorVoiceSelectHint.textContent = voice
+    ? `Gespeichert für diese Übung: ${voice.name} (${getVoiceGenderLabel(voice.gender)}, ${shortId}).`
+    : "Diese Stimme wird für Voice-Begleitung, Vorführung und Dialog-Audio gespeichert.";
+}
+
+function handleEditorVoiceSelectionChange() {
+  const voice = getEditorSelectedVoice();
+  updateEditorVoiceSelectHint();
+  if (!voice) return;
+  if (editorVoiceAudioVoiceId && editorVoiceAudioVoiceId !== voice.voiceId) {
+    editorVoiceState.textContent = "Andere Übungsstimme gewählt. Audio bitte neu erstellen.";
+  }
+}
+
 function formatVoiceProfileOptionLabel(voice) {
   const shortId = String(voice.voiceId || "").slice(-6) || "ohne ID";
   return `${voice.name} · ${getVoiceGenderLabel(voice.gender)} · ${shortId}`;
@@ -7743,6 +7865,7 @@ async function saveCloudElevenLabsSettings(settings = getElevenLabsSettings(), o
   }
   localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(settingsToSave));
   renderVoiceProfileSelect(settingsToSave);
+  renderEditorVoiceSelect(settingsToSave, editorVoiceSelect?.value || settingsToSave.activeVoiceKey);
 
   if (!options.silent && settingsState) settingsState.textContent = "ElevenLabs-Stimmen in Firebase gespeichert.";
 }
@@ -7763,6 +7886,7 @@ async function loadCloudElevenLabsSettings() {
     const mergedSettings = mergeElevenLabsSettings(localSettings, cloudSettings);
     localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(mergedSettings));
     renderVoiceProfileSelect(mergedSettings);
+    renderEditorVoiceSelect(mergedSettings, savedEditorExercise?.voiceProfileKey || mergedSettings.activeVoiceKey);
     loadSelectedVoiceProfileIntoControls(mergedSettings.activeVoiceKey, {
       settings: mergedSettings,
       silent: true,

@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="LogoSound" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="canonical" href="https://logosound-19293.web.app/" />
-    <link rel="manifest" href="/manifest-20260801-amp205.webmanifest" />
+    <link rel="manifest" href="/manifest-20260801-amp206.webmanifest" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="shortcut icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260801-amp205" />
+    <link rel="stylesheet" href="styles.css?v=20260801-amp206" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp205</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp206</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -390,6 +390,9 @@
           </div>
 
           <div class="editor-section editor-section-voice">
+            <label class="field-label" for="editorVoiceSelect">Sprecher für diese Übung</label>
+            <select id="editorVoiceSelect" class="select-input compact-select"></select>
+            <p id="editorVoiceSelectHint" class="range-help">Diese Stimme wird für Voice-Begleitung, Vorführung und Dialog-Audio gespeichert.</p>
             <label class="field-label" for="editorVoiceInstruction">Voice-Begleitung</label>
             <textarea id="editorVoiceInstruction" rows="3">Bitte sprechen Sie die eingeblendete Übung ruhig und deutlich nach.</textarea>
             <div class="button-row editor-actions">
@@ -789,7 +792,7 @@
       </nav>
     </main>
 
-    <script type="module" src="app.js?v=20260801-amp205"></script>
+    <script type="module" src="app.js?v=20260801-amp206"></script>
   </body>
 </html>
 

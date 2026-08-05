@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="LogoSound" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="canonical" href="https://logosound-19293.web.app/" />
-    <link rel="manifest" href="/manifest-20260801-amp224.webmanifest" />
+    <link rel="manifest" href="/manifest-20260801-amp226.webmanifest" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="shortcut icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260801-amp224" />
+    <link rel="stylesheet" href="styles.css?v=20260801-amp226" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp224</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp226</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -685,11 +685,15 @@
               <strong id="settingsEqSummary">0 dB</strong>
             </summary>
             <div class="settings-eq-actions">
-              <span>-12 dB</span>
-              <button id="settingsEqTestButton" class="secondary-action compact-action" type="button">Testaudio</button>
-              <button id="settingsEqStopButton" class="secondary-action compact-action" type="button" disabled>Stop</button>
-              <button id="settingsEqResetButton" class="secondary-action compact-action" type="button">Reset EQ</button>
-              <span>+12 dB</span>
+              <div class="settings-eq-scale">
+                <span>-12 dB</span>
+                <span>+12 dB</span>
+              </div>
+              <div class="settings-eq-buttons">
+                <button id="settingsEqTestButton" class="secondary-action compact-action" type="button">Testaudio</button>
+                <button id="settingsEqStopButton" class="secondary-action compact-action" type="button" disabled>Stop</button>
+                <button id="settingsEqResetButton" class="secondary-action compact-action" type="button">Reset EQ</button>
+              </div>
             </div>
             <div class="settings-eq-sliders" aria-label="Equalizer-Bänder">
               <label>
@@ -797,7 +801,7 @@
       </nav>
     </main>
 
-    <script type="module" src="app.js?v=20260801-amp224"></script>
+    <script type="module" src="app.js?v=20260801-amp226"></script>
   </body>
 </html>
 

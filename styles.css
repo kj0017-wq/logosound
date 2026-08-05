@@ -1854,7 +1854,7 @@ button:disabled {
 
 .settings-collapsible-content {
   display: grid;
-  gap: 0;
+  gap: 10px;
 }
 
 .settings-calibration-actions {
@@ -1925,13 +1925,32 @@ button:disabled {
 
 .settings-eq-actions {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin: 8px 0 6px;
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 850;
+}
+
+.settings-eq-scale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-eq-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.settings-eq-buttons .secondary-action {
+  min-height: 46px;
+  padding-inline: 8px;
+}
+
+.settings-eq-buttons .secondary-action:disabled {
+  opacity: 0.55;
 }
 
 .settings-eq-actions span:last-child {

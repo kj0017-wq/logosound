@@ -4212,11 +4212,7 @@ async function suggestVoiceInstruction() {
 }
 
 async function generateVoiceAudio() {
-  if (editorMode.value === "dialog") {
-    await generateDialogVoiceAudio();
-    return;
-  }
-
+  const isDialogMode = editorMode.value === "dialog";
   const text = editorVoiceInstruction.value.trim();
   if (!text) {
     editorVoiceState.textContent = "Bitte zuerst einen Voice-Text eintragen.";
@@ -4260,7 +4256,11 @@ async function generateVoiceAudio() {
     editorVoiceState.textContent = "ElevenLabs-Audio erstellt und in Firebase gespeichert.";
     saveEditorDraft();
     await saveEditorExercise();
-    editorVoiceState.textContent = "ElevenLabs-Audio erstellt und in der Übung gespeichert.";
+    if (isDialogMode) {
+      await generateDialogVoiceAudio({ allowMissingSystemTurns: true });
+    } else {
+      editorVoiceState.textContent = "ElevenLabs-Audio erstellt und in der Übung gespeichert.";
+    }
   } catch (error) {
     editorVoiceAudioDataUrl = "";
     editorVoiceAudioUrl = "";
@@ -4518,14 +4518,16 @@ function applyEditorModeDefaults() {
   }
 }
 
-async function generateDialogVoiceAudio() {
+async function generateDialogVoiceAudio(options = {}) {
   const exercise = buildEditorExerciseFromForm();
   const requestSettings = getEditorVoiceRequestSettings();
   const turns = Array.isArray(exercise.dialogTurns) ? exercise.dialogTurns : [];
   const systemTurns = turns.filter((turn) => turn.role !== "patient" && turn.text);
 
   if (!systemTurns.length) {
-    editorVoiceState.textContent = "Bitte mindestens eine KI-Dialogzeile eintragen.";
+    editorVoiceState.textContent = options.allowMissingSystemTurns
+      ? "Voice-Begleitung gespeichert. Für Dialog-Audio bitte eine KI-Dialogzeile eintragen."
+      : "Bitte mindestens eine KI-Dialogzeile eintragen.";
     return;
   }
 

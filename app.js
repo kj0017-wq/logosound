@@ -44,6 +44,7 @@ const exerciseEditor = document.querySelector("#exerciseEditor");
 const editorModeState = document.querySelector("#editorModeState");
 const editorExerciseName = document.querySelector("#editorExerciseName");
 const editorMode = document.querySelector("#editorMode");
+const editorPatientScope = document.querySelector("#editorPatientScope");
 const editorContent = document.querySelector("#editorContent");
 const editorSentenceBuilder = document.querySelector("#editorSentenceBuilder");
 const editorSentenceInput = document.querySelector("#editorSentenceInput");
@@ -785,7 +786,7 @@ recordingModeFilter?.addEventListener("change", () => {
     : "Alle Funktionsarten sichtbar.";
 });
 
-[editorExerciseName, editorMode, editorContent, editorVoiceInstruction, editorUseRepeats, editorRepeats, editorSpeed, editorVoiceSelect].forEach((input) => {
+[editorExerciseName, editorMode, editorPatientScope, editorContent, editorVoiceInstruction, editorUseRepeats, editorRepeats, editorSpeed, editorVoiceSelect].forEach((input) => {
   input?.addEventListener("input", () => {
     if (input === editorVoiceSelect) handleEditorVoiceSelectionChange();
     if (input === editorContent && editorMode.value === "dialog") {
@@ -2430,6 +2431,7 @@ async function finishRecording() {
         })),
       dauerSekunden: Number(durationSeconds.toFixed(1)),
       patientName: getCurrentPatientName(),
+      patientId: slugify(getCurrentPatientName()),
       empfindlichkeit: Number(sensitivitySlider.value),
       durchschnittlicheLautstaerke: stats.average,
       maximaleLautstaerke: stats.maximum,
@@ -4359,6 +4361,8 @@ function hydrateEditorExercise(exercise) {
   const timing = exercise.timing || EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
   const content = exercise.content || getDefaultEditorContent(mode);
   const repeats = Math.max(1, Number(exercise.repeats || 1));
+  const assignedPatientName = String(exercise.patientName || "").trim();
+  const assignedPatientId = assignedPatientName ? slugify(assignedPatientName) : "";
   const savedDialogTurns = Array.isArray(exercise.dialogTurns)
     ? exercise.dialogTurns.map((turn) => normalizeDialogTurn(turn)).filter((turn) => turn.text)
     : [];
@@ -4391,6 +4395,9 @@ function hydrateEditorExercise(exercise) {
     mode,
     speed,
     timing,
+    patientName: assignedPatientName,
+    patientId: assignedPatientId,
+    isSharedTemplate: !assignedPatientName,
     content,
     contentLabel,
     sentences,
@@ -4447,10 +4454,14 @@ function buildEditorExerciseFromForm() {
   const repeats = useRepeats ? getEditorRepeats() : 1;
   const script = useRepeats ? buildRepeatedScript(content, repeats) : content;
   const patientTurnCount = dialogTurns.filter((turn) => turn.role === "patient").length;
+  const assignedPatientName = String(editorPatientScope?.value || "").trim();
 
   return {
     name,
     mode,
+    patientName: assignedPatientName,
+    patientId: assignedPatientName ? slugify(assignedPatientName) : "",
+    isSharedTemplate: !assignedPatientName,
     speed,
     timing,
     content,
@@ -5138,6 +5149,7 @@ function updateEditorSavedListVisibility() {
 function resetEditorForm(options = {}) {
   editorExerciseName.value = "";
   editorMode.value = options.blank ? "syllables" : "sentences";
+  renderEditorPatientScopeOptions(getCurrentPatientName());
   editorDialogTurnsState = [];
   editorContent.value = options.blank ? "" : "";
   if (editorSentenceInput) editorSentenceInput.value = "";
@@ -5307,8 +5319,11 @@ function renderRecordingExerciseOptions(preferredValue = exerciseName.value) {
 
 function getFilteredRecordingEditorExercises() {
   const selectedMode = recordingModeFilter?.value || "";
-  if (!selectedMode) return savedEditorExercises;
-  return savedEditorExercises.filter((exercise) =>
+  const patientVisibleExercises = savedEditorExercises.filter((exercise) =>
+    isEditorExerciseVisibleForCurrentPatient(exercise),
+  );
+  if (!selectedMode) return patientVisibleExercises;
+  return patientVisibleExercises.filter((exercise) =>
     normalizeEditorExerciseModeValue(exercise?.mode) === selectedMode,
   );
 }
@@ -5397,6 +5412,7 @@ function getEditorSelectValueForExerciseName(name) {
 function applyEditorExerciseToForm(exercise) {
   editorExerciseName.value = exercise.name || "Neue Übung";
   editorMode.value = exercise.mode || "syllables";
+  renderEditorPatientScopeOptions(exercise.patientName || "");
   if (editorMode.value === "dialog") {
     editorDialogTurnsState = getExerciseDialogTurns(exercise);
     editorContent.value = serializeDialogTurns(editorDialogTurnsState, getDialogSystemSpeakerLabel(exercise));
@@ -5445,6 +5461,7 @@ function saveEditorDraft() {
     name: editorExerciseName.value,
     activeExerciseName: activeEditorExerciseName,
     mode: editorMode.value,
+    patientName: editorPatientScope?.value || "",
     content: editorContent.value,
     dialogTurns: editorMode.value === "dialog" ? getEditorDialogTurns() : [],
     voiceInstruction: editorVoiceInstruction.value,
@@ -5689,6 +5706,7 @@ function loadEditorDraft() {
     } else {
       editorExerciseName.value = draft.name || editorExerciseName.value;
       editorMode.value = draft.mode || editorMode.value;
+      renderEditorPatientScopeOptions(draft.patientName || getCurrentPatientName());
       if (editorMode.value === "dialog") {
         editorDialogTurnsState = Array.isArray(draft.dialogTurns) && draft.dialogTurns.length
           ? draft.dialogTurns.map((turn) => normalizeDialogTurn(turn)).filter((turn) => turn.text)
@@ -9927,6 +9945,52 @@ function renderPatientOptions(recordings) {
     option.value = name;
     patientSuggestions.append(option);
   });
+  renderEditorPatientScopeOptions();
+  renderRecordingExerciseOptions();
+}
+
+function getKnownPatientNames() {
+  const names = new Set();
+  patientProfiles.forEach((profile) => {
+    if (profile?.name) names.add(profile.name);
+  });
+  allRecordings.forEach((recording) => {
+    if (recording?.patientName) names.add(recording.patientName);
+  });
+  names.add(getCurrentPatientName());
+  return [...names].filter(Boolean).sort((a, b) => a.localeCompare(b, "de"));
+}
+
+function renderEditorPatientScopeOptions(preferredName = editorPatientScope?.value || "") {
+  if (!editorPatientScope) return;
+
+  const currentValue = preferredName || editorPatientScope.value || getCurrentPatientName();
+  editorPatientScope.innerHTML = "";
+
+  const sharedOption = document.createElement("option");
+  sharedOption.value = "";
+  sharedOption.textContent = "Gemeinsam / Vorlage";
+  editorPatientScope.append(sharedOption);
+
+  getKnownPatientNames().forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = `Patient: ${name}`;
+    editorPatientScope.append(option);
+  });
+
+  const optionValues = Array.from(editorPatientScope.options).map((option) => option.value);
+  editorPatientScope.value = optionValues.includes(currentValue) ? currentValue : "";
+}
+
+function getEditorExercisePatientName(exercise) {
+  return String(exercise?.patientName || "").trim();
+}
+
+function isEditorExerciseVisibleForCurrentPatient(exercise, patient = getCurrentPatientName()) {
+  const assignedPatient = getEditorExercisePatientName(exercise);
+  if (!assignedPatient) return true;
+  return normalizeEditorExerciseName(assignedPatient) === normalizeEditorExerciseName(patient);
 }
 
 function buildPatientProfile(name = getCurrentPatientName()) {

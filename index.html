@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="LogoSound" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="canonical" href="https://logosound-19293.web.app/" />
-    <link rel="manifest" href="/manifest-20260801-amp229.webmanifest" />
+    <link rel="manifest" href="/manifest-20260801-amp230.webmanifest" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="shortcut icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260801-amp229" />
+    <link rel="stylesheet" href="styles.css?v=20260801-amp230" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp229</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-01 amp230</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -337,6 +337,12 @@
                 <option value="dialog">Dialog</option>
               </select>
             </div>
+
+            <div class="editor-field-stack">
+              <label class="field-label" for="editorPatientScope">Zuordnung</label>
+              <select id="editorPatientScope" class="select-input compact-select"></select>
+              <p class="field-help">Gemeinsam = Vorlage f&uuml;r alle. Patient = nur bei diesem Patienten in der Aufnahme-Auswahl.</p>
+            </div>
           </div>
 
           <div class="editor-section editor-section-content">
@@ -570,7 +576,7 @@
           <p class="eyebrow">Patient</p>
           <div class="patient-row">
             <input id="patientName" type="text" value="Demo Patient" list="patientSuggestions" autocomplete="off" aria-label="Patientenname" />
-            <button id="savePatientButton" class="secondary-action compact-action" type="button">Wählen</button>
+            <button id="savePatientButton" class="secondary-action compact-action" type="button">Speichern</button>
           </div>
           <datalist id="patientSuggestions"></datalist>
         </div>
@@ -801,7 +807,7 @@
       </nav>
     </main>
 
-    <script type="module" src="app.js?v=20260801-amp229"></script>
+    <script type="module" src="app.js?v=20260801-amp230"></script>
   </body>
 </html>
 

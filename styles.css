@@ -3182,7 +3182,7 @@ body.recording-focus:not(.recording-overview) #liveWaveform {
   bottom: max(10px, env(safe-area-inset-bottom));
   z-index: 22;
   width: 96vw;
-  height: 17dvh;
+  height: 15dvh;
   border: 0;
   border-radius: 8px;
   background: rgba(16, 24, 32, 0.5);
@@ -3194,17 +3194,48 @@ body.recording-focus:not(.recording-overview) .voice-frequency-overlay {
   position: fixed;
   left: 2vw;
   right: 2vw;
-  bottom: calc(17dvh + max(16px, env(safe-area-inset-bottom)));
+  bottom: calc(15dvh + max(18px, env(safe-area-inset-bottom)));
   z-index: 23;
   width: 96vw;
 }
 
+body.recording-focus:not(.recording-overview) #frequencyTimeline {
+  position: fixed;
+  left: 2vw;
+  right: 2vw;
+  bottom: calc(15dvh + max(58px, env(safe-area-inset-bottom)));
+  z-index: 22;
+  display: block !important;
+  width: 96vw;
+  height: 8dvh;
+  min-height: 48px;
+  max-height: 72px;
+}
+
 body.recording-focus:not(.recording-overview) .karaoke-overlay {
   position: fixed;
-  left: 4vw;
-  right: 4vw;
-  bottom: calc(17dvh + max(62px, env(safe-area-inset-bottom)));
+  left: 3vw;
+  right: 3vw;
+  bottom: calc(23dvh + max(72px, env(safe-area-inset-bottom)));
   z-index: 24;
+  max-height: min(30dvh, 230px);
+  overflow: hidden;
+}
+
+body.recording-focus:not(.recording-overview) .karaoke-overlay.is-three-line,
+body.recording-focus:not(.recording-overview) .karaoke-overlay.is-text-passage-mode {
+  min-height: 128px;
+  max-height: min(33dvh, 250px);
+  padding: 12px 14px;
+}
+
+body.recording-focus:not(.recording-overview) .karaoke-overlay.is-text-passage-mode .karaoke-line-before {
+  font-size: clamp(1.05rem, 4.1vw, 1.9rem);
+  max-height: 5.6em;
+}
+
+body.recording-focus:not(.recording-overview) .karaoke-overlay.is-three-line.is-context-dense .karaoke-line-current {
+  font-size: clamp(1.35rem, 5.7vw, 2.35rem);
 }
 
 body.recording-focus.recording-overview #liveWaveform {
@@ -3290,9 +3321,9 @@ body.recording-focus.recording-overview .result-panel {
   body.recording-focus:not(.recording-overview) #liveWaveform {
     display: block !important;
     left: 3vw;
-    right: 34vw;
+    right: 36vw;
     bottom: max(12px, env(safe-area-inset-bottom));
-    width: 63vw;
+    width: 61vw;
     height: calc(100dvh - 92px);
     border-radius: 8px;
     background: rgba(16, 24, 32, 0.88);
@@ -3301,9 +3332,9 @@ body.recording-focus.recording-overview .result-panel {
   body.recording-focus:not(.recording-overview) #frequencyTimeline {
     display: block !important;
     left: auto;
-    right: 20vw;
+    right: 21vw;
     bottom: max(12px, env(safe-area-inset-bottom));
-    width: 11vw;
+    width: 10vw;
     min-width: 86px;
     height: calc(100dvh - 92px);
     min-height: 180px;
@@ -3325,6 +3356,10 @@ body.recording-focus.recording-overview .result-panel {
     padding: 10px;
     font-size: 1rem;
     text-align: center;
+  }
+
+  body.recording-focus:not(.recording-overview) .karaoke-overlay {
+    display: none !important;
   }
 
   body.recording-focus:not(.recording-overview) .voice-frequency-track {

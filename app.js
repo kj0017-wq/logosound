@@ -3167,10 +3167,12 @@ function renderEditorDialogList() {
     removeButton.type = "button";
     removeButton.textContent = "×";
     removeButton.setAttribute("aria-label", `Dialogzeile ${index + 1} entfernen`);
-    removeButton.addEventListener("click", () => {
+    removeButton.addEventListener("click", async () => {
+      const previousExercise = getCurrentSavedEditorExerciseForDeletion();
       const nextTurns = getEditorDialogTurns();
       nextTurns.splice(index, 1);
       syncEditorDialogTurns(nextTurns);
+      await persistEditorInlineDeletion(previousExercise, "Dialogzeile gelöscht");
     });
 
     item.append(row, textarea, removeButton);
@@ -3996,10 +3998,12 @@ function renderEditorSentenceListLegacy() {
     removeButton.type = "button";
     removeButton.textContent = "×";
     removeButton.setAttribute("aria-label", `Satz ${index + 1} entfernen`);
-    removeButton.addEventListener("click", () => {
+    removeButton.addEventListener("click", async () => {
+      const previousExercise = getCurrentSavedEditorExerciseForDeletion();
       const nextSentences = getEditorSentences();
       nextSentences.splice(index, 1);
       syncEditorSentences(nextSentences);
+      await persistEditorInlineDeletion(previousExercise, "Satz gelöscht");
     });
 
     item.append(label, removeButton);
@@ -4048,7 +4052,8 @@ function renderEditorSentenceList() {
     removeButton.className = "editor-sentence-remove-button";
     removeButton.textContent = "\u00d7";
     removeButton.setAttribute("aria-label", `Satz ${index + 1} entfernen`);
-    removeButton.addEventListener("click", () => {
+    removeButton.addEventListener("click", async () => {
+      const previousExercise = getCurrentSavedEditorExerciseForDeletion();
       const nextSentences = getEditorSentences();
       nextSentences.splice(index, 1);
       if (editingEditorSentenceIndex === index) {
@@ -4059,6 +4064,7 @@ function renderEditorSentenceList() {
         editingEditorSentenceIndex -= 1;
       }
       syncEditorSentences(nextSentences);
+      await persistEditorInlineDeletion(previousExercise, "Satz gelöscht");
     });
 
     item.append(label, editButton, removeButton);
@@ -5410,6 +5416,59 @@ function collectEditorExerciseAudioPaths(exercise) {
     if (path) paths.add(path);
   });
   return [...paths];
+}
+
+function getCurrentSavedEditorExerciseForDeletion() {
+  const formName = editorExerciseName.value.trim();
+  return (
+    findSavedEditorExerciseByName(formName) ||
+    (normalizeEditorExerciseName(savedEditorExercise?.name) === normalizeEditorExerciseName(formName)
+      ? savedEditorExercise
+      : null)
+  );
+}
+
+function clearEditorDemoAudio(exercise) {
+  return {
+    ...exercise,
+    demoAudioUrl: "",
+    demoAudioPath: "",
+    demoAudioSegments: [],
+    demoVoiceId: "",
+    demoVoiceSettings: null,
+    demoTextHash: "",
+    demoSpeed: 0,
+    demoCreatedAt: "",
+  };
+}
+
+async function deleteEditorAudioPaths(paths) {
+  const uniquePaths = [...new Set(paths.filter(Boolean))];
+  await Promise.all(uniquePaths.map((path) => deleteObject(ref(storage, path)).catch(() => {})));
+}
+
+async function persistEditorInlineDeletion(previousExercise, successText) {
+  saveEditorDraft();
+
+  if (!previousExercise?.name) {
+    editorVoiceState.textContent = `${successText}. Zum dauerhaften Übernehmen bitte speichern.`;
+    return;
+  }
+
+  let updatedExercise = buildEditorExerciseFromForm();
+  updatedExercise = clearEditorDemoAudio(updatedExercise);
+
+  const nextAudioPaths = new Set(collectEditorExerciseAudioPaths(updatedExercise));
+  const removedAudioPaths = collectEditorExerciseAudioPaths(previousExercise).filter(
+    (path) => !nextAudioPaths.has(path),
+  );
+
+  editorVoiceState.textContent = `${successText}. Firebase wird aktualisiert...`;
+  await deleteEditorAudioPaths(removedAudioPaths);
+  await saveEditorExerciseObject(updatedExercise);
+  applyEditorExerciseToForm(updatedExercise);
+  updateEditorForm();
+  editorVoiceState.textContent = `${successText} und in Firebase gespeichert. Audio bei Bedarf neu erstellen.`;
 }
 
 async function fetchEditorExercisesFromCloud() {

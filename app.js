@@ -3374,6 +3374,36 @@ function buildDialogTimeline(turns, secondsPerTurn = SENTENCE_MAX_SECONDS, exerc
   }));
 }
 
+function buildPlaybackDialogTimeline(turns, totalSeconds, timing = getPlaybackKaraokeTiming({}), exercise = null) {
+  const normalizedTurns = turns.map((turn) => normalizeDialogTurn(turn)).filter((turn) => turn.text);
+  if (!normalizedTurns.length) return [];
+
+  const fallbackTotal = normalizedTurns.length * 2.4;
+  const targetTotal = Math.max(1, Number(totalSeconds) || fallbackTotal);
+  const fastTargetTotal = Math.max(1, targetTotal * 0.9);
+  const wordSeconds = Number(timing.wordSeconds) || DEFAULT_KARAOKE_WORD_SECONDS;
+  const pauseSeconds = Number(timing.pauseSeconds) || DEFAULT_KARAOKE_PAUSE_SECONDS;
+  const rawDurations = normalizedTurns.map((turn) => {
+    const base = getTextPassageSeconds(turn.text, wordSeconds, pauseSeconds);
+    const roleFactor = turn.role === "patient" ? 1.06 : 0.82;
+    return Math.max(0.65, base * roleFactor);
+  });
+  const rawTotal = rawDurations.reduce((sum, value) => sum + value, 0) || fallbackTotal;
+  const scale = fastTargetTotal / rawTotal;
+  let cursor = 0;
+
+  return buildDialogTimeline(normalizedTurns, 1, exercise).map((item, index) => {
+    const duration = Math.max(0.55, rawDurations[index] * scale);
+    const nextItem = {
+      ...item,
+      start: cursor,
+      end: cursor + duration,
+    };
+    cursor += duration;
+    return nextItem;
+  });
+}
+
 function updateExercisePromptProgress(displayVolume) {
   if (isHoldUntilSilenceExercise()) {
     updateHoldPromptBySilence(displayVolume);
@@ -6944,12 +6974,12 @@ function setupPlaybackKaraoke(metadata) {
   const playbackSentenceSeconds = sentences.length
     ? Math.max(1.4, (Number(metadata.dauerSekunden) || sentences.length * 3) / sentences.length)
     : SENTENCE_MAX_SECONDS;
-  const playbackDialogSeconds = dialogTurns.length
-    ? Math.max(1.4, (Number(metadata.dauerSekunden) || dialogTurns.length * 3) / dialogTurns.length)
-    : SENTENCE_MAX_SECONDS;
-
   playbackKaraokeTimeline = dialogTurns.length
-    ? buildDialogTimeline(dialogTurns.map((turn) => normalizeDialogTurn(turn)), playbackDialogSeconds)
+    ? buildPlaybackDialogTimeline(
+        dialogTurns,
+        Number(metadata.dauerSekunden) || 0,
+        getPlaybackKaraokeTiming(metadata),
+      )
     : sentences.length
     ? buildSentenceTimeline(sentences, playbackSentenceSeconds)
     : textPassages.length

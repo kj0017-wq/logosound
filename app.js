@@ -4139,6 +4139,13 @@ function getExerciseConfiguration() {
       individuellGespeichert: Boolean(getRecordingKaraokeSpeedMap()[getCurrentExerciseSpeedKey()]),
     },
     voiceBegleitung: exercise.voiceInstruction,
+    voiceProfil: {
+      key: exercise.voiceProfileKey || "",
+      name: exercise.voiceProfileName || "",
+      geschlecht: exercise.voiceProfileGender || "neutral",
+      voiceId: exercise.voiceProfileVoiceId || "",
+      settings: exercise.voiceProfileSettings || null,
+    },
     voiceAudioVorhanden: Boolean(exercise.voiceAudioUrl || exercise.voiceAudioDataUrl),
     voiceAudioUrl: exercise.voiceAudioUrl || "",
     voiceAudioPath: exercise.voiceAudioPath || "",
@@ -4158,20 +4165,20 @@ function getActiveRecordingExercise() {
   const selectedOption = exerciseName.selectedOptions?.[0];
   const selectedLabel = selectedOption?.textContent?.trim() || "";
   const candidates = [selectedLabel, exerciseName.value];
+  const savedOverride = savedEditorExercises.find((exercise) =>
+    candidates.some(
+      (candidate) => normalizeEditorExerciseName(candidate) === normalizeEditorExerciseName(exercise.name),
+    ),
+  );
+  if (savedOverride) return hydrateEditorExercise(savedOverride);
+
   const standardExercise = STANDARD_EDITOR_EXERCISES.find((exercise) =>
     candidates.some(
       (candidate) => normalizeEditorExerciseName(candidate) === normalizeEditorExerciseName(exercise.name),
     ),
   );
   if (standardExercise) return hydrateEditorExercise(standardExercise);
-
-  const savedOverride = savedEditorExercises.find((exercise) =>
-    candidates.some(
-      (candidate) => normalizeEditorExerciseName(candidate) === normalizeEditorExerciseName(exercise.name),
-    ),
-  );
-
-  return savedOverride ? hydrateEditorExercise(savedOverride) : null;
+  return null;
 }
 
 function hydrateEditorExercise(exercise) {

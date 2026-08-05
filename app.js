@@ -3023,8 +3023,10 @@ function isTextLikeMode(mode) {
 }
 
 function normalizeEditorExerciseMode(exercise = {}) {
+  const hasExplicitMode = Object.prototype.hasOwnProperty.call(exercise || {}, "mode");
   const mode = normalizeEditorExerciseModeValue(exercise?.mode || "text");
   if (mode !== "text") return mode;
+  if (hasExplicitMode) return "text";
 
   const savedPassages = Array.isArray(exercise.textPassages)
     ? exercise.textPassages.filter((passage) => String(passage || "").trim())
@@ -4171,6 +4173,14 @@ function getActiveRecordingExercise() {
   const selectedOption = exerciseName.selectedOptions?.[0];
   const selectedLabel = selectedOption?.textContent?.trim() || "";
   const candidates = [selectedLabel, exerciseName.value];
+  const liveEditorExercise = buildEditorExerciseFromForm();
+  const liveEditorMatchesSelection =
+    activeEditorExerciseName &&
+    candidates.some(
+      (candidate) => normalizeEditorExerciseName(candidate) === normalizeEditorExerciseName(liveEditorExercise.name),
+    );
+  if (liveEditorMatchesSelection) return hydrateEditorExercise(liveEditorExercise);
+
   const savedOverride = savedEditorExercises.find((exercise) =>
     candidates.some(
       (candidate) => normalizeEditorExerciseName(candidate) === normalizeEditorExerciseName(exercise.name),

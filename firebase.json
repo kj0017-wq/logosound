@@ -65,6 +65,27 @@
         }
       },
       {
+        "source": "/api/patients",
+        "function": {
+          "functionId": "patientProfiles",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/api/course-data",
+        "function": {
+          "functionId": "courseData",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/api/media-library",
+        "function": {
+          "functionId": "mediaLibrary",
+          "region": "europe-west3"
+        }
+      },
+      {
         "source": "/api/chatgpt",
         "function": {
           "functionId": "chatgpt",

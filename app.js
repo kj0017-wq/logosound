@@ -1,4 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getAuth,
+  signInAnonymously,
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
   deleteObject,
   getDownloadURL,
@@ -33,11 +37,79 @@ const savePatientButton = document.querySelector("#savePatientButton");
 const patientSuggestions = document.querySelector("#patientSuggestions");
 const patientManagerName = document.querySelector("#patientManagerName");
 const patientManagerSaveButton = document.querySelector("#patientManagerSaveButton");
+const patientManagerState = document.querySelector("#patientManagerState");
 const patientManagerList = document.querySelector("#patientManagerList");
+const patientCourseAssignSelect = document.querySelector("#patientCourseAssignSelect");
+const patientCourseAssignStartDate = document.querySelector("#patientCourseAssignStartDate");
+const assignCourseToPatientButton = document.querySelector("#assignCourseToPatientButton");
+const patientCourseAssignState = document.querySelector("#patientCourseAssignState");
+const patientAssignedCourseList = document.querySelector("#patientAssignedCourseList");
+const newDailyPlanButton = document.querySelector("#newDailyPlanButton");
+const dailyPlanName = document.querySelector("#dailyPlanName");
+const dailyPlanDescription = document.querySelector("#dailyPlanDescription");
+const dailyPlanVoiceSelect = document.querySelector("#dailyPlanVoiceSelect");
+const dailyPlanVoiceHint = document.querySelector("#dailyPlanVoiceHint");
+const dailyPlanIntroAudioButton = document.querySelector("#dailyPlanIntroAudioButton");
+const dailyPlanIntroPreview = document.querySelector("#dailyPlanIntroPreview");
+const dailyPlanExerciseFilter = document.querySelector("#dailyPlanExerciseFilter");
+const dailyPlanExerciseSearch = document.querySelector("#dailyPlanExerciseSearch");
+const dailyPlanExerciseLibrary = document.querySelector("#dailyPlanExerciseLibrary");
+const dailyPlanSelectedExercises = document.querySelector("#dailyPlanSelectedExercises");
+const dailyPlanSelectionSummary = document.querySelector("#dailyPlanSelectionSummary");
+const dailyPlanLibrarySummary = document.querySelector("#dailyPlanLibrarySummary");
+const saveDailyPlanButton = document.querySelector("#saveDailyPlanButton");
+const dailyPlanEditorState = document.querySelector("#dailyPlanEditorState");
+const dailyPlanList = document.querySelector("#dailyPlanList");
+const userRoleSelect = document.querySelector("#userRoleSelect");
+const newCourseButton = document.querySelector("#newCourseButton");
+const editCourseButton = document.querySelector("#editCourseButton");
+const courseNameInputGroup = document.querySelector("#courseNameInputGroup");
+const courseNameSelectGroup = document.querySelector("#courseNameSelectGroup");
+const courseNameSelect = document.querySelector("#courseNameSelect");
+const courseName = document.querySelector("#courseName");
+const courseDescription = document.querySelector("#courseDescription");
+const coursePeriod = document.querySelector("#coursePeriod");
+const courseSymbol = document.querySelector("#courseSymbol");
+const courseMusic = document.querySelector("#courseMusic");
+const coursePauseDuration = document.querySelector("#coursePauseDuration");
+const courseExerciseLibrary = document.querySelector("#courseExerciseLibrary");
+const courseSelectedExercises = document.querySelector("#courseSelectedExercises");
+const saveCourseDraftButton = document.querySelector("#saveCourseDraftButton");
+const courseEditorState = document.querySelector("#courseEditorState");
+const courseList = document.querySelector("#courseList");
+const musicTitle = document.querySelector("#musicTitle");
+const musicCategory = document.querySelector("#musicCategory");
+const musicFile = document.querySelector("#musicFile");
+const musicDefaultVolume = document.querySelector("#musicDefaultVolume");
+const musicDefaultVolumeValue = document.querySelector("#musicDefaultVolumeValue");
+const musicIsDefault = document.querySelector("#musicIsDefault");
+const saveMusicButton = document.querySelector("#saveMusicButton");
+const musicPreview = document.querySelector("#musicPreview");
+const musicList = document.querySelector("#musicList");
+const mediaLibraryTitle = document.querySelector("#mediaLibraryTitle");
+const mediaLibraryKind = document.querySelector("#mediaLibraryKind");
+const mediaLibraryDescription = document.querySelector("#mediaLibraryDescription");
+const mediaLibraryDuration = document.querySelector("#mediaLibraryDuration");
+const mediaLibraryFile = document.querySelector("#mediaLibraryFile");
+const saveMediaLibraryButton = document.querySelector("#saveMediaLibraryButton");
+const mediaLibraryState = document.querySelector("#mediaLibraryState");
+const mediaLibraryList = document.querySelector("#mediaLibraryList");
+const myCourseList = document.querySelector("#myCourseList");
+const coursePatientSwitcher = document.querySelector("#coursePatientSwitcher");
+const coursePlayer = document.querySelector("#coursePlayer");
+const myCoursesPanel = document.querySelector(".my-courses-panel");
+const courseRecordingContext = document.querySelector("#courseRecordingContext");
+const courseRecordingCourse = document.querySelector("#courseRecordingCourse");
+const courseRecordingExercise = document.querySelector("#courseRecordingExercise");
+const courseRecordingPlan = document.querySelector("#courseRecordingPlan");
+const courseRecordingProgress = document.querySelector("#courseRecordingProgress");
 const recordingModeFilter = document.querySelector("#recordingModeFilter");
 const exerciseName = document.querySelector("#exerciseName");
 const recordingExerciseShortcuts = document.querySelector("#recordingExerciseShortcuts");
 const previewExerciseButton = document.querySelector("#previewExerciseButton");
+const previewSessionBar = document.querySelector("#previewSessionBar");
+const previewSessionLabel = document.querySelector("#previewSessionLabel");
+const previewStopButton = document.querySelector("#previewStopButton");
 const editorSavedExercises = document.querySelector("#editorSavedExercises");
 const editorSavedModeFilter = document.querySelector("#editorSavedModeFilter");
 const editorSavedExerciseList = document.querySelector("#editorSavedExerciseList");
@@ -73,6 +145,18 @@ const editorKaraokeTimingHint = document.querySelector("#editorKaraokeTimingHint
 const editorPreview = document.querySelector("#editorPreview");
 const testEditorKaraokeButton = document.querySelector("#testEditorKaraokeButton");
 const saveEditorExerciseButton = document.querySelector("#saveEditorExerciseButton");
+const openEditorAiButton = document.querySelector("#openEditorAiButton");
+const editorAiModal = document.querySelector("#editorAiModal");
+const editorAiInputView = document.querySelector("#editorAiInputView");
+const editorAiPreviewView = document.querySelector("#editorAiPreviewView");
+const editorAiPrompt = document.querySelector("#editorAiPrompt");
+const generateEditorAiExercisesButton = document.querySelector("#generateEditorAiExercisesButton");
+const editorAiSummary = document.querySelector("#editorAiSummary");
+const editorAiPreviewList = document.querySelector("#editorAiPreviewList");
+const applyEditorAiExercisesButton = document.querySelector("#applyEditorAiExercisesButton");
+const resetEditorAiButton = document.querySelector("#resetEditorAiButton");
+const editorAiState = document.querySelector("#editorAiState");
+const closeEditorAiButton = document.querySelector("#closeEditorAiButton");
 const recordingTime = document.querySelector("#recordingTime");
 const volumeValue = document.querySelector("#volumeValue");
 const frequencyValue = document.querySelector("#frequencyValue");
@@ -99,6 +183,7 @@ const emptyRecordButton = document.querySelector("#emptyRecordButton");
 const emptyHistoryButton = document.querySelector("#emptyHistoryButton");
 const resultPanel = document.querySelector("#resultPanel");
 const resultTitle = document.querySelector("#resultTitle");
+const resultCourseContext = document.querySelector("#resultCourseContext");
 const durationBadge = document.querySelector("#durationBadge");
 const resultEvaluationPanel = document.querySelector("#resultEvaluationPanel");
 const resultEvaluationTitle = document.querySelector("#resultEvaluationTitle");
@@ -107,8 +192,10 @@ const resultEvaluationSummary = document.querySelector("#resultEvaluationSummary
 const resultEvaluationHints = document.querySelector("#resultEvaluationHints");
 const resultEvaluationScores = document.querySelector("#resultEvaluationScores");
 const recordingPlayer = document.querySelector("#recordingPlayer");
+const playbackVideoCanvas = document.querySelector("#playbackVideoCanvas");
 const playbackKaraokeOverlay = document.querySelector("#playbackKaraokeOverlay");
 const playPauseButton = document.querySelector("#playPauseButton");
+const playbackTextToggleButton = document.querySelector("#playbackTextToggleButton");
 const playbackSeek = document.querySelector("#playbackSeek");
 const playbackTimeLabel = document.querySelector("#playbackTimeLabel");
 const playbackLibrary = document.querySelector(".playback-library");
@@ -125,6 +212,11 @@ const maxVolume = document.querySelector("#maxVolume");
 const sampleCount = document.querySelector("#sampleCount");
 const downloadAudioButton = document.querySelector("#downloadAudioButton");
 const downloadJsonButton = document.querySelector("#downloadJsonButton");
+const courseResultActions = document.querySelector("#courseResultActions");
+const courseResultTitle = document.querySelector("#courseResultTitle");
+const courseResultText = document.querySelector("#courseResultText");
+const courseResultBackButton = document.querySelector("#courseResultBackButton");
+const courseResultNextButton = document.querySelector("#courseResultNextButton");
 const retakeButton = document.querySelector("#retakeButton");
 const deleteButton = document.querySelector("#deleteButton");
 const firebaseState = document.querySelector("#firebaseState");
@@ -215,17 +307,27 @@ const navButtons = document.querySelectorAll(".nav-button");
 const appSections = document.querySelectorAll(".app-section");
 const instructionAudio = new Audio();
 instructionAudio.preload = "auto";
-instructionAudio.crossOrigin = "anonymous";
+const coursePlaylistAudio = new Audio();
+coursePlaylistAudio.preload = "auto";
+coursePlaylistAudio.playsInline = true;
+const coursePlaylistVideo = document.createElement("video");
+coursePlaylistVideo.preload = "auto";
+coursePlaylistVideo.controls = true;
+coursePlaylistVideo.playsInline = true;
+coursePlaylistVideo.setAttribute("playsinline", "");
+coursePlaylistVideo.setAttribute("webkit-playsinline", "");
 
 const DB_NAME = "logosound-local";
 const STORE_NAME = "recordings";
 const SELECTED_PATIENT_KEY = "logosound-selected-patient";
+const SELECTED_PATIENT_ID_KEY = "logosound-selected-patient-id";
 const PATIENT_PROFILES_KEY = "logosound-patient-profiles";
 const PATIENT_PROFILES_COLLECTION = "patientProfiles";
 const ACTIVE_PATIENT_DOC = "activePatient";
 const SENSITIVITY_KEY = "logosound-sensitivity";
 const RECORDING_KARAOKE_SPEED_KEY = "logosound-recording-karaoke-speed";
 const RECORDING_KARAOKE_SPEEDS_KEY = "logosound-recording-karaoke-speeds-by-exercise";
+const TEXT_OVERLAY_VISIBLE_KEY = "logosound-text-overlay-visible";
 const PLAYBACK_GAIN_KEY = "logosound-playback-gain";
 const STATISTICS_WAVEFORM_HEIGHT_KEY = "logosound-statistics-waveform-height";
 const ANALYSIS_CALIBRATION_KEY = "logosound-analysis-calibration";
@@ -235,7 +337,15 @@ const SETTINGS_EQ_KEY = "logosound-settings-eq";
 const SETTINGS_EQ_DOC = "equalizer";
 const ELEVENLABS_SETTINGS_KEY = "logosound-elevenlabs-settings";
 const ELEVENLABS_SETTINGS_DOC = "elevenLabsVoices";
+const CHATGPT_SETTINGS_DOC = "chatGptSettings";
 const CHATGPT_SETTINGS_KEY = "logosound-chatgpt-settings";
+const USER_ROLE_KEY = "logosound-user-role";
+const COURSES_KEY = "logosound-courses";
+const DAILY_PLANS_KEY = "logosound-daily-plans";
+const COURSE_SESSIONS_KEY = "logosound-course-sessions";
+const COURSE_ASSIGNMENTS_KEY = "logosound-course-assignments";
+const RELAX_MUSIC_KEY = "logosound-relax-music";
+const MEDIA_LIBRARY_KEY = "logosound-media-library";
 const EDITOR_DRAFT_KEY = "logosound-editor-draft";
 const SAVED_EDITOR_EXERCISE_KEY = "logosound-saved-editor-exercise";
 const SAVED_EDITOR_EXERCISES_KEY = "logosound-saved-editor-exercises";
@@ -294,16 +404,18 @@ const EDITOR_SPEEDS = {
   8: { label: "Turbo", wordSeconds: 0.28, pauseSeconds: 0.08 },
   9: { label: "Sehr turbo", wordSeconds: 0.22, pauseSeconds: 0.06 },
   10: { label: "Sprint", wordSeconds: 0.16, pauseSeconds: 0.04 },
+  11: { label: "Extrem", wordSeconds: 0.12, pauseSeconds: 0.03 },
+  12: { label: "Ultra", wordSeconds: 0.09, pauseSeconds: 0.02 },
 };
 const EXERCISE_INSTRUCTIONS = {
   "Vokal A halten":
-    "Bitte halten Sie den Vokal A gleichmäßig. Achten Sie auf eine ruhige Stimme und eine stabile Lautstärke.",
+    "Bitte halten Sie den Vokal A gleichmÃ¤ÃŸig. Achten Sie auf eine ruhige Stimme und eine stabile LautstÃ¤rke.",
   "A E I O U":
     "Bitte sprechen Sie die Vokale nacheinander deutlich aus. A, E, I, O, U. Achten Sie auf klare Mundbewegungen.",
   "Pa Ta Ka":
-    "Bitte sprechen Sie nur die Einzelsilben Pa, Ta und Ka. Wiederholen Sie diese zehnmal mit kurzer Pause zwischen den Durchgängen.",
+    "Bitte sprechen Sie nur die Einzelsilben Pa, Ta und Ka. Wiederholen Sie diese zehnmal mit kurzer Pause zwischen den DurchgÃ¤ngen.",
   "Text lesen":
-    "Bitte lesen Sie den eingeblendeten Text ruhig und deutlich vor. Achten Sie auf gleichmäßiges Tempo, klare Wörter und sichtbare Mundbewegungen.",
+    "Bitte lesen Sie den eingeblendeten Text ruhig und deutlich vor. Achten Sie auf gleichmÃ¤ÃŸiges Tempo, klare WÃ¶rter und sichtbare Mundbewegungen.",
 };
 const STANDARD_EDITOR_EXERCISES = [
   {
@@ -338,7 +450,7 @@ const STANDARD_EDITOR_EXERCISES = [
     name: "Text lesen",
     mode: "text",
     content:
-      "Heute üben wir eine ruhige Stimme. Ich lese langsam, spreche deutlich und achte darauf, dass jeder Satz klar klingt und mein Mund beim Sprechen locker bleibt und die Lippen gut arbeiten.",
+      "Heute Ã¼ben wir eine ruhige Stimme. Ich lese langsam, spreche deutlich und achte darauf, dass jeder Satz klar klingt und mein Mund beim Sprechen locker bleibt und die Lippen gut arbeiten.",
     repeats: 1,
     speed: 4,
     voiceInstruction: EXERCISE_INSTRUCTIONS["Text lesen"],
@@ -375,6 +487,7 @@ const firebaseConfig = {
   appId: "1:29006924401:web:c4f49f09b70c32eaa3a9d0",
 };
 const firebaseApp = initializeApp(firebaseConfig);
+const firebaseAuth = getAuth(firebaseApp);
 const storage = getStorage(firebaseApp);
 const firestore = getFirestore(firebaseApp);
 const appSplash = document.querySelector("#appSplash");
@@ -395,6 +508,7 @@ let settingsEqAmplitudes = [];
 let settingsEqPitches = [];
 let settingsEqStrengths = [];
 let settingsEqCloudSaveTimerId;
+let hasCloudChatGptApiKey = false;
 let analyser;
 let audioSource;
 let audioOnlyStream;
@@ -457,6 +571,7 @@ let previewAudioElement = null;
 let previewAnimationFrameId = 0;
 let previewAudioUrls = [];
 let previewPlaybackOffsetSeconds = 0;
+let previewSegmentTimings = [];
 let previewFallbackStartedAt = 0;
 let previewFallbackDurationSeconds = 0;
 let playbackKaraokeTimeline = [];
@@ -474,6 +589,7 @@ let dialogAdvanceLock = false;
 let dialogVoiceMeterUntil = 0;
 let dialogVoiceMeterStartedAt = 0;
 let playbackAnimationFrame;
+let playbackVideoCanvasContext = playbackVideoCanvas?.getContext?.("2d") || null;
 let autoStopTimeoutId;
 let hardStopTimeoutId;
 let responsiveRefreshId;
@@ -481,6 +597,35 @@ let cameraStartRetryId;
 let savedEditorExercise;
 let savedEditorExercises = [];
 let patientProfiles = [];
+let userRole = localStorage.getItem(USER_ROLE_KEY) || "therapist";
+let courses = [];
+let dailyPlans = [];
+let courseSessions = [];
+let courseAssignments = [];
+let relaxMusicItems = [];
+let mediaLibraryItems = [];
+let editingDailyPlanId = "";
+let editingCourseId = "";
+let dailyPlanDraftExercises = [];
+let dailyPlanIntroDraftAudio = null;
+let courseDraftPlans = [];
+let activeCourseRun = null;
+let coursePauseTimerId = 0;
+let courseAutoAdvanceTimerId = 0;
+let courseMusicAudio = null;
+let coursePlaylistAudioUnlocked = false;
+let coursePlaylistAudioEndHandler = null;
+let coursePlaylistAudioErrorHandler = null;
+let coursePlaylistAudioContext = null;
+let coursePlaylistAudioSource = null;
+let coursePlaylistAudioGain = null;
+let coursePlaylistAudioLoadToken = 0;
+let coursePlaylistPrimedUrl = "";
+let coursePlaylistPrimedVideoUrl = "";
+let coursePlaylistVideoAudioUnlocked = false;
+let courseIntroPlaybackPromise = null;
+let mediaLibraryRefreshPromise = null;
+let firebaseAuthReadyPromise = null;
 let patientProfileSaveTimerId = 0;
 let isApplyingPatientProfile = false;
 let editorDialogTurnsState = [];
@@ -495,9 +640,14 @@ let editorVoiceAudioVoiceSettings = null;
 let editorVoiceAudioTextHash = "";
 let editorVoiceAudioUpdatedAt = "";
 let editorSaveFeedbackTimerId = 0;
+let editorAiGeneratedPayload = null;
 let settingsVoiceTestUrl = "";
 let isVideoPreviewHidden = false;
 let instructionPlaybackActive = false;
+let isTextOverlayVisible = localStorage.getItem(TEXT_OVERLAY_VISIBLE_KEY) !== "0";
+let activeCaptureRotationDegrees = 0;
+let activeCaptureSourceWidth = 0;
+let activeCaptureSourceHeight = 0;
 
 document.body.classList.add("camera-not-ready");
 recordButton.disabled = true;
@@ -512,6 +662,7 @@ loadAnalysisCalibrationControls();
 loadSettingsControls();
 loadSavedEditorExercise();
 loadEditorDraft();
+applyTextOverlayVisibility();
 setActiveView("record");
 hideSplashAfterStartup();
 
@@ -537,6 +688,12 @@ appMenu?.addEventListener("click", (event) => {
   if (!button) return;
   setActiveView(button.dataset.menuView);
   appMenu.classList.add("is-hidden");
+});
+
+document.querySelector(".help-panel")?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-help-target]");
+  if (!button) return;
+  setActiveView(button.dataset.helpTarget);
 });
 
 copyAppLinkButton?.addEventListener("click", async () => {
@@ -569,10 +726,14 @@ document.addEventListener("click", (event) => {
 
 window.addEventListener("pageshow", () => {
   if (mediaStream) ensureCameraPreviewPlaying();
+  schedulePatientProfileRefresh(150);
 });
 
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && mediaStream) ensureCameraPreviewPlaying();
+  if (!document.hidden) {
+    if (mediaStream) ensureCameraPreviewPlaying();
+    schedulePatientProfileRefresh(150);
+  }
 });
 
 cameraStartButton.addEventListener("click", async () => {
@@ -673,17 +834,20 @@ async function init() {
   updateEditorForm();
   setupKaraokeText();
   permissionState.textContent = "Bereit";
-  message.textContent = "Kamera und Mikrofon vor der ersten Übung aktivieren.";
+  message.textContent = "Kamera und Mikrofon vor der ersten Ãœbung aktivieren.";
   recordButton.disabled = false;
   loadCloudEditorExercises().then(() => {
     updateEditorForm();
     setupKaraokeText();
   });
   await loadCloudElevenLabsSettings();
+  await loadCloudChatGptSettings();
   await loadCloudEqualizerSettings();
   await loadCloudNoiseCalibration();
   await loadCloudPatientProfiles();
+  await loadCourseModuleData();
   await refreshRecordings();
+  schedulePatientProfileRefresh(1200);
 }
 
 function repairStaticUiLabels() {
@@ -714,6 +878,12 @@ function repairStaticUiLabels() {
 
 recordButton.addEventListener("click", async (event) => {
   event.stopImmediatePropagation();
+  clearCourseAutoAdvanceTimer();
+
+  if (isCourseMediaLocked() && exerciseName.value !== getActiveCourseExercise()?.exerciseId) {
+    showCourseMediaLockMessage();
+    return;
+  }
 
   if (isRecording || mediaRecorder?.state === "recording") {
     stopRecording();
@@ -736,31 +906,21 @@ recordButton.addEventListener("click", async (event) => {
   await runCountdownAndStart(audioPreparation);
 }, true);
 
-recordButton.addEventListener("click", async () => {
-  if (isRecording || mediaRecorder?.state === "recording") {
-    stopRecording();
-  } else {
-    stopExercisePreview();
-    unlockInstructionAudio();
-    const hadActiveStream = hasActiveMediaStream();
-    const streamReady = await ensureMediaStream();
-    if (!streamReady) return;
-    if (!hadActiveStream) {
-      message.textContent = "Kamera aktiv. Jetzt noch einmal Übung starten tippen.";
-      return;
-    }
-    const audioPreparation = prepareRecordingAudio();
-    await runCountdownAndStart(audioPreparation);
-  }
-});
-
 previewExerciseButton?.addEventListener("click", async () => {
+  if (isCourseMediaLocked()) {
+    showCourseMediaLockMessage();
+    return;
+  }
   if (isPreviewingExercise) {
     stopExercisePreview();
     return;
   }
 
   await startExercisePreview();
+});
+
+previewStopButton?.addEventListener("click", () => {
+  stopExercisePreview();
 });
 
 savePatientButton.addEventListener("click", async () => {
@@ -779,12 +939,68 @@ patientManagerName?.addEventListener("change", async () => {
   await selectPatient(patientManagerName.value);
 });
 
+coursePatientSwitcher?.addEventListener("change", async () => {
+  if (!coursePatientSwitcher.value) return;
+  await selectPatient(coursePatientSwitcher.value);
+  setActiveView("myCourses");
+});
+
+assignCourseToPatientButton?.addEventListener("click", async () => {
+  await assignSelectedCourseToPatients();
+});
+
+userRoleSelect?.addEventListener("change", () => {
+  userRole = userRoleSelect.value || "therapist";
+  localStorage.setItem(USER_ROLE_KEY, userRole);
+  updateRoleMenuVisibility();
+  renderCourseViews();
+});
+
+newCourseButton?.addEventListener("click", () => resetCourseEditor());
+editCourseButton?.addEventListener("click", () => openCourseEditorForEditing());
+courseNameSelect?.addEventListener("change", () => openCourseEditorForEditing(courseNameSelect.value));
+newDailyPlanButton?.addEventListener("click", () => resetDailyPlanEditor());
+dailyPlanDescription?.addEventListener("input", () => invalidateDailyPlanIntroAudio());
+dailyPlanVoiceSelect?.addEventListener("change", () => {
+  invalidateDailyPlanIntroAudio();
+  updateDailyPlanVoiceHint();
+});
+dailyPlanIntroAudioButton?.addEventListener("click", async () => {
+  await generateDailyPlanIntroAudio({ play: true });
+});
+dailyPlanExerciseFilter?.addEventListener("change", () => renderDailyPlanExerciseLibrary());
+dailyPlanExerciseSearch?.addEventListener("input", () => renderDailyPlanExerciseLibrary());
+saveDailyPlanButton?.addEventListener("click", async () => saveDailyPlanFromForm());
+saveCourseDraftButton?.addEventListener("click", async () => saveCourseFromForm("active"));
+musicDefaultVolume?.addEventListener("input", () => {
+  if (musicDefaultVolumeValue) musicDefaultVolumeValue.textContent = `${musicDefaultVolume.value}%`;
+});
+musicFile?.addEventListener("change", () => {
+  const file = musicFile.files?.[0];
+  if (file && musicPreview) {
+    musicPreview.src = URL.createObjectURL(file);
+    musicPreview.load();
+  }
+});
+saveMusicButton?.addEventListener("click", async () => saveRelaxMusicFromForm());
+saveMediaLibraryButton?.addEventListener("click", async () => saveMediaLibraryFromForm());
+mediaLibraryFile?.addEventListener("change", () => {
+  const file = mediaLibraryFile.files?.[0];
+  if (!file) {
+    setMediaLibraryState("Audio, Video oder Bild auswÃ¤hlen.");
+    return;
+  }
+  const mediaType = getMediaFileType(file.type, file.name);
+  setMediaLibraryState(`${file.name} ausgewÃ¤hlt Â· ${mediaType === "audio" ? "Sound" : mediaType === "video" ? "Video" : "Bild"}`, "success");
+  if (!mediaLibraryTitle?.value.trim()) mediaLibraryTitle.value = file.name.replace(/\.[^.]+$/, "");
+});
+
 exerciseName.addEventListener("change", () => {
   stopExercisePreview();
   loadRecordingKaraokeSpeedForCurrentExercise();
   setupKaraokeText();
   renderRecordingExerciseShortcuts();
-  message.textContent = `Übung ausgewählt: ${getExerciseLabel()}`;
+  message.textContent = `Ãœbung ausgewÃ¤hlt: ${getExerciseLabel()}`;
 });
 
 recordingModeFilter?.addEventListener("change", () => {
@@ -872,6 +1088,30 @@ suggestVoiceButton.addEventListener("click", async () => {
 
 generateVoiceAudioButton.addEventListener("click", async () => {
   await generateVoiceAudio();
+});
+
+openEditorAiButton?.addEventListener("click", () => {
+  openEditorAiModal();
+});
+
+closeEditorAiButton?.addEventListener("click", () => {
+  closeEditorAiModal();
+});
+
+editorAiModal?.addEventListener("click", (event) => {
+  if (event.target === editorAiModal) closeEditorAiModal();
+});
+
+generateEditorAiExercisesButton?.addEventListener("click", async () => {
+  await generateEditorAiPreview();
+});
+
+resetEditorAiButton?.addEventListener("click", () => {
+  resetEditorAiModal({ keepPrompt: true });
+});
+
+applyEditorAiExercisesButton?.addEventListener("click", async () => {
+  await applyEditorAiPreview();
 });
 
 settingsTestVoiceButton?.addEventListener("click", async () => {
@@ -1135,6 +1375,10 @@ toggleVideoButton.addEventListener("click", () => {
   toggleVideoPreview();
 });
 
+playbackTextToggleButton?.addEventListener("click", () => {
+  setTextOverlayVisible(!isTextOverlayVisible);
+});
+
 recordingPlayer.addEventListener("timeupdate", () => {
   stopAtStatisticsRangeEnd();
   updatePlaybackVisuals();
@@ -1184,8 +1428,21 @@ recordingPlayer.addEventListener("click", () => {
 });
 
 playPauseButton.addEventListener("click", () => {
+  if (isCourseMediaLocked()) {
+    showCourseMediaLockMessage();
+    return;
+  }
   togglePlayback();
 });
+
+document.addEventListener("play", (event) => {
+  if (!isCourseMediaLocked()) return;
+  const mediaElement = event.target;
+  if (!(mediaElement instanceof HTMLMediaElement)) return;
+  if (mediaElement === cameraPreview || coursePlayer?.contains(mediaElement)) return;
+  mediaElement.pause();
+  showCourseMediaLockMessage();
+}, true);
 
 playbackSeek.addEventListener("input", () => {
   const measuredDuration = currentMetadata?.dauerSekunden || 0;
@@ -1202,7 +1459,7 @@ playbackSeek.addEventListener("input", () => {
 retakeButton?.addEventListener("click", () => {
   recordingPlayer.pause();
   resetRecordingUi();
-  message.textContent = "Bereit für eine neue Aufnahme.";
+  message.textContent = "Bereit fÃ¼r eine neue Aufnahme.";
 });
 
 deleteButton?.addEventListener("click", async () => {
@@ -1211,7 +1468,7 @@ deleteButton?.addEventListener("click", async () => {
     return;
   }
   clearCurrentRecording();
-  message.textContent = "Aufnahme gelöscht.";
+  message.textContent = "Aufnahme gelÃ¶scht.";
 });
 
 downloadAudioButton?.addEventListener("click", () => {
@@ -1229,6 +1486,31 @@ downloadJsonButton?.addEventListener("click", () => {
   }
 });
 
+courseResultBackButton?.addEventListener("click", () => {
+  if (!activeCourseRun) {
+    setActiveView("myCourses");
+    return;
+  }
+  coursePlayer?.classList.remove("is-hidden");
+  renderCoursePlayer();
+  setActiveView("myCourses");
+});
+
+courseResultNextButton?.addEventListener("click", () => {
+  if (!activeCourseRun) {
+    setActiveView("myCourses");
+    return;
+  }
+  const nextExercise = (activeCourseRun.plan?.exercises || [])[activeCourseRun.index];
+  if (!nextExercise) {
+    coursePlayer?.classList.remove("is-hidden");
+    renderCoursePlayer();
+    setActiveView("myCourses");
+    return;
+  }
+  openNextCourseExercise(nextExercise);
+});
+
 async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
   try {
     recordButton.disabled = true;
@@ -1237,7 +1519,7 @@ async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
       recordButton.textContent = "Dialog startet";
       message.textContent = "Dialog startet direkt mit der gespeicherten ElevenLabs-Zeile.";
     } else {
-      recordButton.textContent = "Instruktion läuft";
+      recordButton.textContent = "Instruktion lÃ¤uft";
       await speakExerciseInstruction();
     }
     instructionPlaybackActive = false;
@@ -1261,7 +1543,7 @@ async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
     setExerciseVisualsVisible(false);
     countdownOverlay.classList.add("is-hidden");
     recordButton.disabled = false;
-    recordButton.textContent = "Übung starten";
+    recordButton.textContent = "Ãœbung starten";
     message.textContent = "Start wurde unterbrochen. Bitte erneut versuchen.";
   }
 }
@@ -1272,25 +1554,25 @@ async function speakExerciseInstruction() {
   const instruction =
     getExerciseInstruction() ||
     EXERCISE_INSTRUCTIONS[exerciseName.value] ||
-    `Bitte lesen Sie die eingeblendeten Wörter deutlich und ruhig vor.`;
+    `Bitte lesen Sie die eingeblendeten WÃ¶rter deutlich und ruhig vor.`;
 
   const editorAudio = await getCurrentInstructionAudio(activeExercise, instruction);
 
   if (editorAudio) {
-    message.textContent = "Voice-Begleitung läuft.";
+    message.textContent = "Voice-Begleitung lÃ¤uft.";
     const played = await playVoiceAudio(editorAudio);
     if (played) return;
   }
 
   const generatedAudio = await createTemporaryVoiceAudio(instruction);
   if (generatedAudio) {
-    message.textContent = "ElevenLabs-Instruktion läuft.";
+    message.textContent = "ElevenLabs-Instruktion lÃ¤uft.";
     const played = await playVoiceAudio(generatedAudio);
     URL.revokeObjectURL(generatedAudio);
     if (played) return;
   }
 
-  message.textContent = "ElevenLabs stumm, Browser-Stimme läuft.";
+  message.textContent = "ElevenLabs stumm, Browser-Stimme lÃ¤uft.";
   return speakWithBrowserVoice(instruction);
 }
 
@@ -1376,11 +1658,11 @@ async function createStoredVoiceAudio(text, exerciseLabel, requestSettings = get
   const contentType = response.headers.get("content-type") || "";
   if (!response.ok || !contentType.includes("application/json")) {
     const details = await response.text().catch(() => "");
-    throw new Error(`Vorführung-Audio Fehler ${response.status}: ${details.slice(0, 80) || contentType || "keine Antwort"}`);
+    throw new Error(`VorfÃ¼hrung-Audio Fehler ${response.status}: ${details.slice(0, 80) || contentType || "keine Antwort"}`);
   }
 
   const payload = await response.json();
-  if (!payload.downloadUrl) throw new Error("Vorführung-Audio ohne URL.");
+  if (!payload.downloadUrl) throw new Error("VorfÃ¼hrung-Audio ohne URL.");
   return {
     url: getGlobalVoiceAudioUrl(payload.downloadUrl, payload.path),
     path: payload.path || "",
@@ -1395,16 +1677,22 @@ async function startExercisePreview() {
   if (isRecording || mediaRecorder?.state === "recording") return;
 
   await unlockInstructionAudio();
+  if (!hasActiveMediaStream()) {
+    await ensureMediaStream().catch(() => false);
+  }
   setupKaraokeText();
+  const activeExercise = getActiveRecordingExercise();
   const previewText = getExercisePreviewText();
   if (!previewText) {
-    message.textContent = "Keine Vorführung möglich: Übung hat keinen Text.";
+    message.textContent = "Keine VorfÃ¼hrung mÃ¶glich: Ãœbung hat keinen Text.";
     return;
   }
 
   isPreviewingExercise = true;
+  previewSegmentTimings = buildPreviewSegmentTimings(activeExercise, previewText);
+  setPreviewSessionState(true, "VorfÃ¼hrung aktiv");
   previewExerciseButton.disabled = true;
-  previewExerciseButton.textContent = "Vorführung lädt";
+  previewExerciseButton.textContent = "VorfÃ¼hrung lÃ¤dt";
   recordButton.disabled = true;
 
   try {
@@ -1415,7 +1703,7 @@ async function startExercisePreview() {
   } finally {
     if (isPreviewingExercise && previewExerciseButton) {
       previewExerciseButton.disabled = false;
-      previewExerciseButton.textContent = "Vorführung stoppen";
+      previewExerciseButton.textContent = "VorfÃ¼hrung stoppen";
     }
   }
 }
@@ -1423,6 +1711,110 @@ async function startExercisePreview() {
 function getExercisePreviewText() {
   const exercise = getActiveRecordingExercise();
   return getExercisePreviewTextForExercise(exercise);
+}
+
+function getPreviewChunkTimelineDuration(chunk, exercise, timing = getCurrentKaraokeTiming()) {
+  const text = String(chunk || "").trim();
+  if (!text) return Math.max(0.4, Number(timing.pauseSeconds) || DEFAULT_KARAOKE_PAUSE_SECONDS);
+
+  if (
+    exercise?.mode === "dialog" ||
+    exercise?.mode === "sentences" ||
+    exercise?.mode === "text" ||
+    isLongTextMode(exercise?.mode)
+  ) {
+    return getTextPassageSeconds(text, timing.wordSeconds, timing.pauseSeconds);
+  }
+
+  const words = text
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter((word) => word && word !== "|");
+  const timeline = buildKaraokeTimeline(words, timing);
+  return getKaraokeTimelineDuration(timeline) || getTextPassageSeconds(text, timing.wordSeconds, timing.pauseSeconds);
+}
+
+function buildPreviewSegmentTimings(exercise, previewText) {
+  const syncedTimings = buildPreviewSegmentTimingsFromExerciseTimeline(exercise);
+  if (syncedTimings.length) return syncedTimings;
+
+  const chunks = getExercisePreviewChunks(exercise, previewText);
+  if (!chunks.length) return [];
+
+  const fullDuration = getKaraokeTimelineDuration(karaokeTimeline);
+  const timing = getCurrentKaraokeTiming();
+  const rawDurations = chunks.map((chunk) => getPreviewChunkTimelineDuration(chunk, exercise, timing));
+  const rawTotal = rawDurations.reduce((sum, value) => sum + value, 0) || 1;
+  const scale = fullDuration > 0 ? fullDuration / rawTotal : 1;
+
+  let cursor = 0;
+  return rawDurations.map((duration, index) => {
+    const scaledDuration = Math.max(0.12, duration * scale);
+    const start = cursor;
+    const end = index === rawDurations.length - 1 && fullDuration > 0 ? fullDuration : cursor + scaledDuration;
+    cursor = end;
+    return { start, end };
+  });
+}
+
+function buildPreviewSegmentTimingsFromExerciseTimeline(exercise) {
+  if (!Array.isArray(karaokeTimeline) || !karaokeTimeline.length) return [];
+
+  if (exercise?.mode === "dialog") {
+    const systemEntries = karaokeTimeline.filter((item) => item.isSystemTurn);
+    const systemTexts = getExerciseDialogTurns(exercise)
+      .filter((turn) => turn.role !== "patient" && turn.text)
+      .map((turn) => turn.text);
+    return buildPreviewSegmentsFromTextEntries(systemEntries, systemTexts);
+  }
+
+  if (exercise?.mode === "sentences") {
+    const sentenceEntries = karaokeTimeline.filter((item) => item.isSentence);
+    return buildPreviewSegmentsFromTextEntries(sentenceEntries, getExerciseSentences(exercise));
+  }
+
+  if (isLongTextMode(exercise?.mode)) {
+    const passageEntries = karaokeTimeline.filter((item) => item.isTextPassage);
+    return buildPreviewSegmentsFromTextEntries(passageEntries, getExerciseTextPassages(exercise), 620);
+  }
+
+  return [];
+}
+
+function buildPreviewSegmentsFromTextEntries(entries, texts, maxLength = 840) {
+  const timing = getCurrentKaraokeTiming();
+  const segments = [];
+
+  entries.forEach((entry, index) => {
+    const sourceText = String(texts[index] || entry?.text || "").trim();
+    if (!sourceText) return;
+
+    const chunks = splitVoicePreviewText(sourceText, maxLength);
+    const entryStart = Number(entry?.start || 0);
+    const entryEnd = Number(entry?.end || entryStart);
+    const entryDuration = Math.max(0.12, entryEnd - entryStart);
+
+    if (chunks.length <= 1) {
+      segments.push({ start: entryStart, end: entryEnd });
+      return;
+    }
+
+    const rawDurations = chunks.map((chunk) =>
+      getTextPassageSeconds(chunk, timing.wordSeconds, timing.pauseSeconds)
+    );
+    const rawTotal = rawDurations.reduce((sum, value) => sum + value, 0) || 1;
+    let cursor = entryStart;
+
+    rawDurations.forEach((duration, chunkIndex) => {
+      const scaledDuration = Math.max(0.12, (duration / rawTotal) * entryDuration);
+      const start = cursor;
+      const end = chunkIndex === rawDurations.length - 1 ? entryEnd : cursor + scaledDuration;
+      segments.push({ start, end });
+      cursor = end;
+    });
+  });
+
+  return segments;
 }
 
 function getExercisePreviewTextForExercise(exercise) {
@@ -1499,8 +1891,8 @@ async function prepareDemoAudioForExercise(exercise, requestSettings) {
       return { exercise, changed: false };
     }
 
-    editorVoiceState.textContent = "Vorführ-Audio wird erstellt und gespeichert...";
-    const storedDemo = await createStoredVoiceAudio(previewText, `${exercise.name} Vorführung`, requestSettings);
+    editorVoiceState.textContent = "VorfÃ¼hr-Audio wird erstellt und gespeichert...";
+    const storedDemo = await createStoredVoiceAudio(previewText, `${exercise.name} VorfÃ¼hrung`, requestSettings);
     return {
       changed: true,
       exercise: hydrateEditorExercise({
@@ -1523,10 +1915,10 @@ async function prepareDemoAudioForExercise(exercise, requestSettings) {
 
   const segments = [];
   for (let index = 0; index < chunks.length; index += 1) {
-    editorVoiceState.textContent = `Vorführ-Audio wird erstellt: ${index + 1}/${chunks.length}`;
+    editorVoiceState.textContent = `VorfÃ¼hr-Audio wird erstellt: ${index + 1}/${chunks.length}`;
     const storedAudio = await createStoredVoiceAudio(
       chunks[index],
-      `${exercise.name} Vorführung ${index + 1}`,
+      `${exercise.name} VorfÃ¼hrung ${index + 1}`,
       requestSettings,
     );
     segments.push({
@@ -1612,7 +2004,7 @@ async function getExercisePreviewAudio(text) {
     return getGlobalVoiceAudioUrl(activeExercise.demoAudioUrl, activeExercise.demoAudioPath);
   }
 
-  const storedAudio = await createStoredVoiceAudio(text, `${getExerciseLabel()} Vorführung`, requestSettings);
+  const storedAudio = await createStoredVoiceAudio(text, `${getExerciseLabel()} VorfÃ¼hrung`, requestSettings);
   if (activeExercise?.name) {
     await saveDemoAudioForActiveExercise(storedAudio);
   }
@@ -1643,9 +2035,9 @@ async function getExercisePreviewAudioSegments(text) {
   const segments = [];
   for (let index = 0; index < chunks.length; index += 1) {
     if (!isPreviewingExercise) break;
-    previewExerciseButton.textContent = `Vorführung lädt ${index + 1}/${chunks.length}`;
-    const storedAudio = await createStoredVoiceAudio(chunks[index], `${getExerciseLabel()} Vorführung ${index + 1}`, requestSettings);
-    if (!storedAudio?.url) throw new Error(`Vorführung-Teil ${index + 1} konnte nicht erzeugt werden.`);
+    previewExerciseButton.textContent = `VorfÃ¼hrung lÃ¤dt ${index + 1}/${chunks.length}`;
+    const storedAudio = await createStoredVoiceAudio(chunks[index], `${getExerciseLabel()} VorfÃ¼hrung ${index + 1}`, requestSettings);
+    if (!storedAudio?.url) throw new Error(`VorfÃ¼hrung-Teil ${index + 1} konnte nicht erzeugt werden.`);
     segments.push({
       index,
       url: storedAudio.url,
@@ -1688,7 +2080,7 @@ async function getDialogPreviewAudioSegments(exercise) {
       continue;
     }
 
-    previewExerciseButton.textContent = `Dialog-Audio lädt ${systemIndex}/${systemTurns.length}`;
+    previewExerciseButton.textContent = `Dialog-Audio lÃ¤dt ${systemIndex}/${systemTurns.length}`;
     const storedAudio = await createStoredVoiceAudio(turn.text, `${exercise.name} Dialog ${systemIndex}`, requestSettings);
     const updatedTurn = {
       ...normalizeDialogTurn(turn),
@@ -1849,103 +2241,49 @@ async function saveDemoAudioSegmentsForActiveExercise(segments) {
 
 async function playExercisePreviewAudio(audioUrls, fallbackText = "") {
   const urls = Array.isArray(audioUrls) ? audioUrls.filter(Boolean) : [audioUrls].filter(Boolean);
-  if (!urls.length) throw new Error("Keine Vorführ-Audiodatei vorhanden.");
+  if (!urls.length) throw new Error("Keine VorfÃ¼hr-Audiodatei vorhanden.");
 
   setExerciseVisualsVisible(true);
-  message.textContent = "Vorführung läuft.";
+  message.textContent = "VorfÃ¼hrung lÃ¤uft.";
   previewAudioUrls = urls;
   previewPlaybackOffsetSeconds = 0;
-  await playExercisePreviewSegment(0, fallbackText);
+  for (let index = 0; index < previewAudioUrls.length; index += 1) {
+    if (!isPreviewingExercise) return;
+    const played = await playExercisePreviewSegment(index, fallbackText);
+    if (!played && fallbackText) {
+      await playExercisePreviewFallback(fallbackText, new Error("VorfÃ¼hrung-Audio konnte nicht abgespielt werden."));
+      return;
+    }
+  }
+  if (isPreviewingExercise) stopExercisePreview();
+}
+
+function getPreviewSegmentWindow(index) {
+  const fallbackEnd = getKaraokeTimelineDuration(karaokeTimeline) || 0;
+  return previewSegmentTimings[index] || { start: 0, end: fallbackEnd };
 }
 
 async function playExercisePreviewSegment(index, fallbackText = "") {
   if (!isPreviewingExercise || index >= previewAudioUrls.length) {
-    stopExercisePreview();
-    return;
+    return false;
   }
-
-  const webAudioPlayed = await playExercisePreviewBufferSegment(index, fallbackText);
-  if (webAudioPlayed) return;
-
-  previewAudioElement = new Audio(previewAudioUrls[index]);
-  previewAudioElement.preload = "auto";
-  previewAudioElement.muted = false;
-  previewAudioElement.defaultMuted = false;
-  previewAudioElement.volume = 1;
-  previewAudioElement.addEventListener("ended", async () => {
-    previewPlaybackOffsetSeconds += Number(previewAudioElement?.duration) || 0;
-    previewAudioElement = null;
-    await playExercisePreviewSegment(index + 1, fallbackText);
-  }, { once: true });
-  previewAudioElement.addEventListener("error", async () => {
-    await playExercisePreviewFallback(fallbackText || getExercisePreviewText(), new Error("Vorführung-Audio konnte nicht abgespielt werden."));
-  }, { once: true });
 
   previewExerciseButton.disabled = false;
   previewExerciseButton.textContent = previewAudioUrls.length > 1
-    ? `Vorführung stoppen ${index + 1}/${previewAudioUrls.length}`
-    : "Vorführung stoppen";
-  await previewAudioElement.play();
-  animateExercisePreviewKaraoke();
-}
+    ? `VorfÃ¼hrung stoppen ${index + 1}/${previewAudioUrls.length}`
+    : "VorfÃ¼hrung stoppen";
+  message.textContent = "VorfÃ¼hrung lÃ¤uft.";
 
-async function playExercisePreviewBufferSegment(index, fallbackText = "") {
+  const segmentWindow = getPreviewSegmentWindow(index);
+  animateExercisePreviewKaraoke(index, segmentWindow);
+
   try {
-    await unlockInstructionAudio();
-    if (!instructionAudioContext || instructionAudioContext.state === "closed") return false;
-    if (instructionAudioContext.state === "suspended") {
-      await instructionAudioContext.resume();
+    const played = await playVoiceAudio(previewAudioUrls[index]);
+    if (!played) return false;
+    previewPlaybackOffsetSeconds = segmentWindow.end;
+    if (isPreviewingExercise) {
+      updateKaraokeDisplayAtTime(karaokeOverlay, karaokeTimeline, segmentWindow.end);
     }
-
-    const audioUrl = previewAudioUrls[index];
-    const response = await fetch(resolveAppUrl(audioUrl), { cache: "force-cache" });
-    if (!response.ok) return false;
-    const audioData = await response.arrayBuffer();
-    if (!audioData.byteLength) return false;
-    const audioBuffer = await instructionAudioContext.decodeAudioData(audioData.slice(0));
-    const source = instructionAudioContext.createBufferSource();
-    const gain = instructionAudioContext.createGain();
-    const startedAt = instructionAudioContext.currentTime;
-    const duration = Number(audioBuffer.duration || 0);
-
-    instructionAudioSource?.stop?.();
-    instructionAudioSource = source;
-    source.buffer = audioBuffer;
-    gain.gain.value = 1;
-    source.connect(gain);
-    gain.connect(instructionAudioContext.destination);
-    previewExerciseButton.disabled = false;
-    previewExerciseButton.textContent = previewAudioUrls.length > 1
-      ? `Vorführung stoppen ${index + 1}/${previewAudioUrls.length}`
-      : "Vorführung stoppen";
-    message.textContent = "Vorführung läuft.";
-
-    const animate = () => {
-      if (!isPreviewingExercise || instructionAudioSource !== source) return;
-      const elapsedSeconds = Math.max(0, instructionAudioContext.currentTime - startedAt);
-      updateKaraokeDisplayAtTime(
-        karaokeOverlay,
-        karaokeTimeline,
-        previewPlaybackOffsetSeconds + Math.min(duration || elapsedSeconds, elapsedSeconds),
-      );
-      previewAnimationFrameId = window.requestAnimationFrame(animate);
-    };
-
-    await new Promise((resolve, reject) => {
-      source.onended = () => resolve(true);
-      try {
-        source.start(0);
-        animate();
-      } catch (error) {
-        reject(error);
-      }
-    });
-
-    if (instructionAudioSource === source) instructionAudioSource = null;
-    source.onended = null;
-    if (!isPreviewingExercise) return true;
-    previewPlaybackOffsetSeconds += duration;
-    await playExercisePreviewSegment(index + 1, fallbackText);
     return true;
   } catch (error) {
     if (index === 0 && fallbackText) {
@@ -1953,17 +2291,28 @@ async function playExercisePreviewBufferSegment(index, fallbackText = "") {
       return true;
     }
     return false;
+  } finally {
+    window.cancelAnimationFrame(previewAnimationFrameId);
+    previewAnimationFrameId = 0;
   }
 }
 
-function animateExercisePreviewKaraoke() {
-  if (!isPreviewingExercise || !previewAudioElement) return;
-  updateKaraokeDisplayAtTime(
-    karaokeOverlay,
-    karaokeTimeline,
-    previewPlaybackOffsetSeconds + (previewAudioElement.currentTime || 0),
-  );
-  previewAnimationFrameId = window.requestAnimationFrame(animateExercisePreviewKaraoke);
+function animateExercisePreviewKaraoke(index, segmentWindow = getPreviewSegmentWindow(index)) {
+  const startedAt = performance.now();
+  const segmentDuration = Math.max(0.12, segmentWindow.end - segmentWindow.start);
+  const animate = () => {
+    if (!isPreviewingExercise) return;
+    const elapsedSeconds = Math.max(0, (performance.now() - startedAt) / 1000);
+    const segmentProgress = Math.max(0, Math.min(1, elapsedSeconds / segmentDuration));
+    updateKaraokeDisplayAtTime(
+      karaokeOverlay,
+      karaokeTimeline,
+      segmentWindow.start + segmentDuration * segmentProgress,
+    );
+    previewAnimationFrameId = window.requestAnimationFrame(animate);
+  };
+  window.cancelAnimationFrame(previewAnimationFrameId);
+  previewAnimationFrameId = window.requestAnimationFrame(animate);
 }
 
 async function playExercisePreviewFallback(previewText, error) {
@@ -1978,16 +2327,17 @@ async function playExercisePreviewFallback(previewText, error) {
   setExerciseVisualsVisible(true);
   previewAudioUrls = [];
   previewPlaybackOffsetSeconds = 0;
+  previewSegmentTimings = [];
   previewFallbackDurationSeconds = Math.max(
     getKaraokeTimelineDuration(karaokeTimeline),
     Math.min(60, Math.max(3, String(previewText || "").length * 0.055)),
   );
   previewFallbackStartedAt = performance.now();
   previewExerciseButton.disabled = false;
-  previewExerciseButton.textContent = "Vorführung stoppen";
+  previewExerciseButton.textContent = "VorfÃ¼hrung stoppen";
   message.textContent = error?.message
-    ? `${error.message} Browser-Stimme läuft als Ersatz.`
-    : "Browser-Stimme läuft als Ersatz.";
+    ? `${error.message} Browser-Stimme lÃ¤uft als Ersatz.`
+    : "Browser-Stimme lÃ¤uft als Ersatz.";
   animateExercisePreviewFallback();
   await speakWithBrowserVoice(previewText);
   if (isPreviewingExercise) stopExercisePreview();
@@ -2027,19 +2377,21 @@ function stopExercisePreview() {
   });
   previewAudioUrls = [];
   previewPlaybackOffsetSeconds = 0;
+  previewSegmentTimings = [];
   previewFallbackStartedAt = 0;
   previewFallbackDurationSeconds = 0;
 
+  setPreviewSessionState(false);
   setExerciseVisualsVisible(false);
   if (previewExerciseButton) {
     previewExerciseButton.disabled = false;
-    previewExerciseButton.textContent = "Vorführung";
+    previewExerciseButton.textContent = "VorfÃ¼hrung";
   }
   if (!isRecording) {
     recordButton.disabled = false;
-    recordButton.textContent = "Übung starten";
+    recordButton.textContent = "Ãœbung starten";
   }
-  message.textContent = "Vorführung beendet. Übung kann gestartet werden.";
+  message.textContent = "VorfÃ¼hrung beendet. Ãœbung kann gestartet werden.";
 }
 
 function speakWithBrowserVoice(instruction) {
@@ -2336,14 +2688,14 @@ async function startRecording() {
   startRecordingKaraokeEventIfPatient(activeKaraokeIndex);
   enterRecordingFocus();
 
-  recordButton.textContent = "Übung stoppen";
+  recordButton.textContent = "Ãœbung stoppen";
   recordButton.classList.add("is-recording");
   recordButton.disabled = false;
   resultPanel.classList.add("is-hidden");
   message.textContent =
     mediaRecorder.recordingExtension === "webm"
-      ? "Videoaufnahme läuft."
-      : `Aufnahme läuft. Dieser Browser speichert als ${mediaRecorder.recordingExtension.toUpperCase()}.`;
+      ? "Videoaufnahme lÃ¤uft."
+      : `Aufnahme lÃ¤uft. Dieser Browser speichert als ${mediaRecorder.recordingExtension.toUpperCase()}.`;
 
   window.setTimeout(() => {
     if (isRecording) {
@@ -2389,7 +2741,7 @@ function stopRecording() {
   window.clearTimeout(saveTimeoutId);
   saveTimeoutId = window.setTimeout(() => {
     if (recordButton.disabled) {
-      restoreRecorderControls("Speichern dauert länger als erwartet. Bitte erneut versuchen.");
+      restoreRecorderControls("Speichern dauert lÃ¤nger als erwartet. Bitte erneut versuchen.");
     }
   }, SAVE_TIMEOUT_MS);
 }
@@ -2442,7 +2794,7 @@ async function finishRecording() {
         })),
       dauerSekunden: Number(durationSeconds.toFixed(1)),
       patientName: getCurrentPatientName(),
-      patientId: slugify(getCurrentPatientName()),
+      patientId: getCurrentPatientId(),
       empfindlichkeit: Number(sensitivitySlider.value),
       durchschnittlicheLautstaerke: stats.average,
       maximaleLautstaerke: stats.maximum,
@@ -2460,29 +2812,67 @@ async function finishRecording() {
       stimmfrequenzenHz: roundedPitchHz,
       audioSpuren: sourceAudioTracks,
       videoSpuren: sourceVideoTracks,
+      quellVideoBreite: activeCaptureSourceWidth,
+      quellVideoHoehe: activeCaptureSourceHeight,
+      captureRotationGrad: activeCaptureRotationDegrees,
+      capturePipelineVersion: 3,
       dateityp: mimeType,
       aufnahme: `${fileStem}.${fileExtension}`,
     };
+    if (activeCourseRun?.session && activeCourseRun?.plan) {
+      const activeCourseExercise = getActiveCourseExercise();
+      currentMetadata.courseSessionId = activeCourseRun.session.id;
+      currentMetadata.courseId = activeCourseRun.course?.id || "";
+      currentMetadata.courseName = activeCourseRun.course?.name || "";
+      currentMetadata.coursePlanId = activeCourseRun.plan.id || "";
+      currentMetadata.coursePlanTitle = activeCourseRun.plan.title || "";
+      currentMetadata.courseExerciseId = activeCourseExercise?.exerciseId || "";
+      currentMetadata.courseExerciseTitle = activeCourseExercise?.title || currentMetadata.uebung;
+      currentMetadata.courseDayIndex = Number(activeCourseRun.dayIndex || 0);
+      currentMetadata.courseExerciseIndex = Number(activeCourseRun.index || 0);
+    }
     currentMetadata.audioAnalyse = buildAudioAnalysis(currentMetadata);
     currentMetadata.werte = getVoiceAnalysisValues(currentMetadata);
     currentMetadata.bewertung = calculateVoiceEvaluation(currentMetadata, allRecordings);
     selectedAnalysisRecordingId = currentMetadata.id;
     currentVideoBlob = videoBlob;
 
+    const completedCourseExercise = activeCourseRun?.playlistMode
+      ? getActiveCourseExercise()
+      : null;
+    const completedCourseSessionId = activeCourseRun?.session?.id || "";
+    const coursePlaylistWasActive = Boolean(activeCourseRun?.playlistMode && completedCourseSessionId);
     await saveRecording(currentMetadata, videoBlob);
+    await completeCourseExerciseFromRecording(currentMetadata);
     await refreshRecordings(currentMetadata.id);
-    showResult(currentMetadata, videoBlob);
+    const continuePlaylist = Boolean(
+      completedCourseExercise
+      && coursePlaylistWasActive
+      && currentMetadata.courseSessionId === completedCourseSessionId
+      && activeCourseRun?.session?.id === completedCourseSessionId
+    );
+    if (continuePlaylist) {
+      courseResultActions?.classList.add("is-hidden");
+      resultPanel.classList.add("is-hidden");
+    } else {
+      showResult(currentMetadata, videoBlob);
+    }
 
     recordButton.disabled = false;
-    recordButton.textContent = "Übung starten";
+    recordButton.textContent = "Ãœbung starten";
     recordButton.classList.remove("is-recording");
     if (mediaRecorder === stoppedRecorder) {
       mediaRecorder = null;
     }
     message.textContent = "Aufnahme gespeichert.";
-    firebaseState.textContent = "Lokal gespeichert. Firebase-Upload läuft.";
+    firebaseState.textContent = "Lokal gespeichert. Firebase-Upload lÃ¤uft.";
 
     uploadCurrentRecording(currentMetadata, videoBlob);
+    if (continuePlaylist) {
+      coursePlayer?.classList.remove("is-hidden");
+      setActiveView("myCourses");
+      continueCoursePlaylist();
+    }
   } catch (error) {
     stopComposedVideoStream();
     restoreRecorderControls("Speichern fehlgeschlagen. Bitte Aufnahme erneut versuchen.");
@@ -2502,7 +2892,7 @@ async function prepareRecordingAudio() {
   }
 }
 
-async function setupAudioAnalyser({ reuseExisting = false } = {}) {
+async function setupAudioAnalyser({ reuseExisting = false, forceDedicatedStream = false } = {}) {
   await ensureAudioContext();
 
   if (reuseExisting && analyser && audioSource) {
@@ -2513,10 +2903,32 @@ async function setupAudioAnalyser({ reuseExisting = false } = {}) {
   disconnectAudioAnalyser();
 
   const existingAudioTrack = mediaStream?.getAudioTracks?.()[0];
+  const preferDedicatedAudioStream = forceDedicatedStream || !isIosMediaDevice();
 
   audioOnlyStreamOwnsTracks = false;
 
-  if (existingAudioTrack && existingAudioTrack.readyState === "live") {
+  if (preferDedicatedAudioStream) {
+    try {
+      audioOnlyStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: false,
+        },
+        video: false,
+      });
+      audioOnlyStreamOwnsTracks = true;
+    } catch (error) {
+      const fallbackTrack = existingAudioTrack;
+      if (!fallbackTrack) {
+        if (!instructionPlaybackActive) {
+          message.textContent = "Kein Mikrofonsignal gefunden.";
+        }
+        return;
+      }
+      audioOnlyStream = new MediaStream([fallbackTrack]);
+    }
+  } else if (existingAudioTrack && existingAudioTrack.readyState === "live") {
     audioOnlyStream = new MediaStream([existingAudioTrack]);
   } else {
     try {
@@ -2530,7 +2942,7 @@ async function setupAudioAnalyser({ reuseExisting = false } = {}) {
       });
       audioOnlyStreamOwnsTracks = true;
     } catch (error) {
-      const fallbackTrack = mediaStream.getAudioTracks()[0];
+      const fallbackTrack = existingAudioTrack;
       if (!fallbackTrack) {
         if (!instructionPlaybackActive) {
           message.textContent = "Kein Mikrofonsignal gefunden.";
@@ -2603,7 +3015,10 @@ async function ensureRecordingAnalyserReady() {
 
   const hasFreshFrames = await waitForAudioProcessorFrames(650);
   if (!hasFreshFrames) {
-    await setupAudioAnalyser({ reuseExisting: false });
+    await setupAudioAnalyser({
+      reuseExisting: false,
+      forceDedicatedStream: !isIosMediaDevice(),
+    });
     await waitForAudioProcessorFrames(650);
   }
 }
@@ -2935,20 +3350,56 @@ function measureAudio() {
     now,
   );
   adaptiveVolumeNoiseFloor = updateAdaptiveVolumeNoiseFloor(volumeSignal, adaptiveVolumeNoiseFloor);
-  const dynamicVolumeGate = Math.max(
+  let dynamicVolumeGate = Math.max(
     VOLUME_NOISE_GATE,
     calibrationNoiseFloor.volumeGate || 0,
     adaptiveVolumeNoiseFloor * VOLUME_NOISE_GATE_MULTIPLIER,
   );
+  const likelyVoiceActivity =
+    !isMeasuringSilence &&
+    (
+      voiceAverage > backgroundAverage * 1.08 + 1.5 ||
+      voicePeak > backgroundAverage * 1.1 + 6 ||
+      voiceContrast > 1.15 ||
+      voicePeakContrast > 3.5
+    );
+  if (likelyVoiceActivity && volumeSignal > 0) {
+    dynamicVolumeGate = Math.min(
+      dynamicVolumeGate,
+      Math.max(VOLUME_NOISE_GATE, volumeSignal * 0.72),
+    );
+  }
   const gatedVolumeSignal = Math.max(0, volumeSignal - dynamicVolumeGate);
   const calibrationMeterBoost = isCalibrating ? 1.8 : 1;
   let calibratedVolume = isMeasuringSilence ? 0 : scaleVolumeLevel(gatedVolumeSignal * calibrationMeterBoost);
   const frequencySignal = isMeasuringSilence
     ? 0
     : Math.max(0, rawFrequencySignal - (calibrationNoiseFloor.frequencyGate || 0)) * calibrationMeterBoost;
+  const hasVoicePresence = likelyVoiceActivity;
+  const recoveredVolumeSignal =
+    hasVoicePresence && gatedVolumeSignal <= 0
+      ? Math.max(0, volumeSignal - Math.min(dynamicVolumeGate * 0.58, Math.max(0.9, volumeSignal * 0.48)))
+      : gatedVolumeSignal;
+  if (hasVoicePresence && calibratedVolume <= 0 && recoveredVolumeSignal > 0) {
+    calibratedVolume = scaleVolumeLevel(recoveredVolumeSignal * calibrationMeterBoost);
+  }
+  const desktopMeterFallback =
+    !isIosMediaDevice()
+    && !isMeasuringSilence
+    && (
+      voicePeak > backgroundAverage + 3
+      || volumeSignal > Math.max(2.2, dynamicVolumeGate * 0.62)
+      || analyserRms > 1.2
+    );
+  if (desktopMeterFallback && calibratedVolume <= 0) {
+    calibratedVolume = scaleVolumeLevel(Math.max(volumeSignal * 0.92, recoveredVolumeSignal * 1.18));
+  }
   let rawSignal = isMeasuringSilence
     ? 0
-    : Math.max(gatedVolumeSignal * calibrationMeterBoost * 1.35, frequencySignal * 0.72);
+    : Math.max(recoveredVolumeSignal * calibrationMeterBoost * 1.35, frequencySignal * 0.72);
+  if (desktopMeterFallback && rawSignal <= 0) {
+    rawSignal = Math.max(rawSignal, volumeSignal * calibrationMeterBoost * 1.08);
+  }
   let volume = scaleAmplitude(rawSignal);
   let displayVolume = calibratedVolume;
   let displayFrequency = scaleAmplitude(frequencySignal);
@@ -2967,7 +3418,7 @@ function measureAudio() {
     rawAmplitudes.push(rawSignal);
     amplitudes.push(amplitude);
     volumeValues.push(displayVolume);
-    rawVolumeValues.push(gatedVolumeSignal);
+    rawVolumeValues.push(recoveredVolumeSignal);
     frequencyValues.push(displayFrequency);
     pitchHzValues.push(pitchHz);
     lastAmplitudeAt = now;
@@ -3112,7 +3563,7 @@ function splitLongTextIntoSentencePassages(text) {
   const normalizedText = String(text || "").replace(/\s+/g, " ").trim();
   if (!normalizedText) return [];
 
-  const matches = normalizedText.match(/[^.!?…]+(?:[.!?…]+["»“”']?)?/g) || [normalizedText];
+  const matches = normalizedText.match(/[^.!?&]+(?:[.!?&]+["\u201c\u201d']?)?/g) || [normalizedText];
   const sentences = matches
     .map((sentence) => sentence.trim())
     .filter(Boolean);
@@ -3227,14 +3678,14 @@ function renderEditorDialogList() {
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
-    removeButton.textContent = "×";
+    removeButton.textContent = "Ã—";
     removeButton.setAttribute("aria-label", `Dialogzeile ${index + 1} entfernen`);
     removeButton.addEventListener("click", async () => {
       const previousExercise = getCurrentSavedEditorExerciseForDeletion();
       const nextTurns = getEditorDialogTurns();
       nextTurns.splice(index, 1);
       syncEditorDialogTurns(nextTurns);
-      await persistEditorInlineDeletion(previousExercise, "Dialogzeile gelöscht");
+      await persistEditorInlineDeletion(previousExercise, "Dialogzeile gelÃ¶scht");
     });
 
     item.append(row, textarea, removeButton);
@@ -3787,7 +4238,7 @@ function advanceSentencePrompt() {
     activeKaraokeIndex += 1;
     startRecordingKaraokeEventIfPatient(activeKaraokeIndex);
     updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
-    message.textContent = `Nächster Satz ${activeKaraokeIndex + 1} von ${karaokeTimeline.length}.`;
+    message.textContent = `NÃ¤chster Satz ${activeKaraokeIndex + 1} von ${karaokeTimeline.length}.`;
     return;
   }
 
@@ -3904,7 +4355,7 @@ function getExerciseLabel() {
   const activeExercise = getActiveRecordingExercise();
   if (activeExercise) return activeExercise.name;
 
-  return exerciseName.selectedOptions?.[0]?.textContent || exerciseName.value || "Übung";
+  return exerciseName.selectedOptions?.[0]?.textContent || exerciseName.value || "Ãœbung";
 }
 
 function getExerciseScript() {
@@ -3982,15 +4433,48 @@ function saveRecordingKaraokeSpeedForExerciseName(nameOrKey, speed) {
 function clampRecordingKaraokeSpeed(value) {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return 3;
-  return Math.max(1, Math.min(10, Math.round(numericValue)));
+  return Math.max(1, Math.min(12, Math.round(numericValue)));
 }
 
 function updateRecordingKaraokeSpeed(value) {
   const nextValue = clampRecordingKaraokeSpeed(value);
   if (recordingKaraokeSpeed) recordingKaraokeSpeed.value = String(nextValue);
   saveRecordingKaraokeSpeedForCurrentExercise(nextValue);
+  persistRecordingSpeedToActiveExercise(nextValue);
   updateRecordingKaraokeSpeedLabel();
   retimeKaraokeAfterSpeedChange();
+}
+
+function persistRecordingSpeedToActiveExercise(speed) {
+  const activeExercise = getActiveRecordingExercise();
+  if (!activeExercise?.name) return;
+
+  const matchingExercise = findSavedEditorExerciseByName(activeExercise.name);
+  if (!matchingExercise?.name) return;
+
+  const nextSpeed = clampRecordingKaraokeSpeed(speed);
+  const nextTiming = EDITOR_SPEEDS[nextSpeed] || EDITOR_SPEEDS[3];
+  const updatedExercise = hydrateEditorExercise({
+    ...matchingExercise,
+    speed: nextSpeed,
+    timing: nextTiming,
+  });
+
+  savedEditorExercises = upsertEditorExercise(savedEditorExercises, updatedExercise);
+  if (normalizeEditorExerciseName(savedEditorExercise?.name) === normalizeEditorExerciseName(updatedExercise.name)) {
+    savedEditorExercise = updatedExercise;
+  }
+  persistEditorExercises();
+  saveCloudEditorExercise(updatedExercise).catch(() => {});
+}
+
+function setPreviewSessionState(active, label = "") {
+  document.body.classList.toggle("previewing-exercise", Boolean(active));
+  previewSessionBar?.classList.toggle("is-hidden", !active);
+  previewSessionBar?.classList.toggle("is-visible", Boolean(active));
+  if (previewSessionLabel) {
+    previewSessionLabel.textContent = label || (active ? "VorfÃ¼hrung aktiv" : "VorfÃ¼hrung");
+  }
 }
 
 function retimeKaraokeAfterSpeedChange() {
@@ -4046,12 +4530,12 @@ function getKaraokeTimingHint(exercise, timing) {
     const durations = passages.map((passage) =>
       getTextPassageSeconds(passage, timing.wordSeconds, timing.pauseSeconds),
     );
-    if (!durations.length) return `Standzeit: nach Abschnittslänge (${speedLabel}).`;
+    if (!durations.length) return `Standzeit: nach AbschnittslÃ¤nge (${speedLabel}).`;
 
     const minSeconds = Math.min(...durations);
     const maxSeconds = Math.max(...durations);
     const avgSeconds = durations.reduce((sum, value) => sum + value, 0) / durations.length;
-    return `Standzeit: ${formatSecondsAndMilliseconds(minSeconds)}-${formatSecondsAndMilliseconds(maxSeconds)} pro Abschnitt, Ø ${formatSecondsAndMilliseconds(avgSeconds)} (${speedLabel}).`;
+    return `Standzeit: ${formatSecondsAndMilliseconds(minSeconds)}-${formatSecondsAndMilliseconds(maxSeconds)} pro Abschnitt, Â· ${formatSecondsAndMilliseconds(avgSeconds)} (${speedLabel}).`;
   }
 
   const words = String(exercise.script || exercise.content || "")
@@ -4064,7 +4548,7 @@ function getKaraokeTimingHint(exercise, timing) {
   const maxSeconds = Math.max(...durations);
 
   if (exercise.mode === "sentences") {
-    return `Standzeit: kurze Sätze wechseln per Pause; Tempo ${speedLabel}.`;
+    return `Standzeit: kurze SÃ¤tze wechseln per Pause; Tempo ${speedLabel}.`;
   }
 
   return `Standzeit: ${formatSecondsAndMilliseconds(minSeconds)}-${formatSecondsAndMilliseconds(maxSeconds)} pro Wort/Silbe (${speedLabel}).`;
@@ -4150,29 +4634,28 @@ function renderEditorSentenceListLegacy() {
   if (!sentences.length) {
     const empty = document.createElement("p");
     empty.className = "editor-sentence-empty";
-    empty.textContent = "Noch keine Sätze hinzugefügt.";
+    empty.textContent = "Noch keine SÃ¤tze hinzugefÃ¼gt.";
     editorSentenceList.append(empty);
     return;
   }
 
   sentences.forEach((sentence, index) => {
-    const wordCount = sentence.split(/\s+/).filter(Boolean).length;
     const item = document.createElement("div");
     item.className = "editor-sentence-item";
 
     const label = document.createElement("span");
-    label.textContent = `${index + 1}. ${sentence} (${wordCount} ${wordCount === 1 ? "Wort" : "Wörter"})`;
+    label.textContent = sentence;
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
-    removeButton.textContent = "×";
+    removeButton.textContent = "Ã—";
     removeButton.setAttribute("aria-label", `Satz ${index + 1} entfernen`);
     removeButton.addEventListener("click", async () => {
       const previousExercise = getCurrentSavedEditorExerciseForDeletion();
       const nextSentences = getEditorSentences();
       nextSentences.splice(index, 1);
       syncEditorSentences(nextSentences);
-      await persistEditorInlineDeletion(previousExercise, "Satz gelöscht");
+      await persistEditorInlineDeletion(previousExercise, "Satz gelÃ¶scht");
     });
 
     item.append(label, removeButton);
@@ -4195,13 +4678,12 @@ function renderEditorSentenceList() {
   }
 
   sentences.forEach((sentence, index) => {
-    const wordCount = sentence.split(/\s+/).filter(Boolean).length;
     const item = document.createElement("div");
     item.className = "editor-sentence-item";
     item.classList.toggle("is-editing", index === editingEditorSentenceIndex);
 
     const label = document.createElement("span");
-    label.textContent = `${index + 1}. ${sentence} (${wordCount} ${wordCount === 1 ? "Wort" : "W\u00f6rter"})`;
+    label.textContent = sentence;
     label.addEventListener("click", () => {
       editEditorSentence(index);
     });
@@ -4233,7 +4715,7 @@ function renderEditorSentenceList() {
         editingEditorSentenceIndex -= 1;
       }
       syncEditorSentences(nextSentences);
-      await persistEditorInlineDeletion(previousExercise, "Satz gelöscht");
+      await persistEditorInlineDeletion(previousExercise, "Satz gelÃ¶scht");
     });
 
     item.append(label, editButton, removeButton);
@@ -4252,11 +4734,11 @@ function getExerciseInstruction() {
   if (exercise.voiceInstruction) return exercise.voiceInstruction;
 
   if (exercise.mode === "dialog") {
-    return `Bereiten Sie sich auf den Dialog vor. Hören Sie auf die System-Antworten und sprechen Sie Ihren Teil ruhig und deutlich.`;
+    return `Bereiten Sie sich auf den Dialog vor. HÃ¶ren Sie auf die System-Antworten und sprechen Sie Ihren Teil ruhig und deutlich.`;
   }
 
   if (exercise.mode === "sentences") {
-    return `Bereiten Sie sich auf die kurzen Sätze vor. Lesen Sie jeden Satz im Tempo ${exercise.timing.label}. Machen Sie nach jedem Satz eine kurze Pause.`;
+    return `Bereiten Sie sich auf die kurzen SÃ¤tze vor. Lesen Sie jeden Satz im Tempo ${exercise.timing.label}. Machen Sie nach jedem Satz eine kurze Pause.`;
   }
 
   if (exercise.mode === "long_text") {
@@ -4267,7 +4749,7 @@ function getExerciseInstruction() {
     return `Bitte lesen Sie den eingeblendeten Karaoke-Text ruhig und deutlich vor. Das Tempo ist ${exercise.timing.label}.`;
   }
 
-  return `Bitte sprechen Sie ${exercise.contentLabel}. Wiederholen Sie die Folge ${exercise.repeats} mal im Tempo ${exercise.timing.label}, mit kurzer Pause zwischen den Durchgängen.`;
+  return `Bitte sprechen Sie ${exercise.contentLabel}. Wiederholen Sie die Folge ${exercise.repeats} mal im Tempo ${exercise.timing.label}, mit kurzer Pause zwischen den DurchgÃ¤ngen.`;
 }
 
 function getExerciseConfiguration() {
@@ -4335,6 +4817,17 @@ function getActiveEditorExercise() {
 }
 
 function getActiveRecordingExercise() {
+  const courseExercise = getActiveCourseExercise();
+  if (courseExercise?.mode === "media_exercise" && courseExercise.exerciseId === exerciseName.value) {
+    return hydrateEditorExercise({
+      name: courseExercise.title || "MedienÃ¼bung",
+      mode: "long_text",
+      content: courseExercise.patientHint || courseExercise.title || "MedienÃ¼bung",
+      script: courseExercise.patientHint || courseExercise.title || "MedienÃ¼bung",
+      repeats: 1,
+      speed: Number(recordingKaraokeSpeed?.value || 3),
+    });
+  }
   if (exerciseName.value === "custom-editor") return getActiveEditorExercise();
 
   const selectedOption = exerciseName.selectedOptions?.[0];
@@ -4390,6 +4883,7 @@ function hydrateEditorExercise(exercise) {
     : exercise.script || content;
   const sentences = exercise.sentences || (mode === "sentences" ? content.split("|").map((sentence) => sentence.trim()).filter(Boolean) : []);
   const patientTurnCount = dialogTurns.filter((turn) => turn.role === "patient").length;
+  const embeddedVoiceProfile = getEmbeddedExerciseVoiceProfile(exercise);
   const contentLabel =
     exercise.contentLabel ||
     (mode === "dialog"
@@ -4413,6 +4907,11 @@ function hydrateEditorExercise(exercise) {
     contentLabel,
     sentences,
     dialogTurns,
+    voiceProfileKey: exercise.voiceProfileKey || embeddedVoiceProfile?.key || "",
+    voiceProfileName: exercise.voiceProfileName || embeddedVoiceProfile?.name || "",
+    voiceProfileGender: exercise.voiceProfileGender || embeddedVoiceProfile?.gender || "neutral",
+    voiceProfileVoiceId: String(exercise.voiceProfileVoiceId || embeddedVoiceProfile?.voiceId || ""),
+    voiceProfileSettings: exercise.voiceProfileSettings || embeddedVoiceProfile?.settings || null,
     voiceAudioUrl: getGlobalVoiceAudioUrl(exercise.voiceAudioUrl, exercise.voiceAudioPath),
     demoAudioUrl: getGlobalVoiceAudioUrl(exercise.demoAudioUrl, exercise.demoAudioPath),
     demoAudioSegments: Array.isArray(exercise.demoAudioSegments)
@@ -4428,7 +4927,7 @@ function hydrateEditorExercise(exercise) {
   };
 }
 function buildEditorExerciseFromForm() {
-  const name = editorExerciseName.value.trim() || "Neue Übung";
+  const name = editorExerciseName.value.trim() || "Neue Ãœbung";
   const mode = editorMode.value;
   const speed = Number(editorSpeed.value);
   const timing = EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
@@ -4536,18 +5035,18 @@ function buildRepeatedScript(content, repeats) {
 function getDefaultEditorContent(mode) {
   if (mode === "sentences") return "";
   if (mode === "text") return "Heute lese ich langsam und deutlich.";
-  if (mode === "long_text") return "Es blaut die Nacht.\nDie Sternlein blinken.\nSchneeflöcklein leise niedersinken.";
+  if (mode === "long_text") return "Es blaut die Nacht.\nDie Sternlein blinken.\nSchneeflÃ¶cklein leise niedersinken.";
   if (mode === "vowels") return "A E I O U";
   if (mode === "dialog") {
     const speakerName = getCurrentPatientName();
-    return `System: Guten Morgen, wie geht es Ihnen?\n${speakerName}: Mir geht es heute gut.\nSystem: Was haben Sie heute geübt?\n${speakerName}: Ich habe ruhig und deutlich gesprochen.`;
+    return `System: Guten Morgen, wie geht es Ihnen?\n${speakerName}: Mir geht es heute gut.\nSystem: Was haben Sie heute geÃ¼bt?\n${speakerName}: Ich habe ruhig und deutlich gesprochen.`;
   }
   return "Pa Ta Ka";
 }
 
 function getDefaultEditorVoiceInstruction(mode) {
-  if (mode === "dialog") return "Bitte hören Sie auf die System-Sätze und sprechen Sie Ihren Teil ruhig und deutlich.";
-  if (mode === "sentences") return "Bitte lesen Sie die kurzen Sätze nacheinander ruhig und deutlich vor. Machen Sie nach jedem Satz eine kurze Pause.";
+  if (mode === "dialog") return "Bitte hÃ¶ren Sie auf die System-SÃ¤tze und sprechen Sie Ihren Teil ruhig und deutlich.";
+  if (mode === "sentences") return "Bitte lesen Sie die kurzen SÃ¤tze nacheinander ruhig und deutlich vor. Machen Sie nach jedem Satz eine kurze Pause.";
   if (mode === "text") return "Bitte lesen Sie den eingeblendeten Text ruhig und deutlich vor.";
   if (mode === "long_text") return "Bitte lesen Sie jeden eingeblendeten Textabschnitt ruhig und deutlich vor.";
   if (mode === "vowels") return "Bitte sprechen Sie die Vokale nacheinander deutlich aus.";
@@ -4559,7 +5058,7 @@ function buildVoiceInstructionSuggestion() {
   const speedText = exercise.timing.label.toLowerCase();
 
   if (exercise.mode === "sentences") {
-    return `Bereiten Sie sich auf die kurzen Sätze vor. Lesen Sie jeden Satz im Tempo ${speedText}. Machen Sie nach jedem Satz eine kurze Pause.`;
+    return `Bereiten Sie sich auf die kurzen SÃ¤tze vor. Lesen Sie jeden Satz im Tempo ${speedText}. Machen Sie nach jedem Satz eine kurze Pause.`;
   }
 
   if (exercise.mode === "dialog") {
@@ -4567,7 +5066,7 @@ function buildVoiceInstructionSuggestion() {
   }
 
   if (exercise.mode === "text") {
-    return `Bereiten Sie sich auf den Text vor. Lesen Sie gleich Wort für Wort im Tempo ${speedText}. Sprechen Sie ruhig, deutlich und ohne Druck.`;
+    return `Bereiten Sie sich auf den Text vor. Lesen Sie gleich Wort fÃ¼r Wort im Tempo ${speedText}. Sprechen Sie ruhig, deutlich und ohne Druck.`;
   }
 
   if (exercise.mode === "long_text") {
@@ -4575,22 +5074,835 @@ function buildVoiceInstructionSuggestion() {
   }
 
   if (exercise.mode === "vowels") {
-    return `Bereiten Sie sich auf die Vokalübung vor. Sprechen Sie ${exercise.contentLabel} nacheinander im Tempo ${speedText}. Achten Sie auf klare Mundöffnung und gleichmäßige Stimme.`;
+    return `Bereiten Sie sich auf die VokalÃ¼bung vor. Sprechen Sie ${exercise.contentLabel} nacheinander im Tempo ${speedText}. Achten Sie auf klare MundÃ¶ffnung und gleichmÃ¤ÃŸige Stimme.`;
   }
 
-  return `Bereiten Sie sich auf die Silbenübung vor. Sprechen Sie ${exercise.contentLabel} einzeln und deutlich. Wiederholen Sie die Folge ${exercise.repeats} mal im Tempo ${speedText}.`;
+  return `Bereiten Sie sich auf die SilbenÃœbung vor. Sprechen Sie ${exercise.contentLabel} einzeln und deutlich. Wiederholen Sie die Folge ${exercise.repeats} mal im Tempo ${speedText}.`;
+}
+
+function openEditorAiModal() {
+  resetEditorAiModal({ keepPrompt: true, keepState: true });
+  editorAiModal?.removeAttribute("hidden");
+  editorAiModal?.classList.remove("is-hidden");
+  editorAiModal?.setAttribute("aria-hidden", "false");
+  window.setTimeout(() => editorAiPrompt?.focus(), 40);
+}
+
+function closeEditorAiModal() {
+  editorAiModal?.classList.add("is-hidden");
+  editorAiModal?.setAttribute("aria-hidden", "true");
+  editorAiModal?.setAttribute("hidden", "");
+}
+
+function resetEditorAiModal(options = {}) {
+  editorAiGeneratedPayload = null;
+  editorAiInputView?.classList.remove("is-hidden");
+  editorAiPreviewView?.classList.add("is-hidden");
+  editorAiPreviewView?.setAttribute("hidden", "");
+  if (!options.keepPrompt && editorAiPrompt) editorAiPrompt.value = "";
+  if (editorAiPreviewList) editorAiPreviewList.innerHTML = "";
+  if (editorAiSummary) editorAiSummary.textContent = "";
+  if (!options.keepState && editorAiState) {
+    editorAiState.textContent = "ChatGPT nutzt die Einstellungen aus dem Setup.";
+  }
+}
+
+function setEditorAiState(text) {
+  if (editorAiState) editorAiState.textContent = text;
+}
+
+async function ensureChatGptAccess() {
+  let settings = getChatGptSettings();
+  if (hasUsableChatGptAccess(settings)) return settings;
+
+  await loadCloudChatGptSettings().catch(() => {});
+  settings = getChatGptSettings();
+  return settings;
+}
+
+function getChatGptRequestConfig() {
+  const settings = getChatGptSettings();
+  return {
+    apiKey: String(settings.apiKey || "").trim(),
+    model: String(settings.model || getDefaultChatGptSettings().model).trim() || getDefaultChatGptSettings().model,
+    systemPrompt: String(settings.systemPrompt || getDefaultChatGptSettings().systemPrompt).trim() || getDefaultChatGptSettings().systemPrompt,
+    hasCloudFallback: hasCloudChatGptApiKey,
+    enabled: settings.enabled !== false || hasCloudChatGptApiKey,
+  };
+}
+
+function extractEditorAiRequestedCount(prompt) {
+  const match = String(prompt || "").match(/\b(\d{1,3})\b/);
+  const parsed = Number(match?.[1] || 0);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 20;
+}
+
+function extractEditorAiTargetSound(prompt) {
+  const normalized = String(prompt || "").trim();
+  const directMatch = normalized.match(/\bmit\s+([A-Za-zAeOeUeaeoeuessSCHsch]{1,6})\b/);
+  if (directMatch?.[1]) return directMatch[1].toUpperCase();
+  const lautMatch = normalized.match(/\b([A-Za-zAeOeUeaeoeuessSCHsch]{1,6})-?lauten?\b/i);
+  if (lautMatch?.[1]) return lautMatch[1].toUpperCase();
+  return "";
+}
+
+function detectLocalEditorAiKind(prompt) {
+  const normalized = String(prompt || "").toLowerCase();
+  if (/\bdialog/.test(normalized)) return "dialog";
+  if (/\bgedicht|\bpoem|\breim/.test(normalized)) return "long_text";
+  if (/\btext|\balltagstext|\bgeschichte/.test(normalized)) return "long_text";
+  if (/\bw[oÃ¶]rter|\bwoerter|\bwort\b/.test(normalized)) return "syllables";
+  if (/\bvokal/.test(normalized)) return "vowels";
+  return "sentences";
+}
+
+function extractLocalEditorAiTheme(prompt) {
+  const normalized = String(prompt || "").trim();
+  const themeMatch = normalized.match(/\b(?:ueber|Ã¼ber|auf|zum|zur|zu|von)\s+(.+)$/i);
+  if (themeMatch?.[1]) return themeMatch[1].trim();
+  return normalized.trim();
+}
+
+function getLocalSoundWordPool(sound) {
+  const pools = {
+    O: ["Otto", "Oma", "Ofen", "oben", "orange", "Oper", "Osten", "Offen"],
+    W: ["Walter", "Wolke", "Wasser", "Wiese", "Winter", "Wort", "Weg", "Wunder"],
+    S: ["Sonne", "Suppe", "Susi", "singen", "Sommer", "sachte", "Seife", "Sessel"],
+    SCH: ["Schule", "Schaf", "Schere", "Schiff", "schauen", "Schokolade", "schlafen", "Schnee"],
+    R: ["Rita", "Regen", "Rose", "rot", "Runde", "rennen", "Radio", "ruhig"],
+    A: ["Anna", "Apfel", "Atem", "Abend", "Ampel", "Aal", "Auge", "April"],
+    E: ["Emil", "Esel", "Ecke", "Eimer", "Eis", "Erde", "Ebbe", "Ente"],
+    I: ["Ida", "Igel", "Iris", "Insel", "immer", "innen", "Info", "Iglu"],
+    U: ["Ute", "Ufer", "Uhr", "unten", "Urlaub", "Uhu", "U-Bahn", "Umweg"],
+  };
+  return pools[sound] || ["Laut", "Wort", "Stimme", "Mund", "Sprache", "Ton", "Lippe", "Atem"];
+}
+
+function getLocalSentenceTemplatesForSound(sound) {
+  const templates = {
+    O: [
+      "Otto oeffnet das Tor.",
+      "Oma kocht heute Kohl.",
+      "Oskar holt das Brot.",
+      "Der Ofen ist noch warm.",
+      "Otto wohnt oben.",
+      "Mona ordnet bunte Dosen.",
+      "Das Sofa steht vor dem Ofen.",
+      "Olaf holt roten Klee.",
+      "Morgen kommt Opa zu Besuch.",
+      "Die Sonne scheint auf den Hof.",
+    ],
+    W: [
+      "Walter winkt am Weg.",
+      "Willi waescht das Weinglas.",
+      "Wiebke wartet am Wasser.",
+      "Wir wohnen nah am Wald.",
+      "Die Wolke zieht weiter.",
+      "Wera wirft den weichen Ball.",
+      "Willi will warme Waffeln.",
+      "Das Wasser wird wieder warm.",
+      "Wanja wohnt an der Wiese.",
+      "Willi schreibt ein Wort an die Wand.",
+    ],
+    S: [
+      "Susi sammelt sieben Steine.",
+      "Die Sonne scheint sanft.",
+      "Simon schneidet die Seife.",
+      "Sven sitzt auf dem Sessel.",
+      "Heute essen wir Suppe.",
+      "Sina singt ein leises Lied.",
+      "Sebastian sucht seine Schuhe.",
+      "Am See ist es still.",
+      "Die Salbe riecht nach Salbei.",
+      "Susi sagt alles langsam.",
+    ],
+    SCH: [
+      "Schorsch schiebt den Schlitten.",
+      "Die Schule schliesst schon.",
+      "Scherben stehen im Schrank.",
+      "Schafe schlafen im Schatten.",
+      "Schmidt schreibt schoene Saetze.",
+      "Die Schokolade schmeckt sehr gut.",
+      "Schorsch schaut zum Schuppen.",
+      "Schnee liegt schon im Hof.",
+      "Das Schiff schaukelt leicht.",
+      "Schlaue Schueler sprechen deutlich.",
+    ],
+    R: [
+      "Rita ruft ihren Bruder.",
+      "Robert raeumt ruhig auf.",
+      "Der Regen rauscht am Rand.",
+      "Rosa traegt einen roten Rock.",
+      "Ralf riecht frisches Brot.",
+      "Ruben rollt den Reifen.",
+      "Rita schreibt einen Brief.",
+      "Der Ritter reitet rasch vorbei.",
+      "Mara hoert das Radio.",
+      "Rico traegt drei rote Rosen.",
+    ],
+    A: [
+      "Anna malt einen Ast.",
+      "Am Abend backt Mama Apfelkuchen.",
+      "Anton packt alle Sachen aus.",
+      "Die Ampel zeigt klar Rot an.",
+      "Anna atmet ruhig aus.",
+      "Am Hafen ankert ein Kahn.",
+      "Adam angelt am Kanal.",
+      "Alma faltet ein altes Blatt.",
+      "Das Bad ist angenehm warm.",
+      "Anja sagt alles langsam nach.",
+    ],
+    E: [
+      "Emil hebt den Becher.",
+      "Elli lebt neben Peter.",
+      "Der Esel geht ueber den Weg.",
+      "Eva klebt gelbe Sterne.",
+      "Emre leert den Teller.",
+      "Die Ente schwimmt im See.",
+      "Egon legt die Decke eben.",
+      "Elke redet sehr leise.",
+      "Die Erde riecht nach Regen.",
+      "Erik findet den ersten Fehler.",
+    ],
+    I: [
+      "Ida liebt ihren Igel.",
+      "Im Winter ist die Wiese weiss.",
+      "Iris nimmt die kleinen Kissen.",
+      "Ingo spielt mit Ida im Zimmer.",
+      "Die Insel liegt im Licht.",
+      "Im Kino ist es immer ruhig.",
+      "Ivo sieht sieben Ringe.",
+      "Ina trinkt einen Ingwertee.",
+      "Ein Igel sitzt im Gras.",
+      "Im Bild ist ein Tiger.",
+    ],
+    U: [
+      "Ute sucht ihre Uhr.",
+      "Udo ruft den Bus.",
+      "Unter dem Tisch liegt ein Tuch.",
+      "Ulla kocht eine gute Suppe.",
+      "Am Ufer steht ein Stuhl.",
+      "Uwe holt den Kuchen.",
+      "Die U-Bahn faehrt puenktlich los.",
+      "Ein Uhu ruft im Dunkeln.",
+      "Ute tut den Zucker in die Tasse.",
+      "Der Urlaub beginnt im Juni.",
+    ],
+  };
+  return templates[sound] || [];
+}
+
+function getLocalDialogTemplatesForSound(sound) {
+  const templates = {
+    W: [
+      { role: "system", text: "Wie war Ihr Weg hierher?" },
+      { role: "patient", text: "Mein Weg war ruhig und kurz." },
+      { role: "system", text: "Wollen wir mit warmen Woertern starten?" },
+      { role: "patient", text: "Ja, ich wiederhole die Woerter langsam." },
+      { role: "system", text: "Welches Wort war heute am leichtesten?" },
+      { role: "patient", text: "Wasser war heute fuer mich leicht." },
+    ],
+    SCH: [
+      { role: "system", text: "Sprechen Sie heute bitte schoen langsam." },
+      { role: "patient", text: "Ich spreche schon deutlich und ruhig." },
+      { role: "system", text: "Welches SCH-Wort moegen Sie besonders?" },
+      { role: "patient", text: "Ich mag das Wort Schokolade." },
+      { role: "system", text: "Dann sprechen wir jetzt Schule und Schuhe." },
+      { role: "patient", text: "Schule und Schuhe klingen heute gut." },
+    ],
+    default: [
+      { role: "system", text: "Guten Tag, wir starten jetzt ruhig." },
+      { role: "patient", text: "Guten Tag, ich bin bereit." },
+      { role: "system", text: "Sprechen Sie bitte langsam und deutlich." },
+      { role: "patient", text: "Ich spreche langsam und deutlich." },
+      { role: "system", text: "Wie fuehlt sich die Stimme heute an?" },
+      { role: "patient", text: "Die Stimme fuehlt sich heute ruhig an." },
+    ],
+  };
+  return templates[sound] || templates.default;
+}
+
+function uniquifyGeneratedLines(lines, count, variantBuilder) {
+  const source = Array.isArray(lines)
+    ? lines.map((line) => String(line || "").trim()).filter(Boolean)
+    : [];
+  if (!source.length) return [];
+
+  const unique = [];
+  const seen = new Set();
+  let sourceIndex = 0;
+  let variantIndex = 0;
+
+  while (unique.length < count) {
+    const baseLine = source[sourceIndex % source.length];
+    sourceIndex += 1;
+    let candidate = baseLine;
+
+    if (seen.has(candidate)) {
+      variantIndex += 1;
+      candidate = variantBuilder(baseLine, variantIndex, unique.length);
+    }
+
+    if (seen.has(candidate)) continue;
+    seen.add(candidate);
+    unique.push(candidate);
+  }
+
+  return unique;
+}
+
+function buildLocalSentenceExerciseItems(prompt, count, sound) {
+  const curated = getLocalSentenceTemplatesForSound(sound);
+  if (curated.length) {
+    const sentenceVariants = [
+      (line) => line.replace(/\.$/, " heute."),
+      (line) => line.replace(/\.$/, " ganz ruhig."),
+      (line) => line.replace(/\.$/, " am Morgen."),
+      (line) => line.replace(/\.$/, " im Zimmer."),
+      (line) => line.replace(/\.$/, " fuer die Uebung."),
+    ];
+    return uniquifyGeneratedLines(
+      curated,
+      count,
+      (line, variantIndex) => sentenceVariants[(variantIndex - 1) % sentenceVariants.length](line),
+    );
+  }
+
+  const theme = extractLocalEditorAiTheme(prompt) || "Alltag";
+  const generic = [
+    `Heute sprechen wir ruhig ueber ${theme}.`,
+    `Bitte lesen Sie den Satz langsam und deutlich.`,
+    `Die Stimme bleibt ruhig und klar.`,
+    `Sprechen Sie jedes Wort bewusst aus.`,
+    `Der kurze Satz klingt natuerlich und deutlich.`,
+  ];
+  return uniquifyGeneratedLines(
+    generic,
+    count,
+    (line, variantIndex) => `${line.replace(/\.$/, "")} Variante ${variantIndex}.`,
+  );
+}
+
+function buildLocalWordExerciseItems(count, sound) {
+  const pool = getLocalSoundWordPool(sound);
+  return Array.from({ length: count }, (_, index) => {
+    const word = pool[index % pool.length];
+    return String(word || "").trim();
+  }).filter(Boolean);
+}
+
+function buildLocalPoemItems(prompt, count, sound) {
+  const theme = extractLocalEditorAiTheme(prompt) || "Sommer";
+  const lineCount = Math.min(Math.max(count, 4), 12);
+  const baseLines = [
+    `Ueber ${theme} liegt ein milder Wind.`,
+    `Die Strassen werden leiser gegen Abend.`,
+    `Ein helles Fenster schaut zum Hof hinaus.`,
+    `Im warmen Licht wird alles weich und ruhig.`,
+    `Ein spaeter Vogel zieht noch seine Kreise.`,
+    `Die Stimmen klingen fern und freundlich nach.`,
+    `Ein leichter Regen legt sich auf den Stein.`,
+    `So endet still ein langer, heller Tag.`,
+  ];
+  const soundLines = sound
+    ? baseLines.map((line) => (
+      line.toUpperCase().includes(sound)
+        ? line
+        : `${sound} klingt heute ruhig in diesem ${theme}.`
+    ))
+    : baseLines;
+  return uniquifyGeneratedLines(
+    soundLines,
+    lineCount,
+    (line, variantIndex) => `${line.replace(/\.$/, "")} ${["Ganz leise.", "Noch ein wenig weiter.", "Sehr ruhig heute.", "Im weichen Abendlicht.", "Mit sanftem Nachhall."][(variantIndex - 1) % 5]}`,
+  );
+}
+
+function buildLocalDialogTurns(prompt, count, sound) {
+  const curated = getLocalDialogTemplatesForSound(sound);
+  const turnCount = Math.min(Math.max(count, 4), 12);
+  const lines = curated.map((turn) => JSON.stringify(turn));
+  const uniqueLines = uniquifyGeneratedLines(
+    lines,
+    turnCount,
+    (line, variantIndex) => {
+      const turn = JSON.parse(line);
+      const suffixes = [
+        " heute",
+        " jetzt",
+        " noch einmal",
+        " ganz ruhig",
+        " bitte",
+      ];
+      return JSON.stringify({
+        ...turn,
+        text: `${String(turn.text || "").replace(/[.!?]$/, "")}${suffixes[(variantIndex - 1) % suffixes.length]}.`,
+      });
+    },
+  );
+  return uniqueLines.map((line) => JSON.parse(line));
+}
+
+function buildLocalLongTextItems(prompt, count, sound) {
+  const theme = extractLocalEditorAiTheme(prompt) || "Alltag";
+  const passageCount = Math.min(Math.max(Math.ceil(count / 4), 3), 8);
+  const passages = [
+    `Heute geht es um ${theme}. Bitte lesen Sie ruhig, deutlich und ohne Eile.`,
+    `Achten Sie darauf, dass jedes Wort vollstaendig klingt und die Stimme gleichmaessig bleibt.`,
+    `Machen Sie an passenden Stellen kurze Pausen und lassen Sie den Satz am Ende weich ausklingen.`,
+    `Wenn ein Laut schwierig ist, wiederholen Sie den Abschnitt noch einmal langsam und bewusst.`,
+    `So entsteht ein natuerlicher Textfluss mit klarer Artikulation und ruhiger Stimme.`,
+  ];
+  const normalizedPassages = sound
+    ? passages.map((passage) => (
+      passage.toUpperCase().includes(sound)
+        ? passage
+        : `${passage} Der Laut ${sound} soll dabei deutlich zu hoeren sein.`
+    ))
+    : passages;
+  return uniquifyGeneratedLines(
+    normalizedPassages,
+    passageCount,
+    (line, variantIndex) => `${line.replace(/\.$/, "")} ${["Bleiben Sie dabei entspannt.", "Sprechen Sie ohne Hast.", "Lesen Sie mit ruhigem Atem.", "Jeder Satz darf weich enden."][(variantIndex - 1) % 4]}`,
+  );
+}
+
+function buildLocalEditorAiExercise(prompt) {
+  const count = extractEditorAiRequestedCount(prompt);
+  const sound = extractEditorAiTargetSound(prompt);
+  const kind = detectLocalEditorAiKind(prompt);
+  const theme = extractLocalEditorAiTheme(prompt);
+  const titleBase = sound ? `${sound} Uebung` : theme || "Neue Uebung";
+
+  if (kind === "dialog") {
+    const dialogTurns = buildLocalDialogTurns(prompt, count, sound);
+    return {
+      title: `Dialog - ${titleBase}`.replace(/\s+/g, " ").trim(),
+      kind: "dialog",
+      summary: `${dialogTurns.length} Dialogzeilen lokal erstellt.`,
+      dialogTurns,
+    };
+  }
+
+  if (kind === "long_text") {
+    const items = /\bgedicht|\bpoem|\breim/i.test(prompt)
+      ? buildLocalPoemItems(prompt, count, sound)
+      : buildLocalLongTextItems(prompt, count, sound);
+    return {
+      title: titleBase,
+      kind: "long_text",
+      summary: `${items.length} Textabschnitte lokal erstellt.`,
+      items,
+      content: items.join("\n"),
+    };
+  }
+
+  if (kind === "syllables") {
+    const items = buildLocalWordExerciseItems(count, sound);
+    return {
+      title: titleBase,
+      kind: "syllables",
+      summary: `${items.length} Woerter lokal erstellt.`,
+      items,
+      content: items.join(", "),
+    };
+  }
+
+  if (kind === "vowels") {
+    const items = sound ? [sound] : ["A", "E", "I", "O", "U"];
+    return {
+      title: titleBase,
+      kind: "vowels",
+      summary: `${items.length} Vokale lokal erstellt.`,
+      items,
+      content: items.join(", "),
+    };
+  }
+
+  const items = buildLocalSentenceExerciseItems(prompt, count, sound);
+  return {
+    title: titleBase,
+    kind: "sentences",
+    summary: `${items.length} kurze Saetze lokal erstellt.`,
+    items,
+    content: items.join(" | "),
+  };
+}
+
+function normalizeGeneratedEditorMode(kind) {
+  const normalized = normalizeEditorExerciseModeValue(kind || "");
+  if (normalized === "words") return "sentences";
+  if (normalized === "poem") return "long_text";
+  if (["syllables", "sentences", "text", "long_text", "vowels", "dialog"].includes(normalized)) {
+    return normalized;
+  }
+  return "sentences";
+}
+
+function sanitizeGeneratedEditorText(value) {
+  return String(value || "")
+    .replace(/^\s*(?:[-*?]\s+|\d+[.)]\s+)/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function sanitizeGeneratedEditorTextList(items = []) {
+  const seen = new Set();
+  return items
+    .map((item) => sanitizeGeneratedEditorText(item))
+    .filter(Boolean)
+    .filter((item) => {
+      const key = item.toLocaleLowerCase("de");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function inferGeneratedEditorMode(mode, items, content) {
+  if (mode === "dialog" || mode === "syllables" || mode === "vowels") return mode;
+  const trimmedContent = String(content || "").trim();
+  const joinedItems = items.join("\n").trim();
+  const sourceText = trimmedContent || joinedItems;
+  const passages = splitTextPassages(sourceText);
+  const hasLineBreaks = /\r?\n/.test(sourceText);
+  const firstItem = String(items[0] || "").trim();
+  const firstItemLooksLong = firstItem.length > 120 || /\r?\n/.test(firstItem);
+
+  if (mode === "long_text") return "long_text";
+  if (mode === "text") return passages.length > 1 || hasLineBreaks ? "long_text" : "text";
+  if (mode === "sentences" && (firstItemLooksLong || (passages.length > 3 && items.length <= 2))) {
+    return passages.length > 1 ? "long_text" : "text";
+  }
+  return mode;
+}
+
+function normalizeEditorAiPayload(payload = {}) {
+  const requestedMode = normalizeGeneratedEditorMode(payload.kind || payload.mode);
+  const title = String(payload.title || payload.name || "").trim() || "Neue Uebung";
+  const summary = String(payload.summary || payload.description || "").trim();
+  const content = String(payload.content || "").trim();
+  const items = Array.isArray(payload.items)
+    ? sanitizeGeneratedEditorTextList(payload.items)
+    : [];
+  const dialogTurns = Array.isArray(payload.dialogTurns)
+    ? payload.dialogTurns
+        .map((turn) => ({
+          role: String(turn?.role || "").trim().toLowerCase() === "patient" ? "patient" : "system",
+          text: sanitizeGeneratedEditorText(turn?.text),
+        }))
+        .filter((turn) => turn.text)
+    : [];
+  const mode = inferGeneratedEditorMode(requestedMode, items, content);
+
+  if (mode === "dialog") {
+    return {
+      title,
+      mode,
+      summary: summary || `${dialogTurns.length || 0} Dialogzeilen erstellt.`,
+      dialogTurns: dialogTurns.length ? dialogTurns : [
+        { role: "system", text: "Guten Tag." },
+        { role: "patient", text: "Guten Tag." },
+      ],
+      items: [],
+      content: "",
+    };
+  }
+
+  const normalizedItems = items.length
+    ? items
+    : mode === "long_text"
+      ? sanitizeGeneratedEditorTextList(splitTextPassages(content))
+      : mode === "text"
+        ? sanitizeGeneratedEditorTextList([content])
+        : [];
+
+  return {
+    title,
+    mode,
+    summary:
+      summary ||
+      (mode === "long_text"
+        ? `${normalizedItems.length || 0} Textabschnitte erstellt.`
+        : `${normalizedItems.length || 0} Eintraege erstellt.`),
+    items: normalizedItems.filter(Boolean),
+    dialogTurns: [],
+    content,
+  };
+}
+function renderEditorAiPreview() {
+  if (!editorAiPreviewList || !editorAiGeneratedPayload) return;
+
+  editorAiPreviewList.innerHTML = "";
+  const payload = editorAiGeneratedPayload;
+
+  if (editorAiSummary) editorAiSummary.textContent = payload.summary || "Vorschau erstellt.";
+
+  if (payload.mode === "dialog") {
+    payload.dialogTurns.forEach((turn, index) => {
+      const item = document.createElement("div");
+      item.className = "editor-ai-preview-item";
+
+      const header = document.createElement("div");
+      header.className = "editor-ai-preview-head";
+
+      const role = document.createElement("select");
+      role.className = "select-input compact-select";
+      role.innerHTML = `
+        <option value="system">KI</option>
+        <option value="patient">Patient</option>
+      `;
+      role.value = turn.role;
+      role.addEventListener("change", () => {
+        payload.dialogTurns[index].role = role.value === "patient" ? "patient" : "system";
+      });
+
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "editor-ai-preview-remove";
+      removeButton.textContent = "Ã—";
+      removeButton.setAttribute("aria-label", `Eintrag ${index + 1} lÃ¶schen`);
+      removeButton.addEventListener("click", () => {
+        payload.dialogTurns.splice(index, 1);
+        renderEditorAiPreview();
+      });
+
+      header.append(role, removeButton);
+
+      const textarea = document.createElement("textarea");
+      textarea.rows = 3;
+      textarea.value = turn.text;
+      textarea.addEventListener("input", () => {
+        payload.dialogTurns[index].text = textarea.value;
+      });
+
+      item.append(header, textarea);
+      editorAiPreviewList.append(item);
+    });
+    return;
+  }
+
+  payload.items.forEach((text, index) => {
+    const item = document.createElement("div");
+    item.className = "editor-ai-preview-item";
+
+    const header = document.createElement("div");
+    header.className = "editor-ai-preview-head";
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "editor-ai-preview-remove";
+    removeButton.textContent = "Ã—";
+    removeButton.setAttribute("aria-label", `Eintrag ${index + 1} lÃ¶schen`);
+    removeButton.addEventListener("click", () => {
+      payload.items.splice(index, 1);
+      renderEditorAiPreview();
+    });
+
+    header.append(removeButton);
+
+    const textarea = document.createElement("textarea");
+    textarea.rows = payload.mode === "long_text" ? 4 : 2;
+    textarea.value = text;
+    textarea.addEventListener("input", () => {
+      payload.items[index] = textarea.value;
+    });
+
+    item.append(header, textarea);
+    editorAiPreviewList.append(item);
+  });
+}
+
+async function generateEditorAiPreview() {
+  const prompt = String(editorAiPrompt?.value || "").trim();
+  if (!prompt) {
+    setEditorAiState("Bitte zuerst beschreiben, was erstellt werden soll.");
+    return;
+  }
+
+  await ensureChatGptAccess().catch(() => {});
+  const chatGptConfig = getChatGptRequestConfig();
+
+  generateEditorAiExercisesButton.disabled = true;
+  setEditorAiState("ChatGPT erstellt eine Vorschau...");
+
+  try {
+    const response = await fetch(getApiUrl("/api/chatgpt"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        apiKey: chatGptConfig.apiKey,
+        model: chatGptConfig.model,
+        editorPrompt: prompt,
+      }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.exercise) {
+      if (payload.error === "missing-openai-api-key") {
+        throw new Error("ChatGPT ist im Setup nicht aktiviert.");
+      }
+      throw new Error(payload.error || "ki-vorschau-fehlgeschlagen");
+    }
+
+    editorAiGeneratedPayload = normalizeEditorAiPayload(payload.exercise);
+    editorAiInputView?.classList.add("is-hidden");
+    editorAiPreviewView?.removeAttribute("hidden");
+    editorAiPreviewView?.classList.remove("is-hidden");
+    renderEditorAiPreview();
+    setEditorAiState("Vorschau erstellt. Sie kÃ¶nnen jetzt anpassen oder Ã¼bernehmen.");
+  } catch (error) {
+    editorAiGeneratedPayload = normalizeEditorAiPayload(buildLocalEditorAiExercise(prompt));
+    editorAiInputView?.classList.add("is-hidden");
+    editorAiPreviewView?.removeAttribute("hidden");
+    editorAiPreviewView?.classList.remove("is-hidden");
+    renderEditorAiPreview();
+    setEditorAiState(
+      error?.message === "ChatGPT ist im Setup nicht aktiviert."
+        ? "Lokale KI-Vorschau erstellt. ChatGPT ist im Setup noch nicht serverseitig aktiv."
+        : "ChatGPT nicht erreichbar. Lokale KI-Vorschau erstellt.",
+    );
+  } finally {
+    generateEditorAiExercisesButton.disabled = false;
+  }
+}
+
+function buildExerciseFromEditorAiPayload(payload) {
+  if (!payload) return null;
+
+  const mode = payload.mode;
+  const baseName = payload.title || "Neue Ãœbung";
+
+  if (mode === "dialog") {
+    const dialogTurns = payload.dialogTurns
+      .map((turn) => normalizeDialogTurn(turn))
+      .filter((turn) => turn.text);
+    return hydrateEditorExercise({
+      name: baseName,
+      mode: "dialog",
+      dialogTurns,
+      content: serializeDialogTurns(dialogTurns, getEditorVoiceLabel()),
+      script: serializeDialogTurns(dialogTurns, getEditorVoiceLabel()),
+      speed: Number(editorSpeed?.value || 3),
+      repeats: 1,
+      voiceInstruction: getDefaultEditorVoiceInstruction("dialog"),
+    });
+  }
+
+  if (mode === "long_text") {
+    const sourceText = String(payload.content || "").trim();
+    const items = (sourceText
+      ? sanitizeGeneratedEditorTextList(splitTextPassages(sourceText))
+      : sanitizeGeneratedEditorTextList(payload.items || []))
+      .filter(Boolean);
+    const normalizedText = items.join("\n").trim();
+    return hydrateEditorExercise({
+      name: baseName,
+      mode: "long_text",
+      content: normalizedText,
+      rawContent: normalizedText,
+      textPassages: items,
+      script: normalizedText,
+      speed: Number(editorSpeed?.value || 3),
+      repeats: 1,
+      voiceInstruction: getDefaultEditorVoiceInstruction("long_text"),
+    });
+  }
+
+  if (mode === "text") {
+    const text = sanitizeGeneratedEditorText(
+      String(payload.content || "").trim() ||
+      (Array.isArray(payload.items) ? payload.items.join(" ") : "")
+    );
+    return hydrateEditorExercise({
+      name: baseName,
+      mode: "text",
+      content: text,
+      rawContent: text,
+      script: text,
+      speed: Number(editorSpeed?.value || 3),
+      repeats: 1,
+      voiceInstruction: getDefaultEditorVoiceInstruction("text"),
+    });
+  }
+
+  if (mode === "syllables") {
+    const items = payload.items.map((item) => String(item || "").trim()).filter(Boolean);
+    return hydrateEditorExercise({
+      name: baseName,
+      mode: "syllables",
+      content: items.join(", "),
+      rawContent: items.join(", "),
+      script: items.join(" "),
+      speed: Number(editorSpeed?.value || 3),
+      repeats: Number(editorRepeatCount?.value || 5),
+      voiceInstruction: getDefaultEditorVoiceInstruction("syllables"),
+    });
+  }
+
+  if (mode === "vowels") {
+    const items = payload.items.map((item) => String(item || "").trim()).filter(Boolean);
+    return hydrateEditorExercise({
+      name: baseName,
+      mode: "vowels",
+      content: items.join(", "),
+      rawContent: items.join(", "),
+      script: items.join(" "),
+      speed: Number(editorSpeed?.value || 3),
+      repeats: Number(editorRepeatCount?.value || 5),
+      voiceInstruction: getDefaultEditorVoiceInstruction("vowels"),
+    });
+  }
+
+  const sentences = payload.items.map((item) => String(item || "").trim()).filter(Boolean);
+  return hydrateEditorExercise({
+    name: baseName,
+    mode: "sentences",
+    content: sentences.join(" | "),
+    script: sentences.join(" | "),
+    sentences,
+    speed: Number(editorSpeed?.value || 3),
+    repeats: 1,
+    voiceInstruction: getDefaultEditorVoiceInstruction("sentences"),
+  });
+}
+
+async function applyEditorAiPreview() {
+  if (!editorAiGeneratedPayload) {
+    setEditorAiState("Es ist noch keine KI-Vorschau vorhanden.");
+    return;
+  }
+
+  const exercise = buildExerciseFromEditorAiPayload(editorAiGeneratedPayload);
+  if (!exercise) {
+    setEditorAiState("Die Vorschau konnte nicht Ã¼bernommen werden.");
+    return;
+  }
+
+  applyEditorAiExercisesButton.disabled = true;
+  setEditorAiState("Ãœbung wird Ã¼bernommen...");
+
+  try {
+    activeEditorExerciseName = exercise.name;
+    savedEditorExercise = exercise;
+    applyEditorExerciseToForm(exercise);
+    updateEditorForm();
+    await saveEditorExerciseObject(exercise);
+    editorSavedExercises.value = getEditorSelectValueForExerciseName(exercise.name);
+    closeEditorAiModal();
+    resetEditorAiModal();
+    editorVoiceState.textContent = `KI-Ãœbung Ã¼bernommen: ${exercise.name}`;
+  } catch (error) {
+    setEditorAiState(error?.message || "Ãœbernahme fehlgeschlagen.");
+  } finally {
+    applyEditorAiExercisesButton.disabled = false;
+  }
 }
 
 async function suggestVoiceInstruction() {
   const fallbackSuggestion = buildVoiceInstructionSuggestion();
-  const chatGptSettings = getChatGptSettings();
-
-  if (!chatGptSettings.enabled || !chatGptSettings.apiKey) {
-    editorVoiceInstruction.value = fallbackSuggestion;
-    saveEditorDraft();
-    editorVoiceState.textContent = "Lokaler KI-Vorschlag erstellt. ChatGPT ist im Setup nicht aktiv.";
-    return;
-  }
+  await ensureChatGptAccess().catch(() => {});
+  const chatGptConfig = getChatGptRequestConfig();
 
   suggestVoiceButton.disabled = true;
   editorVoiceState.textContent = "ChatGPT erstellt einen Vorschlag...";
@@ -4601,9 +5913,9 @@ async function suggestVoiceInstruction() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        apiKey: chatGptSettings.apiKey,
-        model: chatGptSettings.model,
-        systemPrompt: chatGptSettings.systemPrompt,
+        apiKey: chatGptConfig.apiKey,
+        model: chatGptConfig.model,
+        systemPrompt: chatGptConfig.systemPrompt,
         exercise: {
           name: exercise.name,
           mode: exercise.mode,
@@ -4619,6 +5931,9 @@ async function suggestVoiceInstruction() {
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || !payload.text) {
+      if (payload.error === "missing-openai-api-key") {
+        throw new Error("missing-openai-api-key");
+      }
       throw new Error(payload.error || "chatgpt-suggestion-failed");
     }
 
@@ -4628,7 +5943,9 @@ async function suggestVoiceInstruction() {
   } catch (error) {
     editorVoiceInstruction.value = fallbackSuggestion;
     saveEditorDraft();
-    editorVoiceState.textContent = "ChatGPT nicht erreichbar. Lokaler Vorschlag eingesetzt.";
+    editorVoiceState.textContent = error?.message === "missing-openai-api-key"
+      ? "Lokaler KI-Vorschlag erstellt. ChatGPT ist im Setup nicht aktiv."
+      : "ChatGPT nicht erreichbar. Lokaler Vorschlag eingesetzt.";
   } finally {
     suggestVoiceButton.disabled = false;
   }
@@ -4654,7 +5971,7 @@ async function generateVoiceAudio() {
         text,
         store: true,
         ...requestSettings,
-        exerciseName: editorExerciseName.value.trim() || "Neue Übung",
+        exerciseName: editorExerciseName.value.trim() || "Neue Ãœbung",
       }),
     });
 
@@ -4682,7 +5999,7 @@ async function generateVoiceAudio() {
     if (isDialogMode) {
       await generateDialogVoiceAudio({ allowMissingSystemTurns: true });
     } else {
-      editorVoiceState.textContent = "ElevenLabs-Audio erstellt und in der Übung gespeichert.";
+      editorVoiceState.textContent = "ElevenLabs-Audio erstellt und in der Ãœbung gespeichert.";
     }
   } catch (error) {
     editorVoiceAudioDataUrl = "";
@@ -4741,7 +6058,7 @@ function updateEditorKaraokeTimingHint() {
   const speedLabel = timing.label || EDITOR_SPEEDS[3].label;
 
   if (exercise.mode === "sentences") {
-    editorKaraokeTimingHint.textContent = `Standzeit: kurze Sätze wechseln nach erkannter Pause; Tempo ${speedLabel}.`;
+    editorKaraokeTimingHint.textContent = `Standzeit: kurze SÃ¤tze wechseln nach erkannter Pause; Tempo ${speedLabel}.`;
     return;
   }
 
@@ -4818,7 +6135,7 @@ function startEditorKaraokeTest() {
   const exercise = buildEditorExerciseFromForm();
 
   if (!supportsEditorKaraokeTempoTest(exercise.mode)) {
-    editorVoiceState.textContent = "Der Tempo-Test ist für Karaoke-Text gedacht.";
+    editorVoiceState.textContent = "Der Tempo-Test ist fÃ¼r Karaoke-Text gedacht.";
     return;
   }
 
@@ -4830,7 +6147,7 @@ function startEditorKaraokeTest() {
 
   isTestingEditorKaraoke = true;
   testEditorKaraokeButton.textContent = "Test stoppen";
-  editorVoiceState.textContent = `Karaoke-Test läuft: ${exercise.timing.label}.`;
+  editorVoiceState.textContent = `Karaoke-Test lÃ¤uft: ${exercise.timing.label}.`;
   runEditorKaraokeFrame(performance.now(), exercise);
 }
 
@@ -4935,7 +6252,7 @@ function applyEditorModeDefaults() {
     editorMode.value !== "sentences" &&
     editorMode.value !== "dialog";
   if (editorMode.value === "sentences") {
-    editorExerciseName.value = "Kurze Sätze";
+    editorExerciseName.value = "Kurze SÃ¤tze";
   } else if (editorMode.value === "text") {
     editorExerciseName.value = "Karaoke-Text";
   } else if (editorMode.value === "vowels") {
@@ -4943,7 +6260,7 @@ function applyEditorModeDefaults() {
   } else if (editorMode.value === "dialog") {
     editorExerciseName.value = "Dialog";
   } else {
-    editorExerciseName.value = "Neue Silbenübung";
+    editorExerciseName.value = "Neue SilbenÃœbung";
   }
 }
 
@@ -4955,7 +6272,7 @@ async function generateDialogVoiceAudio(options = {}) {
 
   if (!systemTurns.length) {
     editorVoiceState.textContent = options.allowMissingSystemTurns
-      ? "Voice-Begleitung gespeichert. Für Dialog-Audio bitte eine KI-Dialogzeile eintragen."
+      ? "Voice-Begleitung gespeichert. FÃ¼r Dialog-Audio bitte eine KI-Dialogzeile eintragen."
       : "Bitte mindestens eine KI-Dialogzeile eintragen.";
     return;
   }
@@ -5027,16 +6344,16 @@ async function saveEditorExercise() {
   const exercise = buildEditorExerciseFromForm();
   saveEditorExerciseButton.disabled = true;
   saveEditorExerciseButton.textContent = "Speichern...";
-  editorVoiceState.textContent = "Übung wird vorbereitet...";
+  editorVoiceState.textContent = "Ãœbung wird vorbereitet...";
 
   try {
     const exerciseWithAudio = await prepareExerciseAudioForEditorSave(exercise);
     await saveEditorExerciseObject(exerciseWithAudio);
     applyEditorExerciseToForm(exerciseWithAudio);
-    editorVoiceState.textContent = "Übung mit Audio in Firebase gespeichert.";
+    editorVoiceState.textContent = "Ãœbung mit Audio in Firebase gespeichert.";
   } catch (error) {
     editorVoiceState.textContent =
-      error?.message || "Audio konnte nicht erstellt werden. Übung wird lokal gespeichert.";
+      error?.message || "Audio konnte nicht erstellt werden. Ãœbung wird lokal gespeichert.";
     await saveEditorExerciseObject(exercise);
   } finally {
     saveEditorExerciseButton.disabled = false;
@@ -5052,7 +6369,7 @@ async function saveEditorExerciseObject(exercise, options = {}) {
   let cloudSaved = true;
   await saveCloudEditorExercise(exercise).catch(() => {
     cloudSaved = false;
-    firebaseState.textContent = "Übung lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
+    firebaseState.textContent = "Ãœbung lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
   });
   if (options.refreshUi === false) return;
   renderSavedEditorExercises();
@@ -5115,11 +6432,11 @@ function showEditorSaveFeedback(exerciseLabel, options = {}) {
   saveEditorExerciseButton.textContent = "Gespeichert";
   saveEditorExerciseButton.classList.add("is-saved");
   saveEditorExerciseButton.disabled = true;
-  editorVoiceState.textContent = "Übung gespeichert.";
-  firebaseState.textContent = `Übung gespeichert und in Aufnahme auswählbar: ${exerciseLabel}`;
+  editorVoiceState.textContent = "Ãœbung gespeichert.";
+  firebaseState.textContent = `Ãœbung gespeichert und in Aufnahme auswÃ¤hlbar: ${exerciseLabel}`;
 
   if (options.cloudSaved === false) {
-    firebaseState.textContent = `Übung lokal gespeichert, Firebase fehlgeschlagen: ${exerciseLabel}`;
+    firebaseState.textContent = `Ãœbung lokal gespeichert, Firebase fehlgeschlagen: ${exerciseLabel}`;
   }
 
   editorSaveFeedbackTimerId = window.setTimeout(() => {
@@ -5140,8 +6457,8 @@ function updateEditorModeState() {
   updateEditorSavedListVisibility();
   if (editorModeState) {
     editorModeState.textContent = isEditingSaved
-      ? `Gespeicherte Übung bearbeiten: ${activeEditorExerciseName}`
-      : "Neue Übung";
+      ? `Gespeicherte Ãœbung bearbeiten: ${activeEditorExerciseName}`
+      : "Neue Ãœbung";
   }
 }
 
@@ -5194,7 +6511,7 @@ function renderSavedEditorExercises() {
 
   const emptyOption = document.createElement("option");
   emptyOption.value = "";
-  emptyOption.textContent = "Gespeicherte Übung auswählen";
+  emptyOption.textContent = "Gespeicherte Ãœbung auswÃ¤hlen";
   editorSavedExercises.append(emptyOption);
 
   const templateGroup = document.createElement("optgroup");
@@ -5209,7 +6526,7 @@ function renderSavedEditorExercises() {
 
   if (visibleSavedExercises.length) {
     const savedGroup = document.createElement("optgroup");
-    savedGroup.label = "Gespeicherte Editor-Übungen";
+    savedGroup.label = "Gespeicherte Editor-Ãœbungen";
     visibleSavedExercises.forEach((exercise) => {
       const option = document.createElement("option");
       option.value = exercise.name;
@@ -5246,6 +6563,8 @@ function normalizeEditorExerciseModeValue(mode) {
 }
 
 function getEditorModeLabel(mode) {
+  if (mode === "media_exercise") return "MedienÃ¼bung";
+  if (mode === "media_pause") return "Pauseneinheit";
   const option = Array.from(editorMode?.options || []).find((item) => item.value === mode);
   return option?.textContent?.trim() || "Funktionsart";
 }
@@ -5258,7 +6577,7 @@ function renderSavedEditorExerciseList() {
   if (!savedEditorExercises.length) {
     editorSavedListExpanded = false;
     editorSavedExerciseList.classList.add("is-empty");
-    editorSavedExerciseList.textContent = "Keine gespeicherten Editor-Übungen.";
+    editorSavedExerciseList.textContent = "Keine gespeicherten Editor-Ãœbungen.";
     updateEditorSavedListVisibility();
     return;
   }
@@ -5278,7 +6597,7 @@ function renderSavedEditorExerciseList() {
     const summary = document.createElement("button");
     summary.type = "button";
     summary.className = "editor-saved-exercise-open";
-    summary.textContent = exercise.name || "Unbenannte Übung";
+    summary.textContent = exercise.name || "Unbenannte Ãœbung";
     summary.addEventListener("click", () => {
       editorSavedExercises.value = exercise.name;
       loadEditorExerciseIntoForm(exercise.name);
@@ -5287,8 +6606,8 @@ function renderSavedEditorExerciseList() {
     const deleteListButton = document.createElement("button");
     deleteListButton.type = "button";
     deleteListButton.className = "recording-delete-button editor-exercise-delete-button";
-    deleteListButton.setAttribute("aria-label", `Vorlage löschen: ${exercise.name || "Übung"}`);
-    deleteListButton.title = "Vorlage löschen";
+    deleteListButton.setAttribute("aria-label", `Vorlage lÃ¶schen: ${exercise.name || "Ãœbung"}`);
+    deleteListButton.title = "Vorlage lÃ¶schen";
     deleteListButton.addEventListener("click", async () => {
       await deleteSavedEditorExercise(exercise.name);
     });
@@ -5348,7 +6667,7 @@ function renderRecordingExerciseShortcuts() {
 
   if (!savedEditorExercises.length) {
     recordingExerciseShortcuts.classList.add("is-empty");
-    recordingExerciseShortcuts.textContent = "Noch keine gespeicherte Editor-Übung.";
+    recordingExerciseShortcuts.textContent = "Noch keine gespeicherte Editor-Ãœbung.";
     return;
   }
 
@@ -5366,7 +6685,7 @@ function renderRecordingExerciseShortcuts() {
     button.addEventListener("click", () => {
       exerciseName.value = exercise.name;
       setupKaraokeText();
-      message.textContent = `Übung ausgewählt: ${exercise.name}`;
+      message.textContent = `Ãœbung ausgewÃ¤hlt: ${exercise.name}`;
       renderRecordingExerciseShortcuts();
     });
     button.classList.toggle("is-active", exerciseName.value === exercise.name);
@@ -5421,7 +6740,7 @@ function getEditorSelectValueForExerciseName(name) {
 }
 
 function applyEditorExerciseToForm(exercise) {
-  editorExerciseName.value = exercise.name || "Neue Übung";
+  editorExerciseName.value = exercise.name || "Neue Ãœbung";
   editorMode.value = exercise.mode || "syllables";
   renderEditorPatientScopeOptions(exercise.patientName || "");
   if (editorMode.value === "dialog") {
@@ -5433,9 +6752,11 @@ function applyEditorExerciseToForm(exercise) {
   }
   editorVoiceInstruction.value =
     exercise.voiceInstruction || getDefaultEditorVoiceInstruction(editorMode.value);
-  const exerciseVoiceSettings = getElevenLabsSettings();
+  const exerciseVoiceSettings = mergeExerciseVoiceIntoSettings(getElevenLabsSettings(), exercise);
+  const embeddedVoice = getEmbeddedExerciseVoiceProfile(exercise);
   const exerciseVoiceKey =
     exercise.voiceProfileKey ||
+    embeddedVoice?.key ||
     exerciseVoiceSettings.voices.find((voice) => voice.voiceId === exercise.voiceProfileVoiceId)?.key ||
     "";
   renderEditorVoiceSelect(exerciseVoiceSettings, exerciseVoiceKey);
@@ -5528,9 +6849,9 @@ async function loadCloudEditorExercises() {
 
     persistEditorExercises();
     renderSavedEditorExercises();
-    firebaseState.textContent = "Firebase bereit. Editor-Übungen geladen.";
+    firebaseState.textContent = "Firebase bereit. Editor-Ãœbungen geladen.";
   } catch (error) {
-    firebaseState.textContent = "Firebase bereit. Editor-Übungen nur lokal geladen.";
+    firebaseState.textContent = "Firebase bereit. Editor-Ãœbungen nur lokal geladen.";
   }
 }
 
@@ -5552,22 +6873,22 @@ async function saveCloudEditorExercise(exercise) {
     ...hydratedExercise,
     updatedAt: new Date().toISOString(),
   }).catch(() => {});
-  firebaseState.textContent = "Editor-Übung in Firebase gespeichert.";
+  firebaseState.textContent = "Editor-Ãœbung in Firebase gespeichert.";
 }
 
 async function deleteSavedEditorExercise(name) {
   const exercise = findSavedEditorExerciseByName(name);
   if (!exercise?.name) return;
 
-  const confirmed = window.confirm(`Vorlage "${exercise.name}" wirklich löschen?`);
+  const confirmed = window.confirm(`Vorlage "${exercise.name}" wirklich lÃ¶schen?`);
   if (!confirmed) return;
 
-  firebaseState.textContent = `Vorlage wird in Firebase gelöscht: ${exercise.name}`;
+  firebaseState.textContent = `Vorlage wird in Firebase gelÃ¶scht: ${exercise.name}`;
 
   try {
     await deleteCloudEditorExercise(exercise);
   } catch (error) {
-    firebaseState.textContent = "Firebase-Löschen fehlgeschlagen. Vorlage bleibt erhalten.";
+    firebaseState.textContent = "Firebase-LÃ¶schen fehlgeschlagen. Vorlage bleibt erhalten.";
     return;
   }
 
@@ -5588,7 +6909,7 @@ async function deleteSavedEditorExercise(name) {
   renderSavedEditorExercises();
   renderRecordingExerciseOptions();
   renderPlaybackRecordingAccess(getPatientRecordings(), currentMetadata?.id || null);
-  firebaseState.textContent = `Vorlage aus Firebase gelöscht: ${exercise.name}`;
+  firebaseState.textContent = `Vorlage aus Firebase gelÃ¶scht: ${exercise.name}`;
 }
 
 async function deleteCloudEditorExercise(exercise) {
@@ -5660,7 +6981,7 @@ async function persistEditorInlineDeletion(previousExercise, successText) {
   saveEditorDraft();
 
   if (!previousExercise?.name) {
-    editorVoiceState.textContent = `${successText}. Zum dauerhaften Übernehmen bitte speichern.`;
+    editorVoiceState.textContent = `${successText}. Zum dauerhaften Ãœbernehmen bitte speichern.`;
     return;
   }
 
@@ -5803,7 +7124,7 @@ function getKaraokeWordSeconds(word, timing = getCurrentKaraokeTiming()) {
 }
 
 function isSentenceEndWord(word) {
-  return /[.!?…:;]$/.test(String(word || "").trim());
+  return /[.!?&:;]$/.test(String(word || "").trim());
 }
 
 function updateKaraokeHighlight() {
@@ -5822,6 +7143,7 @@ function renderKaraokeOverlay(overlay, timeline) {
   overlay.innerHTML = "";
   overlay.classList.toggle("is-sentence-mode", timeline.some((item) => item.isSentence));
   overlay.classList.toggle("is-text-passage-mode", timeline.some((item) => item.isTextPassage));
+  overlay.classList.toggle("is-playback-compact", overlay === playbackKaraokeOverlay);
   overlay.classList.add("is-three-line");
 
   ["before", "current", "after"].forEach((lineName) => {
@@ -5966,7 +7288,7 @@ function scheduleAutoStop() {
     if (isRecording || mediaRecorder?.state === "recording") {
       stopRecording();
     } else if (startedAt) {
-      restoreRecorderControls("Übung beendet.");
+      restoreRecorderControls("Ãœbung beendet.");
     }
   }, durationMs + tailMs);
 
@@ -6067,7 +7389,7 @@ function setCameraReadyUi() {
   document.body.classList.add("camera-ready");
   cameraStartOverlay.classList.add("is-hidden");
   permissionState.textContent = "Kamera und Mikrofon aktiv";
-  message.textContent = "Bereit für die Aufnahme.";
+  message.textContent = "Bereit fÃ¼r die Aufnahme.";
 }
 
 async function ensureCameraPreviewPlaying() {
@@ -6099,17 +7421,13 @@ function scheduleCameraPreviewRetry() {
   }, 450);
 }
 
-function shouldUseDirectRecordingStream() {
-  const userAgent = navigator.userAgent || "";
-  const isAppleTouch =
-    /iPad|iPhone|iPod/.test(userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-
-  return isAppleTouch;
-}
-
 function startComposedVideoStream() {
-  if (shouldUseDirectRecordingStream()) {
+  recordingCanvas = document.createElement("canvas");
+  recordingCanvas.width = RECORDING_WIDTH;
+  recordingCanvas.height = RECORDING_HEIGHT;
+  recordingCanvasContext = recordingCanvas.getContext("2d");
+
+  if (!recordingCanvas.captureStream) {
     composedRecordingStream = new MediaStream();
     mediaStream.getVideoTracks().forEach((track) => {
       composedRecordingStream.addTrack(track.clone());
@@ -6118,18 +7436,10 @@ function startComposedVideoStream() {
     if (composedRecordingAudioTrack) composedRecordingStream.addTrack(composedRecordingAudioTrack);
     recordingCanvas = null;
     recordingCanvasContext = null;
+    activeCaptureSourceWidth = 0;
+    activeCaptureSourceHeight = 0;
+    activeCaptureRotationDegrees = 0;
     return composedRecordingStream;
-  }
-
-  recordingCanvas = document.createElement("canvas");
-  recordingCanvas.width = RECORDING_WIDTH;
-  recordingCanvas.height = RECORDING_HEIGHT;
-  recordingCanvasContext = recordingCanvas.getContext("2d");
-
-  if (!recordingCanvas.captureStream) {
-    recordingCanvas = null;
-    recordingCanvasContext = null;
-    return mediaStream;
   }
 
   drawComposedVideoFrame();
@@ -6194,19 +7504,28 @@ function drawComposedVideoFrame() {
   const sourceHeight = cameraPreview.videoHeight;
   const targetWidth = RECORDING_WIDTH;
   const targetHeight = RECORDING_HEIGHT;
+  activeCaptureSourceWidth = sourceWidth;
+  activeCaptureSourceHeight = sourceHeight;
+  activeCaptureRotationDegrees = 0;
+
+  // iOS reports landscape track dimensions for a portrait camera stream, but
+  // drawImage already receives the visually oriented frame. Rotating from the
+  // reported dimensions turns an upright face sideways in the saved video.
   const scale = Math.max(targetWidth / sourceWidth, targetHeight / sourceHeight) * 1.1;
   const drawWidth = sourceWidth * scale;
   const drawHeight = sourceHeight * scale;
-  const drawX = (targetWidth - drawWidth) / 2;
-  const drawY = (targetHeight - drawHeight) / 2;
+  const drawX = -drawWidth / 2;
+  const drawY = -drawHeight / 2;
 
   recordingCanvasContext.save();
   recordingCanvasContext.clearRect(0, 0, targetWidth, targetHeight);
   recordingCanvasContext.fillStyle = "#101820";
   recordingCanvasContext.fillRect(0, 0, targetWidth, targetHeight);
-  recordingCanvasContext.translate(targetWidth, 0);
+  recordingCanvasContext.translate(targetWidth / 2, targetHeight / 2);
+
   recordingCanvasContext.scale(-1, 1);
   recordingCanvasContext.drawImage(cameraPreview, drawX, drawY, drawWidth, drawHeight);
+
   recordingCanvasContext.restore();
   recordingDrawFrame = window.requestAnimationFrame(drawComposedVideoFrame);
 }
@@ -6373,7 +7692,7 @@ function drawWaveform(canvas, values, options = {}) {
 }
 
 function getPlaybackWaveformDisplayOptions(metadata, progress = 0, durationSeconds = null) {
-  const values = metadata?.amplituden || [];
+  const values = getBestPlaybackAmplitudeSeries(metadata);
   const levelValues = metadata?.lautstaerkePegel || metadata?.lautstaerken || values;
   const currentLevel = getTimelineValue(levelValues, Math.max(0, Math.min(1, Number(progress) || 0)));
   return {
@@ -6399,6 +7718,30 @@ function getPlaybackWaveformDisplayOptions(metadata, progress = 0, durationSecon
     minSpeechBarHeight: 5,
     minPauseBarHeight: 2,
   };
+}
+
+function hasUsableWaveformSignal(values = []) {
+  const numericValues = values.map(Number).filter(Number.isFinite);
+  if (!numericValues.length) return false;
+  const maxValue = Math.max(...numericValues);
+  const averageValue = numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length;
+  return maxValue >= 6 || averageValue >= 2.2;
+}
+
+function getBestPlaybackAmplitudeSeries(metadata = currentMetadata) {
+  const amplitudes = (metadata?.amplituden || []).map((value) => Number(value) || 0);
+  if (hasUsableWaveformSignal(amplitudes)) return amplitudes;
+
+  const rawAmplitudes = (metadata?.rawAmplituden || []).map((value) => Number(value) || 0);
+  if (rawAmplitudes.length) {
+    const rescaledRaw = rawAmplitudes.map((value) => scaleAmplitude(value));
+    if (hasUsableWaveformSignal(rescaledRaw)) return rescaledRaw;
+  }
+
+  const levelValues = (metadata?.lautstaerkePegel || metadata?.lautstaerken || []).map((value) => Number(value) || 0);
+  if (levelValues.length) return levelValues;
+
+  return amplitudes;
 }
 
 function drawFilledWaveformEnvelope(context, values, levels, options = {}) {
@@ -7208,14 +8551,26 @@ function showResult(metadata, videoBlob) {
   applyVideoAspectRatio(recordingPlayer);
 
   resultTitle.textContent = metadata.uebung;
+  if (resultCourseContext) {
+    const hasCourseContext = Boolean(metadata.courseName || metadata.coursePlanTitle);
+    resultCourseContext.classList.toggle("is-hidden", !hasCourseContext);
+    resultCourseContext.innerHTML = hasCourseContext
+      ? `<span>Kurs</span><strong>${metadata.courseName || "Kurs"}</strong><small>${metadata.coursePlanTitle || "Tagesplan"}</small>`
+      : "";
+  }
   durationBadge.textContent = formatTime(metadata.dauerSekunden);
   updateResultStats(metadata);
+  updateCourseResultActions(metadata);
   setupPlaybackKaraoke(metadata);
   setPlayPauseButtonState("play");
   playbackSeek.value = "0";
   playbackTimeLabel.textContent = `00:00 / ${formatTime(metadata.dauerSekunden || 0)}`;
 
-  drawWaveform(playbackWaveform, metadata.amplituden, getPlaybackWaveformDisplayOptions(metadata, 0));
+  drawWaveform(
+    playbackWaveform,
+    getBestPlaybackAmplitudeSeries(metadata),
+    getPlaybackWaveformDisplayOptions(metadata, 0),
+  );
   playbackEmptyState?.classList.add("is-hidden");
   resultPanel.classList.remove("is-hidden");
   setActiveView("playback");
@@ -7334,6 +8689,10 @@ function stopPlaybackAnimation() {
 }
 
 async function togglePlayback() {
+  if (isCourseMediaLocked()) {
+    showCourseMediaLockMessage();
+    return;
+  }
   if (!recordingPlayer.src && currentVideoUrl) {
     recordingPlayer.src = currentVideoUrl;
     recordingPlayer.load();
@@ -7375,7 +8734,7 @@ function setPlayPauseButtonState(state) {
     normalizedState === "pause"
       ? "Pausieren"
       : normalizedState === "loading"
-        ? "Wiedergabe lädt"
+        ? "Wiedergabe lÃ¤dt"
         : "Abspielen",
   );
 }
@@ -7403,7 +8762,7 @@ function waitForPlaybackReady(videoElement, timeoutMs = 1600) {
 
 function updatePlaybackVisuals(forcedProgress = null) {
   if (!currentMetadata) return;
-  const playbackValues = currentMetadata.amplituden || [];
+  const playbackValues = getBestPlaybackAmplitudeSeries(currentMetadata);
   const measuredDuration = currentMetadata.dauerSekunden || 0;
   const mediaDuration = Number.isFinite(recordingPlayer.duration) ? recordingPlayer.duration : 0;
   const duration = measuredDuration || mediaDuration || 0;
@@ -7420,7 +8779,91 @@ function updatePlaybackVisuals(forcedProgress = null) {
   playbackSeek.value = String(Math.round(progress * 1000));
   playbackTimeLabel.textContent = `${formatTime(syncedCurrentTime || 0)} / ${formatTime(duration || 0)}`;
   updateKaraokeDisplayAtTime(playbackKaraokeOverlay, playbackKaraokeTimeline, syncedCurrentTime || 0);
+  renderPlaybackVideoCanvas();
   syncStatisticsToPlayback(progress);
+}
+
+function shouldUsePlaybackCanvasCorrection() {
+  if (!isIosMediaDevice()) return false;
+  if (recordingPlayer.readyState < 1) return false;
+
+  const videoWidth = Number(recordingPlayer.videoWidth || 0);
+  const videoHeight = Number(recordingPlayer.videoHeight || 0);
+  if (!videoWidth || !videoHeight) return false;
+
+  const pipelineVersion = Number(currentMetadata?.capturePipelineVersion || 0);
+  const metadataRotation = Number(currentMetadata?.captureRotationGrad || 0);
+
+  // Pipeline 2 rotated iPhone frames from their reported dimensions although
+  // Safari had already oriented the pixels. Correct those saved recordings at
+  // playback. Pipeline 3 stores the displayed frame without that extra turn.
+  if (pipelineVersion >= 3) return false;
+  if (pipelineVersion === 2) {
+    const originalSourceWidth = Number(currentMetadata?.quellVideoBreite || 0);
+    const originalSourceHeight = Number(currentMetadata?.quellVideoHoehe || 0);
+    return videoWidth < videoHeight && originalSourceWidth > originalSourceHeight;
+  }
+
+  return videoWidth > videoHeight && Math.abs(metadataRotation) === 90;
+}
+
+function renderPlaybackVideoCanvas() {
+  if (!playbackVideoCanvas || !playbackVideoCanvasContext) return;
+
+  const stageElement = recordingPlayer.closest(".playback-stage");
+  const shouldCorrect = shouldUsePlaybackCanvasCorrection();
+  stageElement?.classList.toggle("is-canvas-corrected", shouldCorrect);
+  playbackVideoCanvas.classList.toggle("is-hidden", !shouldCorrect);
+
+  if (!shouldCorrect) return;
+  if (!recordingPlayer.videoWidth || !recordingPlayer.videoHeight || recordingPlayer.readyState < 2) return;
+
+  const rect = stageElement?.getBoundingClientRect?.();
+  const cssWidth = Math.max(1, Math.round(rect?.width || playbackVideoCanvas.clientWidth || 1));
+  const cssHeight = Math.max(1, Math.round(rect?.height || playbackVideoCanvas.clientHeight || 1));
+  const pixelRatio = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  const canvasWidth = Math.round(cssWidth * pixelRatio);
+  const canvasHeight = Math.round(cssHeight * pixelRatio);
+
+  if (playbackVideoCanvas.width !== canvasWidth || playbackVideoCanvas.height !== canvasHeight) {
+    playbackVideoCanvas.width = canvasWidth;
+    playbackVideoCanvas.height = canvasHeight;
+  }
+
+  const context = playbackVideoCanvasContext;
+  context.save();
+  context.clearRect(0, 0, canvasWidth, canvasHeight);
+  context.fillStyle = "#101820";
+  context.fillRect(0, 0, canvasWidth, canvasHeight);
+  context.translate(canvasWidth / 2, canvasHeight / 2);
+  context.rotate(-Math.PI / 2);
+
+  const sourceWidth = recordingPlayer.videoWidth;
+  const sourceHeight = recordingPlayer.videoHeight;
+  const originalSourceWidth = Number(currentMetadata?.quellVideoBreite || 0);
+  const originalSourceHeight = Number(currentMetadata?.quellVideoHoehe || 0);
+  const usesLegacyStretchedCapture =
+    Number(currentMetadata?.capturePipelineVersion || 0) < 2 &&
+    originalSourceWidth > originalSourceHeight;
+  const legacyAspectCorrection = usesLegacyStretchedCapture
+    ? originalSourceWidth / originalSourceHeight
+    : 1;
+  const effectiveWidth = sourceHeight * legacyAspectCorrection;
+  const effectiveHeight = sourceWidth;
+  // Fill the portrait stage while preserving the source proportions. The
+  // rotated iPhone track otherwise remains as a small landscape strip.
+  const scale = Math.max(canvasWidth / effectiveWidth, canvasHeight / effectiveHeight);
+  const drawWidth = sourceWidth * scale;
+  const drawHeight = sourceHeight * scale * legacyAspectCorrection;
+
+  context.drawImage(
+    recordingPlayer,
+    -drawWidth / 2,
+    -drawHeight / 2,
+    drawWidth,
+    drawHeight,
+  );
+  context.restore();
 }
 
 function syncStatisticsToPlayback(progress) {
@@ -7442,6 +8885,7 @@ function refreshPlaybackReadyState() {
   recordingPlayer.muted = false;
   recordingPlayer.defaultMuted = false;
   recordingPlayer.volume = 1;
+  renderPlaybackVideoCanvas();
   updatePlaybackVisuals(0);
   window.setTimeout(() => updatePlaybackVisuals(), 80);
 }
@@ -7485,8 +8929,42 @@ function mediaTimeToAnalysisProgress(mediaTime, metadata = currentMetadata) {
 function applyVideoAspectRatio(videoElement) {
   if (!videoElement.videoWidth || !videoElement.videoHeight) return;
 
-  videoElement.style.aspectRatio = `${videoElement.videoWidth} / ${videoElement.videoHeight}`;
+  const stageElement = videoElement.closest(".playback-stage");
+  const useCanvasCorrection = videoElement === recordingPlayer && shouldUsePlaybackCanvasCorrection();
+  const metadataRotation = videoElement === recordingPlayer
+    ? Number(currentMetadata?.captureRotationGrad || 0)
+    : 0;
+  const isLandscapeVideo = videoElement.videoWidth > videoElement.videoHeight;
+  const shouldCorrectPortraitPlayback =
+    videoElement === recordingPlayer &&
+    !useCanvasCorrection &&
+    window.matchMedia("(orientation: portrait)").matches &&
+    isLandscapeVideo &&
+    (
+      metadataRotation === -90 ||
+      metadataRotation === 90
+    );
+  const playbackRotationDegrees =
+    metadataRotation === 90
+      ? -90
+      : (metadataRotation === -90 ? 90 : -90);
+
+  if (stageElement) {
+    const isCanvasCorrected = useCanvasCorrection;
+    stageElement.classList.toggle("is-portrait-corrected", shouldCorrectPortraitPlayback);
+    stageElement.classList.toggle("is-portrait-corrected-cw", shouldCorrectPortraitPlayback && playbackRotationDegrees === 90);
+    stageElement.classList.toggle("is-portrait-corrected-ccw", shouldCorrectPortraitPlayback && playbackRotationDegrees !== 90);
+    stageElement.style.aspectRatio = isCanvasCorrected
+      ? "9 / 16"
+      : shouldCorrectPortraitPlayback
+      ? `${videoElement.videoHeight} / ${videoElement.videoWidth}`
+      : `${videoElement.videoWidth} / ${videoElement.videoHeight}`;
+  }
+
   videoElement.style.objectPosition = "center center";
+  videoElement.style.aspectRatio = shouldCorrectPortraitPlayback
+    ? `${videoElement.videoHeight} / ${videoElement.videoWidth}`
+    : `${videoElement.videoWidth} / ${videoElement.videoHeight}`;
 }
 
 function scheduleResponsiveMediaRefresh() {
@@ -7659,9 +9137,58 @@ function getVoiceRequestSettingsForVoice(voice, settings = getElevenLabsSettings
   };
 }
 
+function getEmbeddedExerciseVoiceProfile(exercise = {}) {
+  const voiceId = String(exercise?.voiceProfileVoiceId || exercise?.voiceAudioVoiceId || "").trim();
+  if (!voiceId) return null;
+
+  return {
+    key:
+      String(exercise?.voiceProfileKey || "").trim() ||
+      createVoiceProfileKey(exercise?.voiceProfileName || "Ãœbungsstimme", voiceId),
+    name: String(exercise?.voiceProfileName || "Ãœbungsstimme").trim() || "Ãœbungsstimme",
+    gender: String(exercise?.voiceProfileGender || "neutral").trim() || "neutral",
+    voiceId,
+    settings: exercise?.voiceProfileSettings || exercise?.voiceAudioVoiceSettings || null,
+  };
+}
+
+function mergeExerciseVoiceIntoSettings(settings = getElevenLabsSettings(), exercise = null) {
+  const embeddedVoice = getEmbeddedExerciseVoiceProfile(exercise);
+  if (!embeddedVoice) return settings;
+
+  const voices = Array.isArray(settings?.voices) ? [...settings.voices] : [];
+  const alreadyPresent = voices.some(
+    (voice) =>
+      (embeddedVoice.key && voice.key === embeddedVoice.key) ||
+      (embeddedVoice.voiceId && voice.voiceId === embeddedVoice.voiceId),
+  );
+
+  if (alreadyPresent) return settings;
+
+  return {
+    ...settings,
+    voices: [...voices, embeddedVoice],
+  };
+}
+
 function getEditorSelectedVoice(settings = getElevenLabsSettings()) {
   const selectedKey = editorVoiceSelect?.value || "";
-  return settings.voices.find((voice) => voice.key === selectedKey) || getActiveElevenLabsVoice(settings);
+  const matchedVoice = settings.voices.find((voice) => voice.key === selectedKey);
+  if (matchedVoice) return matchedVoice;
+
+  const selectedOption = editorVoiceSelect?.selectedOptions?.[0];
+  const embeddedVoiceId = String(selectedOption?.dataset?.voiceId || "").trim();
+  if (selectedKey || embeddedVoiceId) {
+    return {
+      key: selectedKey || createVoiceProfileKey(selectedOption?.dataset?.voiceName || "Ãœbungsstimme", embeddedVoiceId),
+      name: String(selectedOption?.dataset?.voiceName || "Ãœbungsstimme").trim() || "Ãœbungsstimme",
+      gender: String(selectedOption?.dataset?.voiceGender || "neutral").trim() || "neutral",
+      voiceId: embeddedVoiceId || String(settings.voiceId || "").trim() || getDefaultElevenLabsSettings().voiceId,
+      settings: null,
+    };
+  }
+
+  return getActiveElevenLabsVoice(settings);
 }
 
 function getEditorVoiceRequestSettings() {
@@ -7678,8 +9205,8 @@ function getExerciseSelectedVoice(exercise, settings = getElevenLabsSettings()) 
     settings.voices.find((voice) => voice.voiceId === voiceId) ||
     (voiceId
       ? {
-          key: voiceKey || createVoiceProfileKey(exercise?.voiceProfileName || "Übungsstimme", voiceId),
-          name: exercise?.voiceProfileName || "Übungsstimme",
+          key: voiceKey || createVoiceProfileKey(exercise?.voiceProfileName || "Ãœbungsstimme", voiceId),
+          name: exercise?.voiceProfileName || "Ãœbungsstimme",
           gender: exercise?.voiceProfileGender || "neutral",
           voiceId,
         }
@@ -7718,9 +9245,10 @@ function getDefaultChatGptSettings() {
   return {
     enabled: false,
     apiKey: "",
+    hasApiKey: false,
     model: "gpt-5",
     systemPrompt:
-      "Erstelle eine kurze, freundliche logopädische Voice-Instruktion auf Deutsch. Sprich den Patienten direkt an. Maximal drei kurze Sätze. Keine Markdown-Zeichen.",
+      "Erstelle eine kurze, freundliche logopÃ¤dische Voice-Instruktion auf Deutsch. Sprich den Patienten direkt an. Maximal drei kurze SÃ¤tze. Keine Markdown-Zeichen.",
   };
 }
 
@@ -7746,13 +9274,19 @@ function loadSettingsControls() {
   const chatGptSettings = getChatGptSettings();
   renderVoiceProfileSelect(elevenSettings);
   renderEditorVoiceSelect(elevenSettings, savedEditorExercise?.voiceProfileKey || "");
+  renderDailyPlanVoiceSelect(elevenSettings, dailyPlanVoiceSelect?.value || elevenSettings.activeVoiceKey);
   loadSelectedVoiceProfileIntoControls(elevenSettings.activeVoiceKey, { settings: elevenSettings, silent: true });
   if (settingsVoiceStability) settingsVoiceStability.value = String(clampPercent(elevenSettings.stability));
   if (settingsVoiceSimilarity) settingsVoiceSimilarity.value = String(clampPercent(elevenSettings.similarity));
   if (settingsVoiceStyle) settingsVoiceStyle.value = String(clampPercent(elevenSettings.style));
   if (settingsSpeakerBoost) settingsSpeakerBoost.checked = Boolean(elevenSettings.speakerBoost);
   if (settingsChatGptEnabled) settingsChatGptEnabled.checked = Boolean(chatGptSettings.enabled);
-  if (settingsChatGptApiKey) settingsChatGptApiKey.value = chatGptSettings.apiKey || "";
+  if (settingsChatGptApiKey) {
+    settingsChatGptApiKey.value = chatGptSettings.apiKey || "";
+    settingsChatGptApiKey.placeholder = chatGptSettings.hasApiKey || hasCloudChatGptApiKey
+      ? "API-Key ist sicher in Firebase gespeichert"
+      : "sk-...";
+  }
   if (settingsChatGptModel) settingsChatGptModel.value = chatGptSettings.model || getDefaultChatGptSettings().model;
   if (settingsChatGptPrompt) settingsChatGptPrompt.value = chatGptSettings.systemPrompt || getDefaultChatGptSettings().systemPrompt;
   if (settingsSensitivity) settingsSensitivity.value = sensitivitySlider.value;
@@ -7810,6 +9344,17 @@ function getEqualizerSettings() {
   }
 }
 
+function hasUsableChatGptAccess(settings = getChatGptSettings()) {
+  const hasKey = (
+    String(settings.apiKey || "").trim().startsWith("sk-")
+    || settings.hasApiKey
+    || hasCloudChatGptApiKey
+  );
+  return Boolean(
+    hasKey && (settings.enabled !== false || hasCloudChatGptApiKey),
+  );
+}
+
 function readEqualizerSettingsFromControls() {
   const settings = getDefaultEqualizerSettings();
   settingsEqSliders.forEach((slider) => {
@@ -7856,7 +9401,7 @@ function renderEqualizerControls(settings = getEqualizerSettings()) {
     const activeBands = values.filter((value) => value !== 0).length;
     const maxAbs = values.length ? Math.max(...values.map((value) => Math.abs(value))) : 0;
     settingsEqSummary.textContent = activeBands
-      ? `${activeBands} Band${activeBands === 1 ? "" : "s"} · max ${maxAbs} dB`
+      ? `${activeBands} Band${activeBands === 1 ? "" : "s"} Â· max ${maxAbs} dB`
       : "0 dB";
   }
   applySettingsEqualizer(settings);
@@ -7869,9 +9414,9 @@ function resetEqualizerSettings() {
   applySettingsEqualizer(settings);
   queuePatientProfileSave({ immediate: true });
   saveCloudEqualizerSettings(settings).catch(() => {
-    if (settingsState) settingsState.textContent = "Equalizer zurückgesetzt. Firebase-Speichern fehlgeschlagen.";
+    if (settingsState) settingsState.textContent = "Equalizer zurÃ¼ckgesetzt. Firebase-Speichern fehlgeschlagen.";
   });
-  if (settingsState) settingsState.textContent = "Equalizer zurückgesetzt.";
+  if (settingsState) settingsState.textContent = "Equalizer zurÃ¼ckgesetzt.";
 }
 
 async function saveCloudEqualizerSettings(settings = getEqualizerSettings()) {
@@ -7930,7 +9475,7 @@ async function playSettingsEqualizerTestAudio() {
     await settingsVoicePreview.play();
     if (settingsEqStopButton) settingsEqStopButton.disabled = false;
     startSettingsEqVisuals();
-    if (settingsState) settingsState.textContent = "EQ-Test läuft. Regler ändern den Klang live.";
+    if (settingsState) settingsState.textContent = "EQ-Test lÃ¤uft. Regler Ã¤ndern den Klang live.";
   } catch (error) {
     if (settingsState) settingsState.textContent = error?.message || "EQ-Testaudio konnte nicht gestartet werden.";
   } finally {
@@ -8130,13 +9675,70 @@ function renderEditorVoiceSelect(settings = getElevenLabsSettings(), preferredKe
   updateEditorVoiceSelectHint();
 }
 
+function renderDailyPlanVoiceSelect(
+  settings = getElevenLabsSettings(),
+  preferredKey = dailyPlanVoiceSelect?.value || "",
+) {
+  if (!dailyPlanVoiceSelect) return;
+  const activeKey = preferredKey && settings.voices.some((voice) => voice.key === preferredKey)
+    ? preferredKey
+    : settings.activeVoiceKey || settings.voices[0]?.key || "";
+  dailyPlanVoiceSelect.innerHTML = "";
+  settings.voices.forEach((voice) => {
+    const option = document.createElement("option");
+    option.value = voice.key;
+    option.dataset.voiceId = voice.voiceId;
+    option.textContent = formatVoiceProfileOptionLabel(voice);
+    dailyPlanVoiceSelect.append(option);
+  });
+  dailyPlanVoiceSelect.value = activeKey;
+  updateDailyPlanVoiceHint();
+}
+
+function getDailyPlanSelectedVoice(settings = getElevenLabsSettings()) {
+  const selectedKey = dailyPlanVoiceSelect?.value || "";
+  return settings.voices.find((voice) => voice.key === selectedKey) || getActiveElevenLabsVoice(settings);
+}
+
+function getDailyPlanVoice(plan = null, settings = getElevenLabsSettings()) {
+  const voiceKey = String(plan?.introVoiceProfileKey || "").trim();
+  const voiceId = String(plan?.introVoiceId || plan?.introAudioVoiceId || "").trim();
+  return settings.voices.find((voice) => voice.key === voiceKey)
+    || settings.voices.find((voice) => voice.voiceId === voiceId)
+    || (voiceId ? {
+      key: voiceKey || createVoiceProfileKey(plan?.introVoiceProfileName || "Einleitungsstimme", voiceId),
+      name: plan?.introVoiceProfileName || "Einleitungsstimme",
+      gender: plan?.introVoiceProfileGender || "neutral",
+      voiceId,
+    } : null)
+    || getActiveElevenLabsVoice(settings);
+}
+
+function getDailyPlanVoiceRequestSettings(plan = null) {
+  const settings = getElevenLabsSettings();
+  const voice = plan ? getDailyPlanVoice(plan, settings) : getDailyPlanSelectedVoice(settings);
+  const requestSettings = getVoiceRequestSettingsForVoice(voice, settings);
+  if (plan?.introVoiceSettings && requestSettings.voiceId === (plan.introVoiceId || plan.introAudioVoiceId)) {
+    requestSettings.voiceSettings = plan.introVoiceSettings;
+  }
+  return requestSettings;
+}
+
+function updateDailyPlanVoiceHint() {
+  if (!dailyPlanVoiceHint) return;
+  const voice = getDailyPlanSelectedVoice();
+  dailyPlanVoiceHint.textContent = voice
+    ? `Die Beschreibung wird vor der ersten Ãœbung einmal mit ${voice.name} vorgelesen.`
+    : "Die Beschreibung wird vor der ersten Ãœbung einmal vorgelesen.";
+}
+
 function updateEditorVoiceSelectHint() {
   if (!editorVoiceSelectHint) return;
   const voice = getEditorSelectedVoice();
   const shortId = String(voice?.voiceId || "").slice(-6) || "keine ID";
   editorVoiceSelectHint.textContent = voice
-    ? `Gespeichert für diese Übung: ${voice.name} (${getVoiceGenderLabel(voice.gender)}, ${shortId}).`
-    : "Diese Stimme wird für Voice-Begleitung, Vorführung und Dialog-Audio gespeichert.";
+    ? `Gespeichert fÃ¼r diese Ãœbung: ${voice.name} (${getVoiceGenderLabel(voice.gender)}, ${shortId}).`
+    : "Diese Stimme wird fÃ¼r Voice-Begleitung, VorfÃ¼hrung und Dialog-Audio gespeichert.";
 }
 
 function handleEditorVoiceSelectionChange() {
@@ -8153,13 +9755,13 @@ function handleEditorVoiceSelectionChange() {
   }
   if (!voice) return;
   if (editorVoiceAudioVoiceId && editorVoiceAudioVoiceId !== voice.voiceId) {
-    editorVoiceState.textContent = "Andere Übungsstimme gewählt. Audio bitte neu erstellen.";
+    editorVoiceState.textContent = "Andere Ãœbungsstimme gewÃ¤hlt. Audio bitte neu erstellen.";
   }
 }
 
 function formatVoiceProfileOptionLabel(voice) {
   const shortId = String(voice.voiceId || "").slice(-6) || "ohne ID";
-  return `${voice.name} · ${getVoiceGenderLabel(voice.gender)} · ${shortId}`;
+  return `${voice.name} Â· ${getVoiceGenderLabel(voice.gender)} Â· ${shortId}`;
 }
 
 function activateSelectedVoiceProfileFromDropdown() {
@@ -8200,7 +9802,7 @@ function activateSelectedVoiceProfileFromDropdown() {
 }
 
 function getVoiceGenderLabel(gender) {
-  if (gender === "male") return "männlich";
+  if (gender === "male") return "mÃ¤nnlich";
   if (gender === "female") return "weiblich";
   return "neutral";
 }
@@ -8368,9 +9970,9 @@ function deleteSelectedVoiceProfile() {
   renderVoiceProfileSelect(nextSettings);
   loadSelectedVoiceProfileIntoControls(nextSettings.activeVoiceKey, { settings: nextSettings, silent: true });
   saveCloudElevenLabsSettings(nextSettings, { replace: true }).catch(() => {
-    if (settingsState) settingsState.textContent = "Stimme lokal gelöscht. Firebase konnte nicht aktualisiert werden.";
+    if (settingsState) settingsState.textContent = "Stimme lokal gelÃ¶scht. Firebase konnte nicht aktualisiert werden.";
   });
-  if (settingsState) settingsState.textContent = `Stimme gelöscht: ${deletedVoice?.name || "Stimme"}.`;
+  if (settingsState) settingsState.textContent = `Stimme gelÃ¶scht: ${deletedVoice?.name || "Stimme"}.`;
 }
 
 function saveElevenLabsSettings() {
@@ -8430,6 +10032,7 @@ async function saveCloudElevenLabsSettings(settings = getElevenLabsSettings(), o
   localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(settingsToSave));
   renderVoiceProfileSelect(settingsToSave);
   renderEditorVoiceSelect(settingsToSave, editorVoiceSelect?.value || settingsToSave.activeVoiceKey);
+  renderDailyPlanVoiceSelect(settingsToSave, dailyPlanVoiceSelect?.value || settingsToSave.activeVoiceKey);
 
   if (!options.silent && settingsState) settingsState.textContent = "ElevenLabs-Stimmen in Firebase gespeichert.";
 }
@@ -8451,6 +10054,7 @@ async function loadCloudElevenLabsSettings() {
     localStorage.setItem(ELEVENLABS_SETTINGS_KEY, JSON.stringify(mergedSettings));
     renderVoiceProfileSelect(mergedSettings);
     renderEditorVoiceSelect(mergedSettings, savedEditorExercise?.voiceProfileKey || mergedSettings.activeVoiceKey);
+    renderDailyPlanVoiceSelect(mergedSettings, dailyPlanVoiceSelect?.value || mergedSettings.activeVoiceKey);
     loadSelectedVoiceProfileIntoControls(mergedSettings.activeVoiceKey, {
       settings: mergedSettings,
       silent: true,
@@ -8506,10 +10110,96 @@ function saveChatGptSettings() {
   const settings = {
     enabled: Boolean(settingsChatGptEnabled?.checked),
     apiKey: settingsChatGptApiKey?.value.trim() || "",
+    hasApiKey: Boolean((settingsChatGptApiKey?.value || "").trim()) || hasCloudChatGptApiKey,
     model: settingsChatGptModel?.value.trim() || getDefaultChatGptSettings().model,
     systemPrompt: settingsChatGptPrompt?.value.trim() || getDefaultChatGptSettings().systemPrompt,
   };
   localStorage.setItem(CHATGPT_SETTINGS_KEY, JSON.stringify(settings));
+  saveCloudChatGptSettings(settings).catch(() => {
+    if (settingsState) settingsState.textContent = "ChatGPT lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
+  });
+}
+
+async function saveCloudChatGptSettings(settings = getChatGptSettings()) {
+  const normalizedSettings = {
+    ...getDefaultChatGptSettings(),
+    ...(settings || {}),
+  };
+  const payload = {
+    enabled: Boolean(normalizedSettings.enabled),
+    model: normalizedSettings.model,
+    systemPrompt: normalizedSettings.systemPrompt,
+  };
+  if (String(normalizedSettings.apiKey || "").trim()) {
+    payload.apiKey = String(normalizedSettings.apiKey || "").trim();
+  }
+  const response = await fetch(getApiUrl("/api/settings"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chatGptSettings: payload }),
+  });
+
+  if (!response.ok) {
+    await setDoc(doc(firestore, "settings", CHATGPT_SETTINGS_DOC), {
+      ...payload,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  hasCloudChatGptApiKey = hasCloudChatGptApiKey || Boolean(payload.apiKey);
+  normalizedSettings.hasApiKey = hasCloudChatGptApiKey;
+  localStorage.setItem(CHATGPT_SETTINGS_KEY, JSON.stringify(normalizedSettings));
+  if (settingsState) settingsState.textContent = "ChatGPT in Firebase gespeichert.";
+}
+
+async function loadCloudChatGptSettings() {
+  try {
+    const cloudSettings = await loadExistingCloudChatGptSettings();
+    if (!cloudSettings) return;
+
+    const localSettings = getChatGptSettings();
+    hasCloudChatGptApiKey = Boolean(cloudSettings?.hasApiKey);
+    const mergedSettings = {
+      ...getDefaultChatGptSettings(),
+      ...localSettings,
+      ...cloudSettings,
+    };
+    mergedSettings.hasApiKey = hasCloudChatGptApiKey;
+    localStorage.setItem(CHATGPT_SETTINGS_KEY, JSON.stringify(mergedSettings));
+    if (settingsChatGptEnabled) settingsChatGptEnabled.checked = Boolean(mergedSettings.enabled);
+    if (settingsChatGptApiKey) {
+      settingsChatGptApiKey.value = localSettings.apiKey || "";
+      settingsChatGptApiKey.placeholder = hasCloudChatGptApiKey
+        ? "API-Key ist sicher in Firebase gespeichert"
+        : "sk-...";
+    }
+    if (settingsChatGptModel) settingsChatGptModel.value = mergedSettings.model || getDefaultChatGptSettings().model;
+    if (settingsChatGptPrompt) settingsChatGptPrompt.value = mergedSettings.systemPrompt || getDefaultChatGptSettings().systemPrompt;
+    if (settingsState) settingsState.textContent = "ChatGPT aus Firebase geladen.";
+  } catch (error) {
+    if (settingsState) settingsState.textContent = "ChatGPT lokal geladen. Firebase nicht erreichbar.";
+  }
+}
+
+async function loadExistingCloudChatGptSettings() {
+  const response = await fetch(getApiUrl("/api/settings"), { cache: "no-store" }).catch(() => null);
+  if (response?.ok) {
+    const payload = await response.json();
+    if (payload.chatGptSettings) {
+      return {
+        ...getDefaultChatGptSettings(),
+        ...payload.chatGptSettings,
+      };
+    }
+  }
+
+  const snapshot = await getDoc(doc(firestore, "settings", CHATGPT_SETTINGS_DOC));
+  return snapshot.exists()
+    ? {
+        ...getDefaultChatGptSettings(),
+        ...snapshot.data(),
+      }
+    : null;
 }
 
 function saveAllAiSettings() {
@@ -8572,9 +10262,9 @@ async function testElevenLabsSettingsVoice(options = {}) {
 function getDefaultSettingsDemoText() {
   return [
     "Das ist ein Test der LogoSound Stimme.",
-    "Bitte hören Sie auf Klarheit, Wärme und Verständlichkeit.",
-    "Während das Testaudio läuft, können Sie Equalizer und Wiedergabe-Verstärkung verändern.",
-    "So prüfen Sie direkt, ob die Stimme im Übungsraum natürlich und deutlich klingt.",
+    "Bitte hÃ¶ren Sie auf Klarheit, WÃ¤rme und VerstÃ¤ndlichkeit.",
+    "WÃ¤hrend das Testaudio lÃ¤uft, kÃ¶nnen Sie Equalizer und Wiedergabe-VerstÃ¤rkung verÃ¤ndern.",
+    "So prÃ¼fen Sie direkt, ob die Stimme im Ãœbungsraum natÃ¼rlich und deutlich klingt.",
   ].join(" ");
 }
 
@@ -8866,12 +10556,13 @@ function isCompleteVoiceTest(metadata) {
 }
 
 function findVoiceBaseline(metadata, recordings = allRecordings) {
+  const patientId = getMetadataPatientId(metadata);
   const patientName = metadata.patientName || getCurrentPatientName();
   const exerciseName = metadata.uebung || "";
   const candidates = [...recordings, metadata]
     .filter((recording) =>
       recording &&
-      (recording.patientName || "Demo Patient") === patientName &&
+      isRecordingForPatient(recording, patientId, patientName) &&
       (recording.uebung || "") === exerciseName &&
       isCompleteVoiceTest(recording)
     )
@@ -8881,6 +10572,7 @@ function findVoiceBaseline(metadata, recordings = allRecordings) {
 }
 
 function findPreviousVoiceTest(metadata, recordings = allRecordings) {
+  const patientId = getMetadataPatientId(metadata);
   const patientName = metadata.patientName || getCurrentPatientName();
   const exerciseName = metadata.uebung || "";
   const currentDate = String(metadata.datum || "");
@@ -8888,7 +10580,7 @@ function findPreviousVoiceTest(metadata, recordings = allRecordings) {
     .filter((recording) =>
       recording &&
       recording.id !== metadata.id &&
-      (recording.patientName || "Demo Patient") === patientName &&
+      isRecordingForPatient(recording, patientId, patientName) &&
       (recording.uebung || "") === exerciseName &&
       String(recording.datum || "") < currentDate &&
       isCompleteVoiceTest(recording)
@@ -8923,8 +10615,8 @@ function calculateVoiceEvaluation(metadata, recordings = allRecordings) {
       entwicklung: "Ausgangsmessung",
       ampel: "is-warning",
       hinweise: [
-        "Stärke: Ausgangsmessung gespeichert",
-        "Auffällig: Weitere Tests zeigen erst den persönlichen Verlauf",
+        "StÃ¤rke: Ausgangsmessung gespeichert",
+        "AuffÃ¤llig: Weitere Tests zeigen erst den persÃ¶nlichen Verlauf",
       ],
       baseline: {
         testId: metadata.id,
@@ -9006,15 +10698,15 @@ function getTrafficLightClass(score) {
 function buildVoiceEvaluationHints(values, baselineValues, scores) {
   const strengths = [];
   const notices = [];
-  if (values.amplitudenGleichmaessigkeit >= baselineValues.amplitudenGleichmaessigkeit + 4) strengths.push("gleichmäßigere Lautstärke");
+  if (values.amplitudenGleichmaessigkeit >= baselineValues.amplitudenGleichmaessigkeit + 4) strengths.push("gleichmÃ¤ÃŸigere LautstÃ¤rke");
   if (values.pausenUeberEineSekunde < baselineValues.pausenUeberEineSekunde) strengths.push("weniger lange Pausen");
-  if (values.stimmenanteilProzent >= baselineValues.stimmenanteilProzent + 4) strengths.push("höherer Stimmenanteil");
-  if (values.frequenzSchwankung > baselineValues.frequenzSchwankung + 8) notices.push("Grundfrequenz schwankt stärker");
+  if (values.stimmenanteilProzent >= baselineValues.stimmenanteilProzent + 4) strengths.push("hÃ¶herer Stimmenanteil");
+  if (values.frequenzSchwankung > baselineValues.frequenzSchwankung + 8) notices.push("Grundfrequenz schwankt stÃ¤rker");
   if (values.stimmenanteilProzent <= baselineValues.stimmenanteilProzent - 6) notices.push("Stimmenanteil ist geringer");
-  if (scores.lautstaerke < 58) notices.push("Lautstärke weicht deutlich von der Ausgangsmessung ab");
-  if (!strengths.length) strengths.push("Werte sind im persönlichen Verlauf stabil");
+  if (scores.lautstaerke < 58) notices.push("LautstÃ¤rke weicht deutlich von der Ausgangsmessung ab");
+  if (!strengths.length) strengths.push("Werte sind im persÃ¶nlichen Verlauf stabil");
   if (!notices.length) notices.push("keine deutliche Verschlechterung erkennbar");
-  return [...strengths.map((text) => `Stärke: ${text}`), ...notices.map((text) => `Auffällig: ${text}`)];
+  return [...strengths.map((text) => `StÃ¤rke: ${text}`), ...notices.map((text) => `AuffÃ¤llig: ${text}`)];
 }
 
 function splitVoiceEvaluationHints(hints = []) {
@@ -9121,9 +10813,9 @@ function renderAudioAnalysis(metadata = currentMetadata) {
   if (!audioAnalysisGrid || !audioAnalysisTitle || !audioAnalysisNote) return;
 
   if (!metadata) {
-    audioAnalysisTitle.textContent = "Keine Aufnahme geöffnet";
+    audioAnalysisTitle.textContent = "Keine Aufnahme geÃ¶ffnet";
     audioAnalysisGrid.innerHTML = "";
-    audioAnalysisNote.textContent = "Öffne eine Aufnahme aus der Auswertung oder erstelle eine neue Aufnahme.";
+    audioAnalysisNote.textContent = "Ã–ffne eine Aufnahme aus der Auswertung oder erstelle eine neue Aufnahme.";
     if (statisticsPositionSlider) statisticsPositionSlider.disabled = true;
     if (statisticsPositionValue) statisticsPositionValue.textContent = "00:00";
     setAnalysisRangeControlsEnabled(false);
@@ -9135,7 +10827,7 @@ function renderAudioAnalysis(metadata = currentMetadata) {
   const analysis = buildAudioAnalysis(calibratedMetadata);
   const positionAnalysis = buildPositionAudioAnalysis(calibratedMetadata, selectedAnalysisPosition);
   const rangeAnalysis = buildRangeAudioAnalysis(calibratedMetadata, selectedAnalysisStart, selectedAnalysisEnd);
-  audioAnalysisTitle.textContent = `${metadata.uebung || "Aufnahme"} · ${formatTime(positionAnalysis.zeitSekunden)}`;
+  audioAnalysisTitle.textContent = `${metadata.uebung || "Aufnahme"} Â· ${formatTime(positionAnalysis.zeitSekunden)}`;
   audioAnalysisGrid.innerHTML = "";
   if (statisticsPositionSlider) {
     statisticsPositionSlider.disabled = false;
@@ -9150,23 +10842,23 @@ function renderAudioAnalysis(metadata = currentMetadata) {
 
   const items = [
     ["Zeit", formatTime(positionAnalysis.zeitSekunden)],
-    ["Lautstärke an der Analyseposition", positionAnalysis.lautstaerke],
-    ["Ø Lautstärke an der Analyseposition", positionAnalysis.durchschnittlicheLautstaerke],
+    ["LautstÃ¤rke an der Analyseposition", positionAnalysis.lautstaerke],
+    ["Ã˜ LautstÃ¤rke an der Analyseposition", positionAnalysis.durchschnittlicheLautstaerke],
     ["Amplitude an der Analyseposition", positionAnalysis.amplitude],
     ["Frequenz an der Analyseposition", positionAnalysis.stimmfrequenzHz ? `${positionAnalysis.stimmfrequenzHz} Hz` : "0 Hz"],
-    ["Ø Frequenz an der Analyseposition", positionAnalysis.durchschnittlicheStimmfrequenzHz ? `${positionAnalysis.durchschnittlicheStimmfrequenzHz} Hz` : "0 Hz"],
+    ["Ã˜ Frequenz an der Analyseposition", positionAnalysis.durchschnittlicheStimmfrequenzHz ? `${positionAnalysis.durchschnittlicheStimmfrequenzHz} Hz` : "0 Hz"],
     ["Frequenzenergie", positionAnalysis.frequenzAmplitude],
     ["Impulse im Fenster", positionAnalysis.impulse],
     ["Bereich", rangeAnalysis.label],
-    ["Bereich Ø", rangeAnalysis.durchschnittlicheLautstaerke],
+    ["Bereich Ã˜", rangeAnalysis.durchschnittlicheLautstaerke],
     ["Bereich Max", rangeAnalysis.maximaleLautstaerke],
     ["Bereich Frequenz", rangeAnalysis.durchschnittlicheStimmfrequenzHz ? `${rangeAnalysis.durchschnittlicheStimmfrequenzHz} Hz` : "0 Hz"],
     ["Bereich Impulse", rangeAnalysis.impulse],
     ["Leseabschnitte", analysis.timing.leseAbschnitte?.length || 0],
     ["Pausen > 1s", analysis.timing.pausenUeberEineSekunde || 0],
     ["Dauer gesamt", formatTime(analysis.dauerSekunden || metadata.dauerSekunden || 0)],
-    ["Ø gesamt", analysis.lautstaerke.durchschnitt],
-    ["Ø Frequenz gesamt", analysis.frequenz.durchschnittHz ? `${analysis.frequenz.durchschnittHz} Hz` : "0 Hz"],
+    ["Ã˜ gesamt", analysis.lautstaerke.durchschnitt],
+    ["Ã˜ Frequenz gesamt", analysis.frequenz.durchschnittHz ? `${analysis.frequenz.durchschnittHz} Hz` : "0 Hz"],
     ["Stimmanteil gesamt", `${analysis.frequenz.stimmanteilProzent}%`],
   ];
 
@@ -9181,7 +10873,7 @@ function renderAudioAnalysis(metadata = currentMetadata) {
   });
 
   audioAnalysisNote.textContent = analysis.qualitaet.zuLeise
-    ? "Hinweis: Die Aufnahme wirkt sehr leise. Empfindlichkeit oder Abstand zum Mikrofon prüfen."
+    ? "Hinweis: Die Aufnahme wirkt sehr leise. Empfindlichkeit oder Abstand zum Mikrofon prÃ¼fen."
     : "Schieberegler bewegt die Analyseposition. Die Werte werden aus einem kurzen Fenster um diese Stelle berechnet.";
 }
 
@@ -9208,17 +10900,17 @@ function getNormalizedAnalysisDisplayLabel(label) {
 
 function normalizeAnalysisDisplayLabel(label) {
   const text = String(label || "");
-  if (text.includes("Lautst") && text.includes("dort") && text.includes("Ø")) {
-    return "Ø Lautstärke an der Analyseposition";
+  if (text.includes("Lautst") && text.includes("dort") && text.includes("Ã˜")) {
+    return "Ã˜ LautstÃ¤rke an der Analyseposition";
   }
   if (text.includes("Lautst") && text.includes("dort")) {
-    return "Lautstärke an der Analyseposition";
+    return "LautstÃ¤rke an der Analyseposition";
   }
   if (text.includes("Amplitude") && text.includes("dort")) {
     return "Amplitude an der Analyseposition";
   }
-  if (text.includes("Frequenz") && text.includes("dort") && text.includes("Ø")) {
-    return "Ø Frequenz an der Analyseposition";
+  if (text.includes("Frequenz") && text.includes("dort") && text.includes("Ã˜")) {
+    return "Ã˜ Frequenz an der Analyseposition";
   }
   if (text.includes("Frequenz") && text.includes("dort")) {
     return "Frequenz an der Analyseposition";
@@ -9749,7 +11441,7 @@ async function uploadCurrentRecording(metadata, videoBlob) {
     firebaseState.textContent = "Auch in Firebase gespeichert.";
   } catch (error) {
     firebaseState.textContent =
-      "Lokal gespeichert. Firebase-Upload fehlgeschlagen, bitte Storage/Firestore-Regeln prüfen.";
+      "Lokal gespeichert. Firebase-Upload fehlgeschlagen, bitte Storage/Firestore-Regeln prÃ¼fen.";
   }
 }
 
@@ -9852,23 +11544,24 @@ async function resetCloudEvaluationData(metadata) {
 
 async function resetCurrentPatientEvaluationData() {
   const patient = getCurrentPatientName();
+  const patientId = getCurrentPatientId();
   const patientRecordings = allRecordings.filter(
-    (recording) => (recording.patientName || "Demo Patient") === patient,
+    (recording) => isRecordingForPatient(recording, patientId, patient),
   );
 
   if (!patientRecordings.length) {
-    message.textContent = "Keine Aufnahmen für diese Auswertung vorhanden.";
+    message.textContent = "Keine Aufnahmen fÃ¼r diese Auswertung vorhanden.";
     return;
   }
 
   const confirmed = window.confirm(
-    `Auswertung für ${patient} zurücksetzen? Die Aufnahmen bleiben erhalten, aber gespeicherte Analyse- und Bewertungsdaten werden gelöscht.`,
+    `Auswertung fÃ¼r ${patient} zurÃ¼cksetzen? Die Aufnahmen bleiben erhalten, aber gespeicherte Analyse- und Bewertungsdaten werden gelÃ¶scht.`,
   );
   if (!confirmed) return;
 
   resetEvaluationButton.disabled = true;
-  resetEvaluationButton.textContent = "Auswertung wird zurückgesetzt";
-  firebaseState.textContent = "Auswertung wird lokal und in Firebase zurückgesetzt.";
+  resetEvaluationButton.textContent = "Auswertung wird zurÃ¼ckgesetzt";
+  firebaseState.textContent = "Auswertung wird lokal und in Firebase zurÃ¼ckgesetzt.";
 
   let cloudFailed = false;
   const resetTimestamp = new Date().toISOString();
@@ -9892,7 +11585,8 @@ async function resetCurrentPatientEvaluationData() {
   }
 
   try {
-    await setDoc(doc(firestore, "patientEvaluationResets", slugify(patient)), {
+    await setDoc(doc(firestore, "patientEvaluationResets", patientId), {
+      patientId,
       patientName: patient,
       resetAt: resetTimestamp,
       recordingCount: patientRecordings.length,
@@ -9902,7 +11596,7 @@ async function resetCurrentPatientEvaluationData() {
     console.warn("Firebase-Auswertungsreset-Protokoll fehlgeschlagen", error);
   }
 
-  if (currentMetadata && (currentMetadata.patientName || "Demo Patient") === patient) {
+  if (currentMetadata && isRecordingForPatient(currentMetadata, patientId, patient)) {
     currentMetadata = stripEvaluationData(currentMetadata);
   }
   selectedAnalysisRecordingId = "";
@@ -9913,34 +11607,75 @@ async function resetCurrentPatientEvaluationData() {
 
   await refreshRecordings();
   resetEvaluationButton.disabled = false;
-  resetEvaluationButton.textContent = "Auswertung zurücksetzen";
-  message.textContent = "Auswertung zurückgesetzt. Neue Aufnahmen bilden wieder eine neue Ausgangsmessung.";
+  resetEvaluationButton.textContent = "Auswertung zurÃ¼cksetzen";
+  message.textContent = "Auswertung zurÃ¼ckgesetzt. Neue Aufnahmen bilden wieder eine neue Ausgangsmessung.";
   firebaseState.textContent = cloudFailed
-    ? "Auswertung lokal zurückgesetzt. Firebase teilweise fehlgeschlagen."
-    : "Auswertung lokal und in Firebase zurückgesetzt.";
+    ? "Auswertung lokal zurÃ¼ckgesetzt. Firebase teilweise fehlgeschlagen."
+    : "Auswertung lokal und in Firebase zurÃ¼ckgesetzt.";
 }
 
 async function selectPatient(name, options = {}) {
   const cleanedName = name.trim() || "Ohne Name";
+  setPatientManagerState("Patient wird gespeichert...", "saving");
   patientName.value = cleanedName;
   if (patientManagerName) patientManagerName.value = cleanedName;
   localStorage.setItem(SELECTED_PATIENT_KEY, cleanedName);
-  await setActiveCloudPatient(cleanedName).catch(() => {});
-  const profile = await ensurePatientProfile(cleanedName).catch(() => null);
+  let cloudSaved = true;
+  let profile = null;
+  try {
+    profile = await ensurePatientProfile(cleanedName);
+    await setActiveCloudPatient(cleanedName, profile?.id || "");
+  } catch (error) {
+    cloudSaved = false;
+    profile = findPatientProfileByName(cleanedName) || buildPatientProfile(cleanedName);
+    upsertPatientProfile(profile);
+    console.warn("Patient konnte nicht in Firebase gespeichert werden", error);
+  }
+  if (profile?.id) {
+    localStorage.setItem(SELECTED_PATIENT_ID_KEY, profile.id);
+  }
+  if (
+    activeCourseRun &&
+    activeCourseRun.assignment?.patientId !== profile?.id &&
+    normalizeEditorExerciseName(activeCourseRun.assignment?.patientName) !== normalizeEditorExerciseName(cleanedName)
+  ) {
+    window.clearTimeout(coursePauseTimerId);
+    clearCourseAutoAdvanceTimer();
+    stopCoursePauseMusic();
+    clearActiveCourseRun();
+    coursePlayer?.classList.add("is-hidden");
+  }
   if (profile && options.applySettings !== false) {
     applyPatientProfileSettings(profile);
+  }
+  try {
+    await refreshCourseDataForCurrentPatient();
+  } catch (error) {
+    console.warn("Kursdaten fuer den gewaehlten Patienten konnten nicht nachgeladen werden", error);
   }
   if (editorMode?.value === "dialog") {
     renderEditorDialogList();
     renderEditorPreview(buildEditorExerciseFromForm());
   }
   renderPatientManagementList();
+  renderCourseViews();
   await refreshRecordings();
-  message.textContent = `Patient ausgewählt: ${cleanedName}`;
+  setPatientManagerState(
+    cloudSaved
+      ? `Patient in Firebase gespeichert und aktiv: ${cleanedName}`
+      : `Patient nur lokal gespeichert: ${cleanedName}. Firebase fehlgeschlagen.`,
+    cloudSaved ? "success" : "warning",
+  );
+  message.textContent = `Patient ausgewÃ¤hlt: ${cleanedName}`;
 }
 
 async function refreshRecordings(preferredId = null) {
-  allRecordings = await getAllRecordings();
+  try {
+    allRecordings = await getAllRecordings();
+  } catch (error) {
+    console.warn("Aufnahmen konnten nicht geladen werden", error);
+    allRecordings = Array.isArray(allRecordings) ? allRecordings : [];
+  }
   renderPatientOptions(allRecordings);
   renderLibrary(preferredId);
 }
@@ -9971,9 +11706,14 @@ function renderPatientManagementList(names = getKnownPatientNames()) {
   const selectedPatient = getCurrentPatientName();
   const visibleNames = names.length ? names : [selectedPatient];
 
+  if (!visibleNames.length) {
+    patientManagerList.innerHTML = '<div class="course-empty">Noch kein Patient vorhanden.</div>';
+    return;
+  }
+
   visibleNames.forEach((name) => {
     const recordingCount = allRecordings.filter(
-      (recording) => (recording.patientName || "Demo Patient") === name,
+      (recording) => isRecordingForPatient(recording, findPatientProfileByName(name)?.id || "", name),
     ).length;
     const button = document.createElement("button");
     button.type = "button";
@@ -10002,6 +11742,2995 @@ function getKnownPatientNames() {
   return [...names].filter(Boolean).sort((a, b) => a.localeCompare(b, "de"));
 }
 
+function createId(prefix) {
+  const random = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `${prefix}_${String(random).replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
+}
+
+function getCourseTemplates() {
+  return [
+    {
+      id: "template_morning_voice",
+      name: "Morgendliche Stimmaktivierung",
+      description: "Ein kurzer Kurs zur Aktivierung von Stimme und Atmung.",
+      difficulty: "leicht",
+      category: "stimme",
+      sessionsPerWeek: 5,
+      exercises: ["Vokal A halten", "A E I O U", "Pa Ta Ka"],
+    },
+    {
+      id: "template_breath_relax",
+      name: "Lockerung und Atmung",
+      description: "Ruhige Ãœbungen mit Pausen und Atemhinweisen.",
+      difficulty: "leicht",
+      category: "atmung",
+      sessionsPerWeek: 4,
+      exercises: ["Vokal A halten", "Text lesen"],
+    },
+    {
+      id: "template_articulation",
+      name: "Artikulationstraining",
+      description: "Silben, Laute und kurze SÃ¤tze fÃ¼r deutliches Sprechen.",
+      difficulty: "mittel",
+      category: "artikulation",
+      sessionsPerWeek: 5,
+      exercises: ["Pa Ta Ka", "Pa Ta Ka 10x", "Kurze SÃ¤tze"],
+    },
+    {
+      id: "template_evening_relax",
+      name: "Abendliche Entspannung",
+      description: "Sanfter Kurs mit ruhigen Texten und Musikpausen.",
+      difficulty: "leicht",
+      category: "entspannung",
+      sessionsPerWeek: 3,
+      exercises: ["Text lesen", "Langer Text"],
+    },
+    {
+      id: "template_parkinson_voice",
+      name: "Individuelles Parkinson-Stimmtraining",
+      description: "Stimme, Artikulation und kurze Sprechimpulse im Verlauf.",
+      difficulty: "mittel",
+      category: "stimme",
+      sessionsPerWeek: 5,
+      exercises: ["Vokal A halten", "Pa Ta Ka", "Dialog"],
+    },
+  ];
+}
+
+function getExerciseCategory(exercise) {
+  const mode = normalizeEditorExerciseModeValue(exercise?.mode || "");
+  if (mode === "vowels") return "stimme";
+  if (mode === "syllables") return "artikulation";
+  if (mode === "sentences" || mode === "text" || mode === "long_text" || mode === "dialog") return "sprechen";
+  return exercise?.category || "individuell";
+}
+
+function getExerciseLibraryItems() {
+  const fixed = Array.from(exerciseName?.options || [])
+    .filter((option) => option.value && option.value !== "custom-editor")
+    .map((option) => ({
+      id: `fixed:${slugify(option.value)}`,
+      exerciseId: option.value,
+      name: option.textContent.trim() || option.value,
+      mode: option.dataset.mode || "syllables",
+      description: "Vorhandene LogoSound-Ãœbung",
+      duration: Number(option.dataset.duration || 90),
+      difficulty: "leicht",
+      isCustom: false,
+    }));
+
+  const saved = savedEditorExercises.map((exercise) => ({
+    id: `editor:${slugify(exercise.name)}`,
+    exerciseId: exercise.name,
+    name: exercise.name,
+    mode: exercise.mode || "syllables",
+    description: exercise.contentLabel || "Individuell erstellte Ãœbung",
+    duration: estimateExerciseDurationSeconds(exercise),
+    difficulty: exercise.difficulty || "mittel",
+    isCustom: true,
+  }));
+
+  const media = mediaLibraryItems
+    .filter((item) => item.active !== false && item.downloadUrl)
+    .map((item) => ({
+      id: `media:${item.id}`,
+      exerciseId: `media:${item.id}`,
+      name: item.title,
+      mode: item.kind === "pause" ? "media_pause" : "media_exercise",
+      description: item.description || (item.kind === "pause" ? "MediengestÃ¼tzte Pause" : "MediengestÃ¼tzte Ãœbung"),
+      duration: Number(item.duration || 30),
+      difficulty: "leicht",
+      isCustom: false,
+      isMedia: true,
+      mediaId: item.id,
+      mediaUrl: item.downloadUrl,
+      mediaType: item.mediaType,
+      mimeType: item.mimeType,
+    }));
+
+  // Uploaded media are shown first so newly added audio/video modules do not
+  // disappear below a long list of built-in and editor exercises.
+  return [...media, ...saved, ...fixed].map((exercise) => ({
+    ...exercise,
+    category: exercise.isMedia ? "medien" : (exercise.isCustom ? "individuell" : getExerciseCategory(exercise)),
+  }));
+}
+
+function estimateExerciseDurationSeconds(exercise) {
+  const timing = exercise?.timing || EDITOR_SPEEDS[exercise?.speed || 3] || EDITOR_SPEEDS[3];
+  const text = String(exercise?.script || exercise?.content || exercise?.exerciseId || "");
+  const units = text.split(/\s+/).filter(Boolean).length || 1;
+  return Math.max(30, Math.min(900, Math.round(units * (timing.wordSeconds || 0.75) + 30)));
+}
+
+function buildCourseExercise(libraryItem) {
+  const pauseDuration = Math.max(0, Math.min(300, Number(coursePauseDuration?.value) || 30));
+  const isMediaPause = libraryItem.mode === "media_pause";
+  return {
+    exerciseId: libraryItem.exerciseId,
+    title: libraryItem.name,
+    position: dailyPlanDraftExercises.length + 1,
+    duration: isMediaPause ? pauseDuration : (libraryItem.duration || 90),
+    repetitions: 1,
+    category: libraryItem.category || "individuell",
+    difficulty: libraryItem.difficulty || "leicht",
+    unitType: isMediaPause ? "pause" : "exercise",
+    mode: libraryItem.mode || "syllables",
+    mediaId: libraryItem.mediaId || "",
+    mediaUrl: libraryItem.mediaUrl || "",
+    mediaType: libraryItem.mediaType || "",
+    mimeType: libraryItem.mimeType || "",
+    recordAudio: !isMediaPause,
+    recordVideo: !isMediaPause,
+    useVideo: true,
+    useAudioGuide: true,
+    useAvatarGuide: false,
+    volumeAnalysis: true,
+    frequencyAnalysis: true,
+    canSkip: true,
+    autoEvaluation: true,
+    patientHint: "",
+    pauseAfter: {
+      enabled: false,
+      duration: 0,
+      musicId: courseMusic?.value || "",
+      volume: 0.25,
+      autoContinue: true,
+      canSkip: true,
+      text: "Atmen Sie ruhig ein und aus.",
+      breathHint: true,
+    },
+  };
+}
+
+function normalizeCourseExercise(exercise, index = 0) {
+  const normalized = { ...exercise, position: index + 1 };
+  if (!isCoursePauseExercise(normalized)) {
+    return {
+      ...normalized,
+      pauseAfter: {
+        ...(normalized.pauseAfter || {}),
+        enabled: false,
+        duration: 0,
+      },
+    };
+  }
+  const media = resolveCourseUnitMedia(normalized);
+  const sourceDuration = Number(media?.duration || 0);
+  const savedDuration = Number(normalized.duration || 0);
+  const legacyPauseDuration = Number(normalized.pauseAfter?.duration || 0);
+  const configuredPauseDuration = Number(
+    normalized.pauseDuration
+      || legacyPauseDuration
+      || (sourceDuration && savedDuration === sourceDuration
+        ? (Number(coursePauseDuration?.value) || 30)
+        : savedDuration)
+      || 30
+  );
+  return {
+    ...normalized,
+    title: normalized.title || media?.title || "Pauseneinheit",
+    unitType: "pause",
+    mode: "media_pause",
+    mediaId: normalized.mediaId || media?.id || "",
+    mediaUrl: normalized.mediaUrl || media?.downloadUrl || "",
+    mediaType: normalized.mediaType || media?.mediaType || "audio",
+    mimeType: normalized.mimeType || media?.mimeType || "",
+    duration: Math.max(1, Math.min(300, configuredPauseDuration)),
+    recordAudio: false,
+    recordVideo: false,
+    pauseAfter: {
+      ...(normalized.pauseAfter || {}),
+      enabled: false,
+      duration: 0,
+    },
+  };
+}
+
+function normalizeCoursePlan(plan) {
+  if (!plan) return null;
+  const exercises = Array.isArray(plan.exercises)
+    ? plan.exercises.map((exercise, index) => normalizeCourseExercise(exercise, index))
+    : [];
+  return {
+    ...plan,
+    exercises,
+    exerciseCount: exercises.length,
+    estimatedDuration: getCourseEstimatedDuration({ exercises }),
+  };
+}
+
+function getCourseEstimatedDuration(course) {
+  return (course.exercises || []).reduce((sum, exercise) => {
+    const pause = exercise.pauseAfter?.enabled ? Number(exercise.pauseAfter.duration || 0) : 0;
+    return sum + Number(exercise.duration || 0) + pause;
+  }, 0);
+}
+
+function getDailyPlansFromRefs(dayPlanRefs = []) {
+  return dayPlanRefs
+    .map((plan) => resolveCourseDayPlan(plan))
+    .filter(Boolean);
+}
+
+function getTotalDurationFromDailyPlans(dayPlanRefs = []) {
+  return getDailyPlansFromRefs(dayPlanRefs).reduce((sum, plan) => {
+    return sum + Number(plan.estimatedDuration || getCourseEstimatedDuration(plan));
+  }, 0);
+}
+
+function formatCourseDuration(seconds) {
+  const total = Math.max(0, Math.round(Number(seconds) || 0));
+  const minutes = Math.floor(total / 60);
+  const rest = total % 60;
+  return minutes ? `${minutes}:${String(rest).padStart(2, "0")} Min.` : `${rest} Sek.`;
+}
+
+function formatCourseDate(dateString) {
+  if (!dateString) return "heute";
+  const parsed = new Date(dateString);
+  if (Number.isNaN(parsed.getTime())) return String(dateString);
+  return parsed.toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function persistCourseModuleData() {
+  localStorage.setItem(DAILY_PLANS_KEY, JSON.stringify(dailyPlans));
+  localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
+  localStorage.setItem(COURSE_SESSIONS_KEY, JSON.stringify(courseSessions));
+  localStorage.setItem(COURSE_ASSIGNMENTS_KEY, JSON.stringify(courseAssignments));
+  localStorage.setItem(RELAX_MUSIC_KEY, JSON.stringify(relaxMusicItems));
+  localStorage.setItem(MEDIA_LIBRARY_KEY, JSON.stringify(mediaLibraryItems));
+}
+
+async function requestCourseDataApi(method = "GET", body = null) {
+  if (!firebaseAuthReadyPromise) {
+    firebaseAuthReadyPromise = (async () => {
+      if (!firebaseAuth.currentUser) await signInAnonymously(firebaseAuth);
+      return firebaseAuth.currentUser;
+    })().catch((error) => {
+      firebaseAuthReadyPromise = null;
+      throw error;
+    });
+  }
+  const user = await firebaseAuthReadyPromise;
+  const idToken = await user.getIdToken();
+  const patientQuery = method === "GET"
+    ? `?patientId=${encodeURIComponent(getCurrentPatientId())}&patientName=${encodeURIComponent(getCurrentPatientName())}`
+    : "";
+  const response = await fetch(`${getApiUrl("/api/course-data")}${patientQuery}`, {
+    method,
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!response.ok) throw new Error(`Kursdaten-API ${response.status}`);
+  return response.json();
+}
+
+async function loadCourseCollectionsFromCloud() {
+  const payload = await requestCourseDataApi("GET");
+  return payload?.collections || {};
+}
+
+async function refreshCourseDataForCurrentPatient() {
+  const cloud = await loadCourseCollectionsFromCloud();
+  dailyPlans = mergeById(dailyPlans, cloud.dailyPlans || []);
+  courses = mergeById(courses, cloud.courses || []);
+  courseSessions = mergeById(courseSessions, cloud.courseSessions || []);
+  courseAssignments = mergeById(courseAssignments, cloud.courseAssignments || []);
+  relaxMusicItems = mergeById(relaxMusicItems, cloud.relaxMusic || []);
+  courseAssignments = reconcileCourseAssignmentPatients(courseAssignments);
+  persistCourseModuleData();
+}
+
+async function loadCourseModuleData() {
+  try {
+    dailyPlans = JSON.parse(localStorage.getItem(DAILY_PLANS_KEY) || "[]") || [];
+    courses = JSON.parse(localStorage.getItem(COURSES_KEY) || "[]") || [];
+    courseSessions = JSON.parse(localStorage.getItem(COURSE_SESSIONS_KEY) || "[]") || [];
+    courseAssignments = JSON.parse(localStorage.getItem(COURSE_ASSIGNMENTS_KEY) || "[]") || [];
+    relaxMusicItems = JSON.parse(localStorage.getItem(RELAX_MUSIC_KEY) || "[]") || [];
+    mediaLibraryItems = JSON.parse(localStorage.getItem(MEDIA_LIBRARY_KEY) || "[]") || [];
+  } catch (error) {
+    dailyPlans = [];
+    courses = [];
+    courseSessions = [];
+    courseAssignments = [];
+    relaxMusicItems = [];
+    mediaLibraryItems = [];
+  }
+
+  try {
+    const cloud = await loadCourseCollectionsFromCloud();
+    dailyPlans = mergeById(dailyPlans, cloud.dailyPlans || []);
+    courses = mergeById(courses, cloud.courses || []);
+    courseSessions = mergeById(courseSessions, cloud.courseSessions || []);
+    courseAssignments = mergeById(courseAssignments, cloud.courseAssignments || []);
+    relaxMusicItems = mergeById(relaxMusicItems, cloud.relaxMusic || []);
+  } catch (apiError) {
+    await Promise.all([
+      loadCloudCollection("dailyPlans").then((items) => { dailyPlans = mergeById(dailyPlans, items); }),
+      loadCloudCollection("courses").then((items) => { courses = mergeById(courses, items); }),
+      loadCloudCollection("courseSessions").then((items) => { courseSessions = mergeById(courseSessions, items); }),
+      loadCloudCollection("courseAssignments").then((items) => { courseAssignments = mergeById(courseAssignments, items); }),
+      loadCloudCollection("relaxMusic").then((items) => { relaxMusicItems = mergeById(relaxMusicItems, items); }),
+    ]).catch(() => {});
+  }
+  await loadMediaLibraryFromCloud().catch(() => {});
+  courseAssignments = reconcileCourseAssignmentPatients(courseAssignments);
+
+  persistCourseModuleData();
+  syncCourseModuleDataToCloud().catch(() => {});
+  if (userRoleSelect) userRoleSelect.value = userRole;
+  updateRoleMenuVisibility();
+  resetDailyPlanEditor();
+  resetCourseEditor();
+  renderCourseViews();
+}
+
+async function syncCourseModuleDataToCloud() {
+  const updates = [
+    ...dailyPlans.map((item) => ({ collection: "dailyPlans", item })),
+    ...courses.map((item) => ({ collection: "courses", item })),
+    ...courseSessions.map((item) => ({ collection: "courseSessions", item })),
+    ...courseAssignments.map((item) => ({ collection: "courseAssignments", item })),
+    ...relaxMusicItems.map((item) => ({ collection: "relaxMusic", item })),
+  ];
+  if (!updates.length) return;
+  await requestCourseDataApi("POST", { updates });
+}
+
+async function syncCourseAssignmentsForPatient(patientId) {
+  const normalizedPatientId = String(patientId || "").trim();
+  const items = courseAssignments.filter((assignment) => String(assignment.patientId || "").trim() === normalizedPatientId);
+  let failed = false;
+  await Promise.all(items.map((assignment) => (
+    saveCourseAssignmentToCloud(assignment).catch((error) => {
+      failed = true;
+      console.warn("Firebase-Kurszuordnung fehlgeschlagen", error);
+    })
+  )));
+  return !failed;
+}
+
+async function loadCloudCollection(collectionName) {
+  const snapshot = await getDocs(collection(firestore, collectionName));
+  return snapshot.docs.map((item) => item.data()).filter((item) => item?.id);
+}
+
+async function saveCourseItemToCloud(collectionName, item) {
+  await requestCourseDataApi("POST", { collection: collectionName, item });
+}
+
+async function deleteCourseItemFromCloud(collectionName, id) {
+  await requestCourseDataApi("DELETE", { collection: collectionName, id });
+}
+
+function mergeById(localItems, cloudItems) {
+  const map = new Map(localItems.map((item) => [item.id, item]));
+  cloudItems.forEach((item) => {
+    const existing = map.get(item.id);
+    map.set(item.id, !existing || String(item.updatedAt || "") >= String(existing.updatedAt || "") ? item : existing);
+  });
+  return [...map.values()];
+}
+
+async function saveCourseToCloud(course) {
+  await saveCourseItemToCloud("courses", course);
+}
+
+async function saveDailyPlanToCloud(plan) {
+  await saveCourseItemToCloud("dailyPlans", plan);
+}
+
+async function saveCourseSessionToCloud(session) {
+  await saveCourseItemToCloud("courseSessions", session);
+}
+
+async function saveCourseAssignmentToCloud(assignment) {
+  await saveCourseItemToCloud("courseAssignments", assignment);
+}
+
+async function saveRelaxMusicToCloud(item) {
+  await saveCourseItemToCloud("relaxMusic", item);
+}
+
+async function requestMediaLibraryApi(method = "GET", body = null) {
+  const response = await fetch(getApiUrl("/api/media-library"), {
+    method,
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || `Medienfehler ${response.status}`);
+  return payload;
+}
+
+async function loadMediaLibraryFromCloud() {
+  const payload = await requestMediaLibraryApi("GET");
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  mediaLibraryItems = mergeById(mediaLibraryItems, items);
+  localStorage.setItem(MEDIA_LIBRARY_KEY, JSON.stringify(mediaLibraryItems));
+}
+
+function refreshMediaLibraryFromCloud() {
+  if (mediaLibraryRefreshPromise) return mediaLibraryRefreshPromise;
+  mediaLibraryRefreshPromise = loadMediaLibraryFromCloud()
+    .then(() => {
+      persistCourseModuleData();
+      renderDailyPlanExerciseLibrary();
+      renderMediaLibraryList();
+    })
+    .catch(() => {})
+    .finally(() => {
+      mediaLibraryRefreshPromise = null;
+    });
+  return mediaLibraryRefreshPromise;
+}
+
+function getMediaFileType(mimeType = "", fileName = "") {
+  if (mimeType.startsWith("video/")) return "video";
+  if (mimeType.startsWith("image/")) return "image";
+  const extension = String(fileName).split(".").pop()?.toLowerCase() || "";
+  if (["mp4", "mov", "m4v", "webm"].includes(extension)) return "video";
+  if (["jpg", "jpeg", "png", "webp", "heic", "heif"].includes(extension)) return "image";
+  return "audio";
+}
+
+function isSupportedMediaFile(file) {
+  if (!file) return false;
+  if (/^(audio|video|image)\//i.test(file.type || "")) return true;
+  return /\.(mp3|m4a|wav|ogg|aac|flac|webm|mp4|mov|m4v|jpe?g|png|webp|heic|heif)$/i.test(file.name || "");
+}
+
+function safeMediaFileName(fileName = "medium") {
+  const parts = String(fileName).split(".");
+  const extension = parts.length > 1 ? `.${parts.pop().replace(/[^a-z0-9]/gi, "").toLowerCase()}` : "";
+  const base = parts.join(".").normalize("NFKD").replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "") || "medium";
+  return `${base}${extension}`;
+}
+
+function setMediaLibraryState(text, type = "info") {
+  if (!mediaLibraryState) return;
+  mediaLibraryState.textContent = text;
+  mediaLibraryState.dataset.state = type;
+}
+
+function uploadMediaFileToCloud(file, item) {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("POST", `${getApiUrl("/api/media-library")}?upload=1`);
+    request.timeout = 120000;
+    request.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    request.setRequestHeader("X-Media-Metadata", encodeURIComponent(JSON.stringify(item)));
+    request.upload.addEventListener("progress", (event) => {
+      if (!event.lengthComputable) return;
+      const percent = Math.max(1, Math.min(99, Math.round((event.loaded / event.total) * 100)));
+      setMediaLibraryState(`Datei wird hochgeladen: ${percent} %`);
+    });
+    request.addEventListener("load", () => {
+      const payload = (() => {
+        try { return JSON.parse(request.responseText || "{}"); } catch (error) { return {}; }
+      })();
+      if (request.status >= 200 && request.status < 300) {
+        resolve(payload);
+        return;
+      }
+      const message = payload.error === "media-file-too-large"
+        ? "Die Datei ist grÃ¶ÃŸer als 28 MB."
+        : (payload.error || `Upload-Fehler ${request.status}`);
+      reject(new Error(message));
+    });
+    request.addEventListener("error", () => reject(new Error("Netzwerkfehler beim Upload")));
+    request.addEventListener("timeout", () => reject(new Error("Der Upload hat zu lange gedauert")));
+    request.send(file);
+  });
+}
+
+async function saveMediaLibraryFromForm() {
+  const file = mediaLibraryFile?.files?.[0];
+  const title = String(mediaLibraryTitle?.value || file?.name || "").trim();
+  if (!file || !title) {
+    setMediaLibraryState("Bitte Titel und Datei auswÃ¤hlen.", "warning");
+    return;
+  }
+  if (!isSupportedMediaFile(file)) {
+    setMediaLibraryState("Erlaubt sind Audio-, Video- und Bilddateien.", "warning");
+    return;
+  }
+  if (file.size > 28 * 1024 * 1024) {
+    setMediaLibraryState("Die Datei ist grÃ¶ÃŸer als 28 MB. Bitte eine kleinere Datei wÃ¤hlen.", "warning");
+    return;
+  }
+
+  const id = createId("media");
+  saveMediaLibraryButton.disabled = true;
+  setMediaLibraryState("Upload wird gestartet ...");
+  try {
+    const now = new Date().toISOString();
+    const item = {
+      id,
+      title,
+      kind: mediaLibraryKind?.value === "pause" ? "pause" : "exercise",
+      description: String(mediaLibraryDescription?.value || "").trim(),
+      duration: Math.max(1, Math.min(3600, Number(mediaLibraryDuration?.value) || 30)),
+      mediaType: getMediaFileType(file.type, file.name),
+      mimeType: file.type || "application/octet-stream",
+      fileName: file.name,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const payload = await uploadMediaFileToCloud(file, item);
+    mediaLibraryItems = mergeById(mediaLibraryItems, [payload.item || item]);
+    persistCourseModuleData();
+    if (mediaLibraryTitle) mediaLibraryTitle.value = "";
+    if (mediaLibraryDescription) mediaLibraryDescription.value = "";
+    if (mediaLibraryFile) mediaLibraryFile.value = "";
+    const mediaMode = item.kind === "pause" ? "media_pause" : "media_exercise";
+    const mediaModeLabel = item.kind === "pause" ? "Pauseneinheit" : "Medienmodul";
+    setMediaLibraryState(
+      `Gespeichert: ${title}. Unter TagesplÃ¤ne als ${mediaModeLabel} verfÃ¼gbar.`,
+      "success",
+    );
+    renderCourseViews();
+    if (dailyPlanExerciseSearch) dailyPlanExerciseSearch.value = "";
+    if (dailyPlanExerciseFilter) dailyPlanExerciseFilter.value = mediaMode;
+    renderDailyPlanExerciseLibrary();
+  } catch (error) {
+    setMediaLibraryState(`Speichern fehlgeschlagen: ${error.message}`, "error");
+  } finally {
+    saveMediaLibraryButton.disabled = false;
+  }
+}
+
+function renderMediaPreview(item, controls = true) {
+  const source = resolveAppUrl(String(item.downloadUrl || ""));
+  if (!source) return "";
+  const safeSource = source.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  if (item.mediaType === "video") return `<video class="media-library-preview" src="${safeSource}" ${controls ? "controls" : ""} playsinline preload="metadata"></video>`;
+  if (item.mediaType === "image") return `<img class="media-library-preview" src="${safeSource}" alt="" />`;
+  return `<audio class="media-library-audio" src="${safeSource}" ${controls ? "controls" : ""} preload="metadata"></audio>`;
+}
+
+function renderMediaLibraryList() {
+  if (!mediaLibraryList) return;
+  mediaLibraryList.innerHTML = "";
+  if (!mediaLibraryItems.length) {
+    mediaLibraryList.innerHTML = '<div class="course-empty">Noch keine Medien gespeichert.</div>';
+    return;
+  }
+  mediaLibraryItems
+    .slice()
+    .sort((left, right) => String(right.updatedAt || "").localeCompare(String(left.updatedAt || "")))
+    .forEach((item) => {
+      const card = document.createElement("article");
+      card.className = `course-card media-library-card${item.active === false ? " is-inactive" : ""}`;
+      card.innerHTML = `
+        <div class="course-card-head">
+          <span class="course-symbol">${item.kind === "pause" ? "PA" : "ME"}</span>
+          <div><h3>${item.title}</h3><p>${item.kind === "pause" ? "Pauseneinheit" : "MedienÃ¼bung"} Â· ${formatCourseDuration(item.duration)}</p></div>
+          <strong class="course-status ${item.active === false ? "" : "is-active"}">${item.active === false ? "Aus" : "Aktiv"}</strong>
+        </div>
+        ${item.description ? `<p>${item.description}</p>` : ""}
+        ${renderMediaPreview(item)}
+        <div class="course-actions">
+          <button class="secondary-action" type="button" data-action="toggle">${item.active === false ? "Aktivieren" : "Deaktivieren"}</button>
+          <button class="secondary-action danger-action" type="button" data-action="delete" aria-label="Medium lÃ¶schen">LÃ¶schen</button>
+        </div>
+      `;
+      card.addEventListener("click", async (event) => {
+        const action = event.target.closest("button")?.dataset.action;
+        if (!action) return;
+        if (action === "toggle") {
+          const updated = { ...item, active: item.active === false, updatedAt: new Date().toISOString() };
+          const payload = await requestMediaLibraryApi("POST", { item: updated });
+          mediaLibraryItems = mergeById(mediaLibraryItems, [payload.item || updated]);
+          persistCourseModuleData();
+          setMediaLibraryState(`${updated.title} ist ${updated.active ? "aktiv" : "deaktiviert"}.`, "success");
+          renderCourseViews();
+          return;
+        }
+        if (action === "delete") {
+          if (!window.confirm(`â€ž${item.title}â€œ dauerhaft aus Firebase lÃ¶schen?`)) return;
+          await requestMediaLibraryApi("DELETE", { id: item.id });
+          mediaLibraryItems = mediaLibraryItems.filter((entry) => entry.id !== item.id);
+          persistCourseModuleData();
+          setMediaLibraryState(`GelÃ¶scht: ${item.title}`, "success");
+          renderCourseViews();
+        }
+      });
+      mediaLibraryList.append(card);
+    });
+}
+
+function updateRoleMenuVisibility() {
+  const isPatient = userRole === "patient";
+  document.querySelectorAll("[data-role-menu='staff']").forEach((button) => {
+    button.classList.toggle("is-hidden", isPatient);
+  });
+  document.querySelectorAll("[data-role-menu='patient']").forEach((button) => {
+    button.classList.toggle("is-hidden", !isPatient);
+  });
+}
+
+function renderCourseViews() {
+  renderCourseAssignOptions();
+  renderPatientAssignedCourseList();
+  renderDailyPlanExerciseLibrary();
+  renderDailyPlanSelectedExercises();
+  renderDailyPlanList();
+  renderCourseExerciseLibrary();
+  renderCourseSelectedExercises();
+  renderCourseList();
+  renderRelaxMusicList();
+  renderMediaLibraryList();
+  renderMyCourses();
+}
+
+function renderCourseAssignOptions() {
+  if (!patientCourseAssignSelect) return;
+  const selected = patientCourseAssignSelect.value || "";
+  patientCourseAssignSelect.innerHTML = "";
+  if (!courses.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Kein Kurs verfÃ¼gbar";
+    patientCourseAssignSelect.append(option);
+    patientCourseAssignSelect.value = "";
+    if (assignCourseToPatientButton) assignCourseToPatientButton.disabled = true;
+    setCourseAssignState("Noch kein Kurs angelegt.", "info");
+    return;
+  }
+  courses.forEach((course) => {
+    const option = document.createElement("option");
+    option.value = course.id;
+    option.textContent = course.name;
+    patientCourseAssignSelect.append(option);
+  });
+  patientCourseAssignSelect.value = Array.from(patientCourseAssignSelect.options).some((option) => option.value === selected)
+    ? selected
+    : (patientCourseAssignSelect.options[0]?.value || "");
+  if (assignCourseToPatientButton) assignCourseToPatientButton.disabled = false;
+}
+
+function renderDailyPlanFunctionFilter(items) {
+  if (!dailyPlanExerciseFilter) return;
+  const currentValue = dailyPlanExerciseFilter.value;
+  const modes = [...new Set(items.map((item) => normalizeEditorExerciseModeValue(item.mode)))];
+  dailyPlanExerciseFilter.innerHTML = '<option value="">Alle Funktionsarten</option>';
+  modes
+    .sort((left, right) => getEditorModeLabel(left).localeCompare(getEditorModeLabel(right), "de"))
+    .forEach((mode) => {
+      const option = document.createElement("option");
+      option.value = mode;
+      option.textContent = getEditorModeLabel(mode);
+      dailyPlanExerciseFilter.append(option);
+    });
+  dailyPlanExerciseFilter.value = modes.includes(currentValue) ? currentValue : "";
+}
+
+function closeDailyPlanLibraryActions(exceptCard = null) {
+  dailyPlanExerciseLibrary?.querySelectorAll(".course-exercise-card.is-actions-open").forEach((card) => {
+    if (card !== exceptCard) card.classList.remove("is-actions-open");
+  });
+}
+
+function setDailyPlanLibraryActionsOpen(card, open) {
+  if (!card?.classList.contains("has-swipe-actions")) return;
+  if (open) closeDailyPlanLibraryActions(card);
+  card.classList.toggle("is-actions-open", open);
+}
+
+function enableDailyPlanLibrarySwipe(card, foreground) {
+  if (!card?.classList.contains("has-swipe-actions") || !foreground) return;
+  let startX = 0;
+  let startY = 0;
+  let deltaX = 0;
+  let tracking = false;
+
+  foreground.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button")) return;
+    startX = event.clientX;
+    startY = event.clientY;
+    deltaX = 0;
+    tracking = true;
+  });
+
+  foreground.addEventListener("pointermove", (event) => {
+    if (!tracking) return;
+    const moveX = event.clientX - startX;
+    const moveY = event.clientY - startY;
+    if (Math.abs(moveY) > Math.abs(moveX) && Math.abs(moveY) > 8) {
+      tracking = false;
+      foreground.style.removeProperty("transform");
+      return;
+    }
+    if (Math.abs(moveX) < 8) return;
+    deltaX = Math.max(-150, Math.min(0, moveX));
+    foreground.style.transform = `translateX(${deltaX}px)`;
+  });
+
+  const finishSwipe = () => {
+    if (!tracking) return;
+    tracking = false;
+    foreground.style.removeProperty("transform");
+    setDailyPlanLibraryActionsOpen(card, deltaX < -54);
+  };
+  foreground.addEventListener("pointerup", finishSwipe);
+  foreground.addEventListener("pointercancel", finishSwipe);
+  foreground.title = "Doppelklick: Bearbeiten und LÃ¶schen Ã¶ffnen";
+  foreground.addEventListener("dblclick", (event) => {
+    if (event.target.closest("button")) return;
+    event.preventDefault();
+    const shouldOpen = !card.classList.contains("is-actions-open");
+    setDailyPlanLibraryActionsOpen(card, shouldOpen);
+  });
+}
+
+function renderDailyPlanExerciseLibrary() {
+  if (!dailyPlanExerciseLibrary) return;
+  const libraryItemsById = new Map();
+  getExerciseLibraryItems().forEach((item) => {
+    const key = String(item.exerciseId || item.name || item.id).trim().toLocaleLowerCase("de");
+    const current = libraryItemsById.get(key);
+    if (!current || (!current.isCustom && item.isCustom)) libraryItemsById.set(key, item);
+  });
+  const libraryItems = [...libraryItemsById.values()];
+  renderDailyPlanFunctionFilter(libraryItems);
+  const filter = dailyPlanExerciseFilter?.value || "";
+  const search = String(dailyPlanExerciseSearch?.value || "").trim().toLowerCase();
+  dailyPlanExerciseLibrary.innerHTML = "";
+  const visibleItems = libraryItems
+    .filter((item) => !filter || normalizeEditorExerciseModeValue(item.mode) === filter)
+    .filter((item) => {
+      if (!search) return true;
+      const haystack = [item.name, item.description, getEditorModeLabel(item.mode), item.mode].join(" ").toLowerCase();
+      return haystack.includes(search);
+    });
+  if (dailyPlanLibrarySummary) {
+    dailyPlanLibrarySummary.textContent = `${visibleItems.length} von ${libraryItems.length}`;
+  }
+  visibleItems.forEach((item) => {
+      const alreadySelected = dailyPlanDraftExercises.some((exercise) => exercise.exerciseId === item.exerciseId);
+      const isPause = item.mode === "media_pause";
+      const card = document.createElement("article");
+      card.className = `course-exercise-card${alreadySelected ? " is-selected" : ""}${isPause ? " is-pause" : ""}${item.isCustom ? " has-swipe-actions" : ""}`;
+      card.innerHTML = `
+        ${item.isCustom ? `
+          <div class="course-swipe-actions" aria-label="Aktionen fÃ¼r ${item.name}">
+            <button type="button" data-action="edit" class="course-swipe-edit">Bearbeiten</button>
+            <button type="button" data-action="delete" class="course-swipe-delete">LÃ¶schen</button>
+          </div>
+        ` : ""}
+        <div class="course-exercise-content">
+          <div class="course-module-type">${isPause ? "Pause" : getEditorModeLabel(item.mode)}</div>
+          <div class="course-exercise-copy">
+            <strong>${item.name}</strong>
+            <small>${item.description}</small>
+            <div class="course-exercise-meta">
+              <span>${formatCourseDuration(item.duration)}</span>
+              ${alreadySelected ? "<span class=\"is-selected-label\">Im Tagesplan</span>" : ""}
+            </div>
+          </div>
+          <div class="course-exercise-actions">
+            <button type="button" class="secondary-action compact-action${alreadySelected ? " is-selected" : ""}" data-action="${alreadySelected ? "remove" : "add"}" aria-label="${alreadySelected ? "Aus Tagesplan entfernen" : "Zum Tagesplan hinzufÃ¼gen"}" title="${alreadySelected ? "Aus Tagesplan entfernen" : "HinzufÃ¼gen"}">${alreadySelected ? "&#10003;" : "+"}</button>
+          </div>
+        </div>
+      `;
+      card.addEventListener("click", async (event) => {
+        const action = event.target.closest("button")?.dataset.action;
+        if (!action) return;
+        if (action === "edit") {
+          setDailyPlanLibraryActionsOpen(card, false);
+          setActiveView("editor");
+          loadEditorExerciseIntoForm(item.exerciseId);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
+        if (action === "delete") {
+          await deleteSavedEditorExercise(item.exerciseId);
+          renderDailyPlanExerciseLibrary();
+          return;
+        }
+        if (action === "remove") {
+          dailyPlanDraftExercises = dailyPlanDraftExercises.filter((exercise) => exercise.exerciseId !== item.exerciseId);
+          normalizeDailyPlanDraftPositions();
+          setDailyPlanEditorState(`Entfernt: ${item.name}`, "info");
+          renderDailyPlanSelectedExercises();
+          renderDailyPlanExerciseLibrary();
+          return;
+        }
+        if (dailyPlanDraftExercises.some((exercise) => exercise.exerciseId === item.exerciseId)) {
+          setDailyPlanEditorState(`Bereits im Tagesplan: ${item.name}`, "info");
+          return;
+        }
+        dailyPlanDraftExercises.push(buildCourseExercise(item));
+        normalizeDailyPlanDraftPositions();
+        setDailyPlanEditorState(`HinzugefÃ¼gt: ${item.name}`, "success");
+        renderDailyPlanExerciseLibrary();
+        renderDailyPlanSelectedExercises();
+      });
+      enableDailyPlanLibrarySwipe(card, card.querySelector(".course-exercise-content"));
+      dailyPlanExerciseLibrary.append(card);
+    });
+  if (!dailyPlanExerciseLibrary.children.length) {
+    dailyPlanExerciseLibrary.innerHTML = '<div class="course-empty">Keine passende Ãœbung fÃ¼r den aktuellen Filter.</div>';
+  }
+}
+
+function normalizeDailyPlanDraftPositions() {
+  dailyPlanDraftExercises = dailyPlanDraftExercises.map((exercise, index) => normalizeCourseExercise(exercise, index));
+}
+
+function renderDailyPlanSelectedExercises() {
+  if (!dailyPlanSelectedExercises) return;
+  dailyPlanSelectedExercises.innerHTML = "";
+  const totalDuration = dailyPlanDraftExercises.reduce((total, exercise) => total + Math.max(0, Number(exercise.duration) || 0), 0);
+  if (dailyPlanSelectionSummary) {
+    const count = dailyPlanDraftExercises.length;
+    dailyPlanSelectionSummary.textContent = count
+      ? `${count} ${count === 1 ? "Ãœbung" : "Ãœbungen"} Â· ${formatCourseDuration(totalDuration)}`
+      : "0 Ãœbungen";
+  }
+  if (!dailyPlanDraftExercises.length) {
+    dailyPlanSelectedExercises.innerHTML = '<div class="daily-plan-empty"><strong>Noch keine Ãœbung ausgewÃ¤hlt</strong><span>FÃ¼gen Sie unten Ãœbungen oder Pausen hinzu.</span></div>';
+    dailyPlanSelectedExercises.classList.add("is-empty");
+    return;
+  }
+  dailyPlanSelectedExercises.classList.remove("is-empty");
+  dailyPlanDraftExercises.forEach((exercise, index) => {
+    const item = document.createElement("div");
+    const isPause = isCoursePauseExercise(exercise);
+    item.className = `course-selected-item${isPause ? " is-pause" : ""}`;
+    item.innerHTML = `
+      <span class="course-selected-index">${index + 1}</span>
+      <div class="course-selected-copy">
+        <strong>${exercise.title}</strong>
+        <small>${isPause ? "Pausenmusik" : getEditorModeLabel(exercise.mode)} Â· ${formatCourseDuration(exercise.duration)}</small>
+      </div>
+      <div class="course-item-actions">
+        <button type="button" data-action="up" aria-label="Nach oben" title="Nach oben">&#8593;</button>
+        <button type="button" data-action="down" aria-label="Nach unten" title="Nach unten">&#8595;</button>
+        <button type="button" data-action="remove" aria-label="Entfernen" title="Entfernen">&times;</button>
+      </div>
+    `;
+    item.querySelector("[data-action='up']").disabled = index === 0;
+    item.querySelector("[data-action='down']").disabled = index === dailyPlanDraftExercises.length - 1;
+    item.addEventListener("click", (event) => {
+      const action = event.target.closest("button")?.dataset.action;
+      if (!action) return;
+      if (action === "up" && index > 0) {
+        [dailyPlanDraftExercises[index - 1], dailyPlanDraftExercises[index]] = [dailyPlanDraftExercises[index], dailyPlanDraftExercises[index - 1]];
+      }
+      if (action === "down" && index < dailyPlanDraftExercises.length - 1) {
+        [dailyPlanDraftExercises[index + 1], dailyPlanDraftExercises[index]] = [dailyPlanDraftExercises[index], dailyPlanDraftExercises[index + 1]];
+      }
+      if (action === "remove") dailyPlanDraftExercises.splice(index, 1);
+      normalizeDailyPlanDraftPositions();
+      renderDailyPlanExerciseLibrary();
+      renderDailyPlanSelectedExercises();
+    });
+    dailyPlanSelectedExercises.append(item);
+  });
+}
+
+function setDailyPlanEditorState(message, type = "info") {
+  if (!dailyPlanEditorState) return;
+  dailyPlanEditorState.textContent = message;
+  dailyPlanEditorState.classList.remove("is-success", "is-warning", "is-error", "is-info", "is-saving");
+  if (type === "success") dailyPlanEditorState.classList.add("is-success");
+  else if (type === "warning") dailyPlanEditorState.classList.add("is-warning");
+  else if (type === "error") dailyPlanEditorState.classList.add("is-error");
+  else if (type === "saving") dailyPlanEditorState.classList.add("is-saving");
+  else dailyPlanEditorState.classList.add("is-info");
+}
+
+function setCourseEditorState(message, type = "info") {
+  if (!courseEditorState) return;
+  courseEditorState.textContent = message;
+  courseEditorState.classList.remove("is-success", "is-warning", "is-error", "is-info", "is-saving");
+  if (type === "success") courseEditorState.classList.add("is-success");
+  else if (type === "warning") courseEditorState.classList.add("is-warning");
+  else if (type === "error") courseEditorState.classList.add("is-error");
+  else if (type === "saving") courseEditorState.classList.add("is-saving");
+  else courseEditorState.classList.add("is-info");
+}
+
+function setCourseAssignState(message, type = "info") {
+  if (!patientCourseAssignState) return;
+  patientCourseAssignState.textContent = message;
+  patientCourseAssignState.classList.remove("is-success", "is-warning", "is-error", "is-info", "is-saving");
+  if (type === "success") patientCourseAssignState.classList.add("is-success");
+  else if (type === "warning") patientCourseAssignState.classList.add("is-warning");
+  else if (type === "error") patientCourseAssignState.classList.add("is-error");
+  else if (type === "saving") patientCourseAssignState.classList.add("is-saving");
+  else patientCourseAssignState.classList.add("is-info");
+}
+
+function setPatientManagerState(message, type = "info") {
+  if (!patientManagerState) return;
+  patientManagerState.textContent = message;
+  patientManagerState.classList.remove("is-success", "is-warning", "is-error", "is-info", "is-saving");
+  if (type === "success") patientManagerState.classList.add("is-success");
+  else if (type === "warning") patientManagerState.classList.add("is-warning");
+  else if (type === "error") patientManagerState.classList.add("is-error");
+  else if (type === "saving") patientManagerState.classList.add("is-saving");
+  else patientManagerState.classList.add("is-info");
+}
+
+function setDailyPlanIntroPreview(audioUrl = "") {
+  if (!dailyPlanIntroPreview) return;
+  dailyPlanIntroPreview.pause();
+  if (!audioUrl) {
+    dailyPlanIntroPreview.removeAttribute("src");
+    dailyPlanIntroPreview.load();
+    return;
+  }
+  dailyPlanIntroPreview.src = resolveAppUrl(audioUrl);
+  dailyPlanIntroPreview.load();
+}
+
+function invalidateDailyPlanIntroAudio() {
+  dailyPlanIntroDraftAudio = null;
+  setDailyPlanIntroPreview();
+}
+
+function getDailyPlanIntroAudioData(plan = null) {
+  if (!plan?.introAudioUrl) return null;
+  return {
+    url: plan.introAudioUrl,
+    path: plan.introAudioPath || "",
+    voiceId: plan.introAudioVoiceId || plan.introVoiceId || "",
+    voiceSettings: plan.introAudioVoiceSettings || plan.introVoiceSettings || null,
+    textHash: plan.introAudioTextHash || "",
+    updatedAt: plan.introAudioUpdatedAt || plan.updatedAt || "",
+  };
+}
+
+function isDailyPlanIntroAudioCurrent(audioData, text, requestSettings) {
+  return Boolean(
+    audioData?.url
+    && audioData.textHash === hashText(text)
+    && audioData.voiceId === requestSettings.voiceId
+    && JSON.stringify(audioData.voiceSettings || {}) === JSON.stringify(requestSettings.voiceSettings || {}),
+  );
+}
+
+async function generateDailyPlanIntroAudio(options = {}) {
+  const description = String(options.plan?.description ?? dailyPlanDescription?.value ?? "").trim();
+  if (!description) {
+    if (!options.silent) setDailyPlanEditorState("Bitte zuerst eine kurze Beschreibung eingeben.", "warning");
+    return null;
+  }
+  const requestSettings = getDailyPlanVoiceRequestSettings(options.plan || null);
+  const existingAudio = options.plan
+    ? getDailyPlanIntroAudioData(options.plan)
+    : dailyPlanIntroDraftAudio;
+  if (isDailyPlanIntroAudioCurrent(existingAudio, description, requestSettings)) {
+    setDailyPlanIntroPreview(existingAudio.url);
+    if (options.play) await playVoiceAudio(existingAudio.url);
+    return existingAudio;
+  }
+
+  const originalLabel = dailyPlanIntroAudioButton?.textContent || "Einleitung anhÃ¶ren";
+  if (dailyPlanIntroAudioButton && !options.silent) {
+    dailyPlanIntroAudioButton.disabled = true;
+    dailyPlanIntroAudioButton.textContent = "Audio wird erstellt";
+  }
+  if (!options.silent) setDailyPlanEditorState("Einleitungs-Audio wird erstellt und gespeichert...", "saving");
+  try {
+    const label = options.plan?.title || options.plan?.name || dailyPlanName?.value.trim() || "Tagesplan";
+    const storedAudio = await createStoredVoiceAudio(description, `${label} Einleitung`, requestSettings);
+    dailyPlanIntroDraftAudio = {
+      ...storedAudio,
+      updatedAt: new Date().toISOString(),
+    };
+    setDailyPlanIntroPreview(storedAudio.url);
+    if (!options.silent) setDailyPlanEditorState("Einleitungs-Audio gespeichert.", "success");
+    if (options.play) await playVoiceAudio(storedAudio.url);
+    return dailyPlanIntroDraftAudio;
+  } catch (error) {
+    if (!options.silent) setDailyPlanEditorState(`Einleitungs-Audio konnte nicht erstellt werden: ${error.message}`, "error");
+    return null;
+  } finally {
+    if (dailyPlanIntroAudioButton && !options.silent) {
+      dailyPlanIntroAudioButton.disabled = false;
+      dailyPlanIntroAudioButton.textContent = originalLabel;
+    }
+  }
+}
+
+function resetDailyPlanEditor(plan = null) {
+  editingDailyPlanId = plan?.id || "";
+  if (dailyPlanName) dailyPlanName.value = plan?.name || "";
+  if (dailyPlanDescription) dailyPlanDescription.value = plan?.description || "";
+  const settings = getElevenLabsSettings();
+  const savedVoice = getDailyPlanVoice(plan, settings);
+  renderDailyPlanVoiceSelect(settings, savedVoice?.key || settings.activeVoiceKey);
+  dailyPlanIntroDraftAudio = getDailyPlanIntroAudioData(plan);
+  setDailyPlanIntroPreview(dailyPlanIntroDraftAudio?.url || "");
+  dailyPlanDraftExercises = Array.isArray(plan?.exercises)
+    ? plan.exercises.map((exercise, index) => normalizeCourseExercise(exercise, index))
+    : [];
+  normalizeDailyPlanDraftPositions();
+  renderDailyPlanSelectedExercises();
+  renderDailyPlanExerciseLibrary();
+  setDailyPlanEditorState(plan ? `Tagesplan geladen: ${plan.name}` : "Tagesplan bereit.", plan ? "info" : "success");
+}
+
+async function saveDailyPlanFromForm() {
+  if (!dailyPlanDraftExercises.length) {
+    setDailyPlanEditorState("Bitte mindestens eine Uebung fuer den Tagesplan auswaehlen.", "warning");
+    return;
+  }
+  setDailyPlanEditorState("Tagesplan wird gespeichert...", "saving");
+  const now = new Date().toISOString();
+  const description = dailyPlanDescription?.value.trim() || "";
+  const voice = getDailyPlanSelectedVoice();
+  const requestSettings = getDailyPlanVoiceRequestSettings();
+  if (description && !isDailyPlanIntroAudioCurrent(dailyPlanIntroDraftAudio, description, requestSettings)) {
+    dailyPlanIntroDraftAudio = await generateDailyPlanIntroAudio({ silent: true });
+  }
+  const plan = {
+    id: editingDailyPlanId || createId("dayplan"),
+    name: dailyPlanName?.value.trim() || "Neuer Tagesplan",
+    description,
+    introVoiceProfileKey: voice?.key || "",
+    introVoiceProfileName: voice?.name || "",
+    introVoiceProfileGender: voice?.gender || "neutral",
+    introVoiceId: requestSettings.voiceId,
+    introVoiceSettings: requestSettings.voiceSettings,
+    introAudioUrl: description ? dailyPlanIntroDraftAudio?.url || "" : "",
+    introAudioPath: description ? dailyPlanIntroDraftAudio?.path || "" : "",
+    introAudioVoiceId: description ? dailyPlanIntroDraftAudio?.voiceId || "" : "",
+    introAudioVoiceSettings: description ? dailyPlanIntroDraftAudio?.voiceSettings || null : null,
+    introAudioTextHash: description ? dailyPlanIntroDraftAudio?.textHash || "" : "",
+    introAudioUpdatedAt: description ? dailyPlanIntroDraftAudio?.updatedAt || "" : "",
+    exerciseCount: dailyPlanDraftExercises.length,
+    estimatedDuration: getCourseEstimatedDuration({ exercises: dailyPlanDraftExercises }),
+    exercises: dailyPlanDraftExercises.map((exercise, index) => normalizeCourseExercise(exercise, index)),
+    updatedAt: now,
+    createdAt: dailyPlans.find((item) => item.id === editingDailyPlanId)?.createdAt || now,
+  };
+  dailyPlans = mergeById(dailyPlans.filter((item) => item.id !== plan.id), [plan]);
+  editingDailyPlanId = plan.id;
+  persistCourseModuleData();
+  let cloudSaved = true;
+  await saveDailyPlanToCloud(plan).catch(() => {
+    cloudSaved = false;
+    setDailyPlanEditorState("Tagesplan lokal gespeichert. Firebase fehlgeschlagen.", "warning");
+  });
+  if (cloudSaved) {
+    setDailyPlanEditorState(
+      description && !plan.introAudioUrl
+        ? `Tagesplan gespeichert: ${plan.name}. Einleitungs-Audio fehlt noch.`
+        : `Tagesplan mit Einleitung gespeichert: ${plan.name}`,
+      description && !plan.introAudioUrl ? "warning" : "success",
+    );
+  }
+  renderCourseViews();
+}
+
+function renderDailyPlanList() {
+  if (!dailyPlanList) return;
+  dailyPlanList.innerHTML = "";
+  if (!dailyPlans.length) {
+    dailyPlanList.innerHTML = `<div class="course-empty">Noch kein Tagesplan angelegt.</div>`;
+    return;
+  }
+  dailyPlans.forEach((plan) => {
+    const card = document.createElement("article");
+    card.className = "course-card";
+    card.innerHTML = `
+      <div class="course-card-head">
+        <span class="course-symbol">${plan.name.slice(0, 2).toUpperCase()}</span>
+        <div>
+          <h3>${plan.name}</h3>
+          <p>${plan.exerciseCount || 0} Ãœbungen Â· ${formatCourseDuration(plan.estimatedDuration)}</p>
+        </div>
+      </div>
+      <p>${plan.description || "Keine Beschreibung."}</p>
+      <div class="course-actions compact">
+        <button type="button" data-action="edit">Bearbeiten</button>
+        <button type="button" data-action="delete" class="danger-action">LÃ¶schen</button>
+      </div>
+    `;
+    card.addEventListener("click", async (event) => {
+      const action = event.target.closest("button")?.dataset.action;
+      if (!action) return;
+      if (action === "edit") resetDailyPlanEditor(plan);
+      if (action === "delete") await deleteDailyPlan(plan);
+    });
+    dailyPlanList.append(card);
+  });
+}
+
+async function deleteDailyPlan(plan) {
+  if (!window.confirm(`Tagesplan "${plan.name}" wirklich lÃ¶schen?`)) return;
+  dailyPlans = dailyPlans.filter((item) => item.id !== plan.id);
+  courses = courses.map((course) => {
+    const nextDayPlans = (course.dayPlans || []).filter((item) => item.id !== plan.id);
+    return {
+      ...course,
+      dayPlans: nextDayPlans,
+      totalDays: nextDayPlans.length,
+      exerciseCount: getDailyPlansFromRefs(nextDayPlans).reduce(
+        (sum, currentPlan) => sum + Number(currentPlan.exerciseCount || (currentPlan.exercises || []).length || 0),
+        0,
+      ),
+      estimatedDuration: getTotalDurationFromDailyPlans(nextDayPlans),
+      updatedAt: new Date().toISOString(),
+    };
+  });
+  persistCourseModuleData();
+  await deleteCourseItemFromCloud("dailyPlans", plan.id).catch(() => {});
+  await Promise.all(courses.map((course) => saveCourseToCloud(course).catch(() => {})));
+  if (editingDailyPlanId === plan.id) resetDailyPlanEditor();
+  renderCourseViews();
+}
+
+function renderCourseExerciseLibrary() {
+  if (!courseExerciseLibrary) return;
+  courseExerciseLibrary.innerHTML = "";
+  if (!dailyPlans.length) {
+    courseExerciseLibrary.innerHTML = `<div class="course-empty">Erst einen Tagesplan anlegen.</div>`;
+    return;
+  }
+  dailyPlans.forEach((plan) => {
+    const card = document.createElement("article");
+    card.className = "course-exercise-card";
+    card.innerHTML = `
+      <div class="course-symbol">${plan.name.slice(0, 2).toUpperCase()}</div>
+      <div>
+        <strong>${plan.name}</strong>
+        <span>${plan.description || "Tagesplan"}</span>
+        <small>${plan.exerciseCount || 0} Ãœbungen Â· ${formatCourseDuration(plan.estimatedDuration)}</small>
+      </div>
+      <button type="button" class="secondary-action compact-action">+</button>
+    `;
+    card.querySelector("button").addEventListener("click", () => {
+      courseDraftPlans.push({
+        id: plan.id,
+        title: plan.name,
+        description: plan.description || "",
+        exerciseCount: plan.exerciseCount || (plan.exercises || []).length,
+        estimatedDuration: plan.estimatedDuration || getCourseEstimatedDuration(plan),
+      });
+      normalizeCourseDraftPlanPositions();
+      renderCourseSelectedExercises();
+    });
+    courseExerciseLibrary.append(card);
+  });
+}
+
+function normalizeCourseDraftPlanPositions() {
+  courseDraftPlans = courseDraftPlans.map((plan, index) => ({ ...plan, position: index + 1 }));
+}
+
+function renderCourseSelectedExercises() {
+  if (!courseSelectedExercises) return;
+  courseSelectedExercises.innerHTML = "";
+  if (!courseDraftPlans.length) {
+    courseSelectedExercises.textContent = "Noch kein Tagesplan ausgewÃ¤hlt.";
+    courseSelectedExercises.classList.add("is-empty");
+    return;
+  }
+  courseSelectedExercises.classList.remove("is-empty");
+  courseDraftPlans.forEach((plan, index) => {
+    const item = document.createElement("div");
+    item.className = "course-selected-item";
+    item.innerHTML = `
+      <span class="course-selected-index" aria-hidden="true">${index + 1}</span>
+      <div class="course-selected-content">
+        <strong>${plan.title}</strong>
+        <small>${plan.exerciseCount || 0} Ãœbungen Â· ${formatCourseDuration(plan.estimatedDuration)}</small>
+      </div>
+      <div class="course-item-actions">
+        <button type="button" data-action="up" aria-label="Nach oben">&uarr;</button>
+        <button type="button" data-action="down" aria-label="Nach unten">&darr;</button>
+        <button type="button" data-action="remove" aria-label="Entfernen">&times;</button>
+      </div>
+    `;
+    item.querySelector("[data-action='up']").disabled = index === 0;
+    item.querySelector("[data-action='down']").disabled = index === courseDraftPlans.length - 1;
+    item.addEventListener("click", (event) => {
+      const action = event.target.closest("button")?.dataset.action;
+      if (!action) return;
+      if (action === "up" && index > 0) {
+        [courseDraftPlans[index - 1], courseDraftPlans[index]] = [courseDraftPlans[index], courseDraftPlans[index - 1]];
+      }
+      if (action === "down" && index < courseDraftPlans.length - 1) {
+        [courseDraftPlans[index + 1], courseDraftPlans[index]] = [courseDraftPlans[index], courseDraftPlans[index + 1]];
+      }
+      if (action === "remove") courseDraftPlans.splice(index, 1);
+      normalizeCourseDraftPlanPositions();
+      renderCourseSelectedExercises();
+    });
+    courseSelectedExercises.append(item);
+  });
+}
+
+function getCourseDayPlans(course) {
+  if (Array.isArray(course?.dayPlans) && course.dayPlans.length) {
+    return course.dayPlans.map((plan) => resolveCourseDayPlan(plan)).filter(Boolean);
+  }
+  if (Array.isArray(course?.exercises) && course.exercises.length) {
+    return [{
+      id: `${course.id}-legacy`,
+      title: course.name || "Tag 1",
+      description: course.description || "",
+      exerciseCount: course.exercises.length,
+      estimatedDuration: getCourseEstimatedDuration({ exercises: course.exercises }),
+      exercises: course.exercises,
+    }];
+  }
+  return [];
+}
+
+function resolveCourseDayPlan(planRef) {
+  if (!planRef) return null;
+  if (Array.isArray(planRef.exercises) && planRef.exercises.length) return planRef;
+  const storedPlan = dailyPlans.find((item) => item.id === planRef.id);
+  if (storedPlan) {
+    return {
+      ...storedPlan,
+      id: storedPlan.id,
+      title: storedPlan.name,
+      description: storedPlan.description || "",
+      exerciseCount: storedPlan.exerciseCount || storedPlan.exercises.length,
+      estimatedDuration: storedPlan.estimatedDuration || getCourseEstimatedDuration(storedPlan),
+      exercises: storedPlan.exercises || [],
+    };
+  }
+  return {
+    ...planRef,
+    id: planRef.id,
+    title: planRef.title || "Tagesplan",
+    description: planRef.description || "",
+    exerciseCount: planRef.exerciseCount || 0,
+    estimatedDuration: planRef.estimatedDuration || 0,
+    exercises: [],
+  };
+}
+
+function renderCourseNameControls(selectedCourseId = editingCourseId) {
+  const isEditing = Boolean(selectedCourseId);
+  courseNameInputGroup?.classList.toggle("is-hidden", isEditing);
+  courseNameSelectGroup?.classList.toggle("is-hidden", !isEditing);
+  newCourseButton?.classList.toggle("is-active", !isEditing);
+  editCourseButton?.classList.toggle("is-active", isEditing);
+  if (!courseNameSelect) return;
+
+  courseNameSelect.innerHTML = "";
+  courses
+    .slice()
+    .sort((left, right) => String(left.name || "").localeCompare(String(right.name || ""), "de"))
+    .forEach((course) => {
+      const option = document.createElement("option");
+      option.value = course.id;
+      option.textContent = course.name || "Kurs";
+      courseNameSelect.append(option);
+    });
+  if (!courses.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Noch kein Kurs gespeichert";
+    courseNameSelect.append(option);
+  }
+  courseNameSelect.value = courses.some((course) => course.id === selectedCourseId)
+    ? selectedCourseId
+    : courses[0]?.id || "";
+}
+
+function openCourseEditorForEditing(courseId = "") {
+  if (!courses.length) {
+    resetCourseEditor();
+    setCourseEditorState("Noch kein gespeicherter Kurs zum Bearbeiten vorhanden.", "warning");
+    return;
+  }
+  const selectedCourse = courses.find((course) => course.id === courseId)
+    || courses.find((course) => course.id === editingCourseId)
+    || courses[0];
+  resetCourseEditor(selectedCourse);
+}
+
+function resetCourseEditor(course = null) {
+  editingCourseId = course?.id || "";
+  renderCourseNameControls(editingCourseId);
+  if (courseName) courseName.value = course?.name || "";
+  if (courseDescription) courseDescription.value = course?.description || "";
+  if (coursePeriod) coursePeriod.value = course?.period || "";
+  if (courseSymbol) courseSymbol.value = course?.symbol || "LS";
+  courseDraftPlans = getCourseDayPlans(course).map((plan) => ({
+    id: plan.id,
+    title: plan.title || plan.name || "Tagesplan",
+    description: plan.description || "",
+    exerciseCount: plan.exerciseCount || (plan.exercises || []).length,
+    estimatedDuration: plan.estimatedDuration || getCourseEstimatedDuration(plan),
+  }));
+  normalizeCourseDraftPlanPositions();
+  renderCourseSelectedExercises();
+  renderCourseExerciseLibrary();
+  setCourseEditorState(course ? `Kurs geladen: ${course.name}` : "Kurs bereit.", course ? "info" : "success");
+}
+
+async function saveCourseFromForm() {
+  if (!courseDraftPlans.length) {
+    setCourseEditorState("Bitte mindestens einen Tagesplan fÃ¼r den Kurs auswÃ¤hlen.", "warning");
+    return;
+  }
+  setCourseEditorState("Kurs wird gespeichert...", "saving");
+  const now = new Date().toISOString();
+  const existingCourse = courses.find((item) => item.id === editingCourseId) || null;
+  const course = {
+    id: editingCourseId || createId("course"),
+    name: courseName?.value.trim() || "Neuer Kurs",
+    description: courseDescription?.value.trim() || "",
+    period: existingCourse?.period || "",
+    symbol: existingCourse?.symbol || "LS",
+    totalDays: courseDraftPlans.length,
+    exerciseCount: courseDraftPlans.reduce((sum, plan) => sum + Number(plan.exerciseCount || 0), 0),
+    estimatedDuration: getTotalDurationFromDailyPlans(courseDraftPlans),
+    dayPlans: courseDraftPlans.map((plan, index) => ({ ...plan, position: index + 1 })),
+    updatedAt: now,
+    createdAt: courses.find((item) => item.id === editingCourseId)?.createdAt || now,
+  };
+  courses = mergeById(courses.filter((item) => item.id !== course.id), [course]);
+  editingCourseId = course.id;
+  persistCourseModuleData();
+  await saveCourseToCloud(course).catch(() => {
+    setCourseEditorState("Kurs lokal gespeichert. Firebase fehlgeschlagen.", "warning");
+  });
+  setCourseEditorState(`Kurs gespeichert: ${course.name}`, "success");
+  renderCourseViews();
+  renderCourseNameControls(course.id);
+}
+
+function renderCourseList() {
+  if (!courseList) return;
+  courseList.innerHTML = "";
+  if (!courses.length) {
+    courseList.innerHTML = `<div class="course-empty">Noch kein Kurs angelegt.</div>`;
+    renderCourseNameControls("");
+    return;
+  }
+  courses.forEach((course) => {
+    const card = document.createElement("article");
+    card.className = "course-card";
+    card.innerHTML = `
+      <div class="course-card-head">
+        <span class="course-symbol">${course.symbol || "LS"}</span>
+        <div>
+          <h3>${course.name}</h3>
+          <p>${course.totalDays || getCourseDayPlans(course).length} TagesplÃ¤ne Â· ${course.exerciseCount || 0} Ãœbungen Â· ${formatCourseDuration(course.estimatedDuration)}</p>
+        </div>
+      </div>
+      <p>${course.description || "Keine Beschreibung."}</p>
+      <div class="course-actions compact">
+        <button type="button" data-action="edit">Bearbeiten</button>
+        <button type="button" data-action="duplicate">Duplizieren</button>
+        <button type="button" data-action="delete" class="danger-action">LÃ¶schen</button>
+      </div>
+    `;
+    card.addEventListener("click", async (event) => {
+      const action = event.target.closest("button")?.dataset.action;
+      if (!action) return;
+      if (action === "edit") resetCourseEditor(course);
+      if (action === "duplicate") duplicateCourse(course);
+      if (action === "delete") await deleteCourse(course);
+    });
+    courseList.append(card);
+  });
+  renderCourseNameControls(editingCourseId);
+}
+
+function duplicateCourse(course) {
+  const copy = {
+    ...course,
+    id: createId("course"),
+    name: `${course.name} Kopie`,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  courses = mergeById(courses, [copy]);
+  persistCourseModuleData();
+  saveCourseToCloud(copy).catch(() => {});
+  resetCourseEditor(copy);
+  renderCourseViews();
+}
+
+async function deleteCourse(course) {
+  if (!window.confirm(`Kurs "${course.name}" wirklich lÃ¶schen?`)) return;
+  const removedAssignments = courseAssignments.filter((item) => item.courseId === course.id);
+  courses = courses.filter((item) => item.id !== course.id);
+  courseAssignments = courseAssignments.filter((item) => item.courseId !== course.id);
+  persistCourseModuleData();
+  await deleteCourseItemFromCloud("courses", course.id).catch(() => {});
+  await Promise.all(removedAssignments.map((assignment) => (
+    deleteCourseItemFromCloud("courseAssignments", assignment.id).catch(() => {})
+  )));
+  if (editingCourseId === course.id) resetCourseEditor();
+  renderCourseViews();
+}
+
+async function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function saveRelaxMusicFromForm() {
+  const file = musicFile?.files?.[0];
+  const existingDefault = relaxMusicItems.find((item) => item.isDefault);
+  const item = {
+    id: createId("music"),
+    title: musicTitle?.value.trim() || file?.name || "Entspannungsmusik",
+    category: musicCategory?.value || "klavier",
+    volume: Math.max(0, Math.min(1, Number(musicDefaultVolume?.value || 25) / 100)),
+    active: true,
+    isDefault: Boolean(musicIsDefault?.checked) || !existingDefault,
+    dataUrl: file ? await fileToDataUrl(file) : "",
+    fileName: file?.name || "",
+    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+  };
+  if (item.isDefault) relaxMusicItems = relaxMusicItems.map((music) => ({ ...music, isDefault: false }));
+  relaxMusicItems = mergeById(relaxMusicItems, [item]);
+  persistCourseModuleData();
+  await saveRelaxMusicToCloud(item).catch(() => {});
+  if (musicTitle) musicTitle.value = "";
+  if (musicFile) musicFile.value = "";
+  if (musicIsDefault) musicIsDefault.checked = false;
+  renderCourseViews();
+}
+
+function renderRelaxMusicList() {
+  if (!musicList) return;
+  musicList.innerHTML = "";
+  if (!relaxMusicItems.length) {
+    musicList.innerHTML = `<div class="course-empty">Noch keine Musik gespeichert. Pausen laufen ohne Musik.</div>`;
+    return;
+  }
+  relaxMusicItems.forEach((item) => {
+    const card = document.createElement("article");
+    card.className = "course-card";
+    card.innerHTML = `
+      <div class="course-card-head">
+        <span class="course-symbol">j</span>
+        <div>
+          <h3>${item.title}</h3>
+          <p>${item.category} Â· ${Math.round((item.volume || 0) * 100)}%${item.isDefault ? " Â· Standard" : ""}</p>
+        </div>
+        <strong class="course-status">${item.active === false ? "Inaktiv" : "Aktiv"}</strong>
+      </div>
+      <audio controls src="${item.dataUrl || ""}"></audio>
+      <div class="course-actions compact">
+        <button type="button" data-action="default">Standard</button>
+        <button type="button" data-action="toggle">${item.active === false ? "Aktivieren" : "Deaktivieren"}</button>
+        <button type="button" data-action="delete" class="danger-action">LÃ¶schen</button>
+      </div>
+    `;
+    card.addEventListener("click", async (event) => {
+      const action = event.target.closest("button")?.dataset.action;
+      if (!action) return;
+      if (action === "default") relaxMusicItems = relaxMusicItems.map((music) => ({ ...music, isDefault: music.id === item.id }));
+      if (action === "toggle") item.active = item.active === false;
+      if (action === "delete") relaxMusicItems = relaxMusicItems.filter((music) => music.id !== item.id);
+      persistCourseModuleData();
+      if (action === "delete") await deleteCourseItemFromCloud("relaxMusic", item.id).catch(() => {});
+      else await saveRelaxMusicToCloud(item).catch(() => {});
+      renderCourseViews();
+    });
+    musicList.append(card);
+  });
+}
+
+function getCourseById(courseId) {
+  return courses.find((course) => course.id === courseId) || null;
+}
+
+function getCurrentPatientAssignment() {
+  const patientId = getCurrentPatientId();
+  return getAssignmentsForPatient(patientId, getCurrentPatientName())
+    .filter((item) => item.active !== false)
+    .sort((left, right) => String(right.updatedAt || "").localeCompare(String(left.updatedAt || "")))[0] || null;
+}
+
+function getLatestCourseSession(courseId, patientId, planId = "") {
+  return courseSessions
+    .filter((session) => session.courseId === courseId && session.patientId === patientId && (!planId || session.planId === planId))
+    .sort((a, b) => String(b.startedAt || "").localeCompare(String(a.startedAt || "")))[0] || null;
+}
+
+function getCourseDayIndex(assignment, course) {
+  const dayPlans = getCourseDayPlans(course);
+  if (!assignment || !dayPlans.length) return 0;
+  const start = new Date(assignment.startDate || assignment.updatedAt || Date.now());
+  const now = new Date();
+  const diffDays = Math.max(0, Math.floor((now - start) / 86400000));
+  return Math.min(dayPlans.length - 1, diffDays);
+}
+
+function getCurrentCourseDayPlan(course, assignment, selectedDayIndex = null) {
+  const dayPlans = getCourseDayPlans(course);
+  const requestedIndex = Number(selectedDayIndex);
+  const index = selectedDayIndex !== null && Number.isFinite(requestedIndex)
+    ? Math.min(Math.max(0, requestedIndex), Math.max(0, dayPlans.length - 1))
+    : getCourseDayIndex(assignment, course);
+  return {
+    index,
+    total: dayPlans.length,
+    plan: normalizeCoursePlan(dayPlans[index] || null),
+  };
+}
+
+function prepareCourseExerciseInRecordView(exercise) {
+  if (!exercise?.exerciseId) return;
+  stopExercisePreview();
+  if (!Array.from(exerciseName.options).some((option) => option.value === exercise.exerciseId)) {
+    const option = document.createElement("option");
+    option.value = exercise.exerciseId;
+    option.textContent = exercise.title || "MedienÃ¼bung";
+    option.dataset.mode = exercise.mode || "media_exercise";
+    exerciseName.append(option);
+  }
+  exerciseName.value = exercise.exerciseId;
+  loadRecordingKaraokeSpeedForCurrentExercise();
+  setupKaraokeText();
+  renderRecordingExerciseShortcuts();
+  renderCourseRecordingContext(exercise);
+  setActiveView("record");
+  message.textContent = `KursÃ¼bung bereit: ${exercise.title || exercise.exerciseId}`;
+}
+
+function renderCourseRecordingContext(exercise = getActiveCourseExercise()) {
+  const run = activeCourseRun;
+  if (!courseRecordingContext || !run?.playlistMode || !exercise) {
+    clearCourseRecordingContext();
+    return;
+  }
+  const exercises = run.plan?.exercises || [];
+  const current = Math.min(exercises.length, Number(run.index || 0) + 1);
+  const progress = Math.round((current / Math.max(1, exercises.length)) * 100);
+  if (courseRecordingCourse) courseRecordingCourse.textContent = run.course?.name || "Kurs";
+  if (courseRecordingExercise) courseRecordingExercise.textContent = exercise.title || "Aktuelle Ãœbung";
+  if (courseRecordingPlan) {
+    courseRecordingPlan.textContent = `${run.plan?.title || "Tagesplan"} Â· Ãœbung ${current} von ${exercises.length}`;
+  }
+  if (courseRecordingProgress) courseRecordingProgress.style.width = `${progress}%`;
+  courseRecordingContext.classList.remove("is-hidden");
+  document.body.classList.add("course-recording-mode");
+}
+
+function clearCourseRecordingContext() {
+  courseRecordingContext?.classList.add("is-hidden");
+  document.body.classList.remove("course-recording-mode");
+}
+
+function clearCourseAutoAdvanceTimer() {
+  window.clearTimeout(courseAutoAdvanceTimerId);
+  courseAutoAdvanceTimerId = 0;
+}
+
+function scheduleCourseExerciseStart(exercise) {
+  clearCourseAutoAdvanceTimer();
+  const sessionId = activeCourseRun?.session?.id || "";
+  const exerciseId = exercise?.exerciseId || "";
+  courseAutoAdvanceTimerId = window.setTimeout(() => {
+    courseAutoAdvanceTimerId = 0;
+    if (
+      !activeCourseRun?.playlistMode
+      || activeCourseRun.session?.id !== sessionId
+      || getActiveCourseExercise()?.exerciseId !== exerciseId
+      || isRecording
+    ) return;
+    recordButton.click();
+  }, 180);
+}
+
+function openNextCourseExercise(exercise, options = {}) {
+  if (!exercise) return;
+  const autoStart = options.autoStart ?? Boolean(activeCourseRun?.playlistMode);
+  if (exercise.mediaUrl || exercise.mediaId || isCoursePauseExercise(exercise)) {
+    coursePlayer?.classList.remove("is-hidden");
+    renderCoursePlayer();
+    setActiveView("myCourses");
+    return;
+  }
+  prepareCourseExerciseInRecordView(exercise);
+  if (autoStart) scheduleCourseExerciseStart(exercise);
+}
+
+function continueCoursePlaylist() {
+  if (!activeCourseRun) return;
+  clearCourseAutoAdvanceTimer();
+  const nextExercise = getActiveCourseExercise();
+  if (!nextExercise) {
+    coursePlayer?.classList.remove("is-hidden");
+    renderCoursePlayer();
+    setActiveView("myCourses");
+    return;
+  }
+  openNextCourseExercise(nextExercise, { autoStart: true });
+}
+
+function getActiveCourseExercise() {
+  if (!activeCourseRun?.plan?.exercises?.length) return null;
+  return activeCourseRun.plan.exercises[activeCourseRun.index] || null;
+}
+
+function findCourseSessionById(sessionId) {
+  if (!sessionId) return null;
+  return courseSessions.find((session) => session.id === sessionId) || null;
+}
+
+async function completeCourseExerciseFromRecording(metadata) {
+  if (!activeCourseRun || !metadata) return;
+
+  const exercise = getActiveCourseExercise();
+  const session = activeCourseRun.session;
+  if (!exercise || !session) return;
+
+  const recordedExerciseId = metadata.courseExerciseId || "";
+  if (!recordedExerciseId || recordedExerciseId !== exercise.exerciseId) return;
+
+  session.completedExerciseIds = Array.isArray(session.completedExerciseIds)
+    ? session.completedExerciseIds
+    : [];
+  session.skippedExerciseIds = Array.isArray(session.skippedExerciseIds)
+    ? session.skippedExerciseIds
+    : [];
+  session.recordings = Array.isArray(session.recordings)
+    ? session.recordings
+    : [];
+  session.measurementResults = Array.isArray(session.measurementResults)
+    ? session.measurementResults
+    : [];
+
+  if (!session.completedExerciseIds.includes(exercise.exerciseId)) {
+    session.completedExerciseIds.push(exercise.exerciseId);
+  }
+
+  session.recordings = [
+    ...session.recordings.filter((item) => item.exerciseId !== exercise.exerciseId),
+    {
+      exerciseId: exercise.exerciseId,
+      recordingId: metadata.id,
+      title: metadata.uebung || exercise.title || exercise.exerciseId,
+      durationSeconds: Number(metadata.dauerSekunden || 0),
+      createdAt: metadata.datum || new Date().toISOString(),
+    },
+  ];
+
+  session.measurementResults = [
+    ...session.measurementResults.filter((item) => item.exerciseId !== exercise.exerciseId),
+    {
+      exerciseId: exercise.exerciseId,
+      recordingId: metadata.id,
+      averageVolume: Number(metadata.durchschnittlicheLautstaerke || 0),
+      maxVolume: Number(metadata.maximaleLautstaerke || 0),
+      averagePitchHz: Number(metadata.durchschnittlicheStimmfrequenzHz || 0),
+      voiceShare: Number(
+        metadata.werte?.stimmenanteilProzent
+          || metadata.audioAnalyse?.stimmenanteilProzent
+          || 0
+      ),
+    },
+  ];
+
+  activeCourseRun.index += 1;
+  session.currentExerciseIndex = activeCourseRun.index;
+  session.updatedAt = new Date().toISOString();
+  session.status = activeCourseRun.index >= (activeCourseRun.plan?.exercises?.length || 0)
+    ? "completed"
+    : (activeCourseRun.playlistMode ? "in_progress" : "paused");
+  syncCourseMediaLock();
+
+  if (session.status === "completed") {
+    session.completedAt = session.updatedAt;
+    session.totalDuration = Math.round(
+      (new Date(session.completedAt) - new Date(session.startedAt || session.updatedAt)) / 1000
+    );
+  }
+
+  courseSessions = mergeById(courseSessions, [session]);
+  persistCourseModuleData();
+  await saveCourseSessionToCloud(session).catch(() => {});
+  renderCourseViews();
+}
+
+function updateCourseResultActions(metadata) {
+  if (
+    !courseResultActions
+    || !courseResultTitle
+    || !courseResultText
+    || !courseResultBackButton
+    || !courseResultNextButton
+  ) return;
+
+  const sessionId = metadata?.courseSessionId || activeCourseRun?.session?.id || "";
+  const session = findCourseSessionById(sessionId);
+
+  if (!metadata?.courseSessionId || !session || !activeCourseRun?.plan) {
+    courseResultActions.classList.add("is-hidden");
+    return;
+  }
+
+  const exercises = activeCourseRun.plan.exercises || [];
+  const nextExercise = getActiveCourseExercise();
+  const completedCount = Number(session.completedExerciseIds?.length || 0);
+  const remaining = Math.max(0, exercises.length - completedCount);
+  const finishedPlan = remaining === 0 || !nextExercise;
+
+  courseResultTitle.textContent = finishedPlan ? "Tagesplan abgeschlossen" : "Ãœbung abgeschlossen";
+  courseResultText.textContent = finishedPlan
+    ? `Der Tagesplan ${activeCourseRun.plan.title || ""} ist fertig. Sie kÃ¶nnen jetzt in den Kurs zurÃ¼ckkehren.`
+    : `Noch ${remaining} Ãœbung${remaining === 1 ? "" : "en"} offen. Als NÃ¤chstes kommt ${nextExercise.title || nextExercise.exerciseId || "die nÃ¤chste Ãœbung"}.`;
+  courseResultBackButton.textContent = finishedPlan ? "Zum Kurs" : "Zum Tagesplan";
+  courseResultNextButton.textContent = finishedPlan ? "Tagesplan ansehen" : "NÃ¤chste Ãœbung";
+  courseResultActions.classList.remove("is-hidden");
+}
+
+function isCourseMediaLocked() {
+  if (!activeCourseRun?.session) return false;
+  return !["completed", "cancelled", "stopped"].includes(activeCourseRun.session.status);
+}
+
+function syncCourseMediaLock() {
+  const locked = isCourseMediaLocked();
+  document.body.classList.toggle("course-media-locked", locked);
+  if (playPauseButton) playPauseButton.disabled = locked;
+  if (previewExerciseButton) previewExerciseButton.disabled = locked || isPreviewingExercise;
+}
+
+function showCourseMediaLockMessage() {
+  message.textContent = "Ein Kurs lÃ¤uft bereits. Bitte den Kurs zuerst beenden, stoppen oder abbrechen.";
+  syncCourseMediaLock();
+}
+
+function clearActiveCourseRun() {
+  activeCourseRun = null;
+  courseIntroPlaybackPromise = null;
+  coursePlaylistVideoAudioUnlocked = false;
+  clearCourseRecordingContext();
+  myCoursesPanel?.classList.remove("has-active-course");
+  syncCourseMediaLock();
+}
+
+async function resumeOrStartCourse(course, assignment, selectedDayIndex = null) {
+  if (
+    isCourseMediaLocked()
+    && (
+      activeCourseRun.assignment?.patientId !== assignment?.patientId
+      || activeCourseRun.course?.id !== course?.id
+    )
+  ) {
+    showCourseMediaLockMessage();
+    coursePlayer?.classList.remove("is-hidden");
+    renderCoursePlayer();
+    return;
+  }
+  if (
+    activeCourseRun
+    && activeCourseRun.assignment?.patientId === assignment?.patientId
+    && activeCourseRun.course?.id === course?.id
+  ) {
+    activeCourseRun.playlistMode = true;
+    continueCoursePlaylist();
+    return;
+  }
+
+  const dayState = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
+  const instructionUnlock = unlockInstructionAudio();
+  const contextUnlock = unlockCoursePlaylistAudioContext();
+  const introAudio = getDailyPlanIntroAudioData(dayState.plan);
+  const videoPrime = primeCoursePlaylistVideo(course, assignment, selectedDayIndex);
+  // Start the stored introduction directly from the user's tap. iOS treats
+  // audio-only files more reliably in an Audio element than in a Video element.
+  courseIntroPlaybackPromise = dayState.plan?.description && introAudio?.url
+    ? playVoiceAudioElement(introAudio.url)
+    : null;
+  Promise.resolve(videoPrime).then(() => Promise.allSettled([
+    unlockCoursePlaylistAudio(),
+    primeCoursePauseAudio(course, assignment, selectedDayIndex),
+    contextUnlock,
+  ])).catch(() => {});
+  return startCoursePreview(course, null, assignment, selectedDayIndex);
+}
+
+function playCourseIntroductionOnVideoElement(audioUrl) {
+  const mediaUrl = resolveAppUrl(audioUrl);
+  return new Promise((resolve) => {
+    let settled = false;
+    let timeoutId = window.setTimeout(() => finish(false), INSTRUCTION_TIMEOUT_MS);
+    const cleanup = () => {
+      coursePlaylistVideo.removeEventListener("playing", handlePlaying);
+      coursePlaylistVideo.removeEventListener("loadedmetadata", refreshTimeout);
+      coursePlaylistVideo.removeEventListener("ended", handleEnded);
+      coursePlaylistVideo.removeEventListener("error", handleError);
+      coursePlaylistVideo.removeEventListener("abort", handleError);
+    };
+    const finish = (played) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      cleanup();
+      coursePlaylistVideo.pause();
+      coursePlaylistPrimedVideoUrl = "";
+      resolve(Boolean(played));
+    };
+    const handlePlaying = () => {
+      coursePlaylistVideoAudioUnlocked = true;
+      message.textContent = "Einleitung wird abgespielt.";
+    };
+    const refreshTimeout = () => {
+      if (!Number.isFinite(coursePlaylistVideo.duration) || coursePlaylistVideo.duration <= 0) return;
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(
+        () => finish(false),
+        Math.max(INSTRUCTION_TIMEOUT_MS, Math.ceil(coursePlaylistVideo.duration * 1000) + 1800),
+      );
+    };
+    const handleEnded = () => finish(true);
+    const handleError = () => finish(false);
+
+    coursePlaylistVideo.pause();
+    coursePlaylistVideo.className = "media-library-preview course-playlist-video";
+    coursePlaylistVideo.style.position = "fixed";
+    coursePlaylistVideo.style.width = "1px";
+    coursePlaylistVideo.style.height = "1px";
+    coursePlaylistVideo.style.opacity = "0";
+    coursePlaylistVideo.style.pointerEvents = "none";
+    coursePlaylistVideo.controls = false;
+    if (!coursePlaylistVideo.isConnected) document.body.append(coursePlaylistVideo);
+    coursePlaylistVideo.src = mediaUrl;
+    coursePlaylistVideo.preload = "auto";
+    coursePlaylistVideo.muted = false;
+    coursePlaylistVideo.defaultMuted = false;
+    coursePlaylistVideo.volume = 1;
+    coursePlaylistVideo.currentTime = 0;
+    coursePlaylistVideo.addEventListener("playing", handlePlaying);
+    coursePlaylistVideo.addEventListener("loadedmetadata", refreshTimeout);
+    coursePlaylistVideo.addEventListener("ended", handleEnded, { once: true });
+    coursePlaylistVideo.addEventListener("error", handleError, { once: true });
+    coursePlaylistVideo.addEventListener("abort", handleError, { once: true });
+    coursePlaylistVideo.play().catch(handleError);
+  });
+}
+
+async function primeCoursePlaylistVideo(course, assignment, selectedDayIndex = null) {
+  const dayState = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
+  const videoExercise = (dayState.plan?.exercises || []).find((exercise) => {
+    const media = resolveCourseUnitMedia(exercise);
+    return media?.downloadUrl && media.mediaType === "video";
+  });
+  const media = resolveCourseUnitMedia(videoExercise);
+  if (!media?.downloadUrl) return false;
+  const mediaUrl = resolveAppUrl(media.downloadUrl);
+  try {
+    coursePlaylistVideo.className = "media-library-preview course-playlist-video";
+    coursePlaylistVideo.style.position = "fixed";
+    coursePlaylistVideo.style.width = "1px";
+    coursePlaylistVideo.style.height = "1px";
+    coursePlaylistVideo.style.opacity = "0";
+    coursePlaylistVideo.style.pointerEvents = "none";
+    if (!coursePlaylistVideo.isConnected) document.body.append(coursePlaylistVideo);
+    if (coursePlaylistVideo.src !== mediaUrl) coursePlaylistVideo.src = mediaUrl;
+    // This runs directly inside the user's "Playlist starten" tap. Starting
+    // the persistent element audibly once authorizes later audible playback
+    // on iPhone even after the spoken course introduction has finished.
+    coursePlaylistVideo.muted = false;
+    coursePlaylistVideo.defaultMuted = false;
+    coursePlaylistVideo.volume = 0.01;
+    await coursePlaylistVideo.play();
+    coursePlaylistVideo.pause();
+    coursePlaylistVideo.currentTime = 0;
+    coursePlaylistVideo.volume = 1;
+    coursePlaylistPrimedVideoUrl = mediaUrl;
+    coursePlaylistVideoAudioUnlocked = true;
+    return true;
+  } catch (error) {
+    coursePlaylistVideoAudioUnlocked = false;
+    try {
+      coursePlaylistVideo.muted = true;
+      coursePlaylistVideo.defaultMuted = true;
+      await coursePlaylistVideo.play();
+      coursePlaylistVideo.pause();
+      coursePlaylistVideo.currentTime = 0;
+      coursePlaylistPrimedVideoUrl = mediaUrl;
+      return true;
+    } catch (mutedError) {
+      coursePlaylistPrimedVideoUrl = "";
+      return false;
+    }
+  }
+}
+
+async function primeCoursePauseAudio(course, assignment, selectedDayIndex = null) {
+  const dayState = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
+  const pauseExercise = (dayState.plan?.exercises || []).find((exercise) => isCoursePauseExercise(exercise));
+  const media = resolveCourseUnitMedia(pauseExercise);
+  if (!media?.downloadUrl || media.mediaType !== "audio") return false;
+  const mediaUrl = resolveAppUrl(media.downloadUrl);
+  try {
+    coursePlaylistAudio.pause();
+    coursePlaylistAudio.src = mediaUrl;
+    coursePlaylistAudio.preload = "auto";
+    coursePlaylistAudio.loop = true;
+    coursePlaylistAudio.muted = true;
+    coursePlaylistAudio.defaultMuted = true;
+    coursePlaylistAudio.playsInline = true;
+    await coursePlaylistAudio.play();
+    coursePlaylistAudio.pause();
+    coursePlaylistAudio.currentTime = 0;
+    coursePlaylistAudio.muted = false;
+    coursePlaylistAudio.defaultMuted = false;
+    coursePlaylistAudio.volume = 1;
+    coursePlaylistPrimedUrl = mediaUrl;
+    coursePlaylistAudioUnlocked = true;
+    return true;
+  } catch (error) {
+    coursePlaylistAudio.muted = false;
+    coursePlaylistAudio.defaultMuted = false;
+    coursePlaylistPrimedUrl = "";
+    return false;
+  }
+}
+
+async function unlockCoursePlaylistAudioContext() {
+  const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextConstructor) return false;
+  try {
+    if (!coursePlaylistAudioContext || coursePlaylistAudioContext.state === "closed") {
+      coursePlaylistAudioContext = new AudioContextConstructor();
+    }
+    if (coursePlaylistAudioContext.state === "suspended") {
+      await coursePlaylistAudioContext.resume();
+    }
+    const source = coursePlaylistAudioContext.createBufferSource();
+    source.buffer = coursePlaylistAudioContext.createBuffer(1, 1, coursePlaylistAudioContext.sampleRate);
+    source.connect(coursePlaylistAudioContext.destination);
+    source.start(0);
+    return coursePlaylistAudioContext.state === "running";
+  } catch (error) {
+    return false;
+  }
+}
+
+async function unlockCoursePlaylistAudio() {
+  if (coursePlaylistAudioUnlocked) return true;
+  const silentWav = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAACAgICA";
+  try {
+    coursePlaylistAudio.muted = true;
+    coursePlaylistAudio.src = silentWav;
+    await coursePlaylistAudio.play();
+    coursePlaylistAudio.pause();
+    coursePlaylistAudioUnlocked = true;
+    return true;
+  } catch (error) {
+    return false;
+  } finally {
+    coursePlaylistAudio.muted = false;
+    coursePlaylistAudio.removeAttribute("src");
+    coursePlaylistAudio.load();
+  }
+}
+
+async function assignSelectedCourseToPatients() {
+  const courseId = patientCourseAssignSelect?.value || "";
+  const course = getCourseById(courseId);
+  if (!course) {
+    setCourseAssignState("Bitte zuerst einen Kurs auswaehlen.", "warning");
+    return;
+  }
+  const patientNameValue = patientManagerName?.value?.trim() || getCurrentPatientName();
+  const patientId = findPatientProfileByName(patientNameValue)?.id || getCurrentPatientId();
+  const startDate = patientCourseAssignStartDate?.value || new Date().toISOString().slice(0, 10);
+  const updatedAt = new Date().toISOString();
+  setCourseAssignState("Kurszuordnung wird gespeichert...", "saving");
+  const existingAssignment = getAssignmentsForPatient(patientId, patientNameValue)
+    .find((item) => item.courseId === course.id);
+  const assignment = {
+    ...existingAssignment,
+    id: existingAssignment?.id || createId("courseAssignment"),
+    patientId,
+    patientName: patientNameValue,
+    courseId: course.id,
+    courseName: course.name,
+    startDate,
+    active: true,
+    updatedAt,
+    createdAt: existingAssignment?.createdAt || updatedAt,
+  };
+  courseAssignments = mergeById(courseAssignments, [assignment]);
+  persistCourseModuleData();
+  const cloudSynced = await syncCourseAssignmentsForPatient(patientId);
+  if (!cloudSynced) {
+    setCourseAssignState(
+      `Kurs lokal zugeordnet: ${course.name} -> ${patientNameValue}. Firebase wird erneut synchronisiert.`,
+      "warning",
+    );
+    window.setTimeout(() => {
+      syncCourseAssignmentsForPatient(patientId).then((retrySucceeded) => {
+        if (!retrySucceeded) return;
+        setCourseAssignState(`Kurs zugeordnet: ${course.name} -> ${patientNameValue}`, "success");
+      });
+    }, 2500);
+  } else {
+    setCourseAssignState(`Kurs zugeordnet: ${course.name} -> ${patientNameValue}`, "success");
+  }
+  renderCourseViews();
+}
+
+function renderPatientAssignedCourseList() {
+  if (!patientAssignedCourseList) return;
+  const selectedPatientName = patientManagerName?.value?.trim() || getCurrentPatientName();
+  const patientId = findPatientProfileByName(selectedPatientName)?.id || getCurrentPatientId();
+  const assignments = getAssignmentsForPatient(patientId, selectedPatientName)
+    .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+  patientAssignedCourseList.innerHTML = "";
+  if (!assignments.length) {
+    patientAssignedCourseList.innerHTML = `<div class="course-empty">Diesem Patienten ist noch kein Kurs zugeordnet.</div>`;
+    return;
+  }
+  assignments.forEach((assignment) => {
+    const card = document.createElement("article");
+    card.className = "course-card";
+    card.innerHTML = `
+      <div class="course-card-head">
+        <span class="course-symbol">${assignment.courseName.slice(0, 2).toUpperCase()}</span>
+        <div>
+          <h3>${assignment.courseName}</h3>
+          <p>Start: ${formatCourseDate(assignment.startDate)}</p>
+        </div>
+        <strong class="course-status ${assignment.active !== false ? "is-active" : ""}">${assignment.active !== false ? "Aktiv" : "Alt"}</strong>
+      </div>
+    `;
+    patientAssignedCourseList.append(card);
+  });
+}
+
+function renderMyCoursesLegacy() {
+  if (!myCourseList) return;
+  myCourseList.innerHTML = "";
+  if (!activeCourseRun) coursePlayer?.classList.add("is-hidden");
+  const assignment = getCurrentPatientAssignment();
+  const course = assignment ? getCourseById(assignment.courseId) : null;
+  if (!assignment || !course) {
+    myCourseList.innerHTML = `<div class="course-empty">Für diesen Patienten ist noch kein aktiver Kurs freigegeben.</div>`;
+    return;
+  }
+  const { index, total, plan } = getCurrentCourseDayPlan(course, assignment);
+  const lastSession = plan ? getLatestCourseSession(course.id, assignment.patientId, plan.id) : null;
+  const completedCount = Number(lastSession?.completedExerciseIds?.length || 0);
+  const progress = plan?.exerciseCount ? Math.round((completedCount / Math.max(1, plan.exerciseCount)) * 100) : 0;
+  const card = document.createElement("article");
+  card.className = "course-card course-card-primary";
+  const todaysExerciseCount = plan?.exerciseCount || (plan?.exercises || []).length || 0;
+  const todaysDuration = formatCourseDuration(plan?.estimatedDuration || getCourseEstimatedDuration(plan || { exercises: [] }));
+  const buttonLabel = activeCourseRun ? "Playlist fortsetzen" : "Playlist starten";
+  card.innerHTML = `
+    <div class="course-card-head">
+      <span class="course-symbol">${course.symbol || "LS"}</span>
+      <div>
+        <p class="course-label">Aktiver Kurs fÃ¼r ${assignment.patientName || getCurrentPatientName()}</p>
+        <h3>${course.name}</h3>
+        <p>Heute: ${plan?.title || "Kein Tagesplan"} Â· Tag ${Math.min(index + 1, Math.max(total, 1))} von ${Math.max(total, 1)}</p>
+      </div>
+    </div>
+    <p>${course.description || "Ihr aktueller Kurs."}</p>
+    <dl class="course-overview-grid">
+      <div>
+        <dt>Start</dt>
+        <dd>${formatCourseDate(assignment.startDate)}</dd>
+      </div>
+      <div>
+        <dt>Ãœbungen heute</dt>
+        <dd>${todaysExerciseCount}</dd>
+      </div>
+      <div>
+        <dt>Dauer heute</dt>
+        <dd>${todaysDuration}</dd>
+      </div>
+    </dl>
+    <div class="course-progress"><span style="width:${progress}%"></span></div>
+    <small>${lastSession?.startedAt ? `Zuletzt gestartet: ${new Date(lastSession.startedAt).toLocaleString("de-DE")}` : "Noch nicht gestartet"}</small>
+    <div class="course-actions course-actions-single">
+      <button class="primary-action" type="button">${buttonLabel}</button>
+    </div>
+  `;
+  card.querySelector("button").addEventListener("click", () => resumeOrStartCourse(course, assignment));
+  myCourseList.append(card);
+}
+
+function renderCoursePatientSwitcher() {
+  if (!coursePatientSwitcher) return;
+  const currentPatient = getCurrentPatientName();
+  const names = getKnownPatientNames();
+  coursePatientSwitcher.innerHTML = "";
+  names.forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    coursePatientSwitcher.append(option);
+  });
+  if (!names.includes(currentPatient)) {
+    const option = document.createElement("option");
+    option.value = currentPatient;
+    option.textContent = currentPatient;
+    coursePatientSwitcher.append(option);
+  }
+  coursePatientSwitcher.value = currentPatient;
+}
+
+function renderMyCourses() {
+  if (!myCourseList) return;
+  syncCourseMediaLock();
+  renderCoursePatientSwitcher();
+  myCourseList.innerHTML = "";
+  myCoursesPanel?.classList.toggle("has-active-course", Boolean(activeCourseRun));
+  if (!activeCourseRun) {
+    coursePlayer?.classList.add("is-hidden");
+    clearCourseRecordingContext();
+  }
+
+  const patientId = getCurrentPatientId();
+  const patientLabel = getCurrentPatientName();
+  const assignments = getAssignmentsForPatient(patientId, patientLabel)
+    .filter((assignment) => getCourseById(assignment.courseId))
+    .sort((left, right) => String(right.updatedAt || "").localeCompare(String(left.updatedAt || "")));
+
+  if (!assignments.length) {
+    myCourseList.innerHTML = `<div class="course-empty">Für ${patientLabel} ist noch kein Kurs freigegeben.</div>`;
+    return;
+  }
+
+  assignments.forEach((assignment) => {
+    const course = getCourseById(assignment.courseId);
+    const dayPlans = getCourseDayPlans(course).map((item) => normalizeCoursePlan(item)).filter(Boolean);
+    const { index, total, plan } = getCurrentCourseDayPlan(course, assignment);
+    const lastSession = plan ? getLatestCourseSession(course.id, assignment.patientId, plan.id) : null;
+    const completedCount = Number(lastSession?.completedExerciseIds?.length || 0);
+    const exerciseCount = plan?.exerciseCount || (plan?.exercises || []).length || 0;
+    const progress = exerciseCount ? Math.round((completedCount / Math.max(1, exerciseCount)) * 100) : 0;
+    const isRunning = activeCourseRun?.course?.id === course.id;
+    const card = document.createElement("article");
+    card.className = `course-card course-card-primary${isRunning ? " is-running" : ""}`;
+    card.innerHTML = `
+      <div class="course-card-head">
+        <span class="course-symbol">${course.symbol || "LS"}</span>
+        <div>
+          <p class="course-label">${isRunning ? "Laufender Kurs" : `Kurs fÃ¼r ${assignment.patientName || patientLabel}`}</p>
+          <h3>${course.name}</h3>
+          <p>Heute: ${plan?.title || "Kein Tagesplan"} Â· Tag ${Math.min(index + 1, Math.max(total, 1))} von ${Math.max(total, 1)}</p>
+        </div>
+        ${isRunning ? '<strong class="course-status is-active">LÃ¤uft</strong>' : ""}
+      </div>
+      <p>${course.description || "Ihr aktueller Kurs."}</p>
+      <label class="course-day-picker">
+        <span>Trainingstag ausw&auml;hlen</span>
+        <select aria-label="Trainingstag ausw&auml;hlen">
+          ${dayPlans.map((dayPlan, dayIndex) => `
+            <option value="${dayIndex}"${dayIndex === index ? " selected" : ""}>
+              Tag ${dayIndex + 1} &middot; ${dayPlan.title || `Tagesplan ${dayIndex + 1}`}
+            </option>
+          `).join("")}
+        </select>
+      </label>
+      <dl class="course-overview-grid">
+        <div><dt>Start</dt><dd>${formatCourseDate(assignment.startDate)}</dd></div>
+        <div><dt>Ãœbungen heute</dt><dd>${exerciseCount}</dd></div>
+        <div><dt>Dauer heute</dt><dd>${formatCourseDuration(plan?.estimatedDuration || getCourseEstimatedDuration(plan || { exercises: [] }))}</dd></div>
+      </dl>
+      <div class="course-progress"><span style="width:${progress}%"></span></div>
+      <small>${lastSession?.startedAt ? `Zuletzt gestartet: ${new Date(lastSession.startedAt).toLocaleString("de-DE")}` : "Noch nicht gestartet"}</small>
+      <div class="course-actions course-actions-single">
+        <button class="primary-action" type="button">${isRunning ? "Playlist fortsetzen" : "Playlist starten"}</button>
+      </div>
+    `;
+    const startButton = card.querySelector("button");
+    const daySelect = card.querySelector(".course-day-picker select");
+    const anotherCourseIsRunning = isCourseMediaLocked() && !isRunning;
+    startButton.disabled = anotherCourseIsRunning;
+    daySelect.disabled = Boolean(isRunning || anotherCourseIsRunning || dayPlans.length < 2);
+    if (anotherCourseIsRunning) {
+      startButton.textContent = "Anderer Kurs lÃ¤uft";
+      startButton.title = "Den laufenden Kurs zuerst beenden, stoppen oder abbrechen.";
+    }
+    startButton.addEventListener("click", () => resumeOrStartCourse(course, assignment, daySelect.value));
+    myCourseList.append(card);
+  });
+}
+
+async function ensureDailyPlanIntroAudio(plan) {
+  const description = String(plan?.description || "").trim();
+  if (!description) return "";
+  const requestSettings = getDailyPlanVoiceRequestSettings(plan);
+  const existingAudio = getDailyPlanIntroAudioData(plan);
+  if (isDailyPlanIntroAudioCurrent(existingAudio, description, requestSettings)) return existingAudio.url;
+
+  try {
+    const storedAudio = await createStoredVoiceAudio(
+      description,
+      `${plan.title || plan.name || "Tagesplan"} Einleitung`,
+      requestSettings,
+    );
+    const voice = getDailyPlanVoice(plan);
+    const updatedPlan = {
+      ...plan,
+      introVoiceProfileKey: voice?.key || plan.introVoiceProfileKey || "",
+      introVoiceProfileName: voice?.name || plan.introVoiceProfileName || "",
+      introVoiceProfileGender: voice?.gender || plan.introVoiceProfileGender || "neutral",
+      introVoiceId: requestSettings.voiceId,
+      introVoiceSettings: requestSettings.voiceSettings,
+      introAudioUrl: storedAudio.url,
+      introAudioPath: storedAudio.path || "",
+      introAudioVoiceId: storedAudio.voiceId,
+      introAudioVoiceSettings: storedAudio.voiceSettings,
+      introAudioTextHash: storedAudio.textHash,
+      introAudioUpdatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    Object.assign(plan, updatedPlan);
+    const storedIndex = dailyPlans.findIndex((item) => item.id === plan.id);
+    if (storedIndex >= 0) {
+      dailyPlans[storedIndex] = { ...dailyPlans[storedIndex], ...updatedPlan, name: dailyPlans[storedIndex].name || plan.title };
+      persistCourseModuleData();
+      await saveDailyPlanToCloud(dailyPlans[storedIndex]).catch(() => {});
+    }
+    return storedAudio.url;
+  } catch (error) {
+    return "";
+  }
+}
+
+function renderDailyPlanIntroduction() {
+  if (!coursePlayer || !activeCourseRun) return;
+  const { course, plan } = activeCourseRun;
+  myCoursesPanel?.classList.add("has-active-course");
+  coursePlayer.classList.remove("is-hidden");
+  coursePlayer.innerHTML = `
+    <div class="course-player-card course-intro-card">
+      <div class="course-player-context">
+        <span>Kurs</span>
+        <strong>${course?.name || "Kurs"}</strong>
+        <small>${plan?.title || plan?.name || "Tagesplan"}</small>
+      </div>
+      <p class="eyebrow">Einleitung zur Tageseinheit</p>
+      <h2>${plan?.title || plan?.name || "Tagesplan"}</h2>
+      <p class="course-intro-description"></p>
+      <p class="course-intro-state" aria-live="polite">Einleitung wird vorgelesen...</p>
+      <button class="secondary-action danger-action" type="button" data-action="stopIntro">Stoppen</button>
+    </div>
+  `;
+  coursePlayer.querySelector(".course-intro-description").textContent = plan?.description || "";
+  coursePlayer.querySelector("[data-action='stopIntro']")?.addEventListener("click", async () => {
+    const session = activeCourseRun?.session;
+    stopInstructionAudio();
+    window.speechSynthesis?.cancel();
+    if (session) {
+      session.status = "stopped";
+      session.updatedAt = new Date().toISOString();
+      courseSessions = mergeById(courseSessions, [session]);
+      persistCourseModuleData();
+      await saveCourseSessionToCloud(session).catch(() => {});
+    }
+    clearActiveCourseRun();
+    coursePlayer.classList.add("is-hidden");
+    renderMyCourses();
+  });
+}
+
+async function playDailyPlanIntroduction() {
+  const run = activeCourseRun;
+  if (!run?.plan?.description || run.session?.introPlayedAt) return true;
+  const sessionId = run.session.id;
+  setActiveView("myCourses");
+  renderDailyPlanIntroduction();
+  let played = false;
+  if (courseIntroPlaybackPromise) {
+    const playbackPromise = courseIntroPlaybackPromise;
+    courseIntroPlaybackPromise = null;
+    played = await playbackPromise;
+  } else {
+    const audioUrl = await ensureDailyPlanIntroAudio(run.plan);
+    if (!activeCourseRun || activeCourseRun.session?.id !== sessionId) return false;
+    if (audioUrl) played = await playVoiceAudio(audioUrl);
+  }
+  if (!played && activeCourseRun?.session?.id === sessionId) {
+    await speakWithBrowserVoice(run.plan.description);
+  }
+  if (!activeCourseRun || activeCourseRun.session?.id !== sessionId) return false;
+  run.session.introPlayedAt = new Date().toISOString();
+  run.session.updatedAt = run.session.introPlayedAt;
+  run.phase = "exercise";
+  courseSessions = mergeById(courseSessions, [run.session]);
+  persistCourseModuleData();
+  await saveCourseSessionToCloud(run.session).catch(() => {});
+  return true;
+}
+
+async function startCoursePreview(
+  course,
+  session = null,
+  assignment = getCurrentPatientAssignment(),
+  selectedDayIndex = null,
+) {
+  if (!coursePlayer || !assignment) return;
+  const dayState = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
+  if (!dayState.plan) return;
+  const currentSession = session || {
+    id: createId("courseSession"),
+    patientId: assignment.patientId,
+    patientName: assignment.patientName,
+    courseId: course.id,
+    courseName: course.name,
+    planId: dayState.plan.id,
+    planTitle: dayState.plan.title,
+    startedAt: new Date().toISOString(),
+    status: "started",
+    completedExerciseIds: [],
+    skippedExerciseIds: [],
+    pauseDurations: [],
+    recordings: [],
+    measurementResults: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  const shouldPlayIntroduction = Boolean(dayState.plan.description && !currentSession.introPlayedAt);
+  activeCourseRun = {
+    course,
+    assignment,
+    plan: dayState.plan,
+    dayIndex: dayState.index,
+    session: currentSession,
+    index: Number.isFinite(Number(currentSession.currentExerciseIndex))
+      ? Math.max(0, Number(currentSession.currentExerciseIndex))
+      : Math.max(
+        0,
+        Number(currentSession.completedExerciseIds?.length || 0)
+          + Number(currentSession.skippedExerciseIds?.length || 0),
+      ),
+    phase: shouldPlayIntroduction ? "introduction" : "exercise",
+    playlistMode: true,
+  };
+  syncCourseMediaLock();
+  const nextExercise = (dayState.plan.exercises || [])[activeCourseRun.index];
+  if (nextExercise) {
+    currentSession.status = "in_progress";
+    currentSession.updatedAt = new Date().toISOString();
+  }
+  courseSessions = mergeById(courseSessions, [currentSession]);
+  persistCourseModuleData();
+  saveCourseSessionToCloud(currentSession).catch(() => {});
+  if (nextExercise) {
+    if (shouldPlayIntroduction) {
+      const introductionFinished = await playDailyPlanIntroduction();
+      if (!introductionFinished) return;
+    }
+    if (!activeCourseRun || activeCourseRun.session?.id !== currentSession.id) return;
+    coursePlayer.classList.add("is-hidden");
+    continueCoursePlaylist();
+    return;
+  }
+  coursePlayer.classList.remove("is-hidden");
+  renderCoursePlayer();
+  setActiveView("myCourses");
+}
+
+function renderCourseUnitMedia(exercise) {
+  const media = resolveCourseUnitMedia(exercise);
+  if (!media?.downloadUrl) return "";
+  if (media.mediaType === "video") {
+    return '<div class="course-unit-media" data-course-video-container></div><p class="course-media-state" aria-live="polite"></p>';
+  }
+  return `<div class="course-unit-media">${media.mediaType === "audio" ? "" : renderMediaPreview(media)}</div><p class="course-media-state" aria-live="polite"></p>`;
+}
+
+function isIosMediaDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function resolveCourseUnitMedia(exercise) {
+  const exerciseMediaId = String(exercise?.mediaId || "").trim();
+  const exerciseId = String(exercise?.exerciseId || "").replace(/^media:/, "").trim();
+  const exerciseMediaUrl = String(exercise?.mediaUrl || "").trim();
+  const exerciseTitle = String(exercise?.title || "").trim().toLocaleLowerCase("de-DE");
+  const libraryItem = mediaLibraryItems.find((item) => (
+    (exerciseMediaId && String(item.id) === exerciseMediaId)
+    || (exerciseId && String(item.id) === exerciseId)
+    || (exerciseMediaUrl && String(item.downloadUrl || "") === exerciseMediaUrl)
+    || (exerciseTitle && String(item.title || "").trim().toLocaleLowerCase("de-DE") === exerciseTitle)
+  ));
+  if (libraryItem?.downloadUrl) return libraryItem;
+  if (!exercise?.mediaUrl) return null;
+  return {
+    ...exercise,
+    downloadUrl: exercise.mediaUrl,
+    mediaType: exercise.mediaType || "audio",
+  };
+}
+
+function isCoursePauseExercise(exercise) {
+  if (!exercise) return false;
+  const media = resolveCourseUnitMedia(exercise);
+  const title = String(exercise.title || media?.title || "").toLocaleLowerCase("de-DE");
+  const isKnownPauseTitle = /\b(pause|ruhe|stille|entspann|klÃ¤nge|klaenge)\b/.test(title);
+  return exercise.unitType === "pause"
+    || exercise.mode === "media_pause"
+    || exercise.kind === "pause"
+    || media?.kind === "pause"
+    || (isKnownPauseTitle && (exercise.mediaUrl || exercise.mediaId || media?.downloadUrl));
+}
+
+function stopCourseUnitMedia(clearSource = true) {
+  coursePlaylistAudioLoadToken += 1;
+  if (coursePlaylistAudioSource) {
+    try {
+      coursePlaylistAudioSource.stop();
+    } catch (error) {
+      // The source may already have ended.
+    }
+    coursePlaylistAudioSource.disconnect();
+    coursePlaylistAudioSource = null;
+  }
+  if (coursePlaylistAudioGain) {
+    coursePlaylistAudioGain.disconnect();
+    coursePlaylistAudioGain = null;
+  }
+  coursePlayer?.querySelectorAll("video").forEach((videoElement) => {
+    videoElement.pause();
+    videoElement.loop = false;
+    if (clearSource) {
+      videoElement.removeAttribute("src");
+      videoElement.load();
+    }
+  });
+  coursePlaylistVideo.pause();
+  coursePlaylistVideo.loop = false;
+  if (clearSource) {
+    coursePlaylistVideo.removeAttribute("src");
+    coursePlaylistVideo.load();
+    coursePlaylistPrimedVideoUrl = "";
+  }
+  if (coursePlaylistAudioEndHandler) {
+    coursePlaylistAudio.removeEventListener("ended", coursePlaylistAudioEndHandler);
+    coursePlaylistAudioEndHandler = null;
+  }
+  if (coursePlaylistAudioErrorHandler) {
+    coursePlaylistAudio.removeEventListener("error", coursePlaylistAudioErrorHandler);
+    coursePlaylistAudioErrorHandler = null;
+  }
+  coursePlaylistAudio.pause();
+  coursePlaylistAudio.loop = false;
+  if (clearSource) {
+    coursePlaylistAudio.removeAttribute("src");
+    coursePlaylistAudio.load();
+    coursePlaylistPrimedUrl = "";
+  }
+}
+
+async function playCoursePauseAudio(media) {
+  const contextReady = await unlockCoursePlaylistAudioContext();
+  if (!contextReady || !coursePlaylistAudioContext) return false;
+  const loadToken = ++coursePlaylistAudioLoadToken;
+  try {
+    const response = await fetch(resolveAppUrl(media.downloadUrl), { cache: "force-cache" });
+    if (!response.ok) throw new Error(`Audio ${response.status}`);
+    const audioData = await response.arrayBuffer();
+    const audioBuffer = await coursePlaylistAudioContext.decodeAudioData(audioData.slice(0));
+    if (loadToken !== coursePlaylistAudioLoadToken || !activeCourseRun) return false;
+
+    const source = coursePlaylistAudioContext.createBufferSource();
+    const gain = coursePlaylistAudioContext.createGain();
+    source.buffer = audioBuffer;
+    source.loop = true;
+    gain.gain.value = 1;
+    source.connect(gain);
+    gain.connect(coursePlaylistAudioContext.destination);
+    coursePlaylistAudioSource = source;
+    coursePlaylistAudioGain = gain;
+    source.start(0);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function fadeOutCoursePauseAudio(durationMs = 700) {
+  if (!coursePlaylistAudioContext || !coursePlaylistAudioGain) {
+    if (coursePlaylistAudio.paused) {
+      stopCourseUnitMedia();
+      return Promise.resolve();
+    }
+    const startedAt = performance.now();
+    const startVolume = Math.max(0.01, coursePlaylistAudio.volume || 1);
+    return new Promise((resolve) => {
+      const fade = () => {
+        const progress = Math.min(1, (performance.now() - startedAt) / durationMs);
+        coursePlaylistAudio.volume = startVolume * (1 - progress);
+        if (progress < 1) {
+          window.requestAnimationFrame(fade);
+          return;
+        }
+        stopCourseUnitMedia();
+        coursePlaylistAudio.volume = 1;
+        resolve();
+      };
+      fade();
+    });
+  }
+  const gain = coursePlaylistAudioGain.gain;
+  const now = coursePlaylistAudioContext.currentTime;
+  gain.cancelScheduledValues(now);
+  gain.setValueAtTime(Math.max(0.0001, gain.value), now);
+  gain.exponentialRampToValueAtTime(0.0001, now + durationMs / 1000);
+  return new Promise((resolve) => {
+    window.setTimeout(() => {
+      stopCourseUnitMedia();
+      resolve();
+    }, durationMs);
+  });
+}
+
+async function startCourseUnitMedia(exercise) {
+  if (!coursePlayer || !activeCourseRun) return false;
+  const media = resolveCourseUnitMedia(exercise);
+  const state = coursePlayer.querySelector(".course-media-state");
+  if (!media?.downloadUrl) {
+    if (state) state.textContent = "Sounddatei nicht verfÃ¼gbar.";
+    return false;
+  }
+
+  if (media.mediaType !== "audio") {
+    const container = coursePlayer.querySelector("[data-course-video-container]")
+      || coursePlayer.querySelector(".course-unit-media");
+    if (!container) return false;
+    const mediaElement = coursePlaylistVideo;
+    const mediaUrl = resolveAppUrl(media.downloadUrl);
+    mediaElement.className = "media-library-preview course-playlist-video";
+    mediaElement.controls = true;
+    mediaElement.style.position = "";
+    mediaElement.style.width = "";
+    mediaElement.style.height = "";
+    mediaElement.style.opacity = "";
+    mediaElement.style.pointerEvents = "";
+    container.replaceChildren(mediaElement);
+    if (coursePlaylistPrimedVideoUrl !== mediaUrl || mediaElement.src !== mediaUrl) {
+      mediaElement.src = mediaUrl;
+      coursePlaylistPrimedVideoUrl = mediaUrl;
+    }
+    mediaElement.setAttribute("playsinline", "");
+    mediaElement.setAttribute("webkit-playsinline", "");
+    mediaElement.muted = false;
+    mediaElement.defaultMuted = false;
+    mediaElement.volume = 1;
+    mediaElement.currentTime = 0;
+    const isTimedPause = isCoursePauseExercise(exercise);
+    mediaElement.loop = isTimedPause;
+    if (!isTimedPause) {
+      mediaElement.addEventListener("ended", () => coursePlayer.querySelector("[data-action='done']")?.click(), { once: true });
+    }
+    try {
+      await mediaElement.play();
+      coursePlaylistVideoAudioUnlocked = true;
+      if (state) {
+        state.textContent = "";
+      }
+      return true;
+    } catch (error) {
+      // Mobile Safari commonly blocks audible autoplay after an automatic
+      // playlist transition. Muted playback remains permitted.
+      mediaElement.muted = true;
+      mediaElement.defaultMuted = true;
+      try {
+        await mediaElement.play();
+        if (state) {
+          state.innerHTML = '<button class="primary-action course-media-start" type="button" data-action="enableVideoSound">Ton einschalten</button>';
+        }
+        return true;
+      } catch (mutedError) {
+        if (state) {
+          state.innerHTML = '<button class="primary-action course-media-start" type="button" data-action="playMedia">Video starten</button>';
+        }
+        return false;
+      }
+    }
+  }
+
+  const isTimedPause = isCoursePauseExercise(exercise);
+  const mediaUrl = resolveAppUrl(media.downloadUrl);
+  const isPrimedPause = isTimedPause
+    && coursePlaylistPrimedUrl === mediaUrl
+    && coursePlaylistAudio.src === mediaUrl;
+  if (!isPrimedPause) stopCourseUnitMedia();
+  const container = coursePlayer.querySelector(".course-unit-media");
+  coursePlaylistAudio.className = "media-library-audio course-playlist-audio";
+  coursePlaylistAudio.controls = true;
+  if (!isPrimedPause) coursePlaylistAudio.src = mediaUrl;
+  coursePlaylistAudio.muted = false;
+  coursePlaylistAudio.defaultMuted = false;
+  coursePlaylistAudio.volume = 1;
+  coursePlaylistAudio.loop = isTimedPause;
+  container?.replaceChildren(coursePlaylistAudio);
+  coursePlaylistAudioEndHandler = isTimedPause
+    ? null
+    : () => coursePlayer.querySelector("[data-action='done']")?.click();
+  coursePlaylistAudioErrorHandler = () => {
+    if (state) state.textContent = "Sounddatei konnte nicht geladen werden.";
+  };
+  if (coursePlaylistAudioEndHandler) {
+    coursePlaylistAudio.addEventListener("ended", coursePlaylistAudioEndHandler, { once: true });
+  }
+  coursePlaylistAudio.addEventListener("error", coursePlaylistAudioErrorHandler, { once: true });
+  if (isTimedPause) {
+    if (state) state.textContent = "Pausenmusik wird geladen ...";
+    try {
+      if (isPrimedPause) coursePlaylistAudio.currentTime = 0;
+      await coursePlaylistAudio.play();
+      if (state) state.innerHTML = 'Pausenmusik lÃ¤uft. <button class="secondary-action" type="button" data-action="enablePauseSound">Ton einschalten</button>';
+      return true;
+    } catch (error) {
+      coursePlaylistPrimedUrl = "";
+    }
+    const bufferedAudioStarted = await playCoursePauseAudio(media);
+    if (bufferedAudioStarted) {
+      if (state) state.innerHTML = 'Pausenmusik lÃ¤uft. <button class="secondary-action" type="button" data-action="enablePauseSound">Ton einschalten</button>';
+      return true;
+    }
+  }
+  try {
+    await coursePlaylistAudio.play();
+    if (state) state.textContent = "Pausenmusik lÃ¤uft.";
+    return true;
+  } catch (error) {
+    if (state) state.innerHTML = '<button class="secondary-action" type="button" data-action="playMedia">Sound starten</button>';
+    return false;
+  }
+}
+
+function renderCoursePlayer() {
+  if (!coursePlayer || !activeCourseRun) return;
+  myCoursesPanel?.classList.add("has-active-course");
+  clearCourseRecordingContext();
+  if (activeCourseRun.phase === "introduction") {
+    renderDailyPlanIntroduction();
+    return;
+  }
+  window.clearTimeout(coursePauseTimerId);
+  const { course, plan, session, index, phase, dayIndex } = activeCourseRun;
+  const exercises = plan?.exercises || [];
+  const exercise = exercises[index];
+  if (!exercise) {
+    session.status = "completed";
+    syncCourseMediaLock();
+    session.completedAt = new Date().toISOString();
+    session.updatedAt = session.completedAt;
+    session.totalDuration = Math.round((new Date(session.completedAt) - new Date(session.startedAt)) / 1000);
+    coursePlayer.innerHTML = `
+      <div class="course-player-card">
+        <div class="course-player-context">
+          <span>Kurs</span>
+          <strong>${course?.name || "Kurs"}</strong>
+          <small>${plan?.title || "Tagesplan"}</small>
+        </div>
+        <p class="eyebrow">Tagesplan abgeschlossen</p>
+        <h2>${plan?.title || "Tagesplan"}</h2>
+        <p>${session.completedExerciseIds.length} Ãœbungen absolviert Â· ${formatCourseDuration(session.totalDuration)}</p>
+        <button class="secondary-action" type="button" data-action="back">ZurÃ¼ck</button>
+      </div>
+    `;
+    coursePlayer.querySelector("[data-action='back']").addEventListener("click", () => {
+      clearCourseAutoAdvanceTimer();
+      clearActiveCourseRun();
+      coursePlayer.classList.add("is-hidden");
+      renderMyCourses();
+    });
+    persistCourseModuleData();
+    saveCourseSessionToCloud(session).catch(() => {});
+    return;
+  }
+  const progress = Math.round((index / Math.max(1, exercises.length)) * 100);
+  const isMediaPause = isCoursePauseExercise(exercise);
+  const isMediaExercise = exercise.mode === "media_exercise";
+  coursePlayer.innerHTML = `
+    <div class="course-player-card${isMediaPause ? " course-player-pause-mode" : ""}">
+      ${isMediaPause ? '<div class="course-pause-ambient" aria-hidden="true"><span></span><span></span><span></span></div>' : ""}
+      <div class="course-player-context">
+        <span>Kurs</span>
+        <strong>${course?.name || "Kurs"}</strong>
+        <small>${plan?.title || "Tagesplan"} Â· Tag ${Number(dayIndex || 0) + 1}</small>
+      </div>
+      <p class="eyebrow">${isMediaPause ? "Pauseneinheit" : "Aktuelle Ãœbung"}</p>
+      <h2>${exercise.title}</h2>
+      <p>Ãœbung ${index + 1} von ${exercises.length}</p>
+      <div class="course-progress"><span style="width:${progress}%"></span></div>
+      <p>${exercise.patientHint || (isMediaPause ? "Nehmen Sie sich einen ruhigen Moment." : "Bereiten Sie sich auf die nÃ¤chste Ãœbung vor.")}</p>
+      ${isMediaPause ? `<p class="course-media-countdown" aria-live="polite"><strong id="courseMediaPauseCountdown">${Math.max(1, Number(exercise.duration || 30))}</strong><span>Sekunden</span></p>` : ""}
+      ${renderCourseUnitMedia(exercise)}
+      <div class="course-actions">
+        ${isMediaPause ? "" : `<button class="primary-action" type="button" data-action="${isMediaExercise ? "record" : "open"}">${isMediaExercise ? "Aufnahme starten" : "Ãœbung Ã¶ffnen"}</button>`}
+        <button class="secondary-action" type="button" data-action="done">${isMediaPause ? "Pause beenden" : "Erledigt"}</button>
+        ${exercise.canSkip ? `<button class="secondary-action" type="button" data-action="skip">Ãœberspringen</button>` : ""}
+        <button class="secondary-action danger-action" type="button" data-action="cancel">Stoppen</button>
+      </div>
+    </div>
+  `;
+  coursePlayer.onclick = handleCoursePlayerClick;
+  if (isMediaPause || (activeCourseRun.playlistMode && isMediaExercise)) {
+    startCourseUnitMedia(exercise).then((started) => {
+      if (isMediaPause && started) startCourseMediaPauseCountdown(exercise);
+    });
+  }
+}
+
+function startCourseMediaPauseCountdown(exercise) {
+  window.clearTimeout(coursePauseTimerId);
+  const sessionId = activeCourseRun?.session?.id || "";
+  const exerciseId = exercise?.exerciseId || "";
+  const duration = Math.max(1, Number(exercise?.duration || 30));
+  const endsAt = Date.now() + duration * 1000;
+
+  const tick = () => {
+    if (
+      !activeCourseRun
+      || activeCourseRun.session?.id !== sessionId
+      || getActiveCourseExercise()?.exerciseId !== exerciseId
+    ) return;
+
+    const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+    const label = coursePlayer?.querySelector("#courseMediaPauseCountdown");
+    if (label) label.textContent = String(remaining);
+
+    if (remaining <= 0) {
+      fadeOutCoursePauseAudio().then(() => {
+        coursePlayer?.querySelector("[data-action='done']")?.click();
+      });
+      return;
+    }
+    coursePauseTimerId = window.setTimeout(tick, 250);
+  };
+
+  tick();
+}
+
+function handleCoursePlayerClick(event) {
+  const action = event.target.closest("button")?.dataset.action;
+  if (!action || !activeCourseRun) return;
+  const { session, plan, index } = activeCourseRun;
+  const exercises = plan?.exercises || [];
+  const exercise = exercises[index];
+  session.completedExerciseIds = Array.isArray(session.completedExerciseIds) ? session.completedExerciseIds : [];
+  session.skippedExerciseIds = Array.isArray(session.skippedExerciseIds) ? session.skippedExerciseIds : [];
+  if (action === "playMedia") {
+    unlockCoursePlaylistAudioContext()
+      .then(() => startCourseUnitMedia(exercise))
+      .then((started) => {
+        if (started && isCoursePauseExercise(exercise)) startCourseMediaPauseCountdown(exercise);
+      });
+    return;
+  }
+  if (action === "enableVideoSound") {
+    const videoElement = coursePlayer.querySelector("video");
+    if (!videoElement) return;
+    videoElement.muted = false;
+    videoElement.defaultMuted = false;
+    videoElement.volume = 1;
+    videoElement.play()
+      .then(() => {
+        const state = coursePlayer.querySelector(".course-media-state");
+        if (state) state.textContent = "";
+      })
+      .catch(() => {
+        const state = coursePlayer.querySelector(".course-media-state");
+        if (state) state.textContent = "Bitte im Video auf Play tippen.";
+      });
+    return;
+  }
+  if (action === "enablePauseSound") {
+    if (coursePlaylistAudioSource) {
+      try {
+        coursePlaylistAudioSource.stop();
+      } catch (error) {
+        // The fallback source may already have ended.
+      }
+      coursePlaylistAudioSource.disconnect();
+      coursePlaylistAudioSource = null;
+    }
+    if (coursePlaylistAudioGain) {
+      coursePlaylistAudioGain.disconnect();
+      coursePlaylistAudioGain = null;
+    }
+    coursePlaylistAudio.muted = false;
+    coursePlaylistAudio.defaultMuted = false;
+    coursePlaylistAudio.volume = 1;
+    unlockCoursePlaylistAudioContext()
+      .then(() => coursePlaylistAudio.play())
+      .then(() => {
+        const state = coursePlayer?.querySelector(".course-media-state");
+        if (state) state.textContent = "Pausenmusik lÃ¤uft mit Ton.";
+      })
+      .catch(() => {
+        const state = coursePlayer?.querySelector(".course-media-state");
+        if (state) state.textContent = "Bitte im Audioplayer auf Play tippen.";
+      });
+    return;
+  }
+  if (action === "back") {
+    clearCourseAutoAdvanceTimer();
+    window.clearTimeout(coursePauseTimerId);
+    stopCourseUnitMedia();
+    stopCoursePauseMusic();
+    clearActiveCourseRun();
+    coursePlayer.classList.add("is-hidden");
+    renderMyCourses();
+    return;
+  }
+  if (action === "open") {
+    session.status = "in_progress";
+    session.updatedAt = new Date().toISOString();
+    courseSessions = mergeById(courseSessions, [session]);
+    persistCourseModuleData();
+    saveCourseSessionToCloud(session).catch(() => {});
+    openNextCourseExercise(exercise);
+    return;
+  }
+  if (action === "record") {
+    session.status = "in_progress";
+    session.updatedAt = new Date().toISOString();
+    courseSessions = mergeById(courseSessions, [session]);
+    persistCourseModuleData();
+    saveCourseSessionToCloud(session).catch(() => {});
+    coursePlayer.classList.add("is-hidden");
+    prepareCourseExerciseInRecordView(exercise);
+    return;
+  }
+  if (action === "skip" && !session.skippedExerciseIds.includes(exercise.exerciseId)) {
+    session.skippedExerciseIds.push(exercise.exerciseId);
+  }
+  if (action === "done" && !session.completedExerciseIds.includes(exercise.exerciseId)) {
+    session.completedExerciseIds.push(exercise.exerciseId);
+  }
+  if (action === "cancel") {
+    clearCourseAutoAdvanceTimer();
+    window.clearTimeout(coursePauseTimerId);
+    stopCourseUnitMedia();
+    stopCoursePauseMusic();
+    session.status = "cancelled";
+    session.completedAt = new Date().toISOString();
+    session.updatedAt = session.completedAt;
+    coursePlayer.classList.add("is-hidden");
+    clearActiveCourseRun();
+    saveCourseSessionToCloud(session).catch(() => {});
+    renderMyCourses();
+    return;
+  }
+  stopCourseUnitMedia();
+  activeCourseRun.index += 1;
+  session.currentExerciseIndex = activeCourseRun.index;
+  session.status = activeCourseRun.playlistMode ? "in_progress" : "paused";
+  session.updatedAt = new Date().toISOString();
+  courseSessions = mergeById(courseSessions, [session]);
+  persistCourseModuleData();
+  saveCourseSessionToCloud(session).catch(() => {});
+  if (activeCourseRun.playlistMode) {
+    continueCoursePlaylist();
+  } else {
+    renderCoursePause(activeCourseRun.course, exercise);
+  }
+}
+
+function renderCoursePause(course, exercise) {
+  if (!coursePlayer || !activeCourseRun) return;
+  const pause = exercise.pauseAfter || {};
+  const duration = pause.enabled === false ? 0 : Number(pause.duration || 30);
+  if (!duration) {
+    continueCoursePlaylist();
+    return;
+  }
+  const nextExercise = (activeCourseRun.plan?.exercises || [])[activeCourseRun.index];
+  let remaining = duration;
+  coursePlayer.innerHTML = `
+    <div class="course-player-card course-pause-card">
+      <div class="course-player-context">
+        <span>Kurs</span>
+        <strong>${activeCourseRun.course?.name || "Kurs"}</strong>
+        <small>${activeCourseRun.plan?.title || "Tagesplan"}</small>
+      </div>
+      <p class="eyebrow">Kurze Pause</p>
+      <h2><span id="coursePauseCountdown">${remaining}</span> Sekunden</h2>
+      <p>${pause.text || "Atmen Sie ruhig ein und aus."}</p>
+      <p>NÃ¤chste Ãœbung: <strong>${nextExercise?.title || "Abschluss"}</strong></p>
+      ${pause.canSkip ? `<button class="secondary-action" type="button" data-action="skipPause">Pause Ãœberspringen</button>` : ""}
+    </div>
+  `;
+  startCoursePauseMusic(pause);
+  const tick = () => {
+    remaining -= 1;
+    const label = document.querySelector("#coursePauseCountdown");
+    if (label) label.textContent = String(Math.max(0, remaining));
+    if (remaining <= 0) {
+      stopCoursePauseMusic();
+      continueCoursePlaylist();
+      return;
+    }
+    coursePauseTimerId = window.setTimeout(tick, 1000);
+  };
+  coursePlayer.querySelector("[data-action='skipPause']")?.addEventListener("click", () => {
+    window.clearTimeout(coursePauseTimerId);
+    stopCoursePauseMusic();
+    continueCoursePlaylist();
+  });
+  coursePauseTimerId = window.setTimeout(tick, 1000);
+}
+
+function startCoursePauseMusic(pause) {
+  stopCoursePauseMusic();
+  const item = relaxMusicItems.find((music) => music.id === pause.musicId) || relaxMusicItems.find((music) => music.isDefault);
+  if (!item?.dataUrl) return;
+  courseMusicAudio = new Audio(item.dataUrl);
+  courseMusicAudio.loop = true;
+  courseMusicAudio.volume = 0;
+  courseMusicAudio.play().catch(() => {});
+  const target = Math.max(0, Math.min(1, Number(pause.volume ?? item.volume ?? 0.25)));
+  fadeAudioVolume(courseMusicAudio, target, 2000);
+}
+
+function stopCoursePauseMusic() {
+  if (!courseMusicAudio) return;
+  const audio = courseMusicAudio;
+  courseMusicAudio = null;
+  fadeAudioVolume(audio, 0, 1800, () => {
+    audio.pause();
+    audio.src = "";
+  });
+}
+
+function fadeAudioVolume(audio, target, durationMs, done) {
+  const start = audio.volume;
+  const started = performance.now();
+  const step = () => {
+    const progress = Math.min(1, (performance.now() - started) / durationMs);
+    audio.volume = start + (target - start) * progress;
+    if (progress < 1) requestAnimationFrame(step);
+    else done?.();
+  };
+  step();
+}
+
 function renderEditorPatientScopeOptions(preferredName = editorPatientScope?.value || "") {
   if (!editorPatientScope) return;
 
@@ -10013,12 +14742,20 @@ function renderEditorPatientScopeOptions(preferredName = editorPatientScope?.val
   sharedOption.textContent = "Gemeinsam / Vorlage";
   editorPatientScope.append(sharedOption);
 
-  getKnownPatientNames().forEach((name) => {
+  const knownNames = getKnownPatientNames();
+  knownNames.forEach((name) => {
     const option = document.createElement("option");
     option.value = name;
     option.textContent = `Patient: ${name}`;
     editorPatientScope.append(option);
   });
+
+  if (currentValue && !knownNames.some((name) => normalizeEditorExerciseName(name) === normalizeEditorExerciseName(currentValue))) {
+    const missingOption = document.createElement("option");
+    missingOption.value = currentValue;
+    missingOption.textContent = `Patient: ${currentValue} (nicht mehr vorhanden)`;
+    editorPatientScope.append(missingOption);
+  }
 
   const optionValues = Array.from(editorPatientScope.options).map((option) => option.value);
   editorPatientScope.value = optionValues.includes(currentValue) ? currentValue : "";
@@ -10028,16 +14765,26 @@ function getEditorExercisePatientName(exercise) {
   return String(exercise?.patientName || "").trim();
 }
 
+function isKnownPatientName(name) {
+  const normalizedName = normalizeEditorExerciseName(name);
+  if (!normalizedName) return false;
+  return getKnownPatientNames().some(
+    (patientName) => normalizeEditorExerciseName(patientName) === normalizedName,
+  );
+}
+
 function isEditorExerciseVisibleForCurrentPatient(exercise, patient = getCurrentPatientName()) {
   const assignedPatient = getEditorExercisePatientName(exercise);
   if (!assignedPatient) return true;
+  if (!isKnownPatientName(assignedPatient)) return true;
   return normalizeEditorExerciseName(assignedPatient) === normalizeEditorExerciseName(patient);
 }
 
 function buildPatientProfile(name = getCurrentPatientName()) {
   const cleanedName = String(name || "").trim() || "Ohne Name";
+  const existingProfile = findPatientProfileByName(cleanedName);
   return {
-    id: slugify(cleanedName),
+    id: existingProfile?.id || `patient-${slugify(cleanedName)}`,
     name: cleanedName,
     settings: {
       sensitivity: clampSensitivity(sensitivitySlider.value),
@@ -10076,6 +14823,70 @@ function findPatientProfileByName(name) {
   return patientProfiles.find((profile) => normalizeEditorExerciseName(profile.name) === normalizedName) || null;
 }
 
+function findPatientProfileById(patientId) {
+  const normalizedId = String(patientId || "").trim();
+  if (!normalizedId) return null;
+  return patientProfiles.find((profile) => String(profile.id || "").trim() === normalizedId) || null;
+}
+
+function getAssignmentsForPatient(patientId = getCurrentPatientId(), patientLabel = getCurrentPatientName()) {
+  const normalizedId = String(patientId || "").trim();
+  const normalizedName = normalizeEditorExerciseName(patientLabel || "");
+  return courseAssignments.filter((item) => {
+    const assignmentId = String(item.patientId || "").trim();
+    const assignmentName = normalizeEditorExerciseName(item.patientName || "");
+    return (
+      (normalizedId && assignmentId === normalizedId) ||
+      (normalizedName && assignmentName === normalizedName)
+    );
+  });
+}
+
+function reconcileCourseAssignmentPatients(assignments = []) {
+  return assignments.map((assignment) => {
+    const profile =
+      findPatientProfileById(assignment.patientId)
+      || findPatientProfileByName(assignment.patientName || "");
+    if (!profile) return assignment;
+    if (assignment.patientId === profile.id && assignment.patientName === profile.name) return assignment;
+    return {
+      ...assignment,
+      patientId: profile.id,
+      patientName: profile.name,
+      updatedAt: new Date().toISOString(),
+    };
+  });
+}
+
+function getCurrentPatientProfile() {
+  const selectedId = localStorage.getItem(SELECTED_PATIENT_ID_KEY) || "";
+  return (
+    findPatientProfileById(selectedId) ||
+    findPatientProfileByName(patientName?.value || "") ||
+    null
+  );
+}
+
+function getCurrentPatientId() {
+  const profile = getCurrentPatientProfile();
+  return String(profile?.id || slugify(getCurrentPatientName()) || "patient-ohne-name");
+}
+
+function getMetadataPatientId(metadata = null) {
+  return String(
+    metadata?.patientId ||
+    findPatientProfileByName(metadata?.patientName || "")?.id ||
+    slugify(metadata?.patientName || "") ||
+    getCurrentPatientId()
+  );
+}
+
+function isRecordingForPatient(recording, patientId = getCurrentPatientId(), patientLabel = getCurrentPatientName()) {
+  const recordingPatientId = getMetadataPatientId(recording);
+  if (recordingPatientId && patientId) return recordingPatientId === patientId;
+  return String(recording?.patientName || "Demo Patient") === String(patientLabel || "Ohne Name");
+}
+
 function applyPatientProfileSettings(profile) {
   const settings = profile?.settings || {};
   isApplyingPatientProfile = true;
@@ -10112,7 +14923,7 @@ async function ensurePatientProfile(name = getCurrentPatientName()) {
   const cleanedName = String(name || "").trim() || "Ohne Name";
   const localProfile = findPatientProfileByName(cleanedName);
   if (localProfile) {
-    saveCloudPatientProfile(localProfile).catch(() => {});
+    await saveCloudPatientProfile(localProfile);
     return localProfile;
   }
 
@@ -10128,40 +14939,165 @@ async function ensurePatientProfile(name = getCurrentPatientName()) {
   return createdProfile;
 }
 
+async function requestPatientProfilesApi(method = "GET", body = null) {
+  const requestPath = method === "GET"
+    ? `/api/patients?sync=${Date.now()}`
+    : "/api/patients";
+  const response = await fetch(getApiUrl(requestPath), {
+    method,
+    cache: "no-store",
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!response.ok) throw new Error(`Patienten-API ${response.status}`);
+  return response.json();
+}
+
+let patientProfileRefreshTimerId = 0;
+let patientProfileRefreshPromise = null;
+
+function schedulePatientProfileRefresh(delay = 0) {
+  window.clearTimeout(patientProfileRefreshTimerId);
+  patientProfileRefreshTimerId = window.setTimeout(() => {
+    refreshPatientProfilesFromCloud().catch((error) => {
+      console.warn("Patienten konnten nicht erneut aus Firebase geladen werden", error);
+    });
+  }, Math.max(0, Number(delay) || 0));
+}
+
+async function refreshPatientProfilesFromCloud() {
+  if (patientProfileRefreshPromise) return patientProfileRefreshPromise;
+  patientProfileRefreshPromise = (async () => {
+    const result = await requestPatientProfilesApi("GET");
+    const cloudProfiles = Array.isArray(result?.profiles) ? result.profiles : [];
+    cloudProfiles
+      .filter((profile) => profile?.name)
+      .forEach((profile) => upsertPatientProfile(profile));
+
+    renderPatientOptions(allRecordings);
+    renderCoursePatientSwitcher();
+    if (settingsState) {
+      settingsState.textContent = `Patienten aus Firebase geladen: ${patientProfiles.length}.`;
+    }
+    return patientProfiles;
+  })().finally(() => {
+    patientProfileRefreshPromise = null;
+  });
+  return patientProfileRefreshPromise;
+}
+
 async function saveCloudPatientProfile(profile = buildPatientProfile()) {
   const normalizedProfile = {
     ...profile,
     id: profile.id || slugify(profile.name),
     updatedAt: new Date().toISOString(),
   };
-  await setDoc(doc(firestore, PATIENT_PROFILES_COLLECTION, normalizedProfile.id), normalizedProfile, { merge: true });
+  try {
+    const result = await requestPatientProfilesApi("POST", { profile: normalizedProfile });
+    if (result?.profile) Object.assign(normalizedProfile, result.profile);
+  } catch (apiError) {
+    await setDoc(doc(firestore, PATIENT_PROFILES_COLLECTION, normalizedProfile.id), normalizedProfile, { merge: true });
+  }
   upsertPatientProfile(normalizedProfile);
-  await setActiveCloudPatient(normalizedProfile.name).catch(() => {});
+  return normalizedProfile;
 }
 
 async function loadCloudPatientProfile(name) {
-  const snapshot = await getDoc(doc(firestore, PATIENT_PROFILES_COLLECTION, slugify(name)));
-  return snapshot.exists() ? snapshot.data() : null;
+  const result = await requestPatientProfilesApi("GET");
+  const normalizedName = normalizeEditorExerciseName(name);
+  return (result?.profiles || []).find(
+    (profile) => normalizeEditorExerciseName(profile?.name) === normalizedName,
+  ) || null;
 }
 
 async function loadCloudPatientProfiles() {
   try {
-    const snapshot = await getDocs(collection(firestore, PATIENT_PROFILES_COLLECTION));
-    patientProfiles = snapshot.docs.map((profileDoc) => profileDoc.data()).filter((profile) => profile?.name);
-    if (!patientProfiles.length) {
-      patientProfiles = JSON.parse(localStorage.getItem(PATIENT_PROFILES_KEY) || "[]") || [];
+    let localProfiles = [];
+    try {
+      localProfiles = JSON.parse(localStorage.getItem(PATIENT_PROFILES_KEY) || "[]") || [];
+    } catch (parseError) {
+      localProfiles = [];
     }
 
-    const activeSnapshot = await getDoc(doc(firestore, "settings", ACTIVE_PATIENT_DOC)).catch(() => null);
-    const cloudActiveName = activeSnapshot?.exists?.() ? activeSnapshot.data()?.name : "";
-    const localSelected = localStorage.getItem(SELECTED_PATIENT_KEY) || "";
-    const nextPatientName = cloudActiveName || localSelected || patientName.value;
-    patientName.value = nextPatientName;
-    localStorage.setItem(SELECTED_PATIENT_KEY, nextPatientName);
+    let cloudProfiles = [];
+    let cloudActiveName = "";
+    let cloudActiveId = "";
+    try {
+      const result = await requestPatientProfilesApi("GET");
+      cloudProfiles = Array.isArray(result?.profiles) ? result.profiles : [];
+      cloudActiveName = String(result?.activePatient?.name || "").trim();
+      cloudActiveId = String(result?.activePatient?.patientId || "").trim();
+    } catch (apiError) {
+      const snapshot = await getDocs(collection(firestore, PATIENT_PROFILES_COLLECTION));
+      cloudProfiles = snapshot.docs.map((profileDoc) => profileDoc.data());
+      const activeSnapshot = await getDoc(doc(firestore, "settings", ACTIVE_PATIENT_DOC)).catch(() => null);
+      cloudActiveName = activeSnapshot?.exists?.() ? activeSnapshot.data()?.name : "";
+      cloudActiveId = activeSnapshot?.exists?.() ? activeSnapshot.data()?.patientId : "";
+    }
+    patientProfiles = [];
+    localProfiles.forEach((profile) => {
+      if (profile?.name) upsertPatientProfile(profile);
+    });
+    cloudProfiles
+      .filter((profile) => profile?.name)
+      .forEach((profile) => {
+        upsertPatientProfile(profile);
+      });
 
-    const activeProfile = findPatientProfileByName(nextPatientName) || (await ensurePatientProfile(nextPatientName));
+    // Migrate profiles created by older app versions into Firebase once.
+    if (localProfiles.length) {
+      await Promise.all(
+        localProfiles
+          .filter((profile) => profile?.name)
+          .map((profile) => saveCloudPatientProfile(profile)),
+      );
+    }
+
+    const localSelected = localStorage.getItem(SELECTED_PATIENT_KEY) || "";
+    const localSelectedId = localStorage.getItem(SELECTED_PATIENT_ID_KEY) || "";
+    const fallbackProfile = patientProfiles[0] || null;
+    const nextPatientName = localSelected || cloudActiveName || fallbackProfile?.name || patientName.value || "";
+    const localPreferredProfile =
+      findPatientProfileById(localSelectedId) ||
+      findPatientProfileByName(localSelected);
+    const cloudPreferredProfile =
+      findPatientProfileById(cloudActiveId) ||
+      findPatientProfileByName(cloudActiveName);
+    const nextProfile =
+      localPreferredProfile ||
+      cloudPreferredProfile ||
+      findPatientProfileByName(nextPatientName) ||
+      fallbackProfile;
+    patientName.value = nextProfile?.name || nextPatientName || "Ohne Name";
+    localStorage.setItem(SELECTED_PATIENT_KEY, patientName.value);
+    if (nextProfile?.id) {
+      localStorage.setItem(SELECTED_PATIENT_ID_KEY, nextProfile.id);
+    }
+
+    const activeProfile =
+      nextProfile ||
+      (localSelected ? await ensurePatientProfile(localSelected).catch(() => null) : null) ||
+      findPatientProfileByName(nextPatientName) ||
+      (patientProfiles.length ? patientProfiles[0] : null) ||
+      (await ensurePatientProfile(nextPatientName || "Ohne Name"));
+    if (activeProfile?.id) {
+      localStorage.setItem(SELECTED_PATIENT_ID_KEY, activeProfile.id);
+    }
+    if (activeProfile?.name) {
+      patientName.value = activeProfile.name;
+      localStorage.setItem(SELECTED_PATIENT_KEY, activeProfile.name);
+    }
+    if (activeProfile?.name) {
+      await setActiveCloudPatient(activeProfile.name, activeProfile.id).catch((error) => {
+        console.warn("Aktiver Patient konnte nicht in Firebase gespeichert werden", error);
+      });
+    }
     if (activeProfile) applyPatientProfileSettings(activeProfile);
     localStorage.setItem(PATIENT_PROFILES_KEY, JSON.stringify(patientProfiles));
+    if (patientManagerName) patientManagerName.value = patientName.value;
+    renderPatientOptions(allRecordings);
+    renderCoursePatientSwitcher();
+    setPatientManagerState(`Patient geladen: ${patientName.value}`, "success");
     if (settingsState) settingsState.textContent = `Patienten aus Firebase geladen: ${patientProfiles.length}.`;
   } catch (error) {
     try {
@@ -10170,17 +15106,28 @@ async function loadCloudPatientProfiles() {
       patientProfiles = [];
     }
     await ensurePatientProfile(getCurrentPatientName()).catch(() => {});
+    if (patientManagerName) patientManagerName.value = getCurrentPatientName();
+    setPatientManagerState(`Patient bereit: ${getCurrentPatientName()}`, "info");
     if (settingsState) settingsState.textContent = "Patienten lokal geladen. Firebase nicht erreichbar.";
   }
 }
 
-async function setActiveCloudPatient(name = getCurrentPatientName()) {
+async function setActiveCloudPatient(name = getCurrentPatientName(), patientId = getCurrentPatientId()) {
   const cleanedName = String(name || "").trim() || "Ohne Name";
-  await setDoc(doc(firestore, "settings", ACTIVE_PATIENT_DOC), {
-    name: cleanedName,
-    patientId: slugify(cleanedName),
-    updatedAt: new Date().toISOString(),
-  });
+  const normalizedId = patientId || slugify(cleanedName);
+  try {
+    await requestPatientProfilesApi("POST", {
+      action: "activate",
+      name: cleanedName,
+      patientId: normalizedId,
+    });
+  } catch (apiError) {
+    await setDoc(doc(firestore, "settings", ACTIVE_PATIENT_DOC), {
+      name: cleanedName,
+      patientId: normalizedId,
+      updatedAt: new Date().toISOString(),
+    });
+  }
 }
 
 function queuePatientProfileSave(options = {}) {
@@ -10204,8 +15151,9 @@ function queuePatientProfileSave(options = {}) {
 
 function renderLibrary(preferredId = null) {
   const selectedPatient = getCurrentPatientName();
+  const selectedPatientId = getCurrentPatientId();
   const patientRecordings = allRecordings
-    .filter((recording) => (recording.patientName || "Demo Patient") === selectedPatient)
+    .filter((recording) => isRecordingForPatient(recording, selectedPatientId, selectedPatient))
     .sort((a, b) => b.datum.localeCompare(a.datum));
 
   libraryTitle.textContent = selectedPatient;
@@ -10233,7 +15181,7 @@ function renderLibrary(preferredId = null) {
   if (!patientRecordings.length) {
     const empty = document.createElement("p");
     empty.className = "message";
-    empty.textContent = "Noch keine Aufnahme für diesen Patienten.";
+    empty.textContent = "Noch keine Aufnahme fÃ¼r diesen Patienten.";
     recordingsList.append(empty);
     return;
   }
@@ -10244,23 +15192,23 @@ function renderLibrary(preferredId = null) {
 
     const summary = document.createElement("div");
     const title = document.createElement("strong");
-    title.textContent = recording.uebung || "Unbenannte Übung";
+    title.textContent = recording.uebung || "Unbenannte Ãœbung";
     const details = document.createElement("span");
     const analysis = recording.audioAnalyse || buildAudioAnalysis(recording);
-    details.textContent = `${formatDateTime(recording.datum)} · ${formatTime(recording.dauerSekunden)} · Ø ${analysis.lautstaerke.durchschnitt || recording.durchschnittlicheLautstaerke || 0} · ${analysis.frequenz.durchschnittHz || 0} Hz`;
+    details.textContent = `${formatDateTime(recording.datum)} Â· ${formatTime(recording.dauerSekunden)} Â· Ã˜ ${analysis.lautstaerke.durchschnitt || recording.durchschnittlicheLautstaerke || 0} Â· ${analysis.frequenz.durchschnittHz || 0} Hz`;
     summary.append(title, details);
 
     const openButton = document.createElement("button");
     openButton.type = "button";
     openButton.className = "recording-open-button";
-    openButton.textContent = recording.id === preferredId ? "Offen" : "Öffnen";
+    openButton.textContent = recording.id === preferredId ? "Offen" : "Ã–ffnen";
     openButton.addEventListener("click", () => openStoredRecording(recording.id));
 
     const deleteListButton = document.createElement("button");
     deleteListButton.type = "button";
     deleteListButton.className = "recording-delete-button";
-    deleteListButton.setAttribute("aria-label", "Aufnahme löschen");
-    deleteListButton.title = "Aufnahme löschen";
+    deleteListButton.setAttribute("aria-label", "Aufnahme lÃ¶schen");
+    deleteListButton.title = "Aufnahme lÃ¶schen";
     deleteListButton.addEventListener("click", async () => {
       await deleteStoredRecordingById(recording.id);
     });
@@ -10405,7 +15353,7 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
     voiceProgressTitle.textContent = "Noch keine Bewertung";
     voiceProgressScore.textContent = "0";
   voiceProgressScore.className = "voice-score-badge is-neutral";
-  voiceProgressSummary.textContent = "Nach dem ersten vollständigen Test wird eine persönliche Ausgangsmessung gespeichert.";
+  voiceProgressSummary.textContent = "Nach dem ersten vollstÃ¤ndigen Test wird eine persÃ¶nliche Ausgangsmessung gespeichert.";
     if (voiceProgressHints) voiceProgressHints.innerHTML = "";
   voiceProgressScores.innerHTML = "";
     voiceProgressList.innerHTML = "";
@@ -10421,8 +15369,8 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
     completeRecordings.at(-1);
   const evaluation = calculateVoiceEvaluation(selectedRecording, patientRecordings);
   const baselineText = evaluation.veraenderungBaselineProzent >= 0
-    ? `+${evaluation.veraenderungBaselineProzent}% gegenüber dem ersten Test`
-    : `${evaluation.veraenderungBaselineProzent}% gegenüber dem ersten Test`;
+    ? `+${evaluation.veraenderungBaselineProzent}% gegenÃ¼ber dem ersten Test`
+    : `${evaluation.veraenderungBaselineProzent}% gegenÃ¼ber dem ersten Test`;
   const previousText = evaluation.veraenderungVorherigerTestProzent >= 0
     ? `+${evaluation.veraenderungVorherigerTestProzent}% zum vorherigen Test`
     : `${evaluation.veraenderungVorherigerTestProzent}% zum vorherigen Test`;
@@ -10454,15 +15402,15 @@ function renderVoiceProgressHints(hints = []) {
   if (!voiceProgressHints) return;
   voiceProgressHints.innerHTML = "";
   const strengths = hints
-    .filter((hint) => String(hint).startsWith("Stärke:"))
-    .map((hint) => String(hint).replace(/^Stärke:\s*/, ""));
+    .filter((hint) => String(hint).startsWith("StÃ¤rke:"))
+    .map((hint) => String(hint).replace(/^StÃ¤rke:\s*/, ""));
   const notices = hints
-    .filter((hint) => String(hint).startsWith("Auffällig:"))
-    .map((hint) => String(hint).replace(/^Auffällig:\s*/, ""));
+    .filter((hint) => String(hint).startsWith("AuffÃ¤llig:"))
+    .map((hint) => String(hint).replace(/^AuffÃ¤llig:\s*/, ""));
 
   [
-    ["Stärken", strengths],
-    ["Auffällig", notices],
+    ["StÃ¤rken", strengths],
+    ["AuffÃ¤llig", notices],
   ].forEach(([title, entries]) => {
     if (!entries.length) return;
     const group = document.createElement("div");
@@ -10481,12 +15429,12 @@ function renderVoiceProgressHints(hints = []) {
 
 function renderVoiceScoreGrid(scores = {}) {
   const labels = [
-    ["lautstaerke", "Lautstärke"],
-    ["stimmstabilitaet", "Stimmstabilität"],
+    ["lautstaerke", "LautstÃ¤rke"],
+    ["stimmstabilitaet", "StimmstabilitÃ¤t"],
     ["sprechfluss", "Sprechfluss"],
     ["pausen", "Pausen"],
     ["stimmanteil", "Stimmanteil"],
-    ["gleichmaessigkeit", "Gleichmäßigkeit"],
+    ["gleichmaessigkeit", "GleichmÃ¤ÃŸigkeit"],
   ];
 
   voiceProgressScores.innerHTML = "";
@@ -10512,7 +15460,7 @@ function renderVoiceProgressList(recordings, activeId = "") {
     row.className = `voice-progress-row ${recording.id === activeId ? "is-active" : ""}`;
     const baselineChange = `${evaluation.veraenderungBaselineProzent >= 0 ? "+" : ""}${evaluation.veraenderungBaselineProzent}%`;
     const previousChange = `${evaluation.veraenderungVorherigerTestProzent >= 0 ? "+" : ""}${evaluation.veraenderungVorherigerTestProzent}%`;
-    row.textContent = `${formatDateTime(recording.datum)}: ${evaluation.gesamt} Punkte · Baseline ${baselineChange} · Vorher ${previousChange}`;
+    row.textContent = `${formatDateTime(recording.datum)}: ${evaluation.gesamt} Punkte Â· Baseline ${baselineChange} Â· Vorher ${previousChange}`;
     if (evaluation.baseline?.istAusgangsmessung) {
       row.textContent = `${formatDateTime(recording.datum)}: Ausgangsmessung`;
     }
@@ -10608,7 +15556,7 @@ function renderPlaybackRecordingAccessLegacy(patientRecordings, preferredId = nu
     playbackOpenRecordingButton && (playbackOpenRecordingButton.disabled = true);
     const empty = document.createElement("p");
     empty.className = "message";
-    empty.textContent = "Noch keine gespeicherte Aufnahme für diesen Patienten.";
+    empty.textContent = "Noch keine gespeicherte Aufnahme fÃ¼r diesen Patienten.";
     playbackSavedRecordingsList.append(empty);
     return;
   }
@@ -10618,7 +15566,7 @@ function renderPlaybackRecordingAccessLegacy(patientRecordings, preferredId = nu
   patientRecordings.forEach((recording) => {
     const option = document.createElement("option");
     option.value = recording.id;
-    option.textContent = `${formatDateTime(recording.datum)} · ${recording.uebung || "Aufnahme"}`;
+    option.textContent = `${formatDateTime(recording.datum)} Â· ${recording.uebung || "Aufnahme"}`;
     playbackRecordingSelect.append(option);
   });
   playbackRecordingSelect.value = patientRecordings.some((recording) => recording.id === currentId)
@@ -10630,7 +15578,7 @@ function renderPlaybackRecordingAccessLegacy(patientRecordings, preferredId = nu
     button.type = "button";
     button.className = "playback-recording-chip";
     button.classList.toggle("is-active", recording.id === currentId);
-    button.textContent = `${recording.uebung || "Aufnahme"} · ${formatTime(recording.dauerSekunden || 0)}`;
+    button.textContent = `${recording.uebung || "Aufnahme"} Â· ${formatTime(recording.dauerSekunden || 0)}`;
     button.addEventListener("click", () => openStoredRecording(recording.id));
     playbackSavedRecordingsList.append(button);
   });
@@ -10642,23 +15590,23 @@ function createPlaybackRecordingListItem(recording, preferredId = null) {
 
   const summary = document.createElement("div");
   const title = document.createElement("strong");
-  title.textContent = recording.uebung || "Unbenannte Übung";
+  title.textContent = recording.uebung || "Unbenannte Ãœbung";
   const details = document.createElement("span");
   const analysis = recording.audioAnalyse || buildAudioAnalysis(recording);
-  details.textContent = `${formatDateTime(recording.datum)} · ${formatTime(recording.dauerSekunden)} · Ø ${analysis.lautstaerke.durchschnitt || recording.durchschnittlicheLautstaerke || 0} · ${analysis.frequenz.durchschnittHz || 0} Hz`;
+    details.textContent = `${formatDateTime(recording.datum)} Â· ${formatTime(recording.dauerSekunden)} Â· Ã˜ ${analysis.lautstaerke.durchschnitt || recording.durchschnittlicheLautstaerke || 0} Â· ${analysis.frequenz.durchschnittHz || 0} Hz`;
   summary.append(title, details);
 
   const openButton = document.createElement("button");
   openButton.type = "button";
   openButton.className = "recording-open-button";
-  openButton.textContent = recording.id === preferredId ? "Offen" : "Öffnen";
+  openButton.textContent = recording.id === preferredId ? "Offen" : "Ã–ffnen";
   openButton.addEventListener("click", () => openStoredRecording(recording.id));
 
   const deleteListButton = document.createElement("button");
   deleteListButton.type = "button";
   deleteListButton.className = "recording-delete-button";
-  deleteListButton.setAttribute("aria-label", "Aufnahme löschen");
-  deleteListButton.title = "Aufnahme löschen";
+  deleteListButton.setAttribute("aria-label", "Aufnahme lÃ¶schen");
+  deleteListButton.title = "Aufnahme lÃ¶schen";
   deleteListButton.addEventListener("click", async () => {
     await deleteStoredRecordingById(recording.id);
   });
@@ -10685,7 +15633,7 @@ function renderPlaybackRecordingAccess(patientRecordings, preferredId = null) {
 
     const empty = document.createElement("p");
     empty.className = "message";
-    empty.textContent = "Noch keine gespeicherte Aufnahme für diesen Patienten.";
+    empty.textContent = "Noch keine gespeicherte Aufnahme fÃ¼r diesen Patienten.";
     playbackSavedRecordingsList.append(empty);
     return;
   }
@@ -10695,7 +15643,7 @@ function renderPlaybackRecordingAccess(patientRecordings, preferredId = null) {
   visibleRecordings.forEach((recording) => {
     const option = document.createElement("option");
     option.value = recording.id;
-    option.textContent = `${formatDateTime(recording.datum)} · ${recording.uebung || "Aufnahme"}`;
+    option.textContent = `${formatDateTime(recording.datum)} Â· ${recording.uebung || "Aufnahme"}`;
     playbackRecordingSelect.append(option);
   });
 
@@ -10710,7 +15658,7 @@ function renderPlaybackRecordingAccess(patientRecordings, preferredId = null) {
     button.type = "button";
     button.className = "playback-recording-chip";
     button.classList.toggle("is-active", recording.id === currentId);
-    button.textContent = `${formatDateTime(recording.datum)} · ${formatTime(recording.dauerSekunden || 0)}`;
+    button.textContent = `${formatDateTime(recording.datum)} Â· ${formatTime(recording.dauerSekunden || 0)}`;
     button.addEventListener("click", () => openStoredRecording(recording.id));
     playbackSavedRecordingsList.append(button);
   });
@@ -10738,7 +15686,7 @@ function renderPlaybackExerciseSelect(patientRecordings, preferredExerciseName =
   playbackExerciseSelect.innerHTML = "";
   const allOption = document.createElement("option");
   allOption.value = "";
-  allOption.textContent = "Alle Übungen";
+  allOption.textContent = "Alle Ãœbungen";
   playbackExerciseSelect.append(allOption);
 
   [...exerciseNames].sort((a, b) => a.localeCompare(b, "de")).forEach((name) => {
@@ -10775,9 +15723,9 @@ async function openPlaybackExerciseSelection() {
   if (selectedExerciseName) {
     selectRecordingExerciseByName(selectedExerciseName);
     setActiveView("record");
-    message.textContent = `Übung geladen: ${selectedExerciseName}. Noch keine Aufzeichnung vorhanden.`;
+    message.textContent = `Ãœbung geladen: ${selectedExerciseName}. Noch keine Aufzeichnung vorhanden.`;
   } else {
-    message.textContent = "Bitte eine Übung oder Aufzeichnung im Player auswählen.";
+    message.textContent = "Bitte eine Ãœbung oder Aufzeichnung im Player auswÃ¤hlen.";
   }
 }
 
@@ -10819,7 +15767,7 @@ function updateStatisticsRecordingSelect(patientRecordings, preferredId = null) 
   if (!patientRecordings.length) {
     const option = document.createElement("option");
     option.value = "";
-    option.textContent = "Keine Aufnahme ausgewählt";
+    option.textContent = "Keine Aufnahme ausgewÃ¤hlt";
     statisticsRecordingSelect.append(option);
     statisticsRecordingSelect.value = "";
     selectedAnalysisRecordingId = "";
@@ -10830,7 +15778,7 @@ function updateStatisticsRecordingSelect(patientRecordings, preferredId = null) 
   patientRecordings.forEach((recording) => {
     const option = document.createElement("option");
     option.value = recording.id;
-    option.textContent = `${formatDateTime(recording.datum)} · ${recording.uebung || "Aufnahme"}`;
+    option.textContent = `${formatDateTime(recording.datum)} Â· ${recording.uebung || "Aufnahme"}`;
     statisticsRecordingSelect.append(option);
   });
 
@@ -10861,13 +15809,14 @@ async function openStoredRecording(id) {
   showResult(metadata, storedBlob);
   renderPlaybackRecordingAccess(getPatientRecordings(), metadata.id);
   renderAudioAnalysis(metadata);
-  message.textContent = "Aufnahme aus der Auswertung geöffnet.";
+  message.textContent = "Aufnahme aus der Auswertung geÃ¶ffnet.";
 }
 
 function getPatientRecordings() {
   const selectedPatient = getCurrentPatientName();
+  const selectedPatientId = getCurrentPatientId();
   return allRecordings
-    .filter((recording) => (recording.patientName || "Demo Patient") === selectedPatient)
+    .filter((recording) => isRecordingForPatient(recording, selectedPatientId, selectedPatient))
     .sort((a, b) => b.datum.localeCompare(a.datum));
 }
 
@@ -10913,6 +15862,9 @@ function clearCurrentRecording() {
   playbackSeek.value = "0";
   playbackTimeLabel.textContent = "00:00 / 00:00";
   resultPanel.classList.add("is-hidden");
+  courseResultActions?.classList.add("is-hidden");
+  playbackVideoCanvas?.classList.add("is-hidden");
+  recordingPlayer.closest(".playback-stage")?.classList.remove("is-canvas-corrected");
   playbackEmptyState?.classList.remove("is-hidden");
   currentVideoBlob = null;
   currentMetadata = null;
@@ -10968,7 +15920,7 @@ function restoreRecorderControls(statusText) {
   disconnectAudioAnalyser();
   exitRecordingFocus();
   recordButton.disabled = false;
-  recordButton.textContent = "Übung starten";
+  recordButton.textContent = "Ãœbung starten";
   recordButton.classList.remove("is-recording");
   mediaRecorder = null;
   message.textContent = statusText;
@@ -10992,6 +15944,25 @@ function toggleVideoPreview() {
   setVideoPreviewHidden(!isVideoPreviewHidden);
 }
 
+function setTextOverlayVisible(visible) {
+  isTextOverlayVisible = Boolean(visible);
+  localStorage.setItem(TEXT_OVERLAY_VISIBLE_KEY, isTextOverlayVisible ? "1" : "0");
+  applyTextOverlayVisibility();
+}
+
+function applyTextOverlayVisibility() {
+  karaokeOverlay?.classList.toggle("is-text-hidden", !isTextOverlayVisible);
+  playbackKaraokeOverlay?.classList.toggle("is-text-hidden", !isTextOverlayVisible);
+
+  if (playbackTextToggleButton) {
+    playbackTextToggleButton.textContent = isTextOverlayVisible ? "Text aus" : "Text an";
+    playbackTextToggleButton.setAttribute(
+      "aria-label",
+      isTextOverlayVisible ? "Texteinblendung ausschalten" : "Texteinblendung einschalten",
+    );
+  }
+}
+
 function setVideoPreviewHidden(hidden) {
   isVideoPreviewHidden = hidden;
   document.body.classList.toggle("video-preview-hidden", hidden);
@@ -11011,7 +15982,7 @@ function prepareRecordViewFromNavigation() {
   setExerciseVisualsVisible(false);
   resetLiveAnalysisUi();
   recordButton.disabled = false;
-  recordButton.textContent = "Übung starten";
+  recordButton.textContent = "Ãœbung starten";
   recordButton.classList.remove("is-recording");
 
   if (hasActiveMediaStream()) {
@@ -11031,6 +16002,10 @@ function setActiveView(viewName) {
   document.body.dataset.activeView = viewName;
   updateTopBarTitle(viewName);
   appMenu?.classList.add("is-hidden");
+
+  if (viewName !== "editor") {
+    closeEditorAiModal();
+  }
 
   navButtons.forEach((button) => {
     button.classList.toggle("is-active", button.dataset.targetView === viewName);
@@ -11052,6 +16027,14 @@ function setActiveView(viewName) {
   if (viewName === "stats") {
     renderAudioAnalysis(getSelectedAnalysisRecording());
   }
+
+  if (["dailyPlans", "courses", "relaxMusic", "mediaLibrary", "myCourses"].includes(viewName)) {
+    renderCourseViews();
+  }
+
+  if (["dailyPlans", "mediaLibrary"].includes(viewName)) {
+    refreshMediaLibraryFromCloud();
+  }
 }
 
 function hasPlaybackRecording() {
@@ -11072,6 +16055,11 @@ function updateTopBarTitle(viewName) {
     history: "Auswertung",
     stats: "Analyse",
     patients: "Patienten",
+    dailyPlans: "Tagespläne",
+    courses: "Kurse",
+    relaxMusic: "Musik",
+    mediaLibrary: "Medien",
+    myCourses: "Kurs",
     settings: "Einstellungen",
     help: "Hilfe",
   };
@@ -11098,7 +16086,12 @@ async function saveRecording(metadata, videoBlob) {
   const database = await openDatabase();
   const transaction = database.transaction(STORE_NAME, "readwrite");
   const store = transaction.objectStore(STORE_NAME);
-  store.put({ ...metadata, videoBlob });
+  store.put({
+    ...metadata,
+    patientId: metadata.patientId || getMetadataPatientId(metadata),
+    patientName: metadata.patientName || getCurrentPatientName(),
+    videoBlob,
+  });
   return transactionDone(transaction);
 }
 
@@ -11128,6 +16121,7 @@ async function getAllRecordings() {
           return {
             ...metadata,
             patientName: metadata.patientName || "Demo Patient",
+            patientId: metadata.patientId || findPatientProfileByName(metadata.patientName || "")?.id || slugify(metadata.patientName || "Demo Patient"),
           };
         }),
       );
@@ -11148,7 +16142,13 @@ async function deleteStoredRecordingById(id) {
     const { videoBlob, audioBlob, ...recordingMetadata } = storedRecording;
     return recordingMetadata;
   })() : allRecordings.find((recording) => recording.id === id);
+  const recordingLabel = metadata?.uebung || "diese Aufnahme";
+  const confirmed = window.confirm(
+    `${recordingLabel} wirklich lÃ¶schen?\n\nDie Aufnahme wird lokal auf diesem GerÃ¤t und zusÃ¤tzlich in Firebase gelÃ¶scht.`,
+  );
+  if (!confirmed) return;
 
+  firebaseState.textContent = "Aufnahme wird lokal und in Firebase gelÃ¶scht...";
   await deleteRecording(id);
 
   if (currentMetadata?.id === id) {
@@ -11164,20 +16164,28 @@ async function deleteStoredRecordingById(id) {
   }
 
   await refreshRecordings();
-  message.textContent = "Aufnahme gelöscht.";
+  message.textContent = "Aufnahme lokal gelÃ¶scht.";
 
   if (metadata) {
-    deleteCloudRecording(metadata).catch(() => {
-      firebaseState.textContent = "Lokal gelöscht. Firebase-Löschen fehlgeschlagen.";
-    });
+    try {
+      await deleteCloudRecording(metadata);
+      firebaseState.textContent = "Aufnahme lokal und in Firebase gelÃ¶scht.";
+      message.textContent = "Aufnahme vollstÃ¤ndig gelÃ¶scht.";
+    } catch (error) {
+      console.warn("Firebase-LÃ¶schen fehlgeschlagen", error);
+      firebaseState.textContent = "Aufnahme lokal gelÃ¶scht. Firebase-LÃ¶schen fehlgeschlagen.";
+    }
+  } else {
+    firebaseState.textContent = "Aufnahme lokal gelÃ¶scht.";
   }
 }
 
 async function loadLatestRecording() {
   await refreshRecordings();
   const selectedPatient = getCurrentPatientName();
+  const selectedPatientId = getCurrentPatientId();
   const latest = allRecordings
-    .filter((recording) => recording.patientName === selectedPatient)
+    .filter((recording) => isRecordingForPatient(recording, selectedPatientId, selectedPatient))
     .sort((a, b) => b.datum.localeCompare(a.datum))[0];
 
   if (latest) {
@@ -11193,5 +16201,6 @@ function transactionDone(transaction) {
     transaction.onabort = () => reject(transaction.error);
   });
 }
+
 
 

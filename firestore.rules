@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    match /patientProfiles/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /settings/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /editorExercises/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /recordings/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /patientEvaluationResets/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /dailyPlans/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /courses/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /courseSessions/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /courseAssignments/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /relaxMusic/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /mediaLibrary/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

@@ -45,25 +45,15 @@ const assignCourseToPatientButton = document.querySelector("#assignCourseToPatie
 const patientCourseAssignState = document.querySelector("#patientCourseAssignState");
 const patientAssignedCourseList = document.querySelector("#patientAssignedCourseList");
 const newDailyPlanButton = document.querySelector("#newDailyPlanButton");
-const openDailyPlanButton = document.querySelector("#openDailyPlanButton");
-const openDailyPlanControl = document.querySelector("#openDailyPlanControl");
-const openDailyPlanSelect = document.querySelector("#openDailyPlanSelect");
 const dailyPlanName = document.querySelector("#dailyPlanName");
 const dailyPlanDescription = document.querySelector("#dailyPlanDescription");
-const dailyPlanIntroImageSelect = document.querySelector("#dailyPlanIntroImageSelect");
 const dailyPlanVoiceSelect = document.querySelector("#dailyPlanVoiceSelect");
 const dailyPlanVoiceHint = document.querySelector("#dailyPlanVoiceHint");
 const dailyPlanIntroAudioButton = document.querySelector("#dailyPlanIntroAudioButton");
 const dailyPlanIntroPreview = document.querySelector("#dailyPlanIntroPreview");
 const dailyPlanExerciseFilter = document.querySelector("#dailyPlanExerciseFilter");
 const dailyPlanExerciseSearch = document.querySelector("#dailyPlanExerciseSearch");
-const dailyPlanMediaFilter = document.querySelector("#dailyPlanMediaFilter");
-const dailyPlanTopicFilter = document.querySelector("#dailyPlanTopicFilter");
 const dailyPlanExerciseLibrary = document.querySelector("#dailyPlanExerciseLibrary");
-const openDailyPlanLibraryButton = document.querySelector("#openDailyPlanLibraryButton");
-const closeDailyPlanLibraryButton = document.querySelector("#closeDailyPlanLibraryButton");
-const dailyPlanWorkspace = document.querySelector(".daily-plan-workspace");
-const dailyPlanLibrary = document.querySelector(".daily-plan-library");
 const dailyPlanSelectedExercises = document.querySelector("#dailyPlanSelectedExercises");
 const dailyPlanSelectionSummary = document.querySelector("#dailyPlanSelectionSummary");
 const dailyPlanLibrarySummary = document.querySelector("#dailyPlanLibrarySummary");
@@ -102,16 +92,8 @@ const mediaLibraryDescription = document.querySelector("#mediaLibraryDescription
 const mediaLibraryDuration = document.querySelector("#mediaLibraryDuration");
 const mediaLibraryFile = document.querySelector("#mediaLibraryFile");
 const saveMediaLibraryButton = document.querySelector("#saveMediaLibraryButton");
-const backfillMediaLibraryThumbnailsButton = document.querySelector("#backfillMediaLibraryThumbnailsButton");
 const mediaLibraryState = document.querySelector("#mediaLibraryState");
 const mediaLibraryList = document.querySelector("#mediaLibraryList");
-const mediaLibraryPlayer = document.querySelector("#mediaLibraryPlayer");
-const closeMediaLibraryPlayerOverlayButton = document.querySelector("#closeMediaLibraryPlayerOverlayButton");
-const mediaLibraryPlayerTitle = document.querySelector("#mediaLibraryPlayerTitle");
-const mediaLibraryPlayerEmpty = document.querySelector("#mediaLibraryPlayerEmpty");
-const mediaLibraryPlayerVideo = document.querySelector("#mediaLibraryPlayerVideo");
-const mediaLibraryPlayerAudio = document.querySelector("#mediaLibraryPlayerAudio");
-const mediaLibraryPlayerImage = document.querySelector("#mediaLibraryPlayerImage");
 const myCourseList = document.querySelector("#myCourseList");
 const coursePatientSwitcher = document.querySelector("#coursePatientSwitcher");
 const coursePlayer = document.querySelector("#coursePlayer");
@@ -175,11 +157,6 @@ const applyEditorAiExercisesButton = document.querySelector("#applyEditorAiExerc
 const resetEditorAiButton = document.querySelector("#resetEditorAiButton");
 const editorAiState = document.querySelector("#editorAiState");
 const closeEditorAiButton = document.querySelector("#closeEditorAiButton");
-const courseTodayOverlay = document.querySelector("#courseTodayOverlay");
-const closeCourseTodayOverlayButton = document.querySelector("#closeCourseTodayOverlayButton");
-const courseTodayOverlayTitle = document.querySelector("#courseTodayOverlayTitle");
-const courseTodayOverlayMeta = document.querySelector("#courseTodayOverlayMeta");
-const courseTodayOverlayList = document.querySelector("#courseTodayOverlayList");
 const recordingTime = document.querySelector("#recordingTime");
 const volumeValue = document.querySelector("#volumeValue");
 const frequencyValue = document.querySelector("#frequencyValue");
@@ -198,22 +175,6 @@ const liveWaveform = document.querySelector("#liveWaveform");
 const frequencyTimeline = document.querySelector("#frequencyTimeline");
 const countdownOverlay = document.querySelector("#countdownOverlay");
 const karaokeOverlay = document.querySelector("#karaokeOverlay");
-const breathingOverlay = document.querySelector("#breathingOverlay");
-const breathingBall = document.querySelector("#breathingBall");
-const breathingPhase = document.querySelector("#breathingPhase");
-const breathingRound = document.querySelector("#breathingRound");
-const breathingCountdown = document.querySelector("#breathingCountdown");
-const breathingStopButton = document.querySelector("#breathingStopButton");
-const breathingSettings = document.querySelector("#breathingSettings");
-const breathingInhale = document.querySelector("#breathingInhale");
-const breathingHold = document.querySelector("#breathingHold");
-const breathingExhale = document.querySelector("#breathingExhale");
-const breathingPause = document.querySelector("#breathingPause");
-const breathingRepeats = document.querySelector("#breathingRepeats");
-const breathingUseVoice = document.querySelector("#breathingUseVoice");
-const breathingExtraSteps = document.querySelector("#breathingExtraSteps");
-const addBreathingStepButton = document.querySelector("#addBreathingStepButton");
-const editorTimingOptions = document.querySelector("#editorTimingOptions");
 const playbackWaveform = document.querySelector("#playbackWaveform");
 const recordButton = document.querySelector("#recordButton");
 const message = document.querySelector("#message");
@@ -385,7 +346,6 @@ const COURSE_SESSIONS_KEY = "logosound-course-sessions";
 const COURSE_ASSIGNMENTS_KEY = "logosound-course-assignments";
 const RELAX_MUSIC_KEY = "logosound-relax-music";
 const MEDIA_LIBRARY_KEY = "logosound-media-library";
-const MEDIA_LIBRARY_TOPICS = ["Kein Thema", "Gesicht und Mimik", "Stimme", "Artikulation", "Atmung", "Kiefer und Lippen", "Zunge", "Mobilisation", "Koordination", "Balance", "Beintraining", "Gymnastik", "Entspannung"];
 const EDITOR_DRAFT_KEY = "logosound-editor-draft";
 const SAVED_EDITOR_EXERCISE_KEY = "logosound-saved-editor-exercise";
 const SAVED_EDITOR_EXERCISES_KEY = "logosound-saved-editor-exercises";
@@ -449,13 +409,13 @@ const EDITOR_SPEEDS = {
 };
 const EXERCISE_INSTRUCTIONS = {
   "Vokal A halten":
-    "Bitte halten Sie den Vokal A gleichmäßig. Achten Sie auf eine ruhige Stimme und eine stabile Lautstärke.",
+    "Bitte halten Sie den Vokal A gleichmÃ¤ÃŸig. Achten Sie auf eine ruhige Stimme und eine stabile LautstÃ¤rke.",
   "A E I O U":
     "Bitte sprechen Sie die Vokale nacheinander deutlich aus. A, E, I, O, U. Achten Sie auf klare Mundbewegungen.",
   "Pa Ta Ka":
-    "Bitte sprechen Sie nur die Einzelsilben Pa, Ta und Ka. Wiederholen Sie diese zehnmal mit kurzer Pause zwischen den Durchgängen.",
+    "Bitte sprechen Sie nur die Einzelsilben Pa, Ta und Ka. Wiederholen Sie diese zehnmal mit kurzer Pause zwischen den DurchgÃ¤ngen.",
   "Text lesen":
-    "Bitte lesen Sie den eingeblendeten Text ruhig und deutlich vor. Achten Sie auf gleichmäßiges Tempo, klare Wörter und sichtbare Mundbewegungen.",
+    "Bitte lesen Sie den eingeblendeten Text ruhig und deutlich vor. Achten Sie auf gleichmÃ¤ÃŸiges Tempo, klare WÃ¶rter und sichtbare Mundbewegungen.",
 };
 const STANDARD_EDITOR_EXERCISES = [
   {
@@ -490,7 +450,7 @@ const STANDARD_EDITOR_EXERCISES = [
     name: "Text lesen",
     mode: "text",
     content:
-      "Heute üben wir eine ruhige Stimme. Ich lese langsam, spreche deutlich und achte darauf, dass jeder Satz klar klingt und mein Mund beim Sprechen locker bleibt und die Lippen gut arbeiten.",
+      "Heute Ã¼ben wir eine ruhige Stimme. Ich lese langsam, spreche deutlich und achte darauf, dass jeder Satz klar klingt und mein Mund beim Sprechen locker bleibt und die Lippen gut arbeiten.",
     repeats: 1,
     speed: 4,
     voiceInstruction: EXERCISE_INSTRUCTIONS["Text lesen"],
@@ -587,10 +547,6 @@ let lastStatisticsPlaybackSyncAt = 0;
 let statisticsResizeState = null;
 let lastAmplitudeAt = 0;
 let isRecording = false;
-let breathingSessionId = 0;
-let breathingCountdownTimerId = null;
-let breathingBallAnimation = null;
-let isBreathingExerciseRunning = false;
 let isCalibrating = false;
 let calibrationReturnView = "record";
 let allRecordings = [];
@@ -648,10 +604,6 @@ let courseSessions = [];
 let courseAssignments = [];
 let relaxMusicItems = [];
 let mediaLibraryItems = [];
-let selectedMediaLibraryItemId = "";
-const pendingMediaThumbnailIds = new Set();
-let expandedMyCourseAssignmentId = "";
-let editingMediaLibraryItemId = "";
 let editingDailyPlanId = "";
 let editingCourseId = "";
 let dailyPlanDraftExercises = [];
@@ -677,7 +629,6 @@ let firebaseAuthReadyPromise = null;
 let patientProfileSaveTimerId = 0;
 let isApplyingPatientProfile = false;
 let editorDialogTurnsState = [];
-let breathingExtraStepsState = [];
 let activeEditorExerciseName = "";
 let editorSavedListExpanded = false;
 let editingEditorSentenceIndex = -1;
@@ -715,13 +666,7 @@ applyTextOverlayVisibility();
 setActiveView("record");
 hideSplashAfterStartup();
 
-init().catch((error) => {
-  console.error("LogoSound konnte nicht vollständig starten", error);
-  recordButton.disabled = false;
-  permissionState.textContent = "Bereit";
-  message.textContent = "Ein Bereich konnte nicht geladen werden. Die App ist trotzdem bereit.";
-  hideSplashAfterStartup();
-});
+init();
 
 navButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -889,25 +834,19 @@ async function init() {
   updateEditorForm();
   setupKaraokeText();
   permissionState.textContent = "Bereit";
-  message.textContent = "Kamera und Mikrofon vor der ersten Übung aktivieren.";
+  message.textContent = "Kamera und Mikrofon vor der ersten Ãœbung aktivieren.";
   recordButton.disabled = false;
   loadCloudEditorExercises().then(() => {
     updateEditorForm();
     setupKaraokeText();
   });
-  const cloudTasks = [
-    loadCloudElevenLabsSettings,
-    loadCloudChatGptSettings,
-    loadCloudEqualizerSettings,
-    loadCloudNoiseCalibration,
-    loadCloudPatientProfiles,
-    loadCourseModuleData,
-    refreshRecordings,
-  ];
-  const results = await Promise.allSettled(cloudTasks.map((task) => task()));
-  results.forEach((result) => {
-    if (result.status === "rejected") console.warn("Cloud-Daten konnten nicht geladen werden", result.reason);
-  });
+  await loadCloudElevenLabsSettings();
+  await loadCloudChatGptSettings();
+  await loadCloudEqualizerSettings();
+  await loadCloudNoiseCalibration();
+  await loadCloudPatientProfiles();
+  await loadCourseModuleData();
+  await refreshRecordings();
   schedulePatientProfileRefresh(1200);
 }
 
@@ -952,11 +891,6 @@ recordButton.addEventListener("click", async (event) => {
   }
 
   stopExercisePreview();
-  const selectedBreathingExercise = getActiveRecordingExercise();
-  if (selectedBreathingExercise?.mode === "breathing") {
-    await startBreathingExercise(selectedBreathingExercise);
-    return;
-  }
   await unlockInstructionAudio();
   recordButton.disabled = true;
   recordButton.textContent = "Start wird vorbereitet";
@@ -987,10 +921,6 @@ previewExerciseButton?.addEventListener("click", async () => {
 
 previewStopButton?.addEventListener("click", () => {
   stopExercisePreview();
-});
-
-breathingStopButton?.addEventListener("click", () => {
-  stopBreathingExercise("Atemübung beendet.");
 });
 
 savePatientButton.addEventListener("click", async () => {
@@ -1029,20 +959,7 @@ userRoleSelect?.addEventListener("change", () => {
 newCourseButton?.addEventListener("click", () => resetCourseEditor());
 editCourseButton?.addEventListener("click", () => openCourseEditorForEditing());
 courseNameSelect?.addEventListener("change", () => openCourseEditorForEditing(courseNameSelect.value));
-newDailyPlanButton?.addEventListener("click", () => {
-  setDailyPlanEditorMode("new");
-  resetDailyPlanEditor();
-});
-openDailyPlanButton?.addEventListener("click", () => {
-  setDailyPlanEditorMode("open");
-});
-openDailyPlanSelect?.addEventListener("change", () => {
-  const plan = dailyPlans.find((item) => item.id === openDailyPlanSelect.value);
-  if (!plan) return;
-  resetDailyPlanEditor(plan);
-  openDailyPlanControl?.classList.add("is-hidden");
-  openDailyPlanButton?.classList.remove("is-active");
-});
+newDailyPlanButton?.addEventListener("click", () => resetDailyPlanEditor());
 dailyPlanDescription?.addEventListener("input", () => invalidateDailyPlanIntroAudio());
 dailyPlanVoiceSelect?.addEventListener("change", () => {
   invalidateDailyPlanIntroAudio();
@@ -1053,10 +970,6 @@ dailyPlanIntroAudioButton?.addEventListener("click", async () => {
 });
 dailyPlanExerciseFilter?.addEventListener("change", () => renderDailyPlanExerciseLibrary());
 dailyPlanExerciseSearch?.addEventListener("input", () => renderDailyPlanExerciseLibrary());
-dailyPlanMediaFilter?.addEventListener("change", () => renderDailyPlanExerciseLibrary());
-dailyPlanTopicFilter?.addEventListener("change", () => renderDailyPlanExerciseLibrary());
-openDailyPlanLibraryButton?.addEventListener("click", () => setDailyPlanLibraryOpen(true));
-closeDailyPlanLibraryButton?.addEventListener("click", () => setDailyPlanLibraryOpen(false));
 saveDailyPlanButton?.addEventListener("click", async () => saveDailyPlanFromForm());
 saveCourseDraftButton?.addEventListener("click", async () => saveCourseFromForm("active"));
 musicDefaultVolume?.addEventListener("input", () => {
@@ -1071,16 +984,15 @@ musicFile?.addEventListener("change", () => {
 });
 saveMusicButton?.addEventListener("click", async () => saveRelaxMusicFromForm());
 saveMediaLibraryButton?.addEventListener("click", async () => saveMediaLibraryFromForm());
-backfillMediaLibraryThumbnailsButton?.addEventListener("click", async () => backfillMediaLibraryThumbnails());
-closeMediaLibraryPlayerOverlayButton?.addEventListener("click", closeMediaLibraryPlayerOverlay);
 mediaLibraryFile?.addEventListener("change", () => {
   const file = mediaLibraryFile.files?.[0];
   if (!file) {
-    setMediaLibraryState("Audio, Video oder Bild auswählen.");
+    setMediaLibraryState("Audio, Video oder Bild auswÃ¤hlen.");
     return;
   }
   const mediaType = getMediaFileType(file.type, file.name);
-  setMediaLibraryState(`${file.name} ausgewählt · ${mediaType === "audio" ? "Sound" : mediaType === "video" ? "Video" : "Bild"}`, "success");
+  setMediaLibraryState(`${file.name} ausgewÃ¤hlt Â· ${mediaType === "audio" ? "Sound" : mediaType === "video" ? "Video" : "Bild"}`, "success");
+  if (!mediaLibraryTitle?.value.trim()) mediaLibraryTitle.value = file.name.replace(/\.[^.]+$/, "");
 });
 
 exerciseName.addEventListener("change", () => {
@@ -1088,7 +1000,7 @@ exerciseName.addEventListener("change", () => {
   loadRecordingKaraokeSpeedForCurrentExercise();
   setupKaraokeText();
   renderRecordingExerciseShortcuts();
-  message.textContent = `Übung ausgewählt: ${getExerciseLabel()}`;
+  message.textContent = `Ãœbung ausgewÃ¤hlt: ${getExerciseLabel()}`;
 });
 
 recordingModeFilter?.addEventListener("change", () => {
@@ -1101,7 +1013,7 @@ recordingModeFilter?.addEventListener("change", () => {
     : "Alle Funktionsarten sichtbar.";
 });
 
-[editorExerciseName, editorMode, editorPatientScope, editorContent, editorVoiceInstruction, editorUseRepeats, editorRepeats, editorSpeed, editorVoiceSelect, breathingInhale, breathingHold, breathingExhale, breathingPause, breathingRepeats, breathingUseVoice].forEach((input) => {
+[editorExerciseName, editorMode, editorPatientScope, editorContent, editorVoiceInstruction, editorUseRepeats, editorRepeats, editorSpeed, editorVoiceSelect].forEach((input) => {
   input?.addEventListener("input", () => {
     if (input === editorVoiceSelect) handleEditorVoiceSelectionChange();
     if (input === editorContent && editorMode.value === "dialog") {
@@ -1112,13 +1024,6 @@ recordingModeFilter?.addEventListener("change", () => {
     if (input === editorContent) renderEditorSentenceList();
     if (exerciseName.value === "custom-editor") setupKaraokeText();
   });
-});
-
-addBreathingStepButton?.addEventListener("click", () => {
-  breathingExtraStepsState.push(normalizeBreathingExtraStep({ key: "hold", seconds: 2 }, breathingExtraStepsState.length));
-  renderBreathingExtraSteps();
-  saveEditorDraft();
-  updateEditorForm();
 });
 
 editorVoiceSelect?.addEventListener("change", () => {
@@ -1193,13 +1098,6 @@ closeEditorAiButton?.addEventListener("click", () => {
   closeEditorAiModal();
 });
 
-closeCourseTodayOverlayButton?.addEventListener("click", () => {
-  closeCourseTodayOverlay();
-});
-
-courseTodayOverlay?.addEventListener("click", (event) => {
-  if (event.target === courseTodayOverlay) closeCourseTodayOverlay();
-});
 editorAiModal?.addEventListener("click", (event) => {
   if (event.target === editorAiModal) closeEditorAiModal();
 });
@@ -1561,7 +1459,7 @@ playbackSeek.addEventListener("input", () => {
 retakeButton?.addEventListener("click", () => {
   recordingPlayer.pause();
   resetRecordingUi();
-  message.textContent = "Bereit für eine neue Aufnahme.";
+  message.textContent = "Bereit fÃ¼r eine neue Aufnahme.";
 });
 
 deleteButton?.addEventListener("click", async () => {
@@ -1570,7 +1468,7 @@ deleteButton?.addEventListener("click", async () => {
     return;
   }
   clearCurrentRecording();
-  message.textContent = "Aufnahme gelöscht.";
+  message.textContent = "Aufnahme gelÃ¶scht.";
 });
 
 downloadAudioButton?.addEventListener("click", () => {
@@ -1613,244 +1511,6 @@ courseResultNextButton?.addEventListener("click", () => {
   openNextCourseExercise(nextExercise);
 });
 
-function clampBreathingSeconds(value, fallback, minimum = 0) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return fallback;
-  return Math.max(minimum, Math.min(30, Math.round(number)));
-}
-
-const BREATHING_PHASE_OPTIONS = [
-  { key: "inhale", label: "Einatmen", minimum: 1 },
-  { key: "hold", label: "Halten", minimum: 0 },
-  { key: "exhale", label: "Ausatmen", minimum: 1 },
-  { key: "pause", label: "Pause", minimum: 0 },
-];
-
-function normalizeBreathingExtraStep(step = {}, index = 0) {
-  const option = BREATHING_PHASE_OPTIONS.find((item) => item.key === step.key) || BREATHING_PHASE_OPTIONS[1];
-  return {
-    id: String(step.id || `breath-step-${Date.now()}-${index}`),
-    key: option.key,
-    seconds: clampBreathingSeconds(step.seconds, 2, option.minimum),
-  };
-}
-
-function getBreathingExtraSteps(exercise = null) {
-  const source = exercise?.breathing || exercise?.breathingSettings || {};
-  const steps = Array.isArray(source.extraSteps)
-    ? source.extraSteps
-    : (exercise ? [] : breathingExtraStepsState);
-  return steps.map((step, index) => normalizeBreathingExtraStep(step, index));
-}
-
-function renderBreathingExtraSteps() {
-  if (!breathingExtraSteps) return;
-  breathingExtraSteps.innerHTML = "";
-  breathingExtraStepsState.forEach((step, index) => {
-    const row = document.createElement("div");
-    row.className = "breathing-extra-row";
-    const phase = document.createElement("select");
-    phase.setAttribute("aria-label", `Atemphase ${index + 1}`);
-    BREATHING_PHASE_OPTIONS.forEach((option) => {
-      const item = document.createElement("option");
-      item.value = option.key;
-      item.textContent = option.label;
-      item.selected = option.key === step.key;
-      phase.append(item);
-    });
-    const seconds = document.createElement("input");
-    seconds.type = "number";
-    seconds.min = String(BREATHING_PHASE_OPTIONS.find((item) => item.key === step.key)?.minimum || 0);
-    seconds.max = "30";
-    seconds.inputMode = "numeric";
-    seconds.value = String(step.seconds);
-    seconds.setAttribute("aria-label", `Dauer fuer Atemschritt ${index + 1}`);
-    const suffix = document.createElement("span");
-    suffix.textContent = "Sek.";
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "compact-action breathing-extra-remove";
-    remove.textContent = "x";
-    remove.setAttribute("aria-label", `Atemschritt ${index + 1} entfernen`);
-    phase.addEventListener("change", () => {
-      const option = BREATHING_PHASE_OPTIONS.find((item) => item.key === phase.value) || BREATHING_PHASE_OPTIONS[1];
-      breathingExtraStepsState[index] = normalizeBreathingExtraStep({ ...step, key: option.key, seconds: Math.max(option.minimum, Number(seconds.value) || 0) }, index);
-      renderBreathingExtraSteps();
-      saveEditorDraft();
-      updateEditorForm();
-    });
-    seconds.addEventListener("input", () => {
-      breathingExtraStepsState[index] = normalizeBreathingExtraStep({ ...step, seconds: seconds.value }, index);
-      saveEditorDraft();
-      updateEditorForm();
-    });
-    remove.addEventListener("click", () => {
-      breathingExtraStepsState.splice(index, 1);
-      renderBreathingExtraSteps();
-      saveEditorDraft();
-      updateEditorForm();
-    });
-    row.append(phase, seconds, suffix, remove);
-    breathingExtraSteps.append(row);
-  });
-  breathingExtraSteps.classList.toggle("is-empty", breathingExtraStepsState.length === 0);
-}
-
-function getBreathingSettings(exercise = null) {
-  const source = exercise?.breathing || exercise?.breathingSettings || {};
-  return {
-    inhale: clampBreathingSeconds(source.inhale ?? breathingInhale?.value, 4, 1),
-    hold: clampBreathingSeconds(source.hold ?? breathingHold?.value, 2),
-    exhale: clampBreathingSeconds(source.exhale ?? breathingExhale?.value, 6, 1),
-    pause: clampBreathingSeconds(source.pause ?? breathingPause?.value, 2),
-    repeats: Math.max(1, Math.min(30, Math.round(Number(source.repeats ?? breathingRepeats?.value) || 5))),
-    useVoice: source.useVoice ?? Boolean(breathingUseVoice?.checked),
-    extraSteps: getBreathingExtraSteps(exercise),
-  };
-}
-
-function getBreathingExerciseDuration(exercise) {
-  const settings = getBreathingSettings(exercise);
-  const extraSeconds = settings.extraSteps.reduce((total, step) => total + step.seconds, 0);
-  return (settings.inhale + settings.hold + settings.exhale + settings.pause + extraSeconds) * settings.repeats;
-}
-
-function updateBreathingOverlay(phase, round, settings, remaining, startAnimation = true) {
-  if (!breathingOverlay) return;
-  breathingOverlay.classList.remove("is-hidden");
-  breathingOverlay.dataset.phase = phase.key;
-  if (startAnimation && breathingBall) {
-    breathingBallAnimation?.cancel();
-    const fromScale = phase.key === "inhale" ? 0.64 : 1;
-    const toScale = phase.key === "inhale" ? 1 : (phase.key === "exhale" ? 0.64 : fromScale);
-    breathingBall.style.transform = `scale(${fromScale})`;
-    breathingBallAnimation = breathingBall.animate(
-      [{ transform: `scale(${fromScale})` }, { transform: `scale(${toScale})` }],
-      { duration: Math.max(400, phase.seconds * 1000), easing: "ease-in-out", fill: "forwards" },
-    );
-    breathingBallAnimation.onfinish = () => {
-      breathingBall.style.transform = `scale(${toScale})`;
-      breathingBallAnimation = null;
-    };
-  }
-  if (breathingPhase) breathingPhase.textContent = phase.label;
-  if (breathingRound) breathingRound.textContent = `Runde ${round} von ${settings.repeats}`;
-  if (breathingCountdown) breathingCountdown.textContent = `${Math.max(0, remaining)} s`;
-}
-
-function waitForBreathingPhase(seconds, sessionId, onTick) {
-  return new Promise((resolve) => {
-    const endAt = Date.now() + seconds * 1000;
-    const tick = () => {
-      if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) {
-        window.clearInterval(breathingCountdownTimerId);
-        breathingCountdownTimerId = null;
-        resolve(false);
-        return;
-      }
-      const remaining = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
-      onTick(remaining);
-      if (remaining <= 0) {
-        window.clearInterval(breathingCountdownTimerId);
-        breathingCountdownTimerId = null;
-        resolve(true);
-      }
-    };
-    tick();
-    breathingCountdownTimerId = window.setInterval(tick, 120);
-  });
-}
-
-async function completeCourseBreathingExercise(exercise) {
-  if (!activeCourseRun || getActiveCourseExercise()?.exerciseId !== exercise?.name && getActiveCourseExercise()?.exerciseId !== exercise?.exerciseId) return;
-  const session = activeCourseRun.session;
-  if (!session) return;
-  session.completedExerciseIds = Array.isArray(session.completedExerciseIds) ? session.completedExerciseIds : [];
-  const courseExercise = getActiveCourseExercise();
-  if (courseExercise?.exerciseId && !session.completedExerciseIds.includes(courseExercise.exerciseId)) {
-    session.completedExerciseIds.push(courseExercise.exerciseId);
-  }
-  activeCourseRun.index += 1;
-  session.currentExerciseIndex = activeCourseRun.index;
-  session.updatedAt = new Date().toISOString();
-  session.status = activeCourseRun.index >= (activeCourseRun.plan?.exercises?.length || 0)
-    ? "completed"
-    : (activeCourseRun.playlistMode ? "in_progress" : "paused");
-  courseSessions = mergeById(courseSessions, [session]);
-  persistCourseModuleData();
-  await saveCourseSessionToCloud(session).catch(() => {});
-  renderCourseViews();
-  if (session.status !== "completed" && activeCourseRun.playlistMode) {
-    window.setTimeout(() => continueCoursePlaylist(), 350);
-  }
-}
-
-function stopBreathingExercise(statusText = "Atemübung beendet.") {
-  breathingSessionId += 1;
-  isBreathingExerciseRunning = false;
-  window.clearInterval(breathingCountdownTimerId);
-  breathingCountdownTimerId = null;
-  breathingBallAnimation?.cancel();
-  breathingBallAnimation = null;
-  breathingOverlay?.classList.add("is-hidden");
-  document.body.classList.remove("breathing-exercise-active");
-  recordButton.disabled = false;
-  recordButton.textContent = "Übung starten";
-  if (isPreviewingExercise) {
-    isPreviewingExercise = false;
-    setPreviewSessionState(false);
-    previewExerciseButton.disabled = false;
-    previewExerciseButton.textContent = "Vorführung";
-  }
-  message.textContent = statusText;
-}
-
-async function startBreathingExercise(exercise, options = {}) {
-  if (!exercise || isBreathingExerciseRunning) return;
-  clearCourseAutoAdvanceTimer();
-  stopInstructionAudio();
-  const settings = getBreathingSettings(exercise);
-  const sessionId = ++breathingSessionId;
-  isBreathingExerciseRunning = true;
-  document.body.classList.add("breathing-exercise-active");
-  recordButton.disabled = true;
-  recordButton.textContent = options.preview ? "Vorführung läuft" : "Atemübung läuft";
-  if (options.preview) {
-    isPreviewingExercise = true;
-    setPreviewSessionState(true, "Vorführung aktiv");
-  }
-  const phases = [
-    { key: "inhale", label: "Einatmen", seconds: settings.inhale },
-    { key: "hold", label: "Halten", seconds: settings.hold },
-    { key: "exhale", label: "Ausatmen", seconds: settings.exhale },
-    { key: "pause", label: "Pause", seconds: settings.pause },
-    ...settings.extraSteps.map((step) => ({
-      key: step.key,
-      label: BREATHING_PHASE_OPTIONS.find((item) => item.key === step.key)?.label || "Pause",
-      seconds: step.seconds,
-    })),
-  ].filter((phase) => phase.seconds > 0);
-  try {
-    for (let round = 1; round <= settings.repeats; round += 1) {
-      for (const phase of phases) {
-        if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) return;
-        updateBreathingOverlay(phase, round, settings, phase.seconds);
-        if (settings.useVoice) {
-          Promise.resolve(speakWithBrowserVoice(phase.key === "exhale" ? "Langsam ausatmen" : phase.label)).catch(() => {});
-        }
-        const completed = await waitForBreathingPhase(phase.seconds, sessionId, (remaining) => {
-          if (sessionId === breathingSessionId) updateBreathingOverlay(phase, round, settings, remaining, false);
-        });
-        if (!completed) return;
-      }
-    }
-    if (sessionId !== breathingSessionId) return;
-    stopBreathingExercise("Sehr gut. Die Atemübung ist beendet.");
-    if (!options.preview) await completeCourseBreathingExercise(exercise);
-  } catch (error) {
-    stopBreathingExercise("Atemübung wurde unterbrochen.");
-  }
-}
 async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
   try {
     recordButton.disabled = true;
@@ -1859,7 +1519,7 @@ async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
       recordButton.textContent = "Dialog startet";
       message.textContent = "Dialog startet direkt mit der gespeicherten ElevenLabs-Zeile.";
     } else {
-      recordButton.textContent = "Instruktion läuft";
+      recordButton.textContent = "Instruktion lÃ¤uft";
       await speakExerciseInstruction();
     }
     instructionPlaybackActive = false;
@@ -1883,7 +1543,7 @@ async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
     setExerciseVisualsVisible(false);
     countdownOverlay.classList.add("is-hidden");
     recordButton.disabled = false;
-    recordButton.textContent = "Übung starten";
+    recordButton.textContent = "Ãœbung starten";
     message.textContent = "Start wurde unterbrochen. Bitte erneut versuchen.";
   }
 }
@@ -1894,25 +1554,25 @@ async function speakExerciseInstruction() {
   const instruction =
     getExerciseInstruction() ||
     EXERCISE_INSTRUCTIONS[exerciseName.value] ||
-    `Bitte lesen Sie die eingeblendeten Wörter deutlich und ruhig vor.`;
+    `Bitte lesen Sie die eingeblendeten WÃ¶rter deutlich und ruhig vor.`;
 
   const editorAudio = await getCurrentInstructionAudio(activeExercise, instruction);
 
   if (editorAudio) {
-    message.textContent = "Voice-Begleitung läuft.";
+    message.textContent = "Voice-Begleitung lÃ¤uft.";
     const played = await playVoiceAudio(editorAudio);
     if (played) return;
   }
 
   const generatedAudio = await createTemporaryVoiceAudio(instruction);
   if (generatedAudio) {
-    message.textContent = "ElevenLabs-Instruktion läuft.";
+    message.textContent = "ElevenLabs-Instruktion lÃ¤uft.";
     const played = await playVoiceAudio(generatedAudio);
     URL.revokeObjectURL(generatedAudio);
     if (played) return;
   }
 
-  message.textContent = "ElevenLabs stumm, Browser-Stimme läuft.";
+  message.textContent = "ElevenLabs stumm, Browser-Stimme lÃ¤uft.";
   return speakWithBrowserVoice(instruction);
 }
 
@@ -1998,11 +1658,11 @@ async function createStoredVoiceAudio(text, exerciseLabel, requestSettings = get
   const contentType = response.headers.get("content-type") || "";
   if (!response.ok || !contentType.includes("application/json")) {
     const details = await response.text().catch(() => "");
-    throw new Error(`Vorführung-Audio Fehler ${response.status}: ${details.slice(0, 80) || contentType || "keine Antwort"}`);
+    throw new Error(`VorfÃ¼hrung-Audio Fehler ${response.status}: ${details.slice(0, 80) || contentType || "keine Antwort"}`);
   }
 
   const payload = await response.json();
-  if (!payload.downloadUrl) throw new Error("Vorführung-Audio ohne URL.");
+  if (!payload.downloadUrl) throw new Error("VorfÃ¼hrung-Audio ohne URL.");
   return {
     url: getGlobalVoiceAudioUrl(payload.downloadUrl, payload.path),
     path: payload.path || "",
@@ -2015,12 +1675,6 @@ async function createStoredVoiceAudio(text, exerciseLabel, requestSettings = get
 
 async function startExercisePreview() {
   if (isRecording || mediaRecorder?.state === "recording") return;
-  const breathingExercise = getActiveRecordingExercise();
-  if (breathingExercise?.mode === "breathing") {
-    await unlockInstructionAudio();
-    await startBreathingExercise(breathingExercise, { preview: true });
-    return;
-  }
 
   await unlockInstructionAudio();
   if (!hasActiveMediaStream()) {
@@ -2030,15 +1684,15 @@ async function startExercisePreview() {
   const activeExercise = getActiveRecordingExercise();
   const previewText = getExercisePreviewText();
   if (!previewText) {
-    message.textContent = "Keine Vorführung möglich: Übung hat keinen Text.";
+    message.textContent = "Keine VorfÃ¼hrung mÃ¶glich: Ãœbung hat keinen Text.";
     return;
   }
 
   isPreviewingExercise = true;
   previewSegmentTimings = buildPreviewSegmentTimings(activeExercise, previewText);
-  setPreviewSessionState(true, "Vorführung aktiv");
+  setPreviewSessionState(true, "VorfÃ¼hrung aktiv");
   previewExerciseButton.disabled = true;
-  previewExerciseButton.textContent = "Vorführung lädt";
+  previewExerciseButton.textContent = "VorfÃ¼hrung lÃ¤dt";
   recordButton.disabled = true;
 
   try {
@@ -2049,7 +1703,7 @@ async function startExercisePreview() {
   } finally {
     if (isPreviewingExercise && previewExerciseButton) {
       previewExerciseButton.disabled = false;
-      previewExerciseButton.textContent = "Vorführung stoppen";
+      previewExerciseButton.textContent = "VorfÃ¼hrung stoppen";
     }
   }
 }
@@ -2237,8 +1891,8 @@ async function prepareDemoAudioForExercise(exercise, requestSettings) {
       return { exercise, changed: false };
     }
 
-    editorVoiceState.textContent = "Vorführ-Audio wird erstellt und gespeichert...";
-    const storedDemo = await createStoredVoiceAudio(previewText, `${exercise.name} Vorführung`, requestSettings);
+    editorVoiceState.textContent = "VorfÃ¼hr-Audio wird erstellt und gespeichert...";
+    const storedDemo = await createStoredVoiceAudio(previewText, `${exercise.name} VorfÃ¼hrung`, requestSettings);
     return {
       changed: true,
       exercise: hydrateEditorExercise({
@@ -2261,10 +1915,10 @@ async function prepareDemoAudioForExercise(exercise, requestSettings) {
 
   const segments = [];
   for (let index = 0; index < chunks.length; index += 1) {
-    editorVoiceState.textContent = `Vorführ-Audio wird erstellt: ${index + 1}/${chunks.length}`;
+    editorVoiceState.textContent = `VorfÃ¼hr-Audio wird erstellt: ${index + 1}/${chunks.length}`;
     const storedAudio = await createStoredVoiceAudio(
       chunks[index],
-      `${exercise.name} Vorführung ${index + 1}`,
+      `${exercise.name} VorfÃ¼hrung ${index + 1}`,
       requestSettings,
     );
     segments.push({
@@ -2350,7 +2004,7 @@ async function getExercisePreviewAudio(text) {
     return getGlobalVoiceAudioUrl(activeExercise.demoAudioUrl, activeExercise.demoAudioPath);
   }
 
-  const storedAudio = await createStoredVoiceAudio(text, `${getExerciseLabel()} Vorführung`, requestSettings);
+  const storedAudio = await createStoredVoiceAudio(text, `${getExerciseLabel()} VorfÃ¼hrung`, requestSettings);
   if (activeExercise?.name) {
     await saveDemoAudioForActiveExercise(storedAudio);
   }
@@ -2381,9 +2035,9 @@ async function getExercisePreviewAudioSegments(text) {
   const segments = [];
   for (let index = 0; index < chunks.length; index += 1) {
     if (!isPreviewingExercise) break;
-    previewExerciseButton.textContent = `Vorführung lädt ${index + 1}/${chunks.length}`;
-    const storedAudio = await createStoredVoiceAudio(chunks[index], `${getExerciseLabel()} Vorführung ${index + 1}`, requestSettings);
-    if (!storedAudio?.url) throw new Error(`Vorführung-Teil ${index + 1} konnte nicht erzeugt werden.`);
+    previewExerciseButton.textContent = `VorfÃ¼hrung lÃ¤dt ${index + 1}/${chunks.length}`;
+    const storedAudio = await createStoredVoiceAudio(chunks[index], `${getExerciseLabel()} VorfÃ¼hrung ${index + 1}`, requestSettings);
+    if (!storedAudio?.url) throw new Error(`VorfÃ¼hrung-Teil ${index + 1} konnte nicht erzeugt werden.`);
     segments.push({
       index,
       url: storedAudio.url,
@@ -2426,7 +2080,7 @@ async function getDialogPreviewAudioSegments(exercise) {
       continue;
     }
 
-    previewExerciseButton.textContent = `Dialog-Audio lädt ${systemIndex}/${systemTurns.length}`;
+    previewExerciseButton.textContent = `Dialog-Audio lÃ¤dt ${systemIndex}/${systemTurns.length}`;
     const storedAudio = await createStoredVoiceAudio(turn.text, `${exercise.name} Dialog ${systemIndex}`, requestSettings);
     const updatedTurn = {
       ...normalizeDialogTurn(turn),
@@ -2587,17 +2241,17 @@ async function saveDemoAudioSegmentsForActiveExercise(segments) {
 
 async function playExercisePreviewAudio(audioUrls, fallbackText = "") {
   const urls = Array.isArray(audioUrls) ? audioUrls.filter(Boolean) : [audioUrls].filter(Boolean);
-  if (!urls.length) throw new Error("Keine Vorführ-Audiodatei vorhanden.");
+  if (!urls.length) throw new Error("Keine VorfÃ¼hr-Audiodatei vorhanden.");
 
   setExerciseVisualsVisible(true);
-  message.textContent = "Vorführung läuft.";
+  message.textContent = "VorfÃ¼hrung lÃ¤uft.";
   previewAudioUrls = urls;
   previewPlaybackOffsetSeconds = 0;
   for (let index = 0; index < previewAudioUrls.length; index += 1) {
     if (!isPreviewingExercise) return;
     const played = await playExercisePreviewSegment(index, fallbackText);
     if (!played && fallbackText) {
-      await playExercisePreviewFallback(fallbackText, new Error("Vorführung-Audio konnte nicht abgespielt werden."));
+      await playExercisePreviewFallback(fallbackText, new Error("VorfÃ¼hrung-Audio konnte nicht abgespielt werden."));
       return;
     }
   }
@@ -2616,9 +2270,9 @@ async function playExercisePreviewSegment(index, fallbackText = "") {
 
   previewExerciseButton.disabled = false;
   previewExerciseButton.textContent = previewAudioUrls.length > 1
-    ? `Vorführung stoppen ${index + 1}/${previewAudioUrls.length}`
-    : "Vorführung stoppen";
-  message.textContent = "Vorführung läuft.";
+    ? `VorfÃ¼hrung stoppen ${index + 1}/${previewAudioUrls.length}`
+    : "VorfÃ¼hrung stoppen";
+  message.textContent = "VorfÃ¼hrung lÃ¤uft.";
 
   const segmentWindow = getPreviewSegmentWindow(index);
   animateExercisePreviewKaraoke(index, segmentWindow);
@@ -2680,10 +2334,10 @@ async function playExercisePreviewFallback(previewText, error) {
   );
   previewFallbackStartedAt = performance.now();
   previewExerciseButton.disabled = false;
-  previewExerciseButton.textContent = "Vorführung stoppen";
+  previewExerciseButton.textContent = "VorfÃ¼hrung stoppen";
   message.textContent = error?.message
-    ? `${error.message} Browser-Stimme läuft als Ersatz.`
-    : "Browser-Stimme läuft als Ersatz.";
+    ? `${error.message} Browser-Stimme lÃ¤uft als Ersatz.`
+    : "Browser-Stimme lÃ¤uft als Ersatz.";
   animateExercisePreviewFallback();
   await speakWithBrowserVoice(previewText);
   if (isPreviewingExercise) stopExercisePreview();
@@ -2731,13 +2385,13 @@ function stopExercisePreview() {
   setExerciseVisualsVisible(false);
   if (previewExerciseButton) {
     previewExerciseButton.disabled = false;
-    previewExerciseButton.textContent = "Vorführung";
+    previewExerciseButton.textContent = "VorfÃ¼hrung";
   }
   if (!isRecording) {
     recordButton.disabled = false;
-    recordButton.textContent = "Übung starten";
+    recordButton.textContent = "Ãœbung starten";
   }
-  message.textContent = "Vorführung beendet. Übung kann gestartet werden.";
+  message.textContent = "VorfÃ¼hrung beendet. Ãœbung kann gestartet werden.";
 }
 
 function speakWithBrowserVoice(instruction) {
@@ -2830,8 +2484,7 @@ async function playVoiceAudioBuffer(audioUrl) {
     return await new Promise((resolve) => {
       const source = instructionAudioContext.createBufferSource();
       const gain = instructionAudioContext.createGain();
-      // Do not stop a valid ElevenLabs introduction after a short fixed timeout.
-      const fallbackMs = Math.max(120000, Math.ceil((audioBuffer.duration || 0) * 1000) + 8000);
+      const fallbackMs = Math.max(1800, Math.ceil((audioBuffer.duration || 0) * 1000) + 1800);
       const fallbackId = window.setTimeout(() => finish(true, { stopSource: true }), fallbackMs);
       const finish = (played, options = {}) => {
         window.clearTimeout(fallbackId);
@@ -2895,13 +2548,13 @@ function getDialogVoiceMeterSignal(now = performance.now()) {
 function playVoiceAudioElement(audioUrl) {
   return new Promise((resolve) => {
     let started = false;
-    let fallbackId = window.setTimeout(() => finish(false), Math.max(INSTRUCTION_TIMEOUT_MS, 15000));
+    let fallbackId = window.setTimeout(() => finish(started), INSTRUCTION_TIMEOUT_MS);
     const refreshFallback = () => {
       if (!Number.isFinite(instructionAudio.duration) || instructionAudio.duration <= 0) return;
       window.clearTimeout(fallbackId);
       fallbackId = window.setTimeout(
         () => finish(true),
-        Math.max(15000, Math.ceil(instructionAudio.duration * 1000) + 4000),
+        Math.max(1800, Math.ceil(instructionAudio.duration * 1000) + 1800),
       );
     };
     const cleanup = () => {
@@ -2910,7 +2563,8 @@ function playVoiceAudioElement(audioUrl) {
       instructionAudio.removeEventListener("loadedmetadata", refreshFallback);
       instructionAudio.removeEventListener("ended", handleEnded);
       instructionAudio.removeEventListener("error", handleError);
-
+      instructionAudio.removeEventListener("abort", handleError);
+      instructionAudio.removeEventListener("stalled", handleError);
     };
     const finish = (played = started) => {
       window.clearTimeout(fallbackId);
@@ -2925,8 +2579,6 @@ function playVoiceAudioElement(audioUrl) {
       if (Number.isFinite(instructionAudio.duration) && instructionAudio.duration > 0) {
         startDialogVoiceMeter(Math.max(0, instructionAudio.duration - instructionAudio.currentTime));
       }
-      window.clearTimeout(fallbackId);
-      fallbackId = window.setTimeout(() => finish(true), 120000);
     };
     const handleEnded = () => finish(true);
     const handleError = () => finish(false);
@@ -2937,7 +2589,8 @@ function playVoiceAudioElement(audioUrl) {
     instructionAudio.addEventListener("loadedmetadata", refreshFallback);
     instructionAudio.addEventListener("ended", handleEnded, { once: true });
     instructionAudio.addEventListener("error", handleError, { once: true });
-
+    instructionAudio.addEventListener("abort", handleError, { once: true });
+    instructionAudio.addEventListener("stalled", handleError, { once: true });
     instructionAudio.muted = false;
     instructionAudio.defaultMuted = false;
     instructionAudio.volume = 1;
@@ -3035,14 +2688,14 @@ async function startRecording() {
   startRecordingKaraokeEventIfPatient(activeKaraokeIndex);
   enterRecordingFocus();
 
-  recordButton.textContent = "Übung stoppen";
+  recordButton.textContent = "Ãœbung stoppen";
   recordButton.classList.add("is-recording");
   recordButton.disabled = false;
   resultPanel.classList.add("is-hidden");
   message.textContent =
     mediaRecorder.recordingExtension === "webm"
-      ? "Videoaufnahme läuft."
-      : `Aufnahme läuft. Dieser Browser speichert als ${mediaRecorder.recordingExtension.toUpperCase()}.`;
+      ? "Videoaufnahme lÃ¤uft."
+      : `Aufnahme lÃ¤uft. Dieser Browser speichert als ${mediaRecorder.recordingExtension.toUpperCase()}.`;
 
   window.setTimeout(() => {
     if (isRecording) {
@@ -3088,7 +2741,7 @@ function stopRecording() {
   window.clearTimeout(saveTimeoutId);
   saveTimeoutId = window.setTimeout(() => {
     if (recordButton.disabled) {
-      restoreRecorderControls("Speichern dauert länger als erwartet. Bitte erneut versuchen.");
+      restoreRecorderControls("Speichern dauert lÃ¤nger als erwartet. Bitte erneut versuchen.");
     }
   }, SAVE_TIMEOUT_MS);
 }
@@ -3206,13 +2859,13 @@ async function finishRecording() {
     }
 
     recordButton.disabled = false;
-    recordButton.textContent = "Übung starten";
+    recordButton.textContent = "Ãœbung starten";
     recordButton.classList.remove("is-recording");
     if (mediaRecorder === stoppedRecorder) {
       mediaRecorder = null;
     }
     message.textContent = "Aufnahme gespeichert.";
-    firebaseState.textContent = "Lokal gespeichert. Firebase-Upload läuft.";
+    firebaseState.textContent = "Lokal gespeichert. Firebase-Upload lÃ¤uft.";
 
     uploadCurrentRecording(currentMetadata, videoBlob);
     if (continuePlaylist) {
@@ -4025,14 +3678,14 @@ function renderEditorDialogList() {
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
-    removeButton.textContent = "×";
+    removeButton.textContent = "Ã—";
     removeButton.setAttribute("aria-label", `Dialogzeile ${index + 1} entfernen`);
     removeButton.addEventListener("click", async () => {
       const previousExercise = getCurrentSavedEditorExerciseForDeletion();
       const nextTurns = getEditorDialogTurns();
       nextTurns.splice(index, 1);
       syncEditorDialogTurns(nextTurns);
-      await persistEditorInlineDeletion(previousExercise, "Dialogzeile gelöscht");
+      await persistEditorInlineDeletion(previousExercise, "Dialogzeile gelÃ¶scht");
     });
 
     item.append(row, textarea, removeButton);
@@ -4585,7 +4238,7 @@ function advanceSentencePrompt() {
     activeKaraokeIndex += 1;
     startRecordingKaraokeEventIfPatient(activeKaraokeIndex);
     updateKaraokeDisplay(karaokeOverlay, karaokeTimeline, activeKaraokeIndex);
-    message.textContent = `Nächster Satz ${activeKaraokeIndex + 1} von ${karaokeTimeline.length}.`;
+    message.textContent = `NÃ¤chster Satz ${activeKaraokeIndex + 1} von ${karaokeTimeline.length}.`;
     return;
   }
 
@@ -4702,7 +4355,7 @@ function getExerciseLabel() {
   const activeExercise = getActiveRecordingExercise();
   if (activeExercise) return activeExercise.name;
 
-  return exerciseName.selectedOptions?.[0]?.textContent || exerciseName.value || "Übung";
+  return exerciseName.selectedOptions?.[0]?.textContent || exerciseName.value || "Ãœbung";
 }
 
 function getExerciseScript() {
@@ -4820,7 +4473,7 @@ function setPreviewSessionState(active, label = "") {
   previewSessionBar?.classList.toggle("is-hidden", !active);
   previewSessionBar?.classList.toggle("is-visible", Boolean(active));
   if (previewSessionLabel) {
-    previewSessionLabel.textContent = label || (active ? "Vorführung aktiv" : "Vorführung");
+    previewSessionLabel.textContent = label || (active ? "VorfÃ¼hrung aktiv" : "VorfÃ¼hrung");
   }
 }
 
@@ -4877,12 +4530,12 @@ function getKaraokeTimingHint(exercise, timing) {
     const durations = passages.map((passage) =>
       getTextPassageSeconds(passage, timing.wordSeconds, timing.pauseSeconds),
     );
-    if (!durations.length) return `Standzeit: nach Abschnittslänge (${speedLabel}).`;
+    if (!durations.length) return `Standzeit: nach AbschnittslÃ¤nge (${speedLabel}).`;
 
     const minSeconds = Math.min(...durations);
     const maxSeconds = Math.max(...durations);
     const avgSeconds = durations.reduce((sum, value) => sum + value, 0) / durations.length;
-    return `Standzeit: ${formatSecondsAndMilliseconds(minSeconds)}-${formatSecondsAndMilliseconds(maxSeconds)} pro Abschnitt, · ${formatSecondsAndMilliseconds(avgSeconds)} (${speedLabel}).`;
+    return `Standzeit: ${formatSecondsAndMilliseconds(minSeconds)}-${formatSecondsAndMilliseconds(maxSeconds)} pro Abschnitt, Â· ${formatSecondsAndMilliseconds(avgSeconds)} (${speedLabel}).`;
   }
 
   const words = String(exercise.script || exercise.content || "")
@@ -4895,7 +4548,7 @@ function getKaraokeTimingHint(exercise, timing) {
   const maxSeconds = Math.max(...durations);
 
   if (exercise.mode === "sentences") {
-    return `Standzeit: kurze Sätze wechseln per Pause; Tempo ${speedLabel}.`;
+    return `Standzeit: kurze SÃ¤tze wechseln per Pause; Tempo ${speedLabel}.`;
   }
 
   return `Standzeit: ${formatSecondsAndMilliseconds(minSeconds)}-${formatSecondsAndMilliseconds(maxSeconds)} pro Wort/Silbe (${speedLabel}).`;
@@ -4981,7 +4634,7 @@ function renderEditorSentenceListLegacy() {
   if (!sentences.length) {
     const empty = document.createElement("p");
     empty.className = "editor-sentence-empty";
-    empty.textContent = "Noch keine Sätze hinzugefügt.";
+    empty.textContent = "Noch keine SÃ¤tze hinzugefÃ¼gt.";
     editorSentenceList.append(empty);
     return;
   }
@@ -4995,14 +4648,14 @@ function renderEditorSentenceListLegacy() {
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
-    removeButton.textContent = "×";
+    removeButton.textContent = "Ã—";
     removeButton.setAttribute("aria-label", `Satz ${index + 1} entfernen`);
     removeButton.addEventListener("click", async () => {
       const previousExercise = getCurrentSavedEditorExerciseForDeletion();
       const nextSentences = getEditorSentences();
       nextSentences.splice(index, 1);
       syncEditorSentences(nextSentences);
-      await persistEditorInlineDeletion(previousExercise, "Satz gelöscht");
+      await persistEditorInlineDeletion(previousExercise, "Satz gelÃ¶scht");
     });
 
     item.append(label, removeButton);
@@ -5062,7 +4715,7 @@ function renderEditorSentenceList() {
         editingEditorSentenceIndex -= 1;
       }
       syncEditorSentences(nextSentences);
-      await persistEditorInlineDeletion(previousExercise, "Satz gelöscht");
+      await persistEditorInlineDeletion(previousExercise, "Satz gelÃ¶scht");
     });
 
     item.append(label, editButton, removeButton);
@@ -5081,11 +4734,11 @@ function getExerciseInstruction() {
   if (exercise.voiceInstruction) return exercise.voiceInstruction;
 
   if (exercise.mode === "dialog") {
-    return `Bereiten Sie sich auf den Dialog vor. Hören Sie auf die System-Antworten und sprechen Sie Ihren Teil ruhig und deutlich.`;
+    return `Bereiten Sie sich auf den Dialog vor. HÃ¶ren Sie auf die System-Antworten und sprechen Sie Ihren Teil ruhig und deutlich.`;
   }
 
   if (exercise.mode === "sentences") {
-    return `Bereiten Sie sich auf die kurzen Sätze vor. Lesen Sie jeden Satz im Tempo ${exercise.timing.label}. Machen Sie nach jedem Satz eine kurze Pause.`;
+    return `Bereiten Sie sich auf die kurzen SÃ¤tze vor. Lesen Sie jeden Satz im Tempo ${exercise.timing.label}. Machen Sie nach jedem Satz eine kurze Pause.`;
   }
 
   if (exercise.mode === "long_text") {
@@ -5096,7 +4749,7 @@ function getExerciseInstruction() {
     return `Bitte lesen Sie den eingeblendeten Karaoke-Text ruhig und deutlich vor. Das Tempo ist ${exercise.timing.label}.`;
   }
 
-  return `Bitte sprechen Sie ${exercise.contentLabel}. Wiederholen Sie die Folge ${exercise.repeats} mal im Tempo ${exercise.timing.label}, mit kurzer Pause zwischen den Durchgängen.`;
+  return `Bitte sprechen Sie ${exercise.contentLabel}. Wiederholen Sie die Folge ${exercise.repeats} mal im Tempo ${exercise.timing.label}, mit kurzer Pause zwischen den DurchgÃ¤ngen.`;
 }
 
 function getExerciseConfiguration() {
@@ -5167,10 +4820,10 @@ function getActiveRecordingExercise() {
   const courseExercise = getActiveCourseExercise();
   if (courseExercise?.mode === "media_exercise" && courseExercise.exerciseId === exerciseName.value) {
     return hydrateEditorExercise({
-      name: courseExercise.title || "Medienübung",
+      name: courseExercise.title || "MedienÃ¼bung",
       mode: "long_text",
-      content: courseExercise.patientHint || courseExercise.title || "Medienübung",
-      script: courseExercise.patientHint || courseExercise.title || "Medienübung",
+      content: courseExercise.patientHint || courseExercise.title || "MedienÃ¼bung",
+      script: courseExercise.patientHint || courseExercise.title || "MedienÃ¼bung",
       repeats: 1,
       speed: Number(recordingKaraokeSpeed?.value || 3),
     });
@@ -5211,7 +4864,6 @@ function hydrateEditorExercise(exercise) {
   const speed = Number(exercise.speed || 3);
   const timing = exercise.timing || EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
   const content = exercise.content || getDefaultEditorContent(mode);
-  const breathing = mode === "breathing" ? getBreathingSettings(exercise) : null;
   const repeats = Math.max(1, Number(exercise.repeats || 1));
   const assignedPatientName = String(exercise.patientName || "").trim();
   const assignedPatientId = assignedPatientName ? slugify(assignedPatientName) : "";
@@ -5234,9 +4886,7 @@ function hydrateEditorExercise(exercise) {
   const embeddedVoiceProfile = getEmbeddedExerciseVoiceProfile(exercise);
   const contentLabel =
     exercise.contentLabel ||
-    (mode === "breathing"
-      ? `${breathing.repeats} Atemrunden · ${getBreathingExerciseDuration({ breathing })} Sekunden`
-      : mode === "dialog"
+    (mode === "dialog"
       ? `${patientTurnCount || 1} Sprecherteil${patientTurnCount === 1 ? "" : "e"}`
       : mode === "sentences"
       ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
@@ -5254,7 +4904,6 @@ function hydrateEditorExercise(exercise) {
     patientId: assignedPatientId,
     isSharedTemplate: !assignedPatientName,
     content,
-    breathing,
     contentLabel,
     sentences,
     dialogTurns,
@@ -5278,12 +4927,11 @@ function hydrateEditorExercise(exercise) {
   };
 }
 function buildEditorExerciseFromForm() {
-  const name = editorExerciseName.value.trim() || "Neue Übung";
+  const name = editorExerciseName.value.trim() || "Neue Ãœbung";
   const mode = editorMode.value;
   const speed = Number(editorSpeed.value);
   const timing = EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
   const sentences = mode === "sentences" ? getEditorSentences() : [];
-  const breathing = mode === "breathing" ? getBreathingSettings() : null;
   const baseExerciseForAudio =
     findSavedEditorExerciseByName(name) ||
     (savedEditorExercise?.name === name ? savedEditorExercise : null);
@@ -5298,9 +4946,7 @@ function buildEditorExerciseFromForm() {
         ? []
         : getEditorTokens();
   const content =
-    mode === "breathing"
-      ? "Ruhige Atemübung"
-      : mode === "dialog"
+    mode === "dialog"
       ? editorContent.value.trim() || getDefaultEditorContent(mode)
       : mode === "sentences"
       ? sentences.join(" | ") || getDefaultEditorContent(mode)
@@ -5332,9 +4978,7 @@ function buildEditorExerciseFromForm() {
     rawContent: isTextLikeMode(mode) ? content : "",
     textPassages,
     contentLabel:
-      mode === "breathing"
-        ? `${breathing.repeats} Atemrunden · ${getBreathingExerciseDuration({ breathing })} Sekunden`
-        : mode === "dialog"
+      mode === "dialog"
         ? `${patientTurnCount || 1} Sprecherteil${patientTurnCount === 1 ? "" : "e"}`
         : mode === "sentences"
         ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
@@ -5374,7 +5018,6 @@ function buildEditorExerciseFromForm() {
     demoSpeed: savedEditorExercise?.name === name ? savedEditorExercise.demoSpeed || 0 : 0,
     demoCreatedAt: savedEditorExercise?.name === name ? savedEditorExercise.demoCreatedAt || "" : "",
     repeats,
-    breathing,
     script,
   };
 }
@@ -5392,23 +5035,21 @@ function buildRepeatedScript(content, repeats) {
 function getDefaultEditorContent(mode) {
   if (mode === "sentences") return "";
   if (mode === "text") return "Heute lese ich langsam und deutlich.";
-  if (mode === "long_text") return "Es blaut die Nacht.\nDie Sternlein blinken.\nSchneeflöcklein leise niedersinken.";
+  if (mode === "long_text") return "Es blaut die Nacht.\nDie Sternlein blinken.\nSchneeflÃ¶cklein leise niedersinken.";
   if (mode === "vowels") return "A E I O U";
-  if (mode === "breathing") return "Ruhige Atemübung";
   if (mode === "dialog") {
     const speakerName = getCurrentPatientName();
-    return `System: Guten Morgen, wie geht es Ihnen?\n${speakerName}: Mir geht es heute gut.\nSystem: Was haben Sie heute geübt?\n${speakerName}: Ich habe ruhig und deutlich gesprochen.`;
+    return `System: Guten Morgen, wie geht es Ihnen?\n${speakerName}: Mir geht es heute gut.\nSystem: Was haben Sie heute geÃ¼bt?\n${speakerName}: Ich habe ruhig und deutlich gesprochen.`;
   }
   return "Pa Ta Ka";
 }
 
 function getDefaultEditorVoiceInstruction(mode) {
-  if (mode === "dialog") return "Bitte hören Sie auf die System-Sätze und sprechen Sie Ihren Teil ruhig und deutlich.";
-  if (mode === "sentences") return "Bitte lesen Sie die kurzen Sätze nacheinander ruhig und deutlich vor. Machen Sie nach jedem Satz eine kurze Pause.";
+  if (mode === "dialog") return "Bitte hÃ¶ren Sie auf die System-SÃ¤tze und sprechen Sie Ihren Teil ruhig und deutlich.";
+  if (mode === "sentences") return "Bitte lesen Sie die kurzen SÃ¤tze nacheinander ruhig und deutlich vor. Machen Sie nach jedem Satz eine kurze Pause.";
   if (mode === "text") return "Bitte lesen Sie den eingeblendeten Text ruhig und deutlich vor.";
   if (mode === "long_text") return "Bitte lesen Sie jeden eingeblendeten Textabschnitt ruhig und deutlich vor.";
   if (mode === "vowels") return "Bitte sprechen Sie die Vokale nacheinander deutlich aus.";
-  if (mode === "breathing") return "Folgen Sie der Atemkugel in Ihrem eigenen ruhigen Tempo.";
   return "Bitte sprechen Sie die einzelnen Silben ruhig und deutlich.";
 }
 
@@ -5417,7 +5058,7 @@ function buildVoiceInstructionSuggestion() {
   const speedText = exercise.timing.label.toLowerCase();
 
   if (exercise.mode === "sentences") {
-    return `Bereiten Sie sich auf die kurzen Sätze vor. Lesen Sie jeden Satz im Tempo ${speedText}. Machen Sie nach jedem Satz eine kurze Pause.`;
+    return `Bereiten Sie sich auf die kurzen SÃ¤tze vor. Lesen Sie jeden Satz im Tempo ${speedText}. Machen Sie nach jedem Satz eine kurze Pause.`;
   }
 
   if (exercise.mode === "dialog") {
@@ -5425,7 +5066,7 @@ function buildVoiceInstructionSuggestion() {
   }
 
   if (exercise.mode === "text") {
-    return `Bereiten Sie sich auf den Text vor. Lesen Sie gleich Wort für Wort im Tempo ${speedText}. Sprechen Sie ruhig, deutlich und ohne Druck.`;
+    return `Bereiten Sie sich auf den Text vor. Lesen Sie gleich Wort fÃ¼r Wort im Tempo ${speedText}. Sprechen Sie ruhig, deutlich und ohne Druck.`;
   }
 
   if (exercise.mode === "long_text") {
@@ -5433,10 +5074,10 @@ function buildVoiceInstructionSuggestion() {
   }
 
   if (exercise.mode === "vowels") {
-    return `Bereiten Sie sich auf die Vokalübung vor. Sprechen Sie ${exercise.contentLabel} nacheinander im Tempo ${speedText}. Achten Sie auf klare Mundöffnung und gleichmäßige Stimme.`;
+    return `Bereiten Sie sich auf die VokalÃ¼bung vor. Sprechen Sie ${exercise.contentLabel} nacheinander im Tempo ${speedText}. Achten Sie auf klare MundÃ¶ffnung und gleichmÃ¤ÃŸige Stimme.`;
   }
 
-  return `Bereiten Sie sich auf die SilbenÜbung vor. Sprechen Sie ${exercise.contentLabel} einzeln und deutlich. Wiederholen Sie die Folge ${exercise.repeats} mal im Tempo ${speedText}.`;
+  return `Bereiten Sie sich auf die SilbenÃœbung vor. Sprechen Sie ${exercise.contentLabel} einzeln und deutlich. Wiederholen Sie die Folge ${exercise.repeats} mal im Tempo ${speedText}.`;
 }
 
 function openEditorAiModal() {
@@ -5510,14 +5151,14 @@ function detectLocalEditorAiKind(prompt) {
   if (/\bdialog/.test(normalized)) return "dialog";
   if (/\bgedicht|\bpoem|\breim/.test(normalized)) return "long_text";
   if (/\btext|\balltagstext|\bgeschichte/.test(normalized)) return "long_text";
-  if (/\bw[oö]rter|\bwoerter|\bwort\b/.test(normalized)) return "syllables";
+  if (/\bw[oÃ¶]rter|\bwoerter|\bwort\b/.test(normalized)) return "syllables";
   if (/\bvokal/.test(normalized)) return "vowels";
   return "sentences";
 }
 
 function extractLocalEditorAiTheme(prompt) {
   const normalized = String(prompt || "").trim();
-  const themeMatch = normalized.match(/\b(?:ueber|über|auf|zum|zur|zu|von)\s+(.+)$/i);
+  const themeMatch = normalized.match(/\b(?:ueber|Ã¼ber|auf|zum|zur|zu|von)\s+(.+)$/i);
   if (themeMatch?.[1]) return themeMatch[1].trim();
   return normalized.trim();
 }
@@ -6019,8 +5660,8 @@ function renderEditorAiPreview() {
       const removeButton = document.createElement("button");
       removeButton.type = "button";
       removeButton.className = "editor-ai-preview-remove";
-      removeButton.textContent = "×";
-      removeButton.setAttribute("aria-label", `Eintrag ${index + 1} löschen`);
+      removeButton.textContent = "Ã—";
+      removeButton.setAttribute("aria-label", `Eintrag ${index + 1} lÃ¶schen`);
       removeButton.addEventListener("click", () => {
         payload.dialogTurns.splice(index, 1);
         renderEditorAiPreview();
@@ -6051,8 +5692,8 @@ function renderEditorAiPreview() {
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     removeButton.className = "editor-ai-preview-remove";
-    removeButton.textContent = "×";
-    removeButton.setAttribute("aria-label", `Eintrag ${index + 1} löschen`);
+    removeButton.textContent = "Ã—";
+    removeButton.setAttribute("aria-label", `Eintrag ${index + 1} lÃ¶schen`);
     removeButton.addEventListener("click", () => {
       payload.items.splice(index, 1);
       renderEditorAiPreview();
@@ -6109,7 +5750,7 @@ async function generateEditorAiPreview() {
     editorAiPreviewView?.removeAttribute("hidden");
     editorAiPreviewView?.classList.remove("is-hidden");
     renderEditorAiPreview();
-    setEditorAiState("Vorschau erstellt. Sie können jetzt anpassen oder übernehmen.");
+    setEditorAiState("Vorschau erstellt. Sie kÃ¶nnen jetzt anpassen oder Ã¼bernehmen.");
   } catch (error) {
     editorAiGeneratedPayload = normalizeEditorAiPayload(buildLocalEditorAiExercise(prompt));
     editorAiInputView?.classList.add("is-hidden");
@@ -6130,7 +5771,7 @@ function buildExerciseFromEditorAiPayload(payload) {
   if (!payload) return null;
 
   const mode = payload.mode;
-  const baseName = payload.title || "Neue Übung";
+  const baseName = payload.title || "Neue Ãœbung";
 
   if (mode === "dialog") {
     const dialogTurns = payload.dialogTurns
@@ -6234,12 +5875,12 @@ async function applyEditorAiPreview() {
 
   const exercise = buildExerciseFromEditorAiPayload(editorAiGeneratedPayload);
   if (!exercise) {
-    setEditorAiState("Die Vorschau konnte nicht übernommen werden.");
+    setEditorAiState("Die Vorschau konnte nicht Ã¼bernommen werden.");
     return;
   }
 
   applyEditorAiExercisesButton.disabled = true;
-  setEditorAiState("Übung wird übernommen...");
+  setEditorAiState("Ãœbung wird Ã¼bernommen...");
 
   try {
     activeEditorExerciseName = exercise.name;
@@ -6250,9 +5891,9 @@ async function applyEditorAiPreview() {
     editorSavedExercises.value = getEditorSelectValueForExerciseName(exercise.name);
     closeEditorAiModal();
     resetEditorAiModal();
-    editorVoiceState.textContent = `KI-Übung übernommen: ${exercise.name}`;
+    editorVoiceState.textContent = `KI-Ãœbung Ã¼bernommen: ${exercise.name}`;
   } catch (error) {
-    setEditorAiState(error?.message || "Übernahme fehlgeschlagen.");
+    setEditorAiState(error?.message || "Ãœbernahme fehlgeschlagen.");
   } finally {
     applyEditorAiExercisesButton.disabled = false;
   }
@@ -6312,7 +5953,6 @@ async function suggestVoiceInstruction() {
 
 async function generateVoiceAudio() {
   const isDialogMode = editorMode.value === "dialog";
-  const isBreathingMode = editorMode.value === "breathing";
   const text = editorVoiceInstruction.value.trim();
   if (!text) {
     editorVoiceState.textContent = "Bitte zuerst einen Voice-Text eintragen.";
@@ -6331,7 +5971,7 @@ async function generateVoiceAudio() {
         text,
         store: true,
         ...requestSettings,
-        exerciseName: editorExerciseName.value.trim() || "Neue Übung",
+        exerciseName: editorExerciseName.value.trim() || "Neue Ãœbung",
       }),
     });
 
@@ -6359,7 +5999,7 @@ async function generateVoiceAudio() {
     if (isDialogMode) {
       await generateDialogVoiceAudio({ allowMissingSystemTurns: true });
     } else {
-      editorVoiceState.textContent = "ElevenLabs-Audio erstellt und in der Übung gespeichert.";
+      editorVoiceState.textContent = "ElevenLabs-Audio erstellt und in der Ãœbung gespeichert.";
     }
   } catch (error) {
     editorVoiceAudioDataUrl = "";
@@ -6395,19 +6035,14 @@ function updateEditorForm() {
   exerciseEditor?.classList.toggle("text-mode", isTextMode);
   exerciseEditor?.classList.toggle("long-text-mode", isLongTextModeSelected);
   const isDialogMode = editorMode.value === "dialog";
-  const isBreathingMode = editorMode.value === "breathing";
   exerciseEditor?.classList.toggle("dialog-mode", isDialogMode);
-  exerciseEditor?.classList.toggle("breathing-mode", isBreathingMode);
-  breathingSettings?.classList.toggle("is-hidden", !isBreathingMode);
-  editorTimingOptions?.classList.toggle("is-hidden", isBreathingMode);
   const canUseRepeats = supportsEditorRepeats(editorMode.value);
   if (!canUseRepeats) editorUseRepeats.checked = false;
   editorRepeatGroup?.classList.toggle("is-hidden", !canUseRepeats);
   repeatControl.classList.toggle("is-hidden", !canUseRepeats || !editorUseRepeats.checked);
   editorUseRepeats.disabled = !canUseRepeats;
-  editorSentenceBuilder?.classList.toggle("is-hidden", !isSentenceMode || isBreathingMode);
+  editorSentenceBuilder?.classList.toggle("is-hidden", !isSentenceMode);
   editorDialogBuilder?.classList.toggle("is-hidden", !isDialogMode);
-  editorContent?.closest(".editor-section-content")?.classList.toggle("breathing-content-mode", isBreathingMode);
   editorSpeedValue.textContent = EDITOR_SPEEDS[editorSpeed.value]?.label || "Normal";
   updateEditorKaraokeTimingHint();
   renderEditorPreview(buildEditorExerciseFromForm());
@@ -6423,7 +6058,7 @@ function updateEditorKaraokeTimingHint() {
   const speedLabel = timing.label || EDITOR_SPEEDS[3].label;
 
   if (exercise.mode === "sentences") {
-    editorKaraokeTimingHint.textContent = `Standzeit: kurze Sätze wechseln nach erkannter Pause; Tempo ${speedLabel}.`;
+    editorKaraokeTimingHint.textContent = `Standzeit: kurze SÃ¤tze wechseln nach erkannter Pause; Tempo ${speedLabel}.`;
     return;
   }
 
@@ -6500,7 +6135,7 @@ function startEditorKaraokeTest() {
   const exercise = buildEditorExerciseFromForm();
 
   if (!supportsEditorKaraokeTempoTest(exercise.mode)) {
-    editorVoiceState.textContent = "Der Tempo-Test ist für Karaoke-Text gedacht.";
+    editorVoiceState.textContent = "Der Tempo-Test ist fÃ¼r Karaoke-Text gedacht.";
     return;
   }
 
@@ -6512,7 +6147,7 @@ function startEditorKaraokeTest() {
 
   isTestingEditorKaraoke = true;
   testEditorKaraokeButton.textContent = "Test stoppen";
-  editorVoiceState.textContent = `Karaoke-Test läuft: ${exercise.timing.label}.`;
+  editorVoiceState.textContent = `Karaoke-Test lÃ¤uft: ${exercise.timing.label}.`;
   runEditorKaraokeFrame(performance.now(), exercise);
 }
 
@@ -6617,17 +6252,15 @@ function applyEditorModeDefaults() {
     editorMode.value !== "sentences" &&
     editorMode.value !== "dialog";
   if (editorMode.value === "sentences") {
-    editorExerciseName.value = "Kurze Sätze";
+    editorExerciseName.value = "Kurze SÃ¤tze";
   } else if (editorMode.value === "text") {
     editorExerciseName.value = "Karaoke-Text";
   } else if (editorMode.value === "vowels") {
     editorExerciseName.value = "Vokale nacheinander";
   } else if (editorMode.value === "dialog") {
     editorExerciseName.value = "Dialog";
-  } else if (editorMode.value === "breathing") {
-    editorExerciseName.value = "Ruhige Bauchatmung";
   } else {
-    editorExerciseName.value = "Neue SilbenÜbung";
+    editorExerciseName.value = "Neue SilbenÃœbung";
   }
 }
 
@@ -6639,7 +6272,7 @@ async function generateDialogVoiceAudio(options = {}) {
 
   if (!systemTurns.length) {
     editorVoiceState.textContent = options.allowMissingSystemTurns
-      ? "Voice-Begleitung gespeichert. Für Dialog-Audio bitte eine KI-Dialogzeile eintragen."
+      ? "Voice-Begleitung gespeichert. FÃ¼r Dialog-Audio bitte eine KI-Dialogzeile eintragen."
       : "Bitte mindestens eine KI-Dialogzeile eintragen.";
     return;
   }
@@ -6711,16 +6344,16 @@ async function saveEditorExercise() {
   const exercise = buildEditorExerciseFromForm();
   saveEditorExerciseButton.disabled = true;
   saveEditorExerciseButton.textContent = "Speichern...";
-  editorVoiceState.textContent = "Übung wird vorbereitet...";
+  editorVoiceState.textContent = "Ãœbung wird vorbereitet...";
 
   try {
     const exerciseWithAudio = await prepareExerciseAudioForEditorSave(exercise);
     await saveEditorExerciseObject(exerciseWithAudio);
     applyEditorExerciseToForm(exerciseWithAudio);
-    editorVoiceState.textContent = "Übung mit Audio in Firebase gespeichert.";
+    editorVoiceState.textContent = "Ãœbung mit Audio in Firebase gespeichert.";
   } catch (error) {
     editorVoiceState.textContent =
-      error?.message || "Audio konnte nicht erstellt werden. Übung wird lokal gespeichert.";
+      error?.message || "Audio konnte nicht erstellt werden. Ãœbung wird lokal gespeichert.";
     await saveEditorExerciseObject(exercise);
   } finally {
     saveEditorExerciseButton.disabled = false;
@@ -6736,7 +6369,7 @@ async function saveEditorExerciseObject(exercise, options = {}) {
   let cloudSaved = true;
   await saveCloudEditorExercise(exercise).catch(() => {
     cloudSaved = false;
-    firebaseState.textContent = "Übung lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
+    firebaseState.textContent = "Ãœbung lokal gespeichert. Firebase-Speichern fehlgeschlagen.";
   });
   if (options.refreshUi === false) return;
   renderSavedEditorExercises();
@@ -6799,11 +6432,11 @@ function showEditorSaveFeedback(exerciseLabel, options = {}) {
   saveEditorExerciseButton.textContent = "Gespeichert";
   saveEditorExerciseButton.classList.add("is-saved");
   saveEditorExerciseButton.disabled = true;
-  editorVoiceState.textContent = "Übung gespeichert.";
-  firebaseState.textContent = `Übung gespeichert und in Aufnahme auswählbar: ${exerciseLabel}`;
+  editorVoiceState.textContent = "Ãœbung gespeichert.";
+  firebaseState.textContent = `Ãœbung gespeichert und in Aufnahme auswÃ¤hlbar: ${exerciseLabel}`;
 
   if (options.cloudSaved === false) {
-    firebaseState.textContent = `Übung lokal gespeichert, Firebase fehlgeschlagen: ${exerciseLabel}`;
+    firebaseState.textContent = `Ãœbung lokal gespeichert, Firebase fehlgeschlagen: ${exerciseLabel}`;
   }
 
   editorSaveFeedbackTimerId = window.setTimeout(() => {
@@ -6824,8 +6457,8 @@ function updateEditorModeState() {
   updateEditorSavedListVisibility();
   if (editorModeState) {
     editorModeState.textContent = isEditingSaved
-      ? `Gespeicherte Übung bearbeiten: ${activeEditorExerciseName}`
-      : "Neue Übung";
+      ? `Gespeicherte Ãœbung bearbeiten: ${activeEditorExerciseName}`
+      : "Neue Ãœbung";
   }
 }
 
@@ -6846,8 +6479,6 @@ function resetEditorForm(options = {}) {
   editorMode.value = options.blank ? "syllables" : "sentences";
   renderEditorPatientScopeOptions(getCurrentPatientName());
   editorDialogTurnsState = [];
-  breathingExtraStepsState = [];
-  renderBreathingExtraSteps();
   editorContent.value = options.blank ? "" : "";
   if (editorSentenceInput) editorSentenceInput.value = "";
   editorVoiceInstruction.value = options.blank ? "" : getDefaultEditorVoiceInstruction(editorMode.value);
@@ -6880,7 +6511,7 @@ function renderSavedEditorExercises() {
 
   const emptyOption = document.createElement("option");
   emptyOption.value = "";
-  emptyOption.textContent = "Gespeicherte Übung auswählen";
+  emptyOption.textContent = "Gespeicherte Ãœbung auswÃ¤hlen";
   editorSavedExercises.append(emptyOption);
 
   const templateGroup = document.createElement("optgroup");
@@ -6895,7 +6526,7 @@ function renderSavedEditorExercises() {
 
   if (visibleSavedExercises.length) {
     const savedGroup = document.createElement("optgroup");
-    savedGroup.label = "Gespeicherte Editor-Übungen";
+    savedGroup.label = "Gespeicherte Editor-Ãœbungen";
     visibleSavedExercises.forEach((exercise) => {
       const option = document.createElement("option");
       option.value = exercise.name;
@@ -6932,7 +6563,7 @@ function normalizeEditorExerciseModeValue(mode) {
 }
 
 function getEditorModeLabel(mode) {
-  if (mode === "media_exercise") return "Medienübung";
+  if (mode === "media_exercise") return "MedienÃ¼bung";
   if (mode === "media_pause") return "Pauseneinheit";
   const option = Array.from(editorMode?.options || []).find((item) => item.value === mode);
   return option?.textContent?.trim() || "Funktionsart";
@@ -6946,7 +6577,7 @@ function renderSavedEditorExerciseList() {
   if (!savedEditorExercises.length) {
     editorSavedListExpanded = false;
     editorSavedExerciseList.classList.add("is-empty");
-    editorSavedExerciseList.textContent = "Keine gespeicherten Editor-Übungen.";
+    editorSavedExerciseList.textContent = "Keine gespeicherten Editor-Ãœbungen.";
     updateEditorSavedListVisibility();
     return;
   }
@@ -6966,7 +6597,7 @@ function renderSavedEditorExerciseList() {
     const summary = document.createElement("button");
     summary.type = "button";
     summary.className = "editor-saved-exercise-open";
-    summary.textContent = exercise.name || "Unbenannte Übung";
+    summary.textContent = exercise.name || "Unbenannte Ãœbung";
     summary.addEventListener("click", () => {
       editorSavedExercises.value = exercise.name;
       loadEditorExerciseIntoForm(exercise.name);
@@ -6975,8 +6606,8 @@ function renderSavedEditorExerciseList() {
     const deleteListButton = document.createElement("button");
     deleteListButton.type = "button";
     deleteListButton.className = "recording-delete-button editor-exercise-delete-button";
-    deleteListButton.setAttribute("aria-label", `Vorlage löschen: ${exercise.name || "Übung"}`);
-    deleteListButton.title = "Vorlage löschen";
+    deleteListButton.setAttribute("aria-label", `Vorlage lÃ¶schen: ${exercise.name || "Ãœbung"}`);
+    deleteListButton.title = "Vorlage lÃ¶schen";
     deleteListButton.addEventListener("click", async () => {
       await deleteSavedEditorExercise(exercise.name);
     });
@@ -7036,7 +6667,7 @@ function renderRecordingExerciseShortcuts() {
 
   if (!savedEditorExercises.length) {
     recordingExerciseShortcuts.classList.add("is-empty");
-    recordingExerciseShortcuts.textContent = "Noch keine gespeicherte Editor-Übung.";
+    recordingExerciseShortcuts.textContent = "Noch keine gespeicherte Editor-Ãœbung.";
     return;
   }
 
@@ -7054,7 +6685,7 @@ function renderRecordingExerciseShortcuts() {
     button.addEventListener("click", () => {
       exerciseName.value = exercise.name;
       setupKaraokeText();
-      message.textContent = `Übung ausgewählt: ${exercise.name}`;
+      message.textContent = `Ãœbung ausgewÃ¤hlt: ${exercise.name}`;
       renderRecordingExerciseShortcuts();
     });
     button.classList.toggle("is-active", exerciseName.value === exercise.name);
@@ -7109,7 +6740,7 @@ function getEditorSelectValueForExerciseName(name) {
 }
 
 function applyEditorExerciseToForm(exercise) {
-  editorExerciseName.value = exercise.name || "Neue Übung";
+  editorExerciseName.value = exercise.name || "Neue Ãœbung";
   editorMode.value = exercise.mode || "syllables";
   renderEditorPatientScopeOptions(exercise.patientName || "");
   if (editorMode.value === "dialog") {
@@ -7154,15 +6785,6 @@ function applyEditorExerciseToForm(exercise) {
     exercise.mode !== "sentences" &&
     exercise.mode !== "dialog";
   editorRepeats.value = String(exercise.repeats || 1);
-  const breathing = getBreathingSettings(exercise);
-  if (breathingInhale) breathingInhale.value = String(breathing.inhale);
-  if (breathingHold) breathingHold.value = String(breathing.hold);
-  if (breathingExhale) breathingExhale.value = String(breathing.exhale);
-  if (breathingPause) breathingPause.value = String(breathing.pause);
-  if (breathingRepeats) breathingRepeats.value = String(breathing.repeats);
-  if (breathingUseVoice) breathingUseVoice.checked = Boolean(breathing.useVoice);
-  breathingExtraStepsState = getBreathingExtraSteps(exercise);
-  renderBreathingExtraSteps();
   editorSpeed.value = String(exercise.speed || 3);
 }
 
@@ -7186,7 +6808,6 @@ function saveEditorDraft() {
     useRepeats: editorUseRepeats.checked,
     repeats: editorRepeats.value,
     speed: editorSpeed.value,
-    breathing: getBreathingSettings(),
   };
   localStorage.setItem(EDITOR_DRAFT_KEY, JSON.stringify(draft));
 }
@@ -7228,9 +6849,9 @@ async function loadCloudEditorExercises() {
 
     persistEditorExercises();
     renderSavedEditorExercises();
-    firebaseState.textContent = "Firebase bereit. Editor-Übungen geladen.";
+    firebaseState.textContent = "Firebase bereit. Editor-Ãœbungen geladen.";
   } catch (error) {
-    firebaseState.textContent = "Firebase bereit. Editor-Übungen nur lokal geladen.";
+    firebaseState.textContent = "Firebase bereit. Editor-Ãœbungen nur lokal geladen.";
   }
 }
 
@@ -7252,22 +6873,22 @@ async function saveCloudEditorExercise(exercise) {
     ...hydratedExercise,
     updatedAt: new Date().toISOString(),
   }).catch(() => {});
-  firebaseState.textContent = "Editor-Übung in Firebase gespeichert.";
+  firebaseState.textContent = "Editor-Ãœbung in Firebase gespeichert.";
 }
 
 async function deleteSavedEditorExercise(name) {
   const exercise = findSavedEditorExerciseByName(name);
   if (!exercise?.name) return;
 
-  const confirmed = window.confirm(`Vorlage "${exercise.name}" wirklich löschen?`);
+  const confirmed = window.confirm(`Vorlage "${exercise.name}" wirklich lÃ¶schen?`);
   if (!confirmed) return;
 
-  firebaseState.textContent = `Vorlage wird in Firebase gelöscht: ${exercise.name}`;
+  firebaseState.textContent = `Vorlage wird in Firebase gelÃ¶scht: ${exercise.name}`;
 
   try {
     await deleteCloudEditorExercise(exercise);
   } catch (error) {
-    firebaseState.textContent = "Firebase-Löschen fehlgeschlagen. Vorlage bleibt erhalten.";
+    firebaseState.textContent = "Firebase-LÃ¶schen fehlgeschlagen. Vorlage bleibt erhalten.";
     return;
   }
 
@@ -7288,7 +6909,7 @@ async function deleteSavedEditorExercise(name) {
   renderSavedEditorExercises();
   renderRecordingExerciseOptions();
   renderPlaybackRecordingAccess(getPatientRecordings(), currentMetadata?.id || null);
-  firebaseState.textContent = `Vorlage aus Firebase gelöscht: ${exercise.name}`;
+  firebaseState.textContent = `Vorlage aus Firebase gelÃ¶scht: ${exercise.name}`;
 }
 
 async function deleteCloudEditorExercise(exercise) {
@@ -7360,7 +6981,7 @@ async function persistEditorInlineDeletion(previousExercise, successText) {
   saveEditorDraft();
 
   if (!previousExercise?.name) {
-    editorVoiceState.textContent = `${successText}. Zum dauerhaften Übernehmen bitte speichern.`;
+    editorVoiceState.textContent = `${successText}. Zum dauerhaften Ãœbernehmen bitte speichern.`;
     return;
   }
 
@@ -7444,15 +7065,6 @@ function loadEditorDraft() {
       }
       editorUseRepeats.checked = draft.useRepeats ?? editorUseRepeats.checked;
       editorRepeats.value = draft.repeats || editorRepeats.value;
-      const breathing = getBreathingSettings({ breathing: draft.breathing || {} });
-      if (breathingInhale) breathingInhale.value = String(breathing.inhale);
-      if (breathingHold) breathingHold.value = String(breathing.hold);
-      if (breathingExhale) breathingExhale.value = String(breathing.exhale);
-      if (breathingPause) breathingPause.value = String(breathing.pause);
-      if (breathingRepeats) breathingRepeats.value = String(breathing.repeats);
-      if (breathingUseVoice) breathingUseVoice.checked = Boolean(breathing.useVoice);
-      breathingExtraStepsState = getBreathingExtraSteps({ breathing: draft.breathing || {} });
-      renderBreathingExtraSteps();
       editorSpeed.value = draft.speed || editorSpeed.value;
     }
   } catch (error) {
@@ -7676,7 +7288,7 @@ function scheduleAutoStop() {
     if (isRecording || mediaRecorder?.state === "recording") {
       stopRecording();
     } else if (startedAt) {
-      restoreRecorderControls("Übung beendet.");
+      restoreRecorderControls("Ãœbung beendet.");
     }
   }, durationMs + tailMs);
 
@@ -7777,7 +7389,7 @@ function setCameraReadyUi() {
   document.body.classList.add("camera-ready");
   cameraStartOverlay.classList.add("is-hidden");
   permissionState.textContent = "Kamera und Mikrofon aktiv";
-  message.textContent = "Bereit für die Aufnahme.";
+  message.textContent = "Bereit fÃ¼r die Aufnahme.";
 }
 
 async function ensureCameraPreviewPlaying() {
@@ -9122,7 +8734,7 @@ function setPlayPauseButtonState(state) {
     normalizedState === "pause"
       ? "Pausieren"
       : normalizedState === "loading"
-        ? "Wiedergabe lädt"
+        ? "Wiedergabe lÃ¤dt"
         : "Abspielen",
   );
 }
@@ -9532,8 +9144,8 @@ function getEmbeddedExerciseVoiceProfile(exercise = {}) {
   return {
     key:
       String(exercise?.voiceProfileKey || "").trim() ||
-      createVoiceProfileKey(exercise?.voiceProfileName || "Übungsstimme", voiceId),
-    name: String(exercise?.voiceProfileName || "Übungsstimme").trim() || "Übungsstimme",
+      createVoiceProfileKey(exercise?.voiceProfileName || "Ãœbungsstimme", voiceId),
+    name: String(exercise?.voiceProfileName || "Ãœbungsstimme").trim() || "Ãœbungsstimme",
     gender: String(exercise?.voiceProfileGender || "neutral").trim() || "neutral",
     voiceId,
     settings: exercise?.voiceProfileSettings || exercise?.voiceAudioVoiceSettings || null,
@@ -9568,8 +9180,8 @@ function getEditorSelectedVoice(settings = getElevenLabsSettings()) {
   const embeddedVoiceId = String(selectedOption?.dataset?.voiceId || "").trim();
   if (selectedKey || embeddedVoiceId) {
     return {
-      key: selectedKey || createVoiceProfileKey(selectedOption?.dataset?.voiceName || "Übungsstimme", embeddedVoiceId),
-      name: String(selectedOption?.dataset?.voiceName || "Übungsstimme").trim() || "Übungsstimme",
+      key: selectedKey || createVoiceProfileKey(selectedOption?.dataset?.voiceName || "Ãœbungsstimme", embeddedVoiceId),
+      name: String(selectedOption?.dataset?.voiceName || "Ãœbungsstimme").trim() || "Ãœbungsstimme",
       gender: String(selectedOption?.dataset?.voiceGender || "neutral").trim() || "neutral",
       voiceId: embeddedVoiceId || String(settings.voiceId || "").trim() || getDefaultElevenLabsSettings().voiceId,
       settings: null,
@@ -9593,8 +9205,8 @@ function getExerciseSelectedVoice(exercise, settings = getElevenLabsSettings()) 
     settings.voices.find((voice) => voice.voiceId === voiceId) ||
     (voiceId
       ? {
-          key: voiceKey || createVoiceProfileKey(exercise?.voiceProfileName || "Übungsstimme", voiceId),
-          name: exercise?.voiceProfileName || "Übungsstimme",
+          key: voiceKey || createVoiceProfileKey(exercise?.voiceProfileName || "Ãœbungsstimme", voiceId),
+          name: exercise?.voiceProfileName || "Ãœbungsstimme",
           gender: exercise?.voiceProfileGender || "neutral",
           voiceId,
         }
@@ -9636,7 +9248,7 @@ function getDefaultChatGptSettings() {
     hasApiKey: false,
     model: "gpt-5",
     systemPrompt:
-      "Erstelle eine kurze, freundliche logopädische Voice-Instruktion auf Deutsch. Sprich den Patienten direkt an. Maximal drei kurze Sätze. Keine Markdown-Zeichen.",
+      "Erstelle eine kurze, freundliche logopÃ¤dische Voice-Instruktion auf Deutsch. Sprich den Patienten direkt an. Maximal drei kurze SÃ¤tze. Keine Markdown-Zeichen.",
   };
 }
 
@@ -9789,7 +9401,7 @@ function renderEqualizerControls(settings = getEqualizerSettings()) {
     const activeBands = values.filter((value) => value !== 0).length;
     const maxAbs = values.length ? Math.max(...values.map((value) => Math.abs(value))) : 0;
     settingsEqSummary.textContent = activeBands
-      ? `${activeBands} Band${activeBands === 1 ? "" : "s"} · max ${maxAbs} dB`
+      ? `${activeBands} Band${activeBands === 1 ? "" : "s"} Â· max ${maxAbs} dB`
       : "0 dB";
   }
   applySettingsEqualizer(settings);
@@ -9802,9 +9414,9 @@ function resetEqualizerSettings() {
   applySettingsEqualizer(settings);
   queuePatientProfileSave({ immediate: true });
   saveCloudEqualizerSettings(settings).catch(() => {
-    if (settingsState) settingsState.textContent = "Equalizer zurückgesetzt. Firebase-Speichern fehlgeschlagen.";
+    if (settingsState) settingsState.textContent = "Equalizer zurÃ¼ckgesetzt. Firebase-Speichern fehlgeschlagen.";
   });
-  if (settingsState) settingsState.textContent = "Equalizer zurückgesetzt.";
+  if (settingsState) settingsState.textContent = "Equalizer zurÃ¼ckgesetzt.";
 }
 
 async function saveCloudEqualizerSettings(settings = getEqualizerSettings()) {
@@ -9863,7 +9475,7 @@ async function playSettingsEqualizerTestAudio() {
     await settingsVoicePreview.play();
     if (settingsEqStopButton) settingsEqStopButton.disabled = false;
     startSettingsEqVisuals();
-    if (settingsState) settingsState.textContent = "EQ-Test läuft. Regler ändern den Klang live.";
+    if (settingsState) settingsState.textContent = "EQ-Test lÃ¤uft. Regler Ã¤ndern den Klang live.";
   } catch (error) {
     if (settingsState) settingsState.textContent = error?.message || "EQ-Testaudio konnte nicht gestartet werden.";
   } finally {
@@ -10116,8 +9728,8 @@ function updateDailyPlanVoiceHint() {
   if (!dailyPlanVoiceHint) return;
   const voice = getDailyPlanSelectedVoice();
   dailyPlanVoiceHint.textContent = voice
-    ? `Die Beschreibung wird vor der ersten Übung einmal mit ${voice.name} vorgelesen.`
-    : "Die Beschreibung wird vor der ersten Übung einmal vorgelesen.";
+    ? `Die Beschreibung wird vor der ersten Ãœbung einmal mit ${voice.name} vorgelesen.`
+    : "Die Beschreibung wird vor der ersten Ãœbung einmal vorgelesen.";
 }
 
 function updateEditorVoiceSelectHint() {
@@ -10125,8 +9737,8 @@ function updateEditorVoiceSelectHint() {
   const voice = getEditorSelectedVoice();
   const shortId = String(voice?.voiceId || "").slice(-6) || "keine ID";
   editorVoiceSelectHint.textContent = voice
-    ? `Gespeichert für diese Übung: ${voice.name} (${getVoiceGenderLabel(voice.gender)}, ${shortId}).`
-    : "Diese Stimme wird für Voice-Begleitung, Vorführung und Dialog-Audio gespeichert.";
+    ? `Gespeichert fÃ¼r diese Ãœbung: ${voice.name} (${getVoiceGenderLabel(voice.gender)}, ${shortId}).`
+    : "Diese Stimme wird fÃ¼r Voice-Begleitung, VorfÃ¼hrung und Dialog-Audio gespeichert.";
 }
 
 function handleEditorVoiceSelectionChange() {
@@ -10143,13 +9755,13 @@ function handleEditorVoiceSelectionChange() {
   }
   if (!voice) return;
   if (editorVoiceAudioVoiceId && editorVoiceAudioVoiceId !== voice.voiceId) {
-    editorVoiceState.textContent = "Andere Übungsstimme gewählt. Audio bitte neu erstellen.";
+    editorVoiceState.textContent = "Andere Ãœbungsstimme gewÃ¤hlt. Audio bitte neu erstellen.";
   }
 }
 
 function formatVoiceProfileOptionLabel(voice) {
   const shortId = String(voice.voiceId || "").slice(-6) || "ohne ID";
-  return `${voice.name} · ${getVoiceGenderLabel(voice.gender)} · ${shortId}`;
+  return `${voice.name} Â· ${getVoiceGenderLabel(voice.gender)} Â· ${shortId}`;
 }
 
 function activateSelectedVoiceProfileFromDropdown() {
@@ -10190,7 +9802,7 @@ function activateSelectedVoiceProfileFromDropdown() {
 }
 
 function getVoiceGenderLabel(gender) {
-  if (gender === "male") return "männlich";
+  if (gender === "male") return "mÃ¤nnlich";
   if (gender === "female") return "weiblich";
   return "neutral";
 }
@@ -10358,9 +9970,9 @@ function deleteSelectedVoiceProfile() {
   renderVoiceProfileSelect(nextSettings);
   loadSelectedVoiceProfileIntoControls(nextSettings.activeVoiceKey, { settings: nextSettings, silent: true });
   saveCloudElevenLabsSettings(nextSettings, { replace: true }).catch(() => {
-    if (settingsState) settingsState.textContent = "Stimme lokal gelöscht. Firebase konnte nicht aktualisiert werden.";
+    if (settingsState) settingsState.textContent = "Stimme lokal gelÃ¶scht. Firebase konnte nicht aktualisiert werden.";
   });
-  if (settingsState) settingsState.textContent = `Stimme gelöscht: ${deletedVoice?.name || "Stimme"}.`;
+  if (settingsState) settingsState.textContent = `Stimme gelÃ¶scht: ${deletedVoice?.name || "Stimme"}.`;
 }
 
 function saveElevenLabsSettings() {
@@ -10650,9 +10262,9 @@ async function testElevenLabsSettingsVoice(options = {}) {
 function getDefaultSettingsDemoText() {
   return [
     "Das ist ein Test der LogoSound Stimme.",
-    "Bitte hören Sie auf Klarheit, Wärme und Verständlichkeit.",
-    "Während das Testaudio läuft, können Sie Equalizer und Wiedergabe-Verstärkung verändern.",
-    "So prüfen Sie direkt, ob die Stimme im Übungsraum natürlich und deutlich klingt.",
+    "Bitte hÃ¶ren Sie auf Klarheit, WÃ¤rme und VerstÃ¤ndlichkeit.",
+    "WÃ¤hrend das Testaudio lÃ¤uft, kÃ¶nnen Sie Equalizer und Wiedergabe-VerstÃ¤rkung verÃ¤ndern.",
+    "So prÃ¼fen Sie direkt, ob die Stimme im Ãœbungsraum natÃ¼rlich und deutlich klingt.",
   ].join(" ");
 }
 
@@ -11003,8 +10615,8 @@ function calculateVoiceEvaluation(metadata, recordings = allRecordings) {
       entwicklung: "Ausgangsmessung",
       ampel: "is-warning",
       hinweise: [
-        "Stärke: Ausgangsmessung gespeichert",
-        "Auffällig: Weitere Tests zeigen erst den persönlichen Verlauf",
+        "StÃ¤rke: Ausgangsmessung gespeichert",
+        "AuffÃ¤llig: Weitere Tests zeigen erst den persÃ¶nlichen Verlauf",
       ],
       baseline: {
         testId: metadata.id,
@@ -11086,15 +10698,15 @@ function getTrafficLightClass(score) {
 function buildVoiceEvaluationHints(values, baselineValues, scores) {
   const strengths = [];
   const notices = [];
-  if (values.amplitudenGleichmaessigkeit >= baselineValues.amplitudenGleichmaessigkeit + 4) strengths.push("gleichmäßigere Lautstärke");
+  if (values.amplitudenGleichmaessigkeit >= baselineValues.amplitudenGleichmaessigkeit + 4) strengths.push("gleichmÃ¤ÃŸigere LautstÃ¤rke");
   if (values.pausenUeberEineSekunde < baselineValues.pausenUeberEineSekunde) strengths.push("weniger lange Pausen");
-  if (values.stimmenanteilProzent >= baselineValues.stimmenanteilProzent + 4) strengths.push("höherer Stimmenanteil");
-  if (values.frequenzSchwankung > baselineValues.frequenzSchwankung + 8) notices.push("Grundfrequenz schwankt stärker");
+  if (values.stimmenanteilProzent >= baselineValues.stimmenanteilProzent + 4) strengths.push("hÃ¶herer Stimmenanteil");
+  if (values.frequenzSchwankung > baselineValues.frequenzSchwankung + 8) notices.push("Grundfrequenz schwankt stÃ¤rker");
   if (values.stimmenanteilProzent <= baselineValues.stimmenanteilProzent - 6) notices.push("Stimmenanteil ist geringer");
-  if (scores.lautstaerke < 58) notices.push("Lautstärke weicht deutlich von der Ausgangsmessung ab");
-  if (!strengths.length) strengths.push("Werte sind im persönlichen Verlauf stabil");
+  if (scores.lautstaerke < 58) notices.push("LautstÃ¤rke weicht deutlich von der Ausgangsmessung ab");
+  if (!strengths.length) strengths.push("Werte sind im persÃ¶nlichen Verlauf stabil");
   if (!notices.length) notices.push("keine deutliche Verschlechterung erkennbar");
-  return [...strengths.map((text) => `Stärke: ${text}`), ...notices.map((text) => `Auffällig: ${text}`)];
+  return [...strengths.map((text) => `StÃ¤rke: ${text}`), ...notices.map((text) => `AuffÃ¤llig: ${text}`)];
 }
 
 function splitVoiceEvaluationHints(hints = []) {
@@ -11201,9 +10813,9 @@ function renderAudioAnalysis(metadata = currentMetadata) {
   if (!audioAnalysisGrid || !audioAnalysisTitle || !audioAnalysisNote) return;
 
   if (!metadata) {
-    audioAnalysisTitle.textContent = "Keine Aufnahme geöffnet";
+    audioAnalysisTitle.textContent = "Keine Aufnahme geÃ¶ffnet";
     audioAnalysisGrid.innerHTML = "";
-    audioAnalysisNote.textContent = "Öffne eine Aufnahme aus der Auswertung oder erstelle eine neue Aufnahme.";
+    audioAnalysisNote.textContent = "Ã–ffne eine Aufnahme aus der Auswertung oder erstelle eine neue Aufnahme.";
     if (statisticsPositionSlider) statisticsPositionSlider.disabled = true;
     if (statisticsPositionValue) statisticsPositionValue.textContent = "00:00";
     setAnalysisRangeControlsEnabled(false);
@@ -11215,7 +10827,7 @@ function renderAudioAnalysis(metadata = currentMetadata) {
   const analysis = buildAudioAnalysis(calibratedMetadata);
   const positionAnalysis = buildPositionAudioAnalysis(calibratedMetadata, selectedAnalysisPosition);
   const rangeAnalysis = buildRangeAudioAnalysis(calibratedMetadata, selectedAnalysisStart, selectedAnalysisEnd);
-  audioAnalysisTitle.textContent = `${metadata.uebung || "Aufnahme"} · ${formatTime(positionAnalysis.zeitSekunden)}`;
+  audioAnalysisTitle.textContent = `${metadata.uebung || "Aufnahme"} Â· ${formatTime(positionAnalysis.zeitSekunden)}`;
   audioAnalysisGrid.innerHTML = "";
   if (statisticsPositionSlider) {
     statisticsPositionSlider.disabled = false;
@@ -11230,23 +10842,23 @@ function renderAudioAnalysis(metadata = currentMetadata) {
 
   const items = [
     ["Zeit", formatTime(positionAnalysis.zeitSekunden)],
-    ["Lautstärke an der Analyseposition", positionAnalysis.lautstaerke],
-    ["Ø Lautstärke an der Analyseposition", positionAnalysis.durchschnittlicheLautstaerke],
+    ["LautstÃ¤rke an der Analyseposition", positionAnalysis.lautstaerke],
+    ["Ã˜ LautstÃ¤rke an der Analyseposition", positionAnalysis.durchschnittlicheLautstaerke],
     ["Amplitude an der Analyseposition", positionAnalysis.amplitude],
     ["Frequenz an der Analyseposition", positionAnalysis.stimmfrequenzHz ? `${positionAnalysis.stimmfrequenzHz} Hz` : "0 Hz"],
-    ["Ø Frequenz an der Analyseposition", positionAnalysis.durchschnittlicheStimmfrequenzHz ? `${positionAnalysis.durchschnittlicheStimmfrequenzHz} Hz` : "0 Hz"],
+    ["Ã˜ Frequenz an der Analyseposition", positionAnalysis.durchschnittlicheStimmfrequenzHz ? `${positionAnalysis.durchschnittlicheStimmfrequenzHz} Hz` : "0 Hz"],
     ["Frequenzenergie", positionAnalysis.frequenzAmplitude],
     ["Impulse im Fenster", positionAnalysis.impulse],
     ["Bereich", rangeAnalysis.label],
-    ["Bereich Ø", rangeAnalysis.durchschnittlicheLautstaerke],
+    ["Bereich Ã˜", rangeAnalysis.durchschnittlicheLautstaerke],
     ["Bereich Max", rangeAnalysis.maximaleLautstaerke],
     ["Bereich Frequenz", rangeAnalysis.durchschnittlicheStimmfrequenzHz ? `${rangeAnalysis.durchschnittlicheStimmfrequenzHz} Hz` : "0 Hz"],
     ["Bereich Impulse", rangeAnalysis.impulse],
     ["Leseabschnitte", analysis.timing.leseAbschnitte?.length || 0],
     ["Pausen > 1s", analysis.timing.pausenUeberEineSekunde || 0],
     ["Dauer gesamt", formatTime(analysis.dauerSekunden || metadata.dauerSekunden || 0)],
-    ["Ø gesamt", analysis.lautstaerke.durchschnitt],
-    ["Ø Frequenz gesamt", analysis.frequenz.durchschnittHz ? `${analysis.frequenz.durchschnittHz} Hz` : "0 Hz"],
+    ["Ã˜ gesamt", analysis.lautstaerke.durchschnitt],
+    ["Ã˜ Frequenz gesamt", analysis.frequenz.durchschnittHz ? `${analysis.frequenz.durchschnittHz} Hz` : "0 Hz"],
     ["Stimmanteil gesamt", `${analysis.frequenz.stimmanteilProzent}%`],
   ];
 
@@ -11261,13 +10873,13 @@ function renderAudioAnalysis(metadata = currentMetadata) {
   });
 
   audioAnalysisNote.textContent = analysis.qualitaet.zuLeise
-    ? "Hinweis: Die Aufnahme wirkt sehr leise. Empfindlichkeit oder Abstand zum Mikrofon prüfen."
+    ? "Hinweis: Die Aufnahme wirkt sehr leise. Empfindlichkeit oder Abstand zum Mikrofon prÃ¼fen."
     : "Schieberegler bewegt die Analyseposition. Die Werte werden aus einem kurzen Fenster um diese Stelle berechnet.";
 }
 
 function getNormalizedAnalysisDisplayLabel(label) {
   const text = String(label || "");
-  const isAverageLabel = text.includes("\u00d8") || text.includes("Ø");
+  const isAverageLabel = text.includes("\u00d8") || text.includes("Ã˜");
   if (text.includes("Lautst") && text.includes("dort") && isAverageLabel) {
     return "\u00d8 Lautst\u00e4rke an der Analyseposition";
   }
@@ -11288,17 +10900,17 @@ function getNormalizedAnalysisDisplayLabel(label) {
 
 function normalizeAnalysisDisplayLabel(label) {
   const text = String(label || "");
-  if (text.includes("Lautst") && text.includes("dort") && text.includes("Ø")) {
-    return "Ø Lautstärke an der Analyseposition";
+  if (text.includes("Lautst") && text.includes("dort") && text.includes("Ã˜")) {
+    return "Ã˜ LautstÃ¤rke an der Analyseposition";
   }
   if (text.includes("Lautst") && text.includes("dort")) {
-    return "Lautstärke an der Analyseposition";
+    return "LautstÃ¤rke an der Analyseposition";
   }
   if (text.includes("Amplitude") && text.includes("dort")) {
     return "Amplitude an der Analyseposition";
   }
-  if (text.includes("Frequenz") && text.includes("dort") && text.includes("Ø")) {
-    return "Ø Frequenz an der Analyseposition";
+  if (text.includes("Frequenz") && text.includes("dort") && text.includes("Ã˜")) {
+    return "Ã˜ Frequenz an der Analyseposition";
   }
   if (text.includes("Frequenz") && text.includes("dort")) {
     return "Frequenz an der Analyseposition";
@@ -11829,7 +11441,7 @@ async function uploadCurrentRecording(metadata, videoBlob) {
     firebaseState.textContent = "Auch in Firebase gespeichert.";
   } catch (error) {
     firebaseState.textContent =
-      "Lokal gespeichert. Firebase-Upload fehlgeschlagen, bitte Storage/Firestore-Regeln prüfen.";
+      "Lokal gespeichert. Firebase-Upload fehlgeschlagen, bitte Storage/Firestore-Regeln prÃ¼fen.";
   }
 }
 
@@ -11938,18 +11550,18 @@ async function resetCurrentPatientEvaluationData() {
   );
 
   if (!patientRecordings.length) {
-    message.textContent = "Keine Aufnahmen für diese Auswertung vorhanden.";
+    message.textContent = "Keine Aufnahmen fÃ¼r diese Auswertung vorhanden.";
     return;
   }
 
   const confirmed = window.confirm(
-    `Auswertung für ${patient} zurücksetzen? Die Aufnahmen bleiben erhalten, aber gespeicherte Analyse- und Bewertungsdaten werden gelöscht.`,
+    `Auswertung fÃ¼r ${patient} zurÃ¼cksetzen? Die Aufnahmen bleiben erhalten, aber gespeicherte Analyse- und Bewertungsdaten werden gelÃ¶scht.`,
   );
   if (!confirmed) return;
 
   resetEvaluationButton.disabled = true;
-  resetEvaluationButton.textContent = "Auswertung wird zurückgesetzt";
-  firebaseState.textContent = "Auswertung wird lokal und in Firebase zurückgesetzt.";
+  resetEvaluationButton.textContent = "Auswertung wird zurÃ¼ckgesetzt";
+  firebaseState.textContent = "Auswertung wird lokal und in Firebase zurÃ¼ckgesetzt.";
 
   let cloudFailed = false;
   const resetTimestamp = new Date().toISOString();
@@ -11995,11 +11607,11 @@ async function resetCurrentPatientEvaluationData() {
 
   await refreshRecordings();
   resetEvaluationButton.disabled = false;
-  resetEvaluationButton.textContent = "Auswertung zurücksetzen";
-  message.textContent = "Auswertung zurückgesetzt. Neue Aufnahmen bilden wieder eine neue Ausgangsmessung.";
+  resetEvaluationButton.textContent = "Auswertung zurÃ¼cksetzen";
+  message.textContent = "Auswertung zurÃ¼ckgesetzt. Neue Aufnahmen bilden wieder eine neue Ausgangsmessung.";
   firebaseState.textContent = cloudFailed
-    ? "Auswertung lokal zurückgesetzt. Firebase teilweise fehlgeschlagen."
-    : "Auswertung lokal und in Firebase zurückgesetzt.";
+    ? "Auswertung lokal zurÃ¼ckgesetzt. Firebase teilweise fehlgeschlagen."
+    : "Auswertung lokal und in Firebase zurÃ¼ckgesetzt.";
 }
 
 async function selectPatient(name, options = {}) {
@@ -12054,7 +11666,7 @@ async function selectPatient(name, options = {}) {
       : `Patient nur lokal gespeichert: ${cleanedName}. Firebase fehlgeschlagen.`,
     cloudSaved ? "success" : "warning",
   );
-  message.textContent = `Patient ausgewählt: ${cleanedName}`;
+  message.textContent = `Patient ausgewÃ¤hlt: ${cleanedName}`;
 }
 
 async function refreshRecordings(preferredId = null) {
@@ -12149,7 +11761,7 @@ function getCourseTemplates() {
     {
       id: "template_breath_relax",
       name: "Lockerung und Atmung",
-      description: "Ruhige Übungen mit Pausen und Atemhinweisen.",
+      description: "Ruhige Ãœbungen mit Pausen und Atemhinweisen.",
       difficulty: "leicht",
       category: "atmung",
       sessionsPerWeek: 4,
@@ -12158,11 +11770,11 @@ function getCourseTemplates() {
     {
       id: "template_articulation",
       name: "Artikulationstraining",
-      description: "Silben, Laute und kurze Sätze für deutliches Sprechen.",
+      description: "Silben, Laute und kurze SÃ¤tze fÃ¼r deutliches Sprechen.",
       difficulty: "mittel",
       category: "artikulation",
       sessionsPerWeek: 5,
-      exercises: ["Pa Ta Ka", "Pa Ta Ka 10x", "Kurze Sätze"],
+      exercises: ["Pa Ta Ka", "Pa Ta Ka 10x", "Kurze SÃ¤tze"],
     },
     {
       id: "template_evening_relax",
@@ -12187,7 +11799,6 @@ function getCourseTemplates() {
 
 function getExerciseCategory(exercise) {
   const mode = normalizeEditorExerciseModeValue(exercise?.mode || "");
-  if (mode === "breathing") return "atmung";
   if (mode === "vowels") return "stimme";
   if (mode === "syllables") return "artikulation";
   if (mode === "sentences" || mode === "text" || mode === "long_text" || mode === "dialog") return "sprechen";
@@ -12202,7 +11813,7 @@ function getExerciseLibraryItems() {
       exerciseId: option.value,
       name: option.textContent.trim() || option.value,
       mode: option.dataset.mode || "syllables",
-      description: "Vorhandene LogoSound-Übung",
+      description: "Vorhandene LogoSound-Ãœbung",
       duration: Number(option.dataset.duration || 90),
       difficulty: "leicht",
       isCustom: false,
@@ -12213,7 +11824,7 @@ function getExerciseLibraryItems() {
     exerciseId: exercise.name,
     name: exercise.name,
     mode: exercise.mode || "syllables",
-    description: exercise.contentLabel || "Individuell erstellte Übung",
+    description: exercise.contentLabel || "Individuell erstellte Ãœbung",
     duration: estimateExerciseDurationSeconds(exercise),
     difficulty: exercise.difficulty || "mittel",
     isCustom: true,
@@ -12226,7 +11837,7 @@ function getExerciseLibraryItems() {
       exerciseId: `media:${item.id}`,
       name: item.title,
       mode: item.kind === "pause" ? "media_pause" : "media_exercise",
-      description: item.description || (item.kind === "pause" ? "Mediengestützte Pause" : "Mediengestützte Übung"),
+      description: item.description || (item.kind === "pause" ? "MediengestÃ¼tzte Pause" : "MediengestÃ¼tzte Ãœbung"),
       duration: Number(item.duration || 30),
       difficulty: "leicht",
       isCustom: false,
@@ -12235,9 +11846,6 @@ function getExerciseLibraryItems() {
       mediaUrl: item.downloadUrl,
       mediaType: item.mediaType,
       mimeType: item.mimeType,
-      thumbnailDataUrl: item.thumbnailDataUrl || "",
-      thumbnailUrl: item.thumbnailUrl || item.posterUrl || "",
-      topic: String(item.topic || "Kein Thema"),
     }));
 
   // Uploaded media are shown first so newly added audio/video modules do not
@@ -12249,7 +11857,6 @@ function getExerciseLibraryItems() {
 }
 
 function estimateExerciseDurationSeconds(exercise) {
-  if (exercise?.mode === "breathing") return getBreathingExerciseDuration(exercise);
   const timing = exercise?.timing || EDITOR_SPEEDS[exercise?.speed || 3] || EDITOR_SPEEDS[3];
   const text = String(exercise?.script || exercise?.content || exercise?.exerciseId || "");
   const units = text.split(/\s+/).filter(Boolean).length || 1;
@@ -12259,7 +11866,6 @@ function estimateExerciseDurationSeconds(exercise) {
 function buildCourseExercise(libraryItem) {
   const pauseDuration = Math.max(0, Math.min(300, Number(coursePauseDuration?.value) || 30));
   const isMediaPause = libraryItem.mode === "media_pause";
-  const isBreathingExercise = libraryItem.mode === "breathing";
   return {
     exerciseId: libraryItem.exerciseId,
     title: libraryItem.name,
@@ -12274,13 +11880,13 @@ function buildCourseExercise(libraryItem) {
     mediaUrl: libraryItem.mediaUrl || "",
     mediaType: libraryItem.mediaType || "",
     mimeType: libraryItem.mimeType || "",
-    recordAudio: !isMediaPause && !isBreathingExercise,
-    recordVideo: !isMediaPause && !isBreathingExercise,
-    useVideo: !isBreathingExercise,
+    recordAudio: !isMediaPause,
+    recordVideo: !isMediaPause,
+    useVideo: true,
     useAudioGuide: true,
     useAvatarGuide: false,
-    volumeAnalysis: !isBreathingExercise,
-    frequencyAnalysis: !isBreathingExercise,
+    volumeAnalysis: true,
+    frequencyAnalysis: true,
     canSkip: true,
     autoEvaluation: true,
     patientHint: "",
@@ -12580,7 +12186,6 @@ function refreshMediaLibraryFromCloud() {
   mediaLibraryRefreshPromise = loadMediaLibraryFromCloud()
     .then(() => {
       persistCourseModuleData();
-      renderDailyPlanIntroImageSelect(dailyPlans.find((plan) => plan.id === editingDailyPlanId) || null);
       renderDailyPlanExerciseLibrary();
       renderMediaLibraryList();
     })
@@ -12640,7 +12245,7 @@ function uploadMediaFileToCloud(file, item) {
         return;
       }
       const message = payload.error === "media-file-too-large"
-        ? "Die Datei ist größer als 28 MB."
+        ? "Die Datei ist grÃ¶ÃŸer als 28 MB."
         : (payload.error || `Upload-Fehler ${request.status}`);
       reject(new Error(message));
     });
@@ -12650,93 +12255,11 @@ function uploadMediaFileToCloud(file, item) {
   });
 }
 
-function formatMediaAspectRatio(width, height) {
-  const sourceWidth = Math.max(0, Math.round(Number(width) || 0));
-  const sourceHeight = Math.max(0, Math.round(Number(height) || 0));
-  if (!sourceWidth || !sourceHeight) return "";
-  const divisor = (left, right) => right ? divisor(right, left % right) : left;
-  const factor = divisor(sourceWidth, sourceHeight);
-  return `${sourceWidth / factor}:${sourceHeight / factor}`;
-}
-
-function createVideoThumbnailDataUrl(source) {
-  return new Promise((resolve) => {
-    const video = document.createElement("video");
-    const isBlob = source instanceof Blob;
-    const objectUrl = isBlob ? URL.createObjectURL(source) : "";
-    let finished = false;
-    const timeout = window.setTimeout(() => finish(""), 10000);
-
-    function finish(dataUrl = "") {
-      if (finished) return;
-      finished = true;
-      window.clearTimeout(timeout);
-      video.pause();
-      video.removeAttribute("src");
-      video.load();
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-      resolve(dataUrl);
-    }
-
-    function capture() {
-      const width = Number(video.videoWidth || 0);
-      const height = Number(video.videoHeight || 0);
-      if (!width || !height) {
-        finish();
-        return;
-      }
-      const targetWidth = Math.min(420, width);
-      const targetHeight = Math.max(1, Math.round((height / width) * targetWidth));
-      const canvas = document.createElement("canvas");
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      const context = canvas.getContext("2d");
-      if (!context) {
-        finish();
-        return;
-      }
-      try {
-        context.drawImage(video, 0, 0, targetWidth, targetHeight);
-        finish({ dataUrl: canvas.toDataURL("image/jpeg", 0.72), width, height });
-      } catch (error) {
-        finish();
-      }
-    }
-
-    video.muted = true;
-    video.playsInline = true;
-    video.preload = "auto";
-    video.addEventListener("loadeddata", capture, { once: true });
-    video.addEventListener("error", () => finish(), { once: true });
-    video.src = isBlob ? objectUrl : resolveAppUrl(String(source || ""));
-    video.load();
-  });
-}
-
-async function ensureMediaLibraryVideoThumbnail(item, source = "") {
-  if (!item || item.mediaType !== "video" || item.thumbnailDataUrl || pendingMediaThumbnailIds.has(item.id)) return;
-  pendingMediaThumbnailIds.add(item.id);
-  try {
-    const thumbnailDataUrl = await createVideoThumbnailDataUrl(source || item.downloadUrl || "");
-    if (!thumbnailDataUrl) return;
-    const updated = { ...item, thumbnailDataUrl, updatedAt: new Date().toISOString() };
-    const payload = await requestMediaLibraryApi("POST", { item: updated });
-    mediaLibraryItems = mergeById(mediaLibraryItems, [payload.item || updated]);
-    persistCourseModuleData();
-    renderMediaLibraryList();
-    renderDailyPlanExerciseLibrary();
-  } catch (error) {
-    console.warn("Video thumbnail creation failed", error);
-  } finally {
-    pendingMediaThumbnailIds.delete(item.id);
-  }
-}
-
 async function saveMediaLibraryFromForm() {
   const file = mediaLibraryFile?.files?.[0];
   const title = String(mediaLibraryTitle?.value || file?.name || "").trim();
   if (!file || !title) {
-    setMediaLibraryState("Bitte Titel und Datei auswählen.", "warning");
+    setMediaLibraryState("Bitte Titel und Datei auswÃ¤hlen.", "warning");
     return;
   }
   if (!isSupportedMediaFile(file)) {
@@ -12744,7 +12267,7 @@ async function saveMediaLibraryFromForm() {
     return;
   }
   if (file.size > 28 * 1024 * 1024) {
-    setMediaLibraryState("Die Datei ist größer als 28 MB. Bitte eine kleinere Datei wählen.", "warning");
+    setMediaLibraryState("Die Datei ist grÃ¶ÃŸer als 28 MB. Bitte eine kleinere Datei wÃ¤hlen.", "warning");
     return;
   }
 
@@ -12763,18 +12286,11 @@ async function saveMediaLibraryFromForm() {
       mimeType: file.type || "application/octet-stream",
       fileName: file.name,
       active: true,
-      topic: "Kein Thema",
-      playbackMode: getMediaFileType(file.type, file.name) === "video" ? "once" : "once",
       createdAt: now,
       updatedAt: now,
     };
     const payload = await uploadMediaFileToCloud(file, item);
-    let savedItem = payload.item || item;
-    mediaLibraryItems = mergeById(mediaLibraryItems, [savedItem]);
-    if (savedItem.mediaType === "video") {
-      setMediaLibraryState("Video gespeichert. Vorschaubild wird erstellt ...");
-      await ensureMediaLibraryVideoThumbnail(savedItem, file);
-    }
+    mediaLibraryItems = mergeById(mediaLibraryItems, [payload.item || item]);
     persistCourseModuleData();
     if (mediaLibraryTitle) mediaLibraryTitle.value = "";
     if (mediaLibraryDescription) mediaLibraryDescription.value = "";
@@ -12782,7 +12298,7 @@ async function saveMediaLibraryFromForm() {
     const mediaMode = item.kind === "pause" ? "media_pause" : "media_exercise";
     const mediaModeLabel = item.kind === "pause" ? "Pauseneinheit" : "Medienmodul";
     setMediaLibraryState(
-      `Gespeichert: ${title}. Unter Tagespläne als ${mediaModeLabel} verfügbar.`,
+      `Gespeichert: ${title}. Unter TagesplÃ¤ne als ${mediaModeLabel} verfÃ¼gbar.`,
       "success",
     );
     renderCourseViews();
@@ -12796,223 +12312,66 @@ async function saveMediaLibraryFromForm() {
   }
 }
 
-function openMediaLibraryPlayerOverlay() {
-  if (!mediaLibraryPlayer) return;
-  mediaLibraryPlayer.classList.add("is-overlay-open");
-  document.body.classList.add("has-media-library-player-overlay");
-  window.requestAnimationFrame(() => closeMediaLibraryPlayerOverlayButton?.focus());
-}
-
-function closeMediaLibraryPlayerOverlay() {
-  if (!mediaLibraryPlayer?.classList.contains("is-overlay-open")) return;
-  mediaLibraryPlayerVideo?.pause();
-  mediaLibraryPlayerAudio?.pause();
-  mediaLibraryPlayer.classList.remove("is-overlay-open");
-  document.body.classList.remove("has-media-library-player-overlay");
-}
-function clearMediaLibraryPlayer() {
-  [mediaLibraryPlayerVideo, mediaLibraryPlayerAudio].forEach((player) => {
-    if (!player) return;
-    player.pause();
-    player.removeAttribute("src");
-    player.load();
-    player.classList.add("is-hidden");
-  });
-  if (mediaLibraryPlayerImage) {
-    mediaLibraryPlayerImage.removeAttribute("src");
-    mediaLibraryPlayerImage.classList.add("is-hidden");
-  }
-}
-
-function showMediaLibraryItem(item, autoplay = false) {
-  if (!item) return;
+function renderMediaPreview(item, controls = true) {
   const source = resolveAppUrl(String(item.downloadUrl || ""));
-  if (!source) {
-    setMediaLibraryState("Für dieses Medium ist keine Datei verfügbar.", "warning");
-    return;
-  }
-  selectedMediaLibraryItemId = item.id;
-  clearMediaLibraryPlayer();
-  if (mediaLibraryPlayerTitle) mediaLibraryPlayerTitle.textContent = item.title || "Medium";
-  mediaLibraryPlayerEmpty?.classList.add("is-hidden");
-  const player = item.mediaType === "video"
-    ? mediaLibraryPlayerVideo
-    : (item.mediaType === "audio" ? mediaLibraryPlayerAudio : mediaLibraryPlayerImage);
-  if (!player) return;
-  player.src = source;
-  if (player instanceof HTMLVideoElement) player.loop = item.playbackMode === "loop";
-  player.classList.remove("is-hidden");
-  if (player instanceof HTMLImageElement) return;
-  player.load();
-  if (autoplay) player.play().catch(() => {});
-}
-
-function mediaLibraryEscape(value = "") {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function getMediaLibraryTypeLabel(item) {
-  if (item.mediaType === "video") return "Video";
-  if (item.mediaType === "image") return "Bild";
-  return "Sound";
-}
-
-function renderMediaLibraryThumbnail(item) {
-  const source = String(item.thumbnailDataUrl || "") || resolveAppUrl(String(item.thumbnailUrl || item.posterUrl || (item.mediaType === "image" ? item.downloadUrl || "" : "")));
-  const type = item.mediaType === "video" ? "video" : (item.mediaType === "image" ? "image" : "audio");
-  if ((type === "image" || type === "video") && source) {
-    if (type === "video") {
-      return `<span class="media-library-thumbnail media-library-thumbnail-video"><img src="${mediaLibraryEscape(source)}" alt=""><span class="media-library-thumbnail-icon">&#9654;</span><small>Video</small></span>`;
-    }
-    return `<span class="media-library-thumbnail media-library-thumbnail-image"><img src="${mediaLibraryEscape(source)}" alt=""></span>`;
-  }
-  const icon = type === "video" ? "&#9654;" : (type === "image" ? "&#9635;" : "&#9835;");
-  const label = type === "video" ? "Video" : (type === "image" ? "Bild" : "Sound");
-  return `<span class="media-library-thumbnail media-library-thumbnail-${type}" aria-hidden="true"><span class="media-library-thumbnail-icon">${icon}</span><small>${label}</small></span>`;
-}
-
-
-async function backfillMediaLibraryThumbnails() {
-  const videos = mediaLibraryItems.filter((item) => item.mediaType === "video" && !item.thumbnailDataUrl);
-  if (!videos.length) {
-    setMediaLibraryState("Alle Videos haben bereits ein Vorschaubild.", "success");
-    return;
-  }
-  if (backfillMediaLibraryThumbnailsButton) backfillMediaLibraryThumbnailsButton.disabled = true;
-  let completed = 0;
-  try {
-    for (const item of videos) {
-      setMediaLibraryState(`Vorschaubild ${completed + 1} von ${videos.length} wird erstellt ...`);
-      await ensureMediaLibraryVideoThumbnail(item);
-      if (mediaLibraryItems.find((entry) => entry.id === item.id)?.thumbnailDataUrl) completed += 1;
-    }
-    setMediaLibraryState(`${completed} von ${videos.length} Vorschaubildern gespeichert.`, completed === videos.length ? "success" : "warning");
-  } finally {
-    if (backfillMediaLibraryThumbnailsButton) backfillMediaLibraryThumbnailsButton.disabled = false;
-  }
-}function getMediaLibraryRatioLabel(item) {
-  if (item?.mediaType !== "video") return "";
-  return String(item.aspectRatio || formatMediaAspectRatio(item.videoWidth, item.videoHeight) || "");
-}
-
-function getMediaLibraryTopicOptions(selected = "Kein Thema") {
-  const normalized = MEDIA_LIBRARY_TOPICS.includes(selected) ? selected : "Kein Thema";
-  return MEDIA_LIBRARY_TOPICS.map((topic) => `<option value="${mediaLibraryEscape(topic)}"${topic === normalized ? " selected" : ""}>${mediaLibraryEscape(topic)}</option>`).join("");
-}
-
-async function saveMediaLibraryItemEdit(item, card) {
-  const titleInput = card.querySelector('[data-field="title"]');
-  const topicSelect = card.querySelector('[data-field="topic"]');
-  const playbackSelect = card.querySelector('[data-field="playbackMode"]');
-  const title = String(titleInput?.value || "").trim();
-  if (!title) {
-    setMediaLibraryState("Bitte einen Titel eingeben.", "warning");
-    titleInput?.focus();
-    return;
-  }
-  const updated = {
-    ...item,
-    title,
-    topic: String(topicSelect?.value || "Kein Thema"),
-    playbackMode: item.mediaType === "video" ? String(playbackSelect?.value || item.playbackMode || "once") : "once",
-    updatedAt: new Date().toISOString(),
-  };
-  try {
-    const payload = await requestMediaLibraryApi("POST", { item: updated });
-    mediaLibraryItems = mergeById(mediaLibraryItems, [payload.item || updated]);
-    editingMediaLibraryItemId = "";
-    persistCourseModuleData();
-    setMediaLibraryState(`Gespeichert: ${title}`, "success");
-    renderCourseViews();
-  } catch (error) {
-    setMediaLibraryState(`Speichern fehlgeschlagen: ${error.message}`, "error");
-  }
+  if (!source) return "";
+  const safeSource = source.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  if (item.mediaType === "video") return `<video class="media-library-preview" src="${safeSource}" ${controls ? "controls" : ""} playsinline preload="metadata"></video>`;
+  if (item.mediaType === "image") return `<img class="media-library-preview" src="${safeSource}" alt="" />`;
+  return `<audio class="media-library-audio" src="${safeSource}" ${controls ? "controls" : ""} preload="metadata"></audio>`;
 }
 
 function renderMediaLibraryList() {
   if (!mediaLibraryList) return;
   mediaLibraryList.innerHTML = "";
-  const items = mediaLibraryItems
-    .slice()
-    .sort((left, right) => String(right.updatedAt || "").localeCompare(String(left.updatedAt || "")));
-  if (!items.length) {
-    clearMediaLibraryPlayer();
-    if (mediaLibraryPlayerTitle) mediaLibraryPlayerTitle.textContent = "Noch keine Medien";
-    mediaLibraryPlayerEmpty?.classList.remove("is-hidden");
+  if (!mediaLibraryItems.length) {
     mediaLibraryList.innerHTML = '<div class="course-empty">Noch keine Medien gespeichert.</div>';
     return;
   }
-  if (!items.some((item) => item.id === selectedMediaLibraryItemId)) selectedMediaLibraryItemId = items[0].id;
-  const selectedItem = items.find((item) => item.id === selectedMediaLibraryItemId);
-  if (selectedItem && !mediaLibraryPlayerVideo?.src && !mediaLibraryPlayerAudio?.src && !mediaLibraryPlayerImage?.src) showMediaLibraryItem(selectedItem);
-
-  items.forEach((item) => {
-    const editing = item.id === editingMediaLibraryItemId;
-    const topic = String(item.topic || "Kein Thema");
-    const ratio = getMediaLibraryRatioLabel(item);
-    const card = document.createElement("article");
-    card.className = `course-card media-library-card${item.active === false ? " is-inactive" : ""}${item.id === selectedMediaLibraryItemId ? " is-selected" : ""}${editing ? " is-editing" : ""}`;
-    card.innerHTML = `
-      <button class="media-library-select" type="button" data-action="preview" aria-label="${mediaLibraryEscape(item.title)} im Player öffnen">
-        ${renderMediaLibraryThumbnail(item)}
-        <span class="media-library-card-copy">
-          <strong title="${mediaLibraryEscape(item.title)}">${mediaLibraryEscape(item.title)}</strong>
-          <small>${getMediaLibraryTypeLabel(item)} · ${formatCourseDuration(item.duration)}${ratio ? ` · <span class="media-library-ratio">${mediaLibraryEscape(ratio)}</span>` : ""}${item.playbackMode === "loop" ? " · Loop" : ""}</small>
-          <small class="media-library-topic-label">Thema: ${mediaLibraryEscape(topic)}</small>
-        </span>
-      </button>
-      <div class="media-library-card-actions">
-        <button class="icon-button" type="button" data-action="${editing ? "save" : "edit"}" title="${editing ? "Änderungen speichern" : "Titel und Thema bearbeiten"}" aria-label="${editing ? "Änderungen speichern" : "Titel und Thema bearbeiten"}">${editing ? "&#10003;" : "&#9998;"}</button>
-        <button class="icon-button danger-action" type="button" data-action="delete" title="Medium löschen" aria-label="Medium löschen">&#128465;</button>
-      </div>
-      ${editing ? `
-        <div class="media-library-edit-fields">
-          <label>Titel<input type="text" data-field="title" value="${mediaLibraryEscape(item.title)}"></label>
-          <label>Thema<select data-field="topic">${getMediaLibraryTopicOptions(topic)}</select></label>
-          ${item.mediaType === "video" ? `<label>Wiedergabe<select data-field="playbackMode"><option value="once"${item.playbackMode !== "loop" ? " selected" : ""}>Einmal abspielen</option><option value="loop"${item.playbackMode === "loop" ? " selected" : ""}>Als Loop wiederholen</option></select></label>` : ""}
-        </div>` : ""}
-    `;
-    card.addEventListener("click", async (event) => {
-      const action = event.target.closest("button")?.dataset.action;
-      if (!action) return;
-      if (action === "preview") {
-        showMediaLibraryItem(item, true);
-        openMediaLibraryPlayerOverlay();
-        renderMediaLibraryList();
-        return;
-      }
-      if (action === "edit") {
-        editingMediaLibraryItemId = item.id;
-        renderMediaLibraryList();
-        return;
-      }
-      if (action === "save") {
-        await saveMediaLibraryItemEdit(item, card);
-        return;
-      }
-      if (action === "delete") {
-        if (!window.confirm(`„${item.title}“ dauerhaft aus Firebase löschen?`)) return;
-        try {
+  mediaLibraryItems
+    .slice()
+    .sort((left, right) => String(right.updatedAt || "").localeCompare(String(left.updatedAt || "")))
+    .forEach((item) => {
+      const card = document.createElement("article");
+      card.className = `course-card media-library-card${item.active === false ? " is-inactive" : ""}`;
+      card.innerHTML = `
+        <div class="course-card-head">
+          <span class="course-symbol">${item.kind === "pause" ? "PA" : "ME"}</span>
+          <div><h3>${item.title}</h3><p>${item.kind === "pause" ? "Pauseneinheit" : "MedienÃ¼bung"} Â· ${formatCourseDuration(item.duration)}</p></div>
+          <strong class="course-status ${item.active === false ? "" : "is-active"}">${item.active === false ? "Aus" : "Aktiv"}</strong>
+        </div>
+        ${item.description ? `<p>${item.description}</p>` : ""}
+        ${renderMediaPreview(item)}
+        <div class="course-actions">
+          <button class="secondary-action" type="button" data-action="toggle">${item.active === false ? "Aktivieren" : "Deaktivieren"}</button>
+          <button class="secondary-action danger-action" type="button" data-action="delete" aria-label="Medium lÃ¶schen">LÃ¶schen</button>
+        </div>
+      `;
+      card.addEventListener("click", async (event) => {
+        const action = event.target.closest("button")?.dataset.action;
+        if (!action) return;
+        if (action === "toggle") {
+          const updated = { ...item, active: item.active === false, updatedAt: new Date().toISOString() };
+          const payload = await requestMediaLibraryApi("POST", { item: updated });
+          mediaLibraryItems = mergeById(mediaLibraryItems, [payload.item || updated]);
+          persistCourseModuleData();
+          setMediaLibraryState(`${updated.title} ist ${updated.active ? "aktiv" : "deaktiviert"}.`, "success");
+          renderCourseViews();
+          return;
+        }
+        if (action === "delete") {
+          if (!window.confirm(`â€ž${item.title}â€œ dauerhaft aus Firebase lÃ¶schen?`)) return;
           await requestMediaLibraryApi("DELETE", { id: item.id });
           mediaLibraryItems = mediaLibraryItems.filter((entry) => entry.id !== item.id);
-          if (selectedMediaLibraryItemId === item.id) selectedMediaLibraryItemId = "";
-          if (editingMediaLibraryItemId === item.id) editingMediaLibraryItemId = "";
           persistCourseModuleData();
-          setMediaLibraryState(`Gelöscht: ${item.title}`, "success");
+          setMediaLibraryState(`GelÃ¶scht: ${item.title}`, "success");
           renderCourseViews();
-        } catch (error) {
-          setMediaLibraryState(`Löschen fehlgeschlagen: ${error.message}`, "error");
         }
-      }
+      });
+      mediaLibraryList.append(card);
     });
-    mediaLibraryList.append(card);
-  });
 }
+
 function updateRoleMenuVisibility() {
   const isPatient = userRole === "patient";
   document.querySelectorAll("[data-role-menu='staff']").forEach((button) => {
@@ -13029,7 +12388,6 @@ function renderCourseViews() {
   renderDailyPlanExerciseLibrary();
   renderDailyPlanSelectedExercises();
   renderDailyPlanList();
-  renderOpenDailyPlanSelect();
   renderCourseExerciseLibrary();
   renderCourseSelectedExercises();
   renderCourseList();
@@ -13045,7 +12403,7 @@ function renderCourseAssignOptions() {
   if (!courses.length) {
     const option = document.createElement("option");
     option.value = "";
-    option.textContent = "Kein Kurs verfügbar";
+    option.textContent = "Kein Kurs verfÃ¼gbar";
     patientCourseAssignSelect.append(option);
     patientCourseAssignSelect.value = "";
     if (assignCourseToPatientButton) assignCourseToPatientButton.disabled = true;
@@ -13064,43 +12422,6 @@ function renderCourseAssignOptions() {
   if (assignCourseToPatientButton) assignCourseToPatientButton.disabled = false;
 }
 
-function renderDailyPlanMediaAndTopicFilters(items) {
-  if (dailyPlanMediaFilter) {
-    const currentMediaValue = dailyPlanMediaFilter.value;
-    const availableMediaTypes = new Set(items.filter((item) => item.isMedia).map((item) => item.mediaType));
-    const pauseAvailable = items.some((item) => item.mode === "media_pause");
-    [...dailyPlanMediaFilter.options].forEach((option) => {
-      if (!option.value) return;
-      const available = option.value === "voice"
-        ? items.some((item) => !item.isMedia && normalizeEditorExerciseModeValue(item.mode) !== "breathing")
-        : option.value === "breathing"
-          ? items.some((item) => normalizeEditorExerciseModeValue(item.mode) === "breathing")
-          : option.value === "pause"
-            ? pauseAvailable
-            : availableMediaTypes.has(option.value);
-      option.hidden = !available;
-      option.disabled = !available;
-    });
-    const activeOption = dailyPlanMediaFilter.querySelector(`option[value="${currentMediaValue}"]`);
-    if (!activeOption || activeOption.disabled) dailyPlanMediaFilter.value = "";
-  }
-
-  if (dailyPlanTopicFilter) {
-    const currentTopic = dailyPlanTopicFilter.value;
-    const topics = [...new Set(items
-      .filter((item) => item.isMedia && item.topic && item.topic !== "Kein Thema")
-      .map((item) => item.topic))]
-      .sort((left, right) => left.localeCompare(right, "de"));
-    dailyPlanTopicFilter.innerHTML = '<option value="">Alle Themen</option>';
-    topics.forEach((topic) => {
-      const option = document.createElement("option");
-      option.value = topic;
-      option.textContent = topic;
-      dailyPlanTopicFilter.append(option);
-    });
-    dailyPlanTopicFilter.value = topics.includes(currentTopic) ? currentTopic : "";
-  }
-}
 function renderDailyPlanFunctionFilter(items) {
   if (!dailyPlanExerciseFilter) return;
   const currentValue = dailyPlanExerciseFilter.value;
@@ -13166,7 +12487,7 @@ function enableDailyPlanLibrarySwipe(card, foreground) {
   };
   foreground.addEventListener("pointerup", finishSwipe);
   foreground.addEventListener("pointercancel", finishSwipe);
-  foreground.title = "Doppelklick: Bearbeiten und Löschen öffnen";
+  foreground.title = "Doppelklick: Bearbeiten und LÃ¶schen Ã¶ffnen";
   foreground.addEventListener("dblclick", (event) => {
     if (event.target.closest("button")) return;
     event.preventDefault();
@@ -13175,35 +12496,6 @@ function enableDailyPlanLibrarySwipe(card, foreground) {
   });
 }
 
-function setDailyPlanLibraryOpen(open, options = {}) {
-  const isOpen = Boolean(open);
-  dailyPlanWorkspace?.classList.toggle("is-library-open", isOpen);
-  dailyPlanLibrary?.setAttribute("aria-hidden", String(!isOpen));
-  openDailyPlanLibraryButton?.setAttribute("aria-expanded", String(isOpen));
-  if (isOpen) renderDailyPlanExerciseLibrary();
-  if (options.focus === false) return;
-  window.requestAnimationFrame(() => {
-    const target = isOpen ? dailyPlanLibrary : dailyPlanSelectedExercises;
-    target?.scrollIntoView({ behavior: "smooth", block: "start" });
-    if (isOpen) dailyPlanExerciseSearch?.focus();
-  });
-}
-
-function renderDailyPlanLibraryVisual(item, isPause = false) {
-  const type = String(item?.mediaType || "");
-  const source = String(item?.thumbnailDataUrl || item?.thumbnailUrl || (type === "image" ? item?.mediaUrl || "" : ""));
-  if (item?.isMedia && source && (type === "video" || type === "image")) {
-    const icon = type === "video" ? "&#9654;" : "&#9635;";
-    const label = type === "video" ? "Video" : "Bild";
-    return `<div class="course-library-visual has-thumbnail"><img src="${mediaLibraryEscape(resolveAppUrl(source))}" alt=""><span class="course-library-visual-play">${icon}</span><small>${label}</small></div>`;
-  }
-  if (isPause) return '<div class="course-library-visual is-pause"><span aria-hidden="true">Ⅱ</span><small>Pause</small></div>';
-  if (item?.isMedia && type === "audio") return '<div class="course-library-visual is-audio"><span aria-hidden="true">♪</span><small>Sound</small></div>';
-  if (item?.mode === "breathing") return '<div class="course-library-visual is-breathing"><span aria-hidden="true">○</span><small>Atem</small></div>';
-  if (item?.mode === "dialog") return '<div class="course-library-visual is-dialog"><span aria-hidden="true">…</span><small>Dialog</small></div>';
-  if (item?.mode === "long_text" || item?.mode === "karaoke") return '<div class="course-library-visual is-text"><span aria-hidden="true">T</span><small>Text</small></div>';
-  return `<div class="course-library-visual"><span aria-hidden="true">Aa</span><small>${mediaLibraryEscape(getEditorModeLabel(item?.mode))}</small></div>`;
-}
 function renderDailyPlanExerciseLibrary() {
   if (!dailyPlanExerciseLibrary) return;
   const libraryItemsById = new Map();
@@ -13213,24 +12505,12 @@ function renderDailyPlanExerciseLibrary() {
     if (!current || (!current.isCustom && item.isCustom)) libraryItemsById.set(key, item);
   });
   const libraryItems = [...libraryItemsById.values()];
-renderDailyPlanFunctionFilter(libraryItems);
-  renderDailyPlanMediaAndTopicFilters(libraryItems);
+  renderDailyPlanFunctionFilter(libraryItems);
   const filter = dailyPlanExerciseFilter?.value || "";
-  const mediaFilter = dailyPlanMediaFilter?.value || "";
-  const topicFilter = dailyPlanTopicFilter?.value || "";
   const search = String(dailyPlanExerciseSearch?.value || "").trim().toLowerCase();
   dailyPlanExerciseLibrary.innerHTML = "";
   const visibleItems = libraryItems
     .filter((item) => !filter || normalizeEditorExerciseModeValue(item.mode) === filter)
-    .filter((item) => {
-      if (!mediaFilter) return true;
-      const mode = normalizeEditorExerciseModeValue(item.mode);
-      if (mediaFilter === "voice") return !item.isMedia && mode !== "breathing";
-      if (mediaFilter === "breathing") return mode === "breathing";
-      if (mediaFilter === "pause") return item.mode === "media_pause";
-      return item.isMedia && item.mediaType === mediaFilter;
-    })
-    .filter((item) => !topicFilter || (item.isMedia && item.topic === topicFilter))
     .filter((item) => {
       if (!search) return true;
       const haystack = [item.name, item.description, getEditorModeLabel(item.mode), item.mode].join(" ").toLowerCase();
@@ -13246,13 +12526,13 @@ renderDailyPlanFunctionFilter(libraryItems);
       card.className = `course-exercise-card${alreadySelected ? " is-selected" : ""}${isPause ? " is-pause" : ""}${item.isCustom ? " has-swipe-actions" : ""}`;
       card.innerHTML = `
         ${item.isCustom ? `
-          <div class="course-swipe-actions" aria-label="Aktionen für ${item.name}">
+          <div class="course-swipe-actions" aria-label="Aktionen fÃ¼r ${item.name}">
             <button type="button" data-action="edit" class="course-swipe-edit">Bearbeiten</button>
-            <button type="button" data-action="delete" class="course-swipe-delete">Löschen</button>
+            <button type="button" data-action="delete" class="course-swipe-delete">LÃ¶schen</button>
           </div>
         ` : ""}
         <div class="course-exercise-content">
-          ${renderDailyPlanLibraryVisual(item, isPause)}
+          <div class="course-module-type">${isPause ? "Pause" : getEditorModeLabel(item.mode)}</div>
           <div class="course-exercise-copy">
             <strong>${item.name}</strong>
             <small>${item.description}</small>
@@ -13262,7 +12542,7 @@ renderDailyPlanFunctionFilter(libraryItems);
             </div>
           </div>
           <div class="course-exercise-actions">
-            <button type="button" class="secondary-action compact-action${alreadySelected ? " is-selected" : ""}" data-action="${alreadySelected ? "remove" : "add"}" aria-label="${alreadySelected ? "Aus Tagesplan entfernen" : "Zum Tagesplan hinzufügen"}" title="${alreadySelected ? "Aus Tagesplan entfernen" : "Hinzufügen"}">${alreadySelected ? "&#10003;" : "+"}</button>
+            <button type="button" class="secondary-action compact-action${alreadySelected ? " is-selected" : ""}" data-action="${alreadySelected ? "remove" : "add"}" aria-label="${alreadySelected ? "Aus Tagesplan entfernen" : "Zum Tagesplan hinzufÃ¼gen"}" title="${alreadySelected ? "Aus Tagesplan entfernen" : "HinzufÃ¼gen"}">${alreadySelected ? "&#10003;" : "+"}</button>
           </div>
         </div>
       `;
@@ -13295,7 +12575,7 @@ renderDailyPlanFunctionFilter(libraryItems);
         }
         dailyPlanDraftExercises.push(buildCourseExercise(item));
         normalizeDailyPlanDraftPositions();
-        setDailyPlanEditorState(`Hinzugefügt: ${item.name}`, "success");
+        setDailyPlanEditorState(`HinzugefÃ¼gt: ${item.name}`, "success");
         renderDailyPlanExerciseLibrary();
         renderDailyPlanSelectedExercises();
       });
@@ -13303,7 +12583,7 @@ renderDailyPlanFunctionFilter(libraryItems);
       dailyPlanExerciseLibrary.append(card);
     });
   if (!dailyPlanExerciseLibrary.children.length) {
-    dailyPlanExerciseLibrary.innerHTML = '<div class="course-empty">Keine passende Übung für den aktuellen Filter.</div>';
+    dailyPlanExerciseLibrary.innerHTML = '<div class="course-empty">Keine passende Ãœbung fÃ¼r den aktuellen Filter.</div>';
   }
 }
 
@@ -13318,11 +12598,11 @@ function renderDailyPlanSelectedExercises() {
   if (dailyPlanSelectionSummary) {
     const count = dailyPlanDraftExercises.length;
     dailyPlanSelectionSummary.textContent = count
-      ? `${count} ${count === 1 ? "Übung" : "Übungen"} · ${formatCourseDuration(totalDuration)}`
-      : "0 Übungen";
+      ? `${count} ${count === 1 ? "Ãœbung" : "Ãœbungen"} Â· ${formatCourseDuration(totalDuration)}`
+      : "0 Ãœbungen";
   }
   if (!dailyPlanDraftExercises.length) {
-    dailyPlanSelectedExercises.innerHTML = '<div class="daily-plan-empty"><strong>Noch keine Übung ausgewählt</strong><span>Fügen Sie unten Übungen oder Pausen hinzu.</span></div>';
+    dailyPlanSelectedExercises.innerHTML = '<div class="daily-plan-empty"><strong>Noch keine Ãœbung ausgewÃ¤hlt</strong><span>FÃ¼gen Sie unten Ãœbungen oder Pausen hinzu.</span></div>';
     dailyPlanSelectedExercises.classList.add("is-empty");
     return;
   }
@@ -13335,7 +12615,7 @@ function renderDailyPlanSelectedExercises() {
       <span class="course-selected-index">${index + 1}</span>
       <div class="course-selected-copy">
         <strong>${exercise.title}</strong>
-        <small>${isPause ? "Pausenmusik" : getEditorModeLabel(exercise.mode)} · ${formatCourseDuration(exercise.duration)}</small>
+        <small>${isPause ? "Pausenmusik" : getEditorModeLabel(exercise.mode)} Â· ${formatCourseDuration(exercise.duration)}</small>
       </div>
       <div class="course-item-actions">
         <button type="button" data-action="up" aria-label="Nach oben" title="Nach oben">&#8593;</button>
@@ -13407,29 +12687,6 @@ function setPatientManagerState(message, type = "info") {
   else patientManagerState.classList.add("is-info");
 }
 
-function getDailyPlanIntroImages() {
-  return mediaLibraryItems
-    .filter((item) => item.active !== false && item.mediaType === "image" && item.downloadUrl)
-    .sort((left, right) => String(left.title || "").localeCompare(String(right.title || ""), "de"));
-}
-
-function renderDailyPlanIntroImageSelect(plan = null) {
-  if (!dailyPlanIntroImageSelect) return;
-  const selectedId = String(plan?.introImageId || dailyPlanIntroImageSelect.value || "");
-  const images = getDailyPlanIntroImages();
-  dailyPlanIntroImageSelect.innerHTML = `<option value="">Kein Hintergrundbild</option>${images
-    .map((item) => `<option value="${mediaLibraryEscape(item.id)}">${mediaLibraryEscape(item.title || "Bild")}</option>`)
-    .join("")}`;
-  dailyPlanIntroImageSelect.value = images.some((item) => item.id === selectedId) ? selectedId : "";
-}
-
-function getDailyPlanIntroImage(plan = null) {
-  const imageId = String(plan?.introImageId || dailyPlanIntroImageSelect?.value || "");
-  const libraryImage = mediaLibraryItems.find((item) => item.id === imageId && item.mediaType === "image" && item.downloadUrl);
-  if (libraryImage) return libraryImage;
-  if (plan?.introImageUrl) return { id: imageId, title: plan.introImageTitle || "Hintergrundbild", downloadUrl: plan.introImageUrl };
-  return null;
-}
 function setDailyPlanIntroPreview(audioUrl = "") {
   if (!dailyPlanIntroPreview) return;
   dailyPlanIntroPreview.pause();
@@ -13484,7 +12741,7 @@ async function generateDailyPlanIntroAudio(options = {}) {
     return existingAudio;
   }
 
-  const originalLabel = dailyPlanIntroAudioButton?.textContent || "Einleitung anhören";
+  const originalLabel = dailyPlanIntroAudioButton?.textContent || "Einleitung anhÃ¶ren";
   if (dailyPlanIntroAudioButton && !options.silent) {
     dailyPlanIntroAudioButton.disabled = true;
     dailyPlanIntroAudioButton.textContent = "Audio wird erstellt";
@@ -13512,38 +12769,10 @@ async function generateDailyPlanIntroAudio(options = {}) {
   }
 }
 
-function renderOpenDailyPlanSelect() {
-  if (!openDailyPlanSelect) return;
-  const selectedId = editingDailyPlanId || openDailyPlanSelect.value || "";
-  openDailyPlanSelect.innerHTML = '<option value="">Tagesplan auswählen</option>';
-  dailyPlans
-    .slice()
-    .sort((left, right) => String(left.name || "").localeCompare(String(right.name || ""), "de"))
-    .forEach((plan) => {
-      const option = document.createElement("option");
-      option.value = plan.id;
-      option.textContent = plan.name || "Unbenannter Tagesplan";
-      openDailyPlanSelect.append(option);
-    });
-  openDailyPlanSelect.value = dailyPlans.some((plan) => plan.id === selectedId) ? selectedId : "";
-}
-
-function setDailyPlanEditorMode(mode = "new") {
-  const opening = mode === "open";
-  openDailyPlanControl?.classList.toggle("is-hidden", !opening);
-  newDailyPlanButton?.classList.toggle("is-active", !opening);
-  openDailyPlanButton?.classList.toggle("is-active", opening);
-  if (opening) {
-    renderOpenDailyPlanSelect();
-    openDailyPlanSelect?.focus();
-  }
-}
 function resetDailyPlanEditor(plan = null) {
-  setDailyPlanLibraryOpen(false, { focus: false });
   editingDailyPlanId = plan?.id || "";
   if (dailyPlanName) dailyPlanName.value = plan?.name || "";
   if (dailyPlanDescription) dailyPlanDescription.value = plan?.description || "";
-  renderDailyPlanIntroImageSelect(plan);
   const settings = getElevenLabsSettings();
   const savedVoice = getDailyPlanVoice(plan, settings);
   renderDailyPlanVoiceSelect(settings, savedVoice?.key || settings.activeVoiceKey);
@@ -13567,7 +12796,6 @@ async function saveDailyPlanFromForm() {
   const now = new Date().toISOString();
   const description = dailyPlanDescription?.value.trim() || "";
   const voice = getDailyPlanSelectedVoice();
-  const introImage = getDailyPlanIntroImage();
   const requestSettings = getDailyPlanVoiceRequestSettings();
   if (description && !isDailyPlanIntroAudioCurrent(dailyPlanIntroDraftAudio, description, requestSettings)) {
     dailyPlanIntroDraftAudio = await generateDailyPlanIntroAudio({ silent: true });
@@ -13576,9 +12804,6 @@ async function saveDailyPlanFromForm() {
     id: editingDailyPlanId || createId("dayplan"),
     name: dailyPlanName?.value.trim() || "Neuer Tagesplan",
     description,
-    introImageId: introImage?.id || "",
-    introImageUrl: introImage?.downloadUrl || "",
-    introImageTitle: introImage?.title || "",
     introVoiceProfileKey: voice?.key || "",
     introVoiceProfileName: voice?.name || "",
     introVoiceProfileGender: voice?.gender || "neutral",
@@ -13630,13 +12855,13 @@ function renderDailyPlanList() {
         <span class="course-symbol">${plan.name.slice(0, 2).toUpperCase()}</span>
         <div>
           <h3>${plan.name}</h3>
-          <p>${plan.exerciseCount || 0} Übungen · ${formatCourseDuration(plan.estimatedDuration)}</p>
+          <p>${plan.exerciseCount || 0} Ãœbungen Â· ${formatCourseDuration(plan.estimatedDuration)}</p>
         </div>
       </div>
       <p>${plan.description || "Keine Beschreibung."}</p>
       <div class="course-actions compact">
         <button type="button" data-action="edit">Bearbeiten</button>
-        <button type="button" data-action="delete" class="danger-action">Löschen</button>
+        <button type="button" data-action="delete" class="danger-action">LÃ¶schen</button>
       </div>
     `;
     card.addEventListener("click", async (event) => {
@@ -13650,7 +12875,7 @@ function renderDailyPlanList() {
 }
 
 async function deleteDailyPlan(plan) {
-  if (!window.confirm(`Tagesplan "${plan.name}" wirklich löschen?`)) return;
+  if (!window.confirm(`Tagesplan "${plan.name}" wirklich lÃ¶schen?`)) return;
   dailyPlans = dailyPlans.filter((item) => item.id !== plan.id);
   courses = courses.map((course) => {
     const nextDayPlans = (course.dayPlans || []).filter((item) => item.id !== plan.id);
@@ -13688,7 +12913,7 @@ function renderCourseExerciseLibrary() {
       <div>
         <strong>${plan.name}</strong>
         <span>${plan.description || "Tagesplan"}</span>
-        <small>${plan.exerciseCount || 0} Übungen · ${formatCourseDuration(plan.estimatedDuration)}</small>
+        <small>${plan.exerciseCount || 0} Ãœbungen Â· ${formatCourseDuration(plan.estimatedDuration)}</small>
       </div>
       <button type="button" class="secondary-action compact-action">+</button>
     `;
@@ -13715,7 +12940,7 @@ function renderCourseSelectedExercises() {
   if (!courseSelectedExercises) return;
   courseSelectedExercises.innerHTML = "";
   if (!courseDraftPlans.length) {
-    courseSelectedExercises.textContent = "Noch kein Tagesplan ausgewählt.";
+    courseSelectedExercises.textContent = "Noch kein Tagesplan ausgewÃ¤hlt.";
     courseSelectedExercises.classList.add("is-empty");
     return;
   }
@@ -13727,7 +12952,7 @@ function renderCourseSelectedExercises() {
       <span class="course-selected-index" aria-hidden="true">${index + 1}</span>
       <div class="course-selected-content">
         <strong>${plan.title}</strong>
-        <small>${plan.exerciseCount || 0} Übungen · ${formatCourseDuration(plan.estimatedDuration)}</small>
+        <small>${plan.exerciseCount || 0} Ãœbungen Â· ${formatCourseDuration(plan.estimatedDuration)}</small>
       </div>
       <div class="course-item-actions">
         <button type="button" data-action="up" aria-label="Nach oben">&uarr;</button>
@@ -13773,17 +12998,17 @@ function getCourseDayPlans(course) {
 
 function resolveCourseDayPlan(planRef) {
   if (!planRef) return null;
+  if (Array.isArray(planRef.exercises) && planRef.exercises.length) return planRef;
   const storedPlan = dailyPlans.find((item) => item.id === planRef.id);
   if (storedPlan) {
     return {
-      ...planRef,
       ...storedPlan,
       id: storedPlan.id,
-      title: storedPlan.name || storedPlan.title || planRef.title || "Tagesplan",
+      title: storedPlan.name,
       description: storedPlan.description || "",
-      exerciseCount: storedPlan.exerciseCount || storedPlan.exercises?.length || 0,
+      exerciseCount: storedPlan.exerciseCount || storedPlan.exercises.length,
       estimatedDuration: storedPlan.estimatedDuration || getCourseEstimatedDuration(storedPlan),
-      exercises: Array.isArray(storedPlan.exercises) ? storedPlan.exercises : [],
+      exercises: storedPlan.exercises || [],
     };
   }
   return {
@@ -13793,7 +13018,7 @@ function resolveCourseDayPlan(planRef) {
     description: planRef.description || "",
     exerciseCount: planRef.exerciseCount || 0,
     estimatedDuration: planRef.estimatedDuration || 0,
-    exercises: Array.isArray(planRef.exercises) ? planRef.exercises : [],
+    exercises: [],
   };
 }
 
@@ -13803,7 +13028,6 @@ function renderCourseNameControls(selectedCourseId = editingCourseId) {
   courseNameSelectGroup?.classList.toggle("is-hidden", !isEditing);
   newCourseButton?.classList.toggle("is-active", !isEditing);
   editCourseButton?.classList.toggle("is-active", isEditing);
-  document.querySelector(".courses-panel")?.classList.toggle("is-editing-course", isEditing);
   if (!courseNameSelect) return;
 
   courseNameSelect.innerHTML = "";
@@ -13861,7 +13085,7 @@ function resetCourseEditor(course = null) {
 
 async function saveCourseFromForm() {
   if (!courseDraftPlans.length) {
-    setCourseEditorState("Bitte mindestens einen Tagesplan für den Kurs auswählen.", "warning");
+    setCourseEditorState("Bitte mindestens einen Tagesplan fÃ¼r den Kurs auswÃ¤hlen.", "warning");
     return;
   }
   setCourseEditorState("Kurs wird gespeichert...", "saving");
@@ -13907,14 +13131,14 @@ function renderCourseList() {
         <span class="course-symbol">${course.symbol || "LS"}</span>
         <div>
           <h3>${course.name}</h3>
-          <p>${course.totalDays || getCourseDayPlans(course).length} Tagespläne · ${course.exerciseCount || 0} Übungen · ${formatCourseDuration(course.estimatedDuration)}</p>
+          <p>${course.totalDays || getCourseDayPlans(course).length} TagesplÃ¤ne Â· ${course.exerciseCount || 0} Ãœbungen Â· ${formatCourseDuration(course.estimatedDuration)}</p>
         </div>
       </div>
       <p>${course.description || "Keine Beschreibung."}</p>
       <div class="course-actions compact">
         <button type="button" data-action="edit">Bearbeiten</button>
         <button type="button" data-action="duplicate">Duplizieren</button>
-        <button type="button" data-action="delete" class="danger-action">Löschen</button>
+        <button type="button" data-action="delete" class="danger-action">LÃ¶schen</button>
       </div>
     `;
     card.addEventListener("click", async (event) => {
@@ -13945,7 +13169,7 @@ function duplicateCourse(course) {
 }
 
 async function deleteCourse(course) {
-  if (!window.confirm(`Kurs "${course.name}" wirklich löschen?`)) return;
+  if (!window.confirm(`Kurs "${course.name}" wirklich lÃ¶schen?`)) return;
   const removedAssignments = courseAssignments.filter((item) => item.courseId === course.id);
   courses = courses.filter((item) => item.id !== course.id);
   courseAssignments = courseAssignments.filter((item) => item.courseId !== course.id);
@@ -14007,7 +13231,7 @@ function renderRelaxMusicList() {
         <span class="course-symbol">j</span>
         <div>
           <h3>${item.title}</h3>
-          <p>${item.category} · ${Math.round((item.volume || 0) * 100)}%${item.isDefault ? " · Standard" : ""}</p>
+          <p>${item.category} Â· ${Math.round((item.volume || 0) * 100)}%${item.isDefault ? " Â· Standard" : ""}</p>
         </div>
         <strong class="course-status">${item.active === false ? "Inaktiv" : "Aktiv"}</strong>
       </div>
@@ -14015,7 +13239,7 @@ function renderRelaxMusicList() {
       <div class="course-actions compact">
         <button type="button" data-action="default">Standard</button>
         <button type="button" data-action="toggle">${item.active === false ? "Aktivieren" : "Deaktivieren"}</button>
-        <button type="button" data-action="delete" class="danger-action">Löschen</button>
+        <button type="button" data-action="delete" class="danger-action">LÃ¶schen</button>
       </div>
     `;
     card.addEventListener("click", async (event) => {
@@ -14078,7 +13302,7 @@ function prepareCourseExerciseInRecordView(exercise) {
   if (!Array.from(exerciseName.options).some((option) => option.value === exercise.exerciseId)) {
     const option = document.createElement("option");
     option.value = exercise.exerciseId;
-    option.textContent = exercise.title || "Medienübung";
+    option.textContent = exercise.title || "MedienÃ¼bung";
     option.dataset.mode = exercise.mode || "media_exercise";
     exerciseName.append(option);
   }
@@ -14088,7 +13312,7 @@ function prepareCourseExerciseInRecordView(exercise) {
   renderRecordingExerciseShortcuts();
   renderCourseRecordingContext(exercise);
   setActiveView("record");
-  message.textContent = `Kursübung bereit: ${exercise.title || exercise.exerciseId}`;
+  message.textContent = `KursÃ¼bung bereit: ${exercise.title || exercise.exerciseId}`;
 }
 
 function renderCourseRecordingContext(exercise = getActiveCourseExercise()) {
@@ -14101,9 +13325,9 @@ function renderCourseRecordingContext(exercise = getActiveCourseExercise()) {
   const current = Math.min(exercises.length, Number(run.index || 0) + 1);
   const progress = Math.round((current / Math.max(1, exercises.length)) * 100);
   if (courseRecordingCourse) courseRecordingCourse.textContent = run.course?.name || "Kurs";
-  if (courseRecordingExercise) courseRecordingExercise.textContent = exercise.title || "Aktuelle Übung";
+  if (courseRecordingExercise) courseRecordingExercise.textContent = exercise.title || "Aktuelle Ãœbung";
   if (courseRecordingPlan) {
-    courseRecordingPlan.textContent = `${run.plan?.title || "Tagesplan"} · Übung ${current} von ${exercises.length}`;
+    courseRecordingPlan.textContent = `${run.plan?.title || "Tagesplan"} Â· Ãœbung ${current} von ${exercises.length}`;
   }
   if (courseRecordingProgress) courseRecordingProgress.style.width = `${progress}%`;
   courseRecordingContext.classList.remove("is-hidden");
@@ -14270,12 +13494,12 @@ function updateCourseResultActions(metadata) {
   const remaining = Math.max(0, exercises.length - completedCount);
   const finishedPlan = remaining === 0 || !nextExercise;
 
-  courseResultTitle.textContent = finishedPlan ? "Tagesplan abgeschlossen" : "Übung abgeschlossen";
+  courseResultTitle.textContent = finishedPlan ? "Tagesplan abgeschlossen" : "Ãœbung abgeschlossen";
   courseResultText.textContent = finishedPlan
-    ? `Der Tagesplan ${activeCourseRun.plan.title || ""} ist fertig. Sie können jetzt in den Kurs zurückkehren.`
-    : `Noch ${remaining} Übung${remaining === 1 ? "" : "en"} offen. Als Nächstes kommt ${nextExercise.title || nextExercise.exerciseId || "die nächste Übung"}.`;
+    ? `Der Tagesplan ${activeCourseRun.plan.title || ""} ist fertig. Sie kÃ¶nnen jetzt in den Kurs zurÃ¼ckkehren.`
+    : `Noch ${remaining} Ãœbung${remaining === 1 ? "" : "en"} offen. Als NÃ¤chstes kommt ${nextExercise.title || nextExercise.exerciseId || "die nÃ¤chste Ãœbung"}.`;
   courseResultBackButton.textContent = finishedPlan ? "Zum Kurs" : "Zum Tagesplan";
-  courseResultNextButton.textContent = finishedPlan ? "Tagesplan ansehen" : "Nächste Übung";
+  courseResultNextButton.textContent = finishedPlan ? "Tagesplan ansehen" : "NÃ¤chste Ãœbung";
   courseResultActions.classList.remove("is-hidden");
 }
 
@@ -14292,12 +13516,11 @@ function syncCourseMediaLock() {
 }
 
 function showCourseMediaLockMessage() {
-  message.textContent = "Ein Kurs läuft bereits. Bitte den Kurs zuerst beenden, stoppen oder abbrechen.";
+  message.textContent = "Ein Kurs lÃ¤uft bereits. Bitte den Kurs zuerst beenden, stoppen oder abbrechen.";
   syncCourseMediaLock();
 }
 
 function clearActiveCourseRun() {
-  setCourseVideoFullscreen(false);
   activeCourseRun = null;
   courseIntroPlaybackPromise = null;
   coursePlaylistVideoAudioUnlocked = false;
@@ -14622,9 +13845,9 @@ function renderMyCoursesLegacy() {
     <div class="course-card-head">
       <span class="course-symbol">${course.symbol || "LS"}</span>
       <div>
-        <p class="course-label">Aktiver Kurs für ${assignment.patientName || getCurrentPatientName()}</p>
+        <p class="course-label">Aktiver Kurs fÃ¼r ${assignment.patientName || getCurrentPatientName()}</p>
         <h3>${course.name}</h3>
-        <p>Heute: ${plan?.title || "Kein Tagesplan"} · Tag ${Math.min(index + 1, Math.max(total, 1))} von ${Math.max(total, 1)}</p>
+        <p>Heute: ${plan?.title || "Kein Tagesplan"} Â· Tag ${Math.min(index + 1, Math.max(total, 1))} von ${Math.max(total, 1)}</p>
       </div>
     </div>
     <p>${course.description || "Ihr aktueller Kurs."}</p>
@@ -14634,7 +13857,7 @@ function renderMyCoursesLegacy() {
         <dd>${formatCourseDate(assignment.startDate)}</dd>
       </div>
       <div>
-        <dt>Übungen heute</dt>
+        <dt>Ãœbungen heute</dt>
         <dd>${todaysExerciseCount}</dd>
       </div>
       <div>
@@ -14672,109 +13895,6 @@ function renderCoursePatientSwitcher() {
   coursePatientSwitcher.value = currentPatient;
 }
 
-function closeCourseTodayOverlay() {
-  if (!courseTodayOverlay) return;
-  courseTodayOverlay.classList.add("is-hidden");
-  courseTodayOverlay.setAttribute("aria-hidden", "true");
-  courseTodayOverlay.setAttribute("hidden", "");
-  document.body.classList.remove("has-course-today-overlay");
-}
-
-function getCourseTodayItemType(exercise) {
-  if (isCoursePauseExercise(exercise)) return "Pauseneinheit";
-  if (exercise?.mode === "breathing") return "Atemübung";
-  if (exercise?.mediaType === "video") return "Video";
-  if (exercise?.mediaType === "image") return "Bild";
-  if (exercise?.mediaType === "audio") return "Audio";
-  if (exercise?.mode === "dialog") return "Dialog";
-  if (exercise?.mode === "karaoke") return "Karaoke-Text";
-  if (exercise?.mode === "long_text") return "Langer Text";
-  return "Übung";
-}
-
-async function startCourseExerciseFromToday(course, assignment, selectedDayIndex, exerciseIndex) {
-  if (!course || !assignment || isCourseMediaLocked()) return;
-  const dayState = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
-  if (!dayState.plan?.exercises?.[exerciseIndex]) return;
-
-  const now = new Date().toISOString();
-  const session = {
-    id: createId("courseSession"),
-    patientId: assignment.patientId,
-    patientName: assignment.patientName,
-    courseId: course.id,
-    courseName: course.name,
-    planId: dayState.plan.id,
-    planTitle: dayState.plan.title,
-    startedAt: now,
-    introPlayedAt: now,
-    currentExerciseIndex: exerciseIndex,
-    status: "started",
-    completedExerciseIds: [],
-    skippedExerciseIds: [],
-    pauseDurations: [],
-    recordings: [],
-    measurementResults: [],
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  const instructionUnlock = unlockInstructionAudio();
-  const contextUnlock = unlockCoursePlaylistAudioContext();
-  Promise.allSettled([
-    instructionUnlock,
-    contextUnlock,
-    unlockCoursePlaylistAudio(),
-    primeCoursePlaylistVideo(course, assignment, selectedDayIndex),
-    primeCoursePauseAudio(course, assignment, selectedDayIndex),
-  ]).catch(() => {});
-  closeCourseTodayOverlay();
-  return startCoursePreview(course, session, assignment, selectedDayIndex);
-}
-function openCourseTodayOverlay(course, assignment, selectedDayIndex = null) {
-  if (!courseTodayOverlay || !courseTodayOverlayList) return;
-  const { index, total, plan } = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
-  const exercises = Array.isArray(plan?.exercises) ? plan.exercises : [];
-  courseTodayOverlayTitle.textContent = plan?.title || plan?.name || "Übungen heute";
-  courseTodayOverlayMeta.textContent = `${course?.name || "Kurs"} · Tag ${index + 1} von ${Math.max(total, 1)} · ${exercises.length} Übungen`;
-  courseTodayOverlayList.replaceChildren();
-
-  if (!exercises.length) {
-    const empty = document.createElement("p");
-    empty.className = "course-empty";
-    empty.textContent = "Für diesen Trainingstag sind noch keine Übungen hinterlegt.";
-    courseTodayOverlayList.append(empty);
-  } else {
-    exercises.forEach((exercise, exerciseIndex) => {
-      const item = document.createElement("button");
-      const isPause = isCoursePauseExercise(exercise);
-      item.type = "button";
-      item.className = `course-today-overlay-item${isPause ? " is-pause" : ""}`;
-      item.title = `${exercise?.title || exercise?.name || (isPause ? "Pause" : "Übung")} starten`;
-      const order = document.createElement("span");
-      order.className = "course-today-order";
-      order.textContent = String(exerciseIndex + 1);
-      const copy = document.createElement("div");
-      const title = document.createElement("strong");
-      title.textContent = exercise?.title || exercise?.name || (isPause ? "Pause" : "Übung");
-      const detail = document.createElement("small");
-      const seconds = Number(exercise?.estimatedDuration || exercise?.durationSeconds || exercise?.duration || 0);
-      detail.textContent = `${getCourseTodayItemType(exercise)}${seconds > 0 ? ` · ${formatCourseDuration(seconds)}` : ""}`;
-      copy.append(title, detail);
-      item.append(order, copy);
-      item.addEventListener("click", () => {
-        startCourseExerciseFromToday(course, assignment, index, exerciseIndex).catch(() => {});
-      });
-      courseTodayOverlayList.append(item);
-    });
-  }
-
-  courseTodayOverlay.removeAttribute("hidden");
-  courseTodayOverlay.classList.remove("is-hidden");
-  courseTodayOverlay.setAttribute("aria-hidden", "false");
-  document.body.classList.add("has-course-today-overlay");
-  closeCourseTodayOverlayButton?.focus();
-}
 function renderMyCourses() {
   if (!myCourseList) return;
   syncCourseMediaLock();
@@ -14806,91 +13926,54 @@ function renderMyCourses() {
     const exerciseCount = plan?.exerciseCount || (plan?.exercises || []).length || 0;
     const progress = exerciseCount ? Math.round((completedCount / Math.max(1, exerciseCount)) * 100) : 0;
     const isRunning = activeCourseRun?.course?.id === course.id;
-    const isExpanded = expandedMyCourseAssignmentId === assignment.id;
     const card = document.createElement("article");
-    card.className = `course-card course-card-primary course-card-collapsible${isRunning ? " is-running" : ""}${isExpanded ? " is-expanded" : ""}`;
+    card.className = `course-card course-card-primary${isRunning ? " is-running" : ""}`;
     card.innerHTML = `
       <div class="course-card-head">
         <span class="course-symbol">${course.symbol || "LS"}</span>
         <div>
-          <p class="course-label">${isRunning ? "Laufender Kurs" : `Kurs für ${assignment.patientName || patientLabel}`}</p>
+          <p class="course-label">${isRunning ? "Laufender Kurs" : `Kurs fÃ¼r ${assignment.patientName || patientLabel}`}</p>
           <h3>${course.name}</h3>
-          <p>Heute: ${plan?.title || "Kein Tagesplan"} · Tag ${Math.min(index + 1, Math.max(total, 1))} von ${Math.max(total, 1)}</p>
+          <p>Heute: ${plan?.title || "Kein Tagesplan"} Â· Tag ${Math.min(index + 1, Math.max(total, 1))} von ${Math.max(total, 1)}</p>
         </div>
-        <div class="course-card-heading-actions">
-          ${isRunning ? '<strong class="course-status is-active">Läuft</strong>' : ""}
-          <button class="course-collapse-button" type="button" aria-expanded="${isExpanded}" title="${isExpanded ? "Kurs schließen" : "Kurs öffnen"}" aria-label="${isExpanded ? "Kurs schließen" : "Kurs öffnen"}">${isExpanded ? "&#8722;" : "+"}</button>
-        </div>
+        ${isRunning ? '<strong class="course-status is-active">LÃ¤uft</strong>' : ""}
       </div>
-      ${isExpanded ? `
-        <div class="course-card-details">
-          <p>${course.description || "Ihr aktueller Kurs."}</p>
-          <label class="course-day-picker">
-            <span>Trainingstag auswählen</span>
-            <select aria-label="Trainingstag auswählen">
-              ${dayPlans.map((dayPlan, dayIndex) => `
-                <option value="${dayIndex}"${dayIndex === index ? " selected" : ""}>
-                  Tag ${dayIndex + 1} · ${dayPlan.title || `Tagesplan ${dayIndex + 1}`}
-                </option>
-              `).join("")}
-            </select>
-          </label>
-          <dl class="course-overview-grid">
-            <div><dt>Start</dt><dd>${formatCourseDate(assignment.startDate)}</dd></div>
-            <div class="course-today-stat"><dt>Übungen heute</dt><dd><button class="course-today-count-button" type="button" aria-label="Übungen der gewählten Tageseinheit anzeigen">${exerciseCount}</button></dd></div>
-            <div><dt>Dauer heute</dt><dd data-course-selected-duration>${formatCourseDuration(plan?.estimatedDuration || getCourseEstimatedDuration(plan || { exercises: [] }))}</dd></div>
-          </dl>
-          <div class="course-progress"><span data-course-selected-progress style="width:${progress}%"></span></div>
-          <small data-course-selected-session>${lastSession?.startedAt ? `Zuletzt gestartet: ${new Date(lastSession.startedAt).toLocaleString("de-DE")}` : "Noch nicht gestartet"}</small>
-          <div class="course-actions course-actions-single">
-            <button class="primary-action" type="button">${isRunning ? "Playlist fortsetzen" : "Playlist starten"}</button>
-          </div>
-        </div>` : ""}
+      <p>${course.description || "Ihr aktueller Kurs."}</p>
+      <label class="course-day-picker">
+        <span>Trainingstag ausw&auml;hlen</span>
+        <select aria-label="Trainingstag ausw&auml;hlen">
+          ${dayPlans.map((dayPlan, dayIndex) => `
+            <option value="${dayIndex}"${dayIndex === index ? " selected" : ""}>
+              Tag ${dayIndex + 1} &middot; ${dayPlan.title || `Tagesplan ${dayIndex + 1}`}
+            </option>
+          `).join("")}
+        </select>
+      </label>
+      <dl class="course-overview-grid">
+        <div><dt>Start</dt><dd>${formatCourseDate(assignment.startDate)}</dd></div>
+        <div><dt>Ãœbungen heute</dt><dd>${exerciseCount}</dd></div>
+        <div><dt>Dauer heute</dt><dd>${formatCourseDuration(plan?.estimatedDuration || getCourseEstimatedDuration(plan || { exercises: [] }))}</dd></div>
+      </dl>
+      <div class="course-progress"><span style="width:${progress}%"></span></div>
+      <small>${lastSession?.startedAt ? `Zuletzt gestartet: ${new Date(lastSession.startedAt).toLocaleString("de-DE")}` : "Noch nicht gestartet"}</small>
+      <div class="course-actions course-actions-single">
+        <button class="primary-action" type="button">${isRunning ? "Playlist fortsetzen" : "Playlist starten"}</button>
+      </div>
     `;
-    const toggleButton = card.querySelector(".course-collapse-button");
-    toggleButton.addEventListener("click", () => {
-      expandedMyCourseAssignmentId = isExpanded ? "" : assignment.id;
-      renderMyCourses();
-    });
-    if (isExpanded) {
-      const startButton = card.querySelector(".primary-action");
-      const daySelect = card.querySelector(".course-day-picker select");
-      const anotherCourseIsRunning = isCourseMediaLocked() && !isRunning;
-      startButton.disabled = anotherCourseIsRunning;
-      daySelect.disabled = Boolean(isRunning || anotherCourseIsRunning || dayPlans.length < 2);
-      if (anotherCourseIsRunning) {
-        startButton.textContent = "Anderer Kurs läuft";
-        startButton.title = "Den laufenden Kurs zuerst beenden, stoppen oder abbrechen.";
-      }
-      const refreshSelectedDaySummary = () => {
-        const selectedDay = getCurrentCourseDayPlan(course, assignment, daySelect.value);
-        const selectedPlan = selectedDay.plan || { exercises: [] };
-        const selectedExerciseCount = Number(selectedPlan.exerciseCount || selectedPlan.exercises?.length || 0);
-        const selectedSession = getLatestCourseSession(course.id, assignment.patientId, selectedPlan.id);
-        const selectedCompleted = Number(selectedSession?.completedExerciseIds?.length || 0);
-        const selectedProgress = selectedExerciseCount
-          ? Math.round((selectedCompleted / Math.max(1, selectedExerciseCount)) * 100)
-          : 0;
-        const countButton = card.querySelector(".course-today-count-button");
-        if (countButton) countButton.textContent = String(selectedExerciseCount);
-        const duration = card.querySelector("[data-course-selected-duration]");
-        if (duration) duration.textContent = formatCourseDuration(selectedPlan.estimatedDuration || getCourseEstimatedDuration(selectedPlan));
-        const progressBar = card.querySelector("[data-course-selected-progress]");
-        if (progressBar) progressBar.style.width = `${selectedProgress}%`;
-        const sessionLabel = card.querySelector("[data-course-selected-session]");
-        if (sessionLabel) sessionLabel.textContent = selectedSession?.startedAt
-          ? `Zuletzt gestartet: ${new Date(selectedSession.startedAt).toLocaleString("de-DE")}`
-          : "Noch nicht gestartet";
-      };
-      daySelect.addEventListener("change", refreshSelectedDaySummary);
-      card.querySelector(".course-today-count-button")?.addEventListener("click", () => {
-        openCourseTodayOverlay(course, assignment, daySelect.value);
-      });
-      startButton.addEventListener("click", () => resumeOrStartCourse(course, assignment, daySelect.value));
+    const startButton = card.querySelector("button");
+    const daySelect = card.querySelector(".course-day-picker select");
+    const anotherCourseIsRunning = isCourseMediaLocked() && !isRunning;
+    startButton.disabled = anotherCourseIsRunning;
+    daySelect.disabled = Boolean(isRunning || anotherCourseIsRunning || dayPlans.length < 2);
+    if (anotherCourseIsRunning) {
+      startButton.textContent = "Anderer Kurs lÃ¤uft";
+      startButton.title = "Den laufenden Kurs zuerst beenden, stoppen oder abbrechen.";
     }
+    startButton.addEventListener("click", () => resumeOrStartCourse(course, assignment, daySelect.value));
     myCourseList.append(card);
   });
 }
+
 async function ensureDailyPlanIntroAudio(plan) {
   const description = String(plan?.description || "").trim();
   if (!description) return "";
@@ -14933,22 +14016,13 @@ async function ensureDailyPlanIntroAudio(plan) {
   }
 }
 
-function setCourseVideoFullscreen(active) {
-  document.body.classList.toggle("course-video-fullscreen", Boolean(active));
-}
-
 function renderDailyPlanIntroduction() {
-  setCourseVideoFullscreen(false);
   if (!coursePlayer || !activeCourseRun) return;
   const { course, plan } = activeCourseRun;
-  const introImage = getDailyPlanIntroImage(plan);
-  const introImageUrl = introImage?.downloadUrl ? resolveAppUrl(introImage.downloadUrl) : "";
   myCoursesPanel?.classList.add("has-active-course");
   coursePlayer.classList.remove("is-hidden");
   coursePlayer.innerHTML = `
-    <div class="course-player-card course-intro-card${introImageUrl ? " has-intro-image" : ""}">
-      ${introImageUrl ? `<img class="course-intro-background" src="${mediaLibraryEscape(introImageUrl)}" alt="">` : ""}
-      <div class="course-intro-content">
+    <div class="course-player-card course-intro-card">
       <div class="course-player-context">
         <span>Kurs</span>
         <strong>${course?.name || "Kurs"}</strong>
@@ -14959,7 +14033,6 @@ function renderDailyPlanIntroduction() {
       <p class="course-intro-description"></p>
       <p class="course-intro-state" aria-live="polite">Einleitung wird vorgelesen...</p>
       <button class="secondary-action danger-action" type="button" data-action="stopIntro">Stoppen</button>
-      </div>
     </div>
   `;
   coursePlayer.querySelector(".course-intro-description").textContent = plan?.description || "";
@@ -15016,13 +14089,6 @@ async function startCoursePreview(
   selectedDayIndex = null,
 ) {
   if (!coursePlayer || !assignment) return;
-  // Refresh the course and day plan so edits from another device are used immediately.
-  try {
-    await refreshCourseDataForCurrentPatient();
-    course = courses.find((item) => item.id === course?.id) || course;
-  } catch (error) {
-    // Local data remains available while offline.
-  }
   const dayState = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
   if (!dayState.plan) return;
   const currentSession = session || {
@@ -15122,7 +14188,7 @@ function isCoursePauseExercise(exercise) {
   if (!exercise) return false;
   const media = resolveCourseUnitMedia(exercise);
   const title = String(exercise.title || media?.title || "").toLocaleLowerCase("de-DE");
-  const isKnownPauseTitle = /\b(pause|ruhe|stille|entspann|klänge|klaenge)\b/.test(title);
+  const isKnownPauseTitle = /\b(pause|ruhe|stille|entspann|klÃ¤nge|klaenge)\b/.test(title);
   return exercise.unitType === "pause"
     || exercise.mode === "media_pause"
     || exercise.kind === "pause"
@@ -15245,7 +14311,7 @@ async function startCourseUnitMedia(exercise) {
   const media = resolveCourseUnitMedia(exercise);
   const state = coursePlayer.querySelector(".course-media-state");
   if (!media?.downloadUrl) {
-    if (state) state.textContent = "Sounddatei nicht verfügbar.";
+    if (state) state.textContent = "Sounddatei nicht verfÃ¼gbar.";
     return false;
   }
 
@@ -15256,7 +14322,7 @@ async function startCourseUnitMedia(exercise) {
     const mediaElement = coursePlaylistVideo;
     const mediaUrl = resolveAppUrl(media.downloadUrl);
     mediaElement.className = "media-library-preview course-playlist-video";
-    mediaElement.controls = false;
+    mediaElement.controls = true;
     mediaElement.style.position = "";
     mediaElement.style.width = "";
     mediaElement.style.height = "";
@@ -15274,9 +14340,8 @@ async function startCourseUnitMedia(exercise) {
     mediaElement.volume = 1;
     mediaElement.currentTime = 0;
     const isTimedPause = isCoursePauseExercise(exercise);
-    const shouldLoop = isTimedPause || media.playbackMode === "loop";
-    mediaElement.loop = shouldLoop;
-    if (!shouldLoop) {
+    mediaElement.loop = isTimedPause;
+    if (!isTimedPause) {
       mediaElement.addEventListener("ended", () => coursePlayer.querySelector("[data-action='done']")?.click(), { once: true });
     }
     try {
@@ -15319,7 +14384,7 @@ async function startCourseUnitMedia(exercise) {
   coursePlaylistAudio.muted = false;
   coursePlaylistAudio.defaultMuted = false;
   coursePlaylistAudio.volume = 1;
-  coursePlaylistAudio.loop = isTimedPause || media.playbackMode === "loop";
+  coursePlaylistAudio.loop = isTimedPause;
   container?.replaceChildren(coursePlaylistAudio);
   coursePlaylistAudioEndHandler = isTimedPause
     ? null
@@ -15336,20 +14401,20 @@ async function startCourseUnitMedia(exercise) {
     try {
       if (isPrimedPause) coursePlaylistAudio.currentTime = 0;
       await coursePlaylistAudio.play();
-      if (state) state.innerHTML = 'Pausenmusik läuft. <button class="secondary-action" type="button" data-action="enablePauseSound">Ton einschalten</button>';
+      if (state) state.innerHTML = 'Pausenmusik lÃ¤uft. <button class="secondary-action" type="button" data-action="enablePauseSound">Ton einschalten</button>';
       return true;
     } catch (error) {
       coursePlaylistPrimedUrl = "";
     }
     const bufferedAudioStarted = await playCoursePauseAudio(media);
     if (bufferedAudioStarted) {
-      if (state) state.innerHTML = 'Pausenmusik läuft. <button class="secondary-action" type="button" data-action="enablePauseSound">Ton einschalten</button>';
+      if (state) state.innerHTML = 'Pausenmusik lÃ¤uft. <button class="secondary-action" type="button" data-action="enablePauseSound">Ton einschalten</button>';
       return true;
     }
   }
   try {
     await coursePlaylistAudio.play();
-    if (state) state.textContent = "Pausenmusik läuft.";
+    if (state) state.textContent = "Pausenmusik lÃ¤uft.";
     return true;
   } catch (error) {
     if (state) state.innerHTML = '<button class="secondary-action" type="button" data-action="playMedia">Sound starten</button>';
@@ -15370,7 +14435,6 @@ function renderCoursePlayer() {
   const exercises = plan?.exercises || [];
   const exercise = exercises[index];
   if (!exercise) {
-    setCourseVideoFullscreen(false);
     session.status = "completed";
     syncCourseMediaLock();
     session.completedAt = new Date().toISOString();
@@ -15385,8 +14449,8 @@ function renderCoursePlayer() {
         </div>
         <p class="eyebrow">Tagesplan abgeschlossen</p>
         <h2>${plan?.title || "Tagesplan"}</h2>
-        <p>${session.completedExerciseIds.length} Übungen absolviert · ${formatCourseDuration(session.totalDuration)}</p>
-        <button class="secondary-action" type="button" data-action="back">Zurück</button>
+        <p>${session.completedExerciseIds.length} Ãœbungen absolviert Â· ${formatCourseDuration(session.totalDuration)}</p>
+        <button class="secondary-action" type="button" data-action="back">ZurÃ¼ck</button>
       </div>
     `;
     coursePlayer.querySelector("[data-action='back']").addEventListener("click", () => {
@@ -15402,28 +14466,25 @@ function renderCoursePlayer() {
   const progress = Math.round((index / Math.max(1, exercises.length)) * 100);
   const isMediaPause = isCoursePauseExercise(exercise);
   const isMediaExercise = exercise.mode === "media_exercise";
-  const media = resolveCourseUnitMedia(exercise);
-  const isFullscreenVideo = media?.mediaType === "video";
-  setCourseVideoFullscreen(isFullscreenVideo);
   coursePlayer.innerHTML = `
-    <div class="course-player-card${isMediaPause ? " course-player-pause-mode" : ""}${isFullscreenVideo ? " course-video-card" : ""}">
+    <div class="course-player-card${isMediaPause ? " course-player-pause-mode" : ""}">
       ${isMediaPause ? '<div class="course-pause-ambient" aria-hidden="true"><span></span><span></span><span></span></div>' : ""}
       <div class="course-player-context">
         <span>Kurs</span>
         <strong>${course?.name || "Kurs"}</strong>
-        <small>${plan?.title || "Tagesplan"} · Tag ${Number(dayIndex || 0) + 1}</small>
+        <small>${plan?.title || "Tagesplan"} Â· Tag ${Number(dayIndex || 0) + 1}</small>
       </div>
-      <p class="eyebrow">${isMediaPause ? "Pauseneinheit" : "Aktuelle Übung"}</p>
+      <p class="eyebrow">${isMediaPause ? "Pauseneinheit" : "Aktuelle Ãœbung"}</p>
       <h2>${exercise.title}</h2>
-      <p>Übung ${index + 1} von ${exercises.length}</p>
+      <p>Ãœbung ${index + 1} von ${exercises.length}</p>
       <div class="course-progress"><span style="width:${progress}%"></span></div>
-      <p>${exercise.patientHint || (isMediaPause ? "Nehmen Sie sich einen ruhigen Moment." : "Bereiten Sie sich auf die nächste Übung vor.")}</p>
+      <p>${exercise.patientHint || (isMediaPause ? "Nehmen Sie sich einen ruhigen Moment." : "Bereiten Sie sich auf die nÃ¤chste Ãœbung vor.")}</p>
       ${isMediaPause ? `<p class="course-media-countdown" aria-live="polite"><strong id="courseMediaPauseCountdown">${Math.max(1, Number(exercise.duration || 30))}</strong><span>Sekunden</span></p>` : ""}
       ${renderCourseUnitMedia(exercise)}
       <div class="course-actions">
-        ${isMediaPause ? "" : `<button class="primary-action" type="button" data-action="${isMediaExercise ? "record" : "open"}">${isMediaExercise ? "Aufnahme starten" : "Übung öffnen"}</button>`}
+        ${isMediaPause ? "" : `<button class="primary-action" type="button" data-action="${isMediaExercise ? "record" : "open"}">${isMediaExercise ? "Aufnahme starten" : "Ãœbung Ã¶ffnen"}</button>`}
         <button class="secondary-action" type="button" data-action="done">${isMediaPause ? "Pause beenden" : "Erledigt"}</button>
-        ${exercise.canSkip ? `<button class="secondary-action" type="button" data-action="skip">Überspringen</button>` : ""}
+        ${exercise.canSkip ? `<button class="secondary-action" type="button" data-action="skip">Ãœberspringen</button>` : ""}
         <button class="secondary-action danger-action" type="button" data-action="cancel">Stoppen</button>
       </div>
     </div>
@@ -15520,7 +14581,7 @@ function handleCoursePlayerClick(event) {
       .then(() => coursePlaylistAudio.play())
       .then(() => {
         const state = coursePlayer?.querySelector(".course-media-state");
-        if (state) state.textContent = "Pausenmusik läuft mit Ton.";
+        if (state) state.textContent = "Pausenmusik lÃ¤uft mit Ton.";
       })
       .catch(() => {
         const state = coursePlayer?.querySelector(".course-media-state");
@@ -15548,7 +14609,6 @@ function handleCoursePlayerClick(event) {
     return;
   }
   if (action === "record") {
-    setCourseVideoFullscreen(false);
     session.status = "in_progress";
     session.updatedAt = new Date().toISOString();
     courseSessions = mergeById(courseSessions, [session]);
@@ -15613,8 +14673,8 @@ function renderCoursePause(course, exercise) {
       <p class="eyebrow">Kurze Pause</p>
       <h2><span id="coursePauseCountdown">${remaining}</span> Sekunden</h2>
       <p>${pause.text || "Atmen Sie ruhig ein und aus."}</p>
-      <p>Nächste Übung: <strong>${nextExercise?.title || "Abschluss"}</strong></p>
-      ${pause.canSkip ? `<button class="secondary-action" type="button" data-action="skipPause">Pause Überspringen</button>` : ""}
+      <p>NÃ¤chste Ãœbung: <strong>${nextExercise?.title || "Abschluss"}</strong></p>
+      ${pause.canSkip ? `<button class="secondary-action" type="button" data-action="skipPause">Pause Ãœberspringen</button>` : ""}
     </div>
   `;
   startCoursePauseMusic(pause);
@@ -16121,7 +15181,7 @@ function renderLibrary(preferredId = null) {
   if (!patientRecordings.length) {
     const empty = document.createElement("p");
     empty.className = "message";
-    empty.textContent = "Noch keine Aufnahme für diesen Patienten.";
+    empty.textContent = "Noch keine Aufnahme fÃ¼r diesen Patienten.";
     recordingsList.append(empty);
     return;
   }
@@ -16132,23 +15192,23 @@ function renderLibrary(preferredId = null) {
 
     const summary = document.createElement("div");
     const title = document.createElement("strong");
-    title.textContent = recording.uebung || "Unbenannte Übung";
+    title.textContent = recording.uebung || "Unbenannte Ãœbung";
     const details = document.createElement("span");
     const analysis = recording.audioAnalyse || buildAudioAnalysis(recording);
-    details.textContent = `${formatDateTime(recording.datum)} · ${formatTime(recording.dauerSekunden)} · Ø ${analysis.lautstaerke.durchschnitt || recording.durchschnittlicheLautstaerke || 0} · ${analysis.frequenz.durchschnittHz || 0} Hz`;
+    details.textContent = `${formatDateTime(recording.datum)} Â· ${formatTime(recording.dauerSekunden)} Â· Ã˜ ${analysis.lautstaerke.durchschnitt || recording.durchschnittlicheLautstaerke || 0} Â· ${analysis.frequenz.durchschnittHz || 0} Hz`;
     summary.append(title, details);
 
     const openButton = document.createElement("button");
     openButton.type = "button";
     openButton.className = "recording-open-button";
-    openButton.textContent = recording.id === preferredId ? "Offen" : "Öffnen";
+    openButton.textContent = recording.id === preferredId ? "Offen" : "Ã–ffnen";
     openButton.addEventListener("click", () => openStoredRecording(recording.id));
 
     const deleteListButton = document.createElement("button");
     deleteListButton.type = "button";
     deleteListButton.className = "recording-delete-button";
-    deleteListButton.setAttribute("aria-label", "Aufnahme löschen");
-    deleteListButton.title = "Aufnahme löschen";
+    deleteListButton.setAttribute("aria-label", "Aufnahme lÃ¶schen");
+    deleteListButton.title = "Aufnahme lÃ¶schen";
     deleteListButton.addEventListener("click", async () => {
       await deleteStoredRecordingById(recording.id);
     });
@@ -16293,7 +15353,7 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
     voiceProgressTitle.textContent = "Noch keine Bewertung";
     voiceProgressScore.textContent = "0";
   voiceProgressScore.className = "voice-score-badge is-neutral";
-  voiceProgressSummary.textContent = "Nach dem ersten vollständigen Test wird eine persönliche Ausgangsmessung gespeichert.";
+  voiceProgressSummary.textContent = "Nach dem ersten vollstÃ¤ndigen Test wird eine persÃ¶nliche Ausgangsmessung gespeichert.";
     if (voiceProgressHints) voiceProgressHints.innerHTML = "";
   voiceProgressScores.innerHTML = "";
     voiceProgressList.innerHTML = "";
@@ -16309,8 +15369,8 @@ function renderVoiceProgress(patientRecordings, preferredId = null) {
     completeRecordings.at(-1);
   const evaluation = calculateVoiceEvaluation(selectedRecording, patientRecordings);
   const baselineText = evaluation.veraenderungBaselineProzent >= 0
-    ? `+${evaluation.veraenderungBaselineProzent}% gegenüber dem ersten Test`
-    : `${evaluation.veraenderungBaselineProzent}% gegenüber dem ersten Test`;
+    ? `+${evaluation.veraenderungBaselineProzent}% gegenÃ¼ber dem ersten Test`
+    : `${evaluation.veraenderungBaselineProzent}% gegenÃ¼ber dem ersten Test`;
   const previousText = evaluation.veraenderungVorherigerTestProzent >= 0
     ? `+${evaluation.veraenderungVorherigerTestProzent}% zum vorherigen Test`
     : `${evaluation.veraenderungVorherigerTestProzent}% zum vorherigen Test`;
@@ -16342,15 +15402,15 @@ function renderVoiceProgressHints(hints = []) {
   if (!voiceProgressHints) return;
   voiceProgressHints.innerHTML = "";
   const strengths = hints
-    .filter((hint) => String(hint).startsWith("Stärke:"))
-    .map((hint) => String(hint).replace(/^Stärke:\s*/, ""));
+    .filter((hint) => String(hint).startsWith("StÃ¤rke:"))
+    .map((hint) => String(hint).replace(/^StÃ¤rke:\s*/, ""));
   const notices = hints
-    .filter((hint) => String(hint).startsWith("Auffällig:"))
-    .map((hint) => String(hint).replace(/^Auffällig:\s*/, ""));
+    .filter((hint) => String(hint).startsWith("AuffÃ¤llig:"))
+    .map((hint) => String(hint).replace(/^AuffÃ¤llig:\s*/, ""));
 
   [
-    ["Stärken", strengths],
-    ["Auffällig", notices],
+    ["StÃ¤rken", strengths],
+    ["AuffÃ¤llig", notices],
   ].forEach(([title, entries]) => {
     if (!entries.length) return;
     const group = document.createElement("div");
@@ -16369,12 +15429,12 @@ function renderVoiceProgressHints(hints = []) {
 
 function renderVoiceScoreGrid(scores = {}) {
   const labels = [
-    ["lautstaerke", "Lautstärke"],
-    ["stimmstabilitaet", "Stimmstabilität"],
+    ["lautstaerke", "LautstÃ¤rke"],
+    ["stimmstabilitaet", "StimmstabilitÃ¤t"],
     ["sprechfluss", "Sprechfluss"],
     ["pausen", "Pausen"],
     ["stimmanteil", "Stimmanteil"],
-    ["gleichmaessigkeit", "Gleichmäßigkeit"],
+    ["gleichmaessigkeit", "GleichmÃ¤ÃŸigkeit"],
   ];
 
   voiceProgressScores.innerHTML = "";
@@ -16400,7 +15460,7 @@ function renderVoiceProgressList(recordings, activeId = "") {
     row.className = `voice-progress-row ${recording.id === activeId ? "is-active" : ""}`;
     const baselineChange = `${evaluation.veraenderungBaselineProzent >= 0 ? "+" : ""}${evaluation.veraenderungBaselineProzent}%`;
     const previousChange = `${evaluation.veraenderungVorherigerTestProzent >= 0 ? "+" : ""}${evaluation.veraenderungVorherigerTestProzent}%`;
-    row.textContent = `${formatDateTime(recording.datum)}: ${evaluation.gesamt} Punkte · Baseline ${baselineChange} · Vorher ${previousChange}`;
+    row.textContent = `${formatDateTime(recording.datum)}: ${evaluation.gesamt} Punkte Â· Baseline ${baselineChange} Â· Vorher ${previousChange}`;
     if (evaluation.baseline?.istAusgangsmessung) {
       row.textContent = `${formatDateTime(recording.datum)}: Ausgangsmessung`;
     }
@@ -16496,7 +15556,7 @@ function renderPlaybackRecordingAccessLegacy(patientRecordings, preferredId = nu
     playbackOpenRecordingButton && (playbackOpenRecordingButton.disabled = true);
     const empty = document.createElement("p");
     empty.className = "message";
-    empty.textContent = "Noch keine gespeicherte Aufnahme für diesen Patienten.";
+    empty.textContent = "Noch keine gespeicherte Aufnahme fÃ¼r diesen Patienten.";
     playbackSavedRecordingsList.append(empty);
     return;
   }
@@ -16506,7 +15566,7 @@ function renderPlaybackRecordingAccessLegacy(patientRecordings, preferredId = nu
   patientRecordings.forEach((recording) => {
     const option = document.createElement("option");
     option.value = recording.id;
-    option.textContent = `${formatDateTime(recording.datum)} · ${recording.uebung || "Aufnahme"}`;
+    option.textContent = `${formatDateTime(recording.datum)} Â· ${recording.uebung || "Aufnahme"}`;
     playbackRecordingSelect.append(option);
   });
   playbackRecordingSelect.value = patientRecordings.some((recording) => recording.id === currentId)
@@ -16518,7 +15578,7 @@ function renderPlaybackRecordingAccessLegacy(patientRecordings, preferredId = nu
     button.type = "button";
     button.className = "playback-recording-chip";
     button.classList.toggle("is-active", recording.id === currentId);
-    button.textContent = `${recording.uebung || "Aufnahme"} · ${formatTime(recording.dauerSekunden || 0)}`;
+    button.textContent = `${recording.uebung || "Aufnahme"} Â· ${formatTime(recording.dauerSekunden || 0)}`;
     button.addEventListener("click", () => openStoredRecording(recording.id));
     playbackSavedRecordingsList.append(button);
   });
@@ -16530,23 +15590,23 @@ function createPlaybackRecordingListItem(recording, preferredId = null) {
 
   const summary = document.createElement("div");
   const title = document.createElement("strong");
-  title.textContent = recording.uebung || "Unbenannte Übung";
+  title.textContent = recording.uebung || "Unbenannte Ãœbung";
   const details = document.createElement("span");
   const analysis = recording.audioAnalyse || buildAudioAnalysis(recording);
-    details.textContent = `${formatDateTime(recording.datum)} · ${formatTime(recording.dauerSekunden)} · Ø ${analysis.lautstaerke.durchschnitt || recording.durchschnittlicheLautstaerke || 0} · ${analysis.frequenz.durchschnittHz || 0} Hz`;
+    details.textContent = `${formatDateTime(recording.datum)} Â· ${formatTime(recording.dauerSekunden)} Â· Ã˜ ${analysis.lautstaerke.durchschnitt || recording.durchschnittlicheLautstaerke || 0} Â· ${analysis.frequenz.durchschnittHz || 0} Hz`;
   summary.append(title, details);
 
   const openButton = document.createElement("button");
   openButton.type = "button";
   openButton.className = "recording-open-button";
-  openButton.textContent = recording.id === preferredId ? "Offen" : "Öffnen";
+  openButton.textContent = recording.id === preferredId ? "Offen" : "Ã–ffnen";
   openButton.addEventListener("click", () => openStoredRecording(recording.id));
 
   const deleteListButton = document.createElement("button");
   deleteListButton.type = "button";
   deleteListButton.className = "recording-delete-button";
-  deleteListButton.setAttribute("aria-label", "Aufnahme löschen");
-  deleteListButton.title = "Aufnahme löschen";
+  deleteListButton.setAttribute("aria-label", "Aufnahme lÃ¶schen");
+  deleteListButton.title = "Aufnahme lÃ¶schen";
   deleteListButton.addEventListener("click", async () => {
     await deleteStoredRecordingById(recording.id);
   });
@@ -16573,7 +15633,7 @@ function renderPlaybackRecordingAccess(patientRecordings, preferredId = null) {
 
     const empty = document.createElement("p");
     empty.className = "message";
-    empty.textContent = "Noch keine gespeicherte Aufnahme für diesen Patienten.";
+    empty.textContent = "Noch keine gespeicherte Aufnahme fÃ¼r diesen Patienten.";
     playbackSavedRecordingsList.append(empty);
     return;
   }
@@ -16583,7 +15643,7 @@ function renderPlaybackRecordingAccess(patientRecordings, preferredId = null) {
   visibleRecordings.forEach((recording) => {
     const option = document.createElement("option");
     option.value = recording.id;
-    option.textContent = `${formatDateTime(recording.datum)} · ${recording.uebung || "Aufnahme"}`;
+    option.textContent = `${formatDateTime(recording.datum)} Â· ${recording.uebung || "Aufnahme"}`;
     playbackRecordingSelect.append(option);
   });
 
@@ -16598,7 +15658,7 @@ function renderPlaybackRecordingAccess(patientRecordings, preferredId = null) {
     button.type = "button";
     button.className = "playback-recording-chip";
     button.classList.toggle("is-active", recording.id === currentId);
-    button.textContent = `${formatDateTime(recording.datum)} · ${formatTime(recording.dauerSekunden || 0)}`;
+    button.textContent = `${formatDateTime(recording.datum)} Â· ${formatTime(recording.dauerSekunden || 0)}`;
     button.addEventListener("click", () => openStoredRecording(recording.id));
     playbackSavedRecordingsList.append(button);
   });
@@ -16626,7 +15686,7 @@ function renderPlaybackExerciseSelect(patientRecordings, preferredExerciseName =
   playbackExerciseSelect.innerHTML = "";
   const allOption = document.createElement("option");
   allOption.value = "";
-  allOption.textContent = "Alle Übungen";
+  allOption.textContent = "Alle Ãœbungen";
   playbackExerciseSelect.append(allOption);
 
   [...exerciseNames].sort((a, b) => a.localeCompare(b, "de")).forEach((name) => {
@@ -16663,9 +15723,9 @@ async function openPlaybackExerciseSelection() {
   if (selectedExerciseName) {
     selectRecordingExerciseByName(selectedExerciseName);
     setActiveView("record");
-    message.textContent = `Übung geladen: ${selectedExerciseName}. Noch keine Aufzeichnung vorhanden.`;
+    message.textContent = `Ãœbung geladen: ${selectedExerciseName}. Noch keine Aufzeichnung vorhanden.`;
   } else {
-    message.textContent = "Bitte eine Übung oder Aufzeichnung im Player auswählen.";
+    message.textContent = "Bitte eine Ãœbung oder Aufzeichnung im Player auswÃ¤hlen.";
   }
 }
 
@@ -16707,7 +15767,7 @@ function updateStatisticsRecordingSelect(patientRecordings, preferredId = null) 
   if (!patientRecordings.length) {
     const option = document.createElement("option");
     option.value = "";
-    option.textContent = "Keine Aufnahme ausgewählt";
+    option.textContent = "Keine Aufnahme ausgewÃ¤hlt";
     statisticsRecordingSelect.append(option);
     statisticsRecordingSelect.value = "";
     selectedAnalysisRecordingId = "";
@@ -16718,7 +15778,7 @@ function updateStatisticsRecordingSelect(patientRecordings, preferredId = null) 
   patientRecordings.forEach((recording) => {
     const option = document.createElement("option");
     option.value = recording.id;
-    option.textContent = `${formatDateTime(recording.datum)} · ${recording.uebung || "Aufnahme"}`;
+    option.textContent = `${formatDateTime(recording.datum)} Â· ${recording.uebung || "Aufnahme"}`;
     statisticsRecordingSelect.append(option);
   });
 
@@ -16749,7 +15809,7 @@ async function openStoredRecording(id) {
   showResult(metadata, storedBlob);
   renderPlaybackRecordingAccess(getPatientRecordings(), metadata.id);
   renderAudioAnalysis(metadata);
-  message.textContent = "Aufnahme aus der Auswertung geöffnet.";
+  message.textContent = "Aufnahme aus der Auswertung geÃ¶ffnet.";
 }
 
 function getPatientRecordings() {
@@ -16860,7 +15920,7 @@ function restoreRecorderControls(statusText) {
   disconnectAudioAnalyser();
   exitRecordingFocus();
   recordButton.disabled = false;
-  recordButton.textContent = "Übung starten";
+  recordButton.textContent = "Ãœbung starten";
   recordButton.classList.remove("is-recording");
   mediaRecorder = null;
   message.textContent = statusText;
@@ -16922,7 +15982,7 @@ function prepareRecordViewFromNavigation() {
   setExerciseVisualsVisible(false);
   resetLiveAnalysisUi();
   recordButton.disabled = false;
-  recordButton.textContent = "Übung starten";
+  recordButton.textContent = "Ãœbung starten";
   recordButton.classList.remove("is-recording");
 
   if (hasActiveMediaStream()) {
@@ -16939,8 +15999,6 @@ function prepareRecordViewFromNavigation() {
 }
 
 function setActiveView(viewName) {
-  const previousView = document.body.dataset.activeView || "";
-  if (viewName === "myCourses" && previousView !== "myCourses") expandedMyCourseAssignmentId = "";
   document.body.dataset.activeView = viewName;
   updateTopBarTitle(viewName);
   appMenu?.classList.add("is-hidden");
@@ -17086,11 +16144,11 @@ async function deleteStoredRecordingById(id) {
   })() : allRecordings.find((recording) => recording.id === id);
   const recordingLabel = metadata?.uebung || "diese Aufnahme";
   const confirmed = window.confirm(
-    `${recordingLabel} wirklich löschen?\n\nDie Aufnahme wird lokal auf diesem Gerät und zusätzlich in Firebase gelöscht.`,
+    `${recordingLabel} wirklich lÃ¶schen?\n\nDie Aufnahme wird lokal auf diesem GerÃ¤t und zusÃ¤tzlich in Firebase gelÃ¶scht.`,
   );
   if (!confirmed) return;
 
-  firebaseState.textContent = "Aufnahme wird lokal und in Firebase gelöscht...";
+  firebaseState.textContent = "Aufnahme wird lokal und in Firebase gelÃ¶scht...";
   await deleteRecording(id);
 
   if (currentMetadata?.id === id) {
@@ -17106,19 +16164,19 @@ async function deleteStoredRecordingById(id) {
   }
 
   await refreshRecordings();
-  message.textContent = "Aufnahme lokal gelöscht.";
+  message.textContent = "Aufnahme lokal gelÃ¶scht.";
 
   if (metadata) {
     try {
       await deleteCloudRecording(metadata);
-      firebaseState.textContent = "Aufnahme lokal und in Firebase gelöscht.";
-      message.textContent = "Aufnahme vollständig gelöscht.";
+      firebaseState.textContent = "Aufnahme lokal und in Firebase gelÃ¶scht.";
+      message.textContent = "Aufnahme vollstÃ¤ndig gelÃ¶scht.";
     } catch (error) {
-      console.warn("Firebase-Löschen fehlgeschlagen", error);
-      firebaseState.textContent = "Aufnahme lokal gelöscht. Firebase-Löschen fehlgeschlagen.";
+      console.warn("Firebase-LÃ¶schen fehlgeschlagen", error);
+      firebaseState.textContent = "Aufnahme lokal gelÃ¶scht. Firebase-LÃ¶schen fehlgeschlagen.";
     }
   } else {
-    firebaseState.textContent = "Aufnahme lokal gelöscht.";
+    firebaseState.textContent = "Aufnahme lokal gelÃ¶scht.";
   }
 }
 

@@ -1,4 +1,4 @@
-﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getAuth,
   signInAnonymously,
@@ -45,25 +45,15 @@ const assignCourseToPatientButton = document.querySelector("#assignCourseToPatie
 const patientCourseAssignState = document.querySelector("#patientCourseAssignState");
 const patientAssignedCourseList = document.querySelector("#patientAssignedCourseList");
 const newDailyPlanButton = document.querySelector("#newDailyPlanButton");
-const openDailyPlanButton = document.querySelector("#openDailyPlanButton");
-const openDailyPlanControl = document.querySelector("#openDailyPlanControl");
-const openDailyPlanSelect = document.querySelector("#openDailyPlanSelect");
 const dailyPlanName = document.querySelector("#dailyPlanName");
 const dailyPlanDescription = document.querySelector("#dailyPlanDescription");
-const dailyPlanIntroImageSelect = document.querySelector("#dailyPlanIntroImageSelect");
 const dailyPlanVoiceSelect = document.querySelector("#dailyPlanVoiceSelect");
 const dailyPlanVoiceHint = document.querySelector("#dailyPlanVoiceHint");
 const dailyPlanIntroAudioButton = document.querySelector("#dailyPlanIntroAudioButton");
 const dailyPlanIntroPreview = document.querySelector("#dailyPlanIntroPreview");
 const dailyPlanExerciseFilter = document.querySelector("#dailyPlanExerciseFilter");
 const dailyPlanExerciseSearch = document.querySelector("#dailyPlanExerciseSearch");
-const dailyPlanMediaFilter = document.querySelector("#dailyPlanMediaFilter");
-const dailyPlanTopicFilter = document.querySelector("#dailyPlanTopicFilter");
 const dailyPlanExerciseLibrary = document.querySelector("#dailyPlanExerciseLibrary");
-const openDailyPlanLibraryButton = document.querySelector("#openDailyPlanLibraryButton");
-const closeDailyPlanLibraryButton = document.querySelector("#closeDailyPlanLibraryButton");
-const dailyPlanWorkspace = document.querySelector(".daily-plan-workspace");
-const dailyPlanLibrary = document.querySelector(".daily-plan-library");
 const dailyPlanSelectedExercises = document.querySelector("#dailyPlanSelectedExercises");
 const dailyPlanSelectionSummary = document.querySelector("#dailyPlanSelectionSummary");
 const dailyPlanLibrarySummary = document.querySelector("#dailyPlanLibrarySummary");
@@ -102,16 +92,8 @@ const mediaLibraryDescription = document.querySelector("#mediaLibraryDescription
 const mediaLibraryDuration = document.querySelector("#mediaLibraryDuration");
 const mediaLibraryFile = document.querySelector("#mediaLibraryFile");
 const saveMediaLibraryButton = document.querySelector("#saveMediaLibraryButton");
-const backfillMediaLibraryThumbnailsButton = document.querySelector("#backfillMediaLibraryThumbnailsButton");
 const mediaLibraryState = document.querySelector("#mediaLibraryState");
 const mediaLibraryList = document.querySelector("#mediaLibraryList");
-const mediaLibraryPlayer = document.querySelector("#mediaLibraryPlayer");
-const closeMediaLibraryPlayerOverlayButton = document.querySelector("#closeMediaLibraryPlayerOverlayButton");
-const mediaLibraryPlayerTitle = document.querySelector("#mediaLibraryPlayerTitle");
-const mediaLibraryPlayerEmpty = document.querySelector("#mediaLibraryPlayerEmpty");
-const mediaLibraryPlayerVideo = document.querySelector("#mediaLibraryPlayerVideo");
-const mediaLibraryPlayerAudio = document.querySelector("#mediaLibraryPlayerAudio");
-const mediaLibraryPlayerImage = document.querySelector("#mediaLibraryPlayerImage");
 const myCourseList = document.querySelector("#myCourseList");
 const coursePatientSwitcher = document.querySelector("#coursePatientSwitcher");
 const coursePlayer = document.querySelector("#coursePlayer");
@@ -175,11 +157,6 @@ const applyEditorAiExercisesButton = document.querySelector("#applyEditorAiExerc
 const resetEditorAiButton = document.querySelector("#resetEditorAiButton");
 const editorAiState = document.querySelector("#editorAiState");
 const closeEditorAiButton = document.querySelector("#closeEditorAiButton");
-const courseTodayOverlay = document.querySelector("#courseTodayOverlay");
-const closeCourseTodayOverlayButton = document.querySelector("#closeCourseTodayOverlayButton");
-const courseTodayOverlayTitle = document.querySelector("#courseTodayOverlayTitle");
-const courseTodayOverlayMeta = document.querySelector("#courseTodayOverlayMeta");
-const courseTodayOverlayList = document.querySelector("#courseTodayOverlayList");
 const recordingTime = document.querySelector("#recordingTime");
 const volumeValue = document.querySelector("#volumeValue");
 const frequencyValue = document.querySelector("#frequencyValue");
@@ -198,22 +175,6 @@ const liveWaveform = document.querySelector("#liveWaveform");
 const frequencyTimeline = document.querySelector("#frequencyTimeline");
 const countdownOverlay = document.querySelector("#countdownOverlay");
 const karaokeOverlay = document.querySelector("#karaokeOverlay");
-const breathingOverlay = document.querySelector("#breathingOverlay");
-const breathingBall = document.querySelector("#breathingBall");
-const breathingPhase = document.querySelector("#breathingPhase");
-const breathingRound = document.querySelector("#breathingRound");
-const breathingCountdown = document.querySelector("#breathingCountdown");
-const breathingStopButton = document.querySelector("#breathingStopButton");
-const breathingSettings = document.querySelector("#breathingSettings");
-const breathingInhale = document.querySelector("#breathingInhale");
-const breathingHold = document.querySelector("#breathingHold");
-const breathingExhale = document.querySelector("#breathingExhale");
-const breathingPause = document.querySelector("#breathingPause");
-const breathingRepeats = document.querySelector("#breathingRepeats");
-const breathingUseVoice = document.querySelector("#breathingUseVoice");
-const breathingExtraSteps = document.querySelector("#breathingExtraSteps");
-const addBreathingStepButton = document.querySelector("#addBreathingStepButton");
-const editorTimingOptions = document.querySelector("#editorTimingOptions");
 const playbackWaveform = document.querySelector("#playbackWaveform");
 const recordButton = document.querySelector("#recordButton");
 const message = document.querySelector("#message");
@@ -385,7 +346,6 @@ const COURSE_SESSIONS_KEY = "logosound-course-sessions";
 const COURSE_ASSIGNMENTS_KEY = "logosound-course-assignments";
 const RELAX_MUSIC_KEY = "logosound-relax-music";
 const MEDIA_LIBRARY_KEY = "logosound-media-library";
-const MEDIA_LIBRARY_TOPICS = ["Kein Thema", "Gesicht und Mimik", "Stimme", "Artikulation", "Atmung", "Kiefer und Lippen", "Zunge", "Mobilisation", "Koordination", "Balance", "Beintraining", "Gymnastik", "Entspannung"];
 const EDITOR_DRAFT_KEY = "logosound-editor-draft";
 const SAVED_EDITOR_EXERCISE_KEY = "logosound-saved-editor-exercise";
 const SAVED_EDITOR_EXERCISES_KEY = "logosound-saved-editor-exercises";
@@ -587,10 +547,6 @@ let lastStatisticsPlaybackSyncAt = 0;
 let statisticsResizeState = null;
 let lastAmplitudeAt = 0;
 let isRecording = false;
-let breathingSessionId = 0;
-let breathingCountdownTimerId = null;
-let breathingBallAnimation = null;
-let isBreathingExerciseRunning = false;
 let isCalibrating = false;
 let calibrationReturnView = "record";
 let allRecordings = [];
@@ -648,10 +604,6 @@ let courseSessions = [];
 let courseAssignments = [];
 let relaxMusicItems = [];
 let mediaLibraryItems = [];
-let selectedMediaLibraryItemId = "";
-const pendingMediaThumbnailIds = new Set();
-let expandedMyCourseAssignmentId = "";
-let editingMediaLibraryItemId = "";
 let editingDailyPlanId = "";
 let editingCourseId = "";
 let dailyPlanDraftExercises = [];
@@ -677,7 +629,6 @@ let firebaseAuthReadyPromise = null;
 let patientProfileSaveTimerId = 0;
 let isApplyingPatientProfile = false;
 let editorDialogTurnsState = [];
-let breathingExtraStepsState = [];
 let activeEditorExerciseName = "";
 let editorSavedListExpanded = false;
 let editingEditorSentenceIndex = -1;
@@ -715,13 +666,7 @@ applyTextOverlayVisibility();
 setActiveView("record");
 hideSplashAfterStartup();
 
-init().catch((error) => {
-  console.error("LogoSound konnte nicht vollständig starten", error);
-  recordButton.disabled = false;
-  permissionState.textContent = "Bereit";
-  message.textContent = "Ein Bereich konnte nicht geladen werden. Die App ist trotzdem bereit.";
-  hideSplashAfterStartup();
-});
+init();
 
 navButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -895,19 +840,13 @@ async function init() {
     updateEditorForm();
     setupKaraokeText();
   });
-  const cloudTasks = [
-    loadCloudElevenLabsSettings,
-    loadCloudChatGptSettings,
-    loadCloudEqualizerSettings,
-    loadCloudNoiseCalibration,
-    loadCloudPatientProfiles,
-    loadCourseModuleData,
-    refreshRecordings,
-  ];
-  const results = await Promise.allSettled(cloudTasks.map((task) => task()));
-  results.forEach((result) => {
-    if (result.status === "rejected") console.warn("Cloud-Daten konnten nicht geladen werden", result.reason);
-  });
+  await loadCloudElevenLabsSettings();
+  await loadCloudChatGptSettings();
+  await loadCloudEqualizerSettings();
+  await loadCloudNoiseCalibration();
+  await loadCloudPatientProfiles();
+  await loadCourseModuleData();
+  await refreshRecordings();
   schedulePatientProfileRefresh(1200);
 }
 
@@ -952,11 +891,6 @@ recordButton.addEventListener("click", async (event) => {
   }
 
   stopExercisePreview();
-  const selectedBreathingExercise = getActiveRecordingExercise();
-  if (selectedBreathingExercise?.mode === "breathing") {
-    await startBreathingExercise(selectedBreathingExercise);
-    return;
-  }
   await unlockInstructionAudio();
   recordButton.disabled = true;
   recordButton.textContent = "Start wird vorbereitet";
@@ -987,10 +921,6 @@ previewExerciseButton?.addEventListener("click", async () => {
 
 previewStopButton?.addEventListener("click", () => {
   stopExercisePreview();
-});
-
-breathingStopButton?.addEventListener("click", () => {
-  stopBreathingExercise("Atemübung beendet.");
 });
 
 savePatientButton.addEventListener("click", async () => {
@@ -1029,20 +959,7 @@ userRoleSelect?.addEventListener("change", () => {
 newCourseButton?.addEventListener("click", () => resetCourseEditor());
 editCourseButton?.addEventListener("click", () => openCourseEditorForEditing());
 courseNameSelect?.addEventListener("change", () => openCourseEditorForEditing(courseNameSelect.value));
-newDailyPlanButton?.addEventListener("click", () => {
-  setDailyPlanEditorMode("new");
-  resetDailyPlanEditor();
-});
-openDailyPlanButton?.addEventListener("click", () => {
-  setDailyPlanEditorMode("open");
-});
-openDailyPlanSelect?.addEventListener("change", () => {
-  const plan = dailyPlans.find((item) => item.id === openDailyPlanSelect.value);
-  if (!plan) return;
-  resetDailyPlanEditor(plan);
-  openDailyPlanControl?.classList.add("is-hidden");
-  openDailyPlanButton?.classList.remove("is-active");
-});
+newDailyPlanButton?.addEventListener("click", () => resetDailyPlanEditor());
 dailyPlanDescription?.addEventListener("input", () => invalidateDailyPlanIntroAudio());
 dailyPlanVoiceSelect?.addEventListener("change", () => {
   invalidateDailyPlanIntroAudio();
@@ -1053,10 +970,6 @@ dailyPlanIntroAudioButton?.addEventListener("click", async () => {
 });
 dailyPlanExerciseFilter?.addEventListener("change", () => renderDailyPlanExerciseLibrary());
 dailyPlanExerciseSearch?.addEventListener("input", () => renderDailyPlanExerciseLibrary());
-dailyPlanMediaFilter?.addEventListener("change", () => renderDailyPlanExerciseLibrary());
-dailyPlanTopicFilter?.addEventListener("change", () => renderDailyPlanExerciseLibrary());
-openDailyPlanLibraryButton?.addEventListener("click", () => setDailyPlanLibraryOpen(true));
-closeDailyPlanLibraryButton?.addEventListener("click", () => setDailyPlanLibraryOpen(false));
 saveDailyPlanButton?.addEventListener("click", async () => saveDailyPlanFromForm());
 saveCourseDraftButton?.addEventListener("click", async () => saveCourseFromForm("active"));
 musicDefaultVolume?.addEventListener("input", () => {
@@ -1071,8 +984,6 @@ musicFile?.addEventListener("change", () => {
 });
 saveMusicButton?.addEventListener("click", async () => saveRelaxMusicFromForm());
 saveMediaLibraryButton?.addEventListener("click", async () => saveMediaLibraryFromForm());
-backfillMediaLibraryThumbnailsButton?.addEventListener("click", async () => backfillMediaLibraryThumbnails());
-closeMediaLibraryPlayerOverlayButton?.addEventListener("click", closeMediaLibraryPlayerOverlay);
 mediaLibraryFile?.addEventListener("change", () => {
   const file = mediaLibraryFile.files?.[0];
   if (!file) {
@@ -1081,6 +992,7 @@ mediaLibraryFile?.addEventListener("change", () => {
   }
   const mediaType = getMediaFileType(file.type, file.name);
   setMediaLibraryState(`${file.name} ausgewählt · ${mediaType === "audio" ? "Sound" : mediaType === "video" ? "Video" : "Bild"}`, "success");
+  if (!mediaLibraryTitle?.value.trim()) mediaLibraryTitle.value = file.name.replace(/\.[^.]+$/, "");
 });
 
 exerciseName.addEventListener("change", () => {
@@ -1101,7 +1013,7 @@ recordingModeFilter?.addEventListener("change", () => {
     : "Alle Funktionsarten sichtbar.";
 });
 
-[editorExerciseName, editorMode, editorPatientScope, editorContent, editorVoiceInstruction, editorUseRepeats, editorRepeats, editorSpeed, editorVoiceSelect, breathingInhale, breathingHold, breathingExhale, breathingPause, breathingRepeats, breathingUseVoice].forEach((input) => {
+[editorExerciseName, editorMode, editorPatientScope, editorContent, editorVoiceInstruction, editorUseRepeats, editorRepeats, editorSpeed, editorVoiceSelect].forEach((input) => {
   input?.addEventListener("input", () => {
     if (input === editorVoiceSelect) handleEditorVoiceSelectionChange();
     if (input === editorContent && editorMode.value === "dialog") {
@@ -1112,13 +1024,6 @@ recordingModeFilter?.addEventListener("change", () => {
     if (input === editorContent) renderEditorSentenceList();
     if (exerciseName.value === "custom-editor") setupKaraokeText();
   });
-});
-
-addBreathingStepButton?.addEventListener("click", () => {
-  breathingExtraStepsState.push(normalizeBreathingExtraStep({ key: "hold", seconds: 2 }, breathingExtraStepsState.length));
-  renderBreathingExtraSteps();
-  saveEditorDraft();
-  updateEditorForm();
 });
 
 editorVoiceSelect?.addEventListener("change", () => {
@@ -1193,13 +1098,6 @@ closeEditorAiButton?.addEventListener("click", () => {
   closeEditorAiModal();
 });
 
-closeCourseTodayOverlayButton?.addEventListener("click", () => {
-  closeCourseTodayOverlay();
-});
-
-courseTodayOverlay?.addEventListener("click", (event) => {
-  if (event.target === courseTodayOverlay) closeCourseTodayOverlay();
-});
 editorAiModal?.addEventListener("click", (event) => {
   if (event.target === editorAiModal) closeEditorAiModal();
 });
@@ -1613,244 +1511,6 @@ courseResultNextButton?.addEventListener("click", () => {
   openNextCourseExercise(nextExercise);
 });
 
-function clampBreathingSeconds(value, fallback, minimum = 0) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return fallback;
-  return Math.max(minimum, Math.min(30, Math.round(number)));
-}
-
-const BREATHING_PHASE_OPTIONS = [
-  { key: "inhale", label: "Einatmen", minimum: 1 },
-  { key: "hold", label: "Halten", minimum: 0 },
-  { key: "exhale", label: "Ausatmen", minimum: 1 },
-  { key: "pause", label: "Pause", minimum: 0 },
-];
-
-function normalizeBreathingExtraStep(step = {}, index = 0) {
-  const option = BREATHING_PHASE_OPTIONS.find((item) => item.key === step.key) || BREATHING_PHASE_OPTIONS[1];
-  return {
-    id: String(step.id || `breath-step-${Date.now()}-${index}`),
-    key: option.key,
-    seconds: clampBreathingSeconds(step.seconds, 2, option.minimum),
-  };
-}
-
-function getBreathingExtraSteps(exercise = null) {
-  const source = exercise?.breathing || exercise?.breathingSettings || {};
-  const steps = Array.isArray(source.extraSteps)
-    ? source.extraSteps
-    : (exercise ? [] : breathingExtraStepsState);
-  return steps.map((step, index) => normalizeBreathingExtraStep(step, index));
-}
-
-function renderBreathingExtraSteps() {
-  if (!breathingExtraSteps) return;
-  breathingExtraSteps.innerHTML = "";
-  breathingExtraStepsState.forEach((step, index) => {
-    const row = document.createElement("div");
-    row.className = "breathing-extra-row";
-    const phase = document.createElement("select");
-    phase.setAttribute("aria-label", `Atemphase ${index + 1}`);
-    BREATHING_PHASE_OPTIONS.forEach((option) => {
-      const item = document.createElement("option");
-      item.value = option.key;
-      item.textContent = option.label;
-      item.selected = option.key === step.key;
-      phase.append(item);
-    });
-    const seconds = document.createElement("input");
-    seconds.type = "number";
-    seconds.min = String(BREATHING_PHASE_OPTIONS.find((item) => item.key === step.key)?.minimum || 0);
-    seconds.max = "30";
-    seconds.inputMode = "numeric";
-    seconds.value = String(step.seconds);
-    seconds.setAttribute("aria-label", `Dauer fuer Atemschritt ${index + 1}`);
-    const suffix = document.createElement("span");
-    suffix.textContent = "Sek.";
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "compact-action breathing-extra-remove";
-    remove.textContent = "x";
-    remove.setAttribute("aria-label", `Atemschritt ${index + 1} entfernen`);
-    phase.addEventListener("change", () => {
-      const option = BREATHING_PHASE_OPTIONS.find((item) => item.key === phase.value) || BREATHING_PHASE_OPTIONS[1];
-      breathingExtraStepsState[index] = normalizeBreathingExtraStep({ ...step, key: option.key, seconds: Math.max(option.minimum, Number(seconds.value) || 0) }, index);
-      renderBreathingExtraSteps();
-      saveEditorDraft();
-      updateEditorForm();
-    });
-    seconds.addEventListener("input", () => {
-      breathingExtraStepsState[index] = normalizeBreathingExtraStep({ ...step, seconds: seconds.value }, index);
-      saveEditorDraft();
-      updateEditorForm();
-    });
-    remove.addEventListener("click", () => {
-      breathingExtraStepsState.splice(index, 1);
-      renderBreathingExtraSteps();
-      saveEditorDraft();
-      updateEditorForm();
-    });
-    row.append(phase, seconds, suffix, remove);
-    breathingExtraSteps.append(row);
-  });
-  breathingExtraSteps.classList.toggle("is-empty", breathingExtraStepsState.length === 0);
-}
-
-function getBreathingSettings(exercise = null) {
-  const source = exercise?.breathing || exercise?.breathingSettings || {};
-  return {
-    inhale: clampBreathingSeconds(source.inhale ?? breathingInhale?.value, 4, 1),
-    hold: clampBreathingSeconds(source.hold ?? breathingHold?.value, 2),
-    exhale: clampBreathingSeconds(source.exhale ?? breathingExhale?.value, 6, 1),
-    pause: clampBreathingSeconds(source.pause ?? breathingPause?.value, 2),
-    repeats: Math.max(1, Math.min(30, Math.round(Number(source.repeats ?? breathingRepeats?.value) || 5))),
-    useVoice: source.useVoice ?? Boolean(breathingUseVoice?.checked),
-    extraSteps: getBreathingExtraSteps(exercise),
-  };
-}
-
-function getBreathingExerciseDuration(exercise) {
-  const settings = getBreathingSettings(exercise);
-  const extraSeconds = settings.extraSteps.reduce((total, step) => total + step.seconds, 0);
-  return (settings.inhale + settings.hold + settings.exhale + settings.pause + extraSeconds) * settings.repeats;
-}
-
-function updateBreathingOverlay(phase, round, settings, remaining, startAnimation = true) {
-  if (!breathingOverlay) return;
-  breathingOverlay.classList.remove("is-hidden");
-  breathingOverlay.dataset.phase = phase.key;
-  if (startAnimation && breathingBall) {
-    breathingBallAnimation?.cancel();
-    const fromScale = phase.key === "inhale" ? 0.64 : 1;
-    const toScale = phase.key === "inhale" ? 1 : (phase.key === "exhale" ? 0.64 : fromScale);
-    breathingBall.style.transform = `scale(${fromScale})`;
-    breathingBallAnimation = breathingBall.animate(
-      [{ transform: `scale(${fromScale})` }, { transform: `scale(${toScale})` }],
-      { duration: Math.max(400, phase.seconds * 1000), easing: "ease-in-out", fill: "forwards" },
-    );
-    breathingBallAnimation.onfinish = () => {
-      breathingBall.style.transform = `scale(${toScale})`;
-      breathingBallAnimation = null;
-    };
-  }
-  if (breathingPhase) breathingPhase.textContent = phase.label;
-  if (breathingRound) breathingRound.textContent = `Runde ${round} von ${settings.repeats}`;
-  if (breathingCountdown) breathingCountdown.textContent = `${Math.max(0, remaining)} s`;
-}
-
-function waitForBreathingPhase(seconds, sessionId, onTick) {
-  return new Promise((resolve) => {
-    const endAt = Date.now() + seconds * 1000;
-    const tick = () => {
-      if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) {
-        window.clearInterval(breathingCountdownTimerId);
-        breathingCountdownTimerId = null;
-        resolve(false);
-        return;
-      }
-      const remaining = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
-      onTick(remaining);
-      if (remaining <= 0) {
-        window.clearInterval(breathingCountdownTimerId);
-        breathingCountdownTimerId = null;
-        resolve(true);
-      }
-    };
-    tick();
-    breathingCountdownTimerId = window.setInterval(tick, 120);
-  });
-}
-
-async function completeCourseBreathingExercise(exercise) {
-  if (!activeCourseRun || getActiveCourseExercise()?.exerciseId !== exercise?.name && getActiveCourseExercise()?.exerciseId !== exercise?.exerciseId) return;
-  const session = activeCourseRun.session;
-  if (!session) return;
-  session.completedExerciseIds = Array.isArray(session.completedExerciseIds) ? session.completedExerciseIds : [];
-  const courseExercise = getActiveCourseExercise();
-  if (courseExercise?.exerciseId && !session.completedExerciseIds.includes(courseExercise.exerciseId)) {
-    session.completedExerciseIds.push(courseExercise.exerciseId);
-  }
-  activeCourseRun.index += 1;
-  session.currentExerciseIndex = activeCourseRun.index;
-  session.updatedAt = new Date().toISOString();
-  session.status = activeCourseRun.index >= (activeCourseRun.plan?.exercises?.length || 0)
-    ? "completed"
-    : (activeCourseRun.playlistMode ? "in_progress" : "paused");
-  courseSessions = mergeById(courseSessions, [session]);
-  persistCourseModuleData();
-  await saveCourseSessionToCloud(session).catch(() => {});
-  renderCourseViews();
-  if (session.status !== "completed" && activeCourseRun.playlistMode) {
-    window.setTimeout(() => continueCoursePlaylist(), 350);
-  }
-}
-
-function stopBreathingExercise(statusText = "Atemübung beendet.") {
-  breathingSessionId += 1;
-  isBreathingExerciseRunning = false;
-  window.clearInterval(breathingCountdownTimerId);
-  breathingCountdownTimerId = null;
-  breathingBallAnimation?.cancel();
-  breathingBallAnimation = null;
-  breathingOverlay?.classList.add("is-hidden");
-  document.body.classList.remove("breathing-exercise-active");
-  recordButton.disabled = false;
-  recordButton.textContent = "Übung starten";
-  if (isPreviewingExercise) {
-    isPreviewingExercise = false;
-    setPreviewSessionState(false);
-    previewExerciseButton.disabled = false;
-    previewExerciseButton.textContent = "Vorführung";
-  }
-  message.textContent = statusText;
-}
-
-async function startBreathingExercise(exercise, options = {}) {
-  if (!exercise || isBreathingExerciseRunning) return;
-  clearCourseAutoAdvanceTimer();
-  stopInstructionAudio();
-  const settings = getBreathingSettings(exercise);
-  const sessionId = ++breathingSessionId;
-  isBreathingExerciseRunning = true;
-  document.body.classList.add("breathing-exercise-active");
-  recordButton.disabled = true;
-  recordButton.textContent = options.preview ? "Vorführung läuft" : "Atemübung läuft";
-  if (options.preview) {
-    isPreviewingExercise = true;
-    setPreviewSessionState(true, "Vorführung aktiv");
-  }
-  const phases = [
-    { key: "inhale", label: "Einatmen", seconds: settings.inhale },
-    { key: "hold", label: "Halten", seconds: settings.hold },
-    { key: "exhale", label: "Ausatmen", seconds: settings.exhale },
-    { key: "pause", label: "Pause", seconds: settings.pause },
-    ...settings.extraSteps.map((step) => ({
-      key: step.key,
-      label: BREATHING_PHASE_OPTIONS.find((item) => item.key === step.key)?.label || "Pause",
-      seconds: step.seconds,
-    })),
-  ].filter((phase) => phase.seconds > 0);
-  try {
-    for (let round = 1; round <= settings.repeats; round += 1) {
-      for (const phase of phases) {
-        if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) return;
-        updateBreathingOverlay(phase, round, settings, phase.seconds);
-        if (settings.useVoice) {
-          Promise.resolve(speakWithBrowserVoice(phase.key === "exhale" ? "Langsam ausatmen" : phase.label)).catch(() => {});
-        }
-        const completed = await waitForBreathingPhase(phase.seconds, sessionId, (remaining) => {
-          if (sessionId === breathingSessionId) updateBreathingOverlay(phase, round, settings, remaining, false);
-        });
-        if (!completed) return;
-      }
-    }
-    if (sessionId !== breathingSessionId) return;
-    stopBreathingExercise("Sehr gut. Die Atemübung ist beendet.");
-    if (!options.preview) await completeCourseBreathingExercise(exercise);
-  } catch (error) {
-    stopBreathingExercise("Atemübung wurde unterbrochen.");
-  }
-}
 async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
   try {
     recordButton.disabled = true;
@@ -2015,12 +1675,6 @@ async function createStoredVoiceAudio(text, exerciseLabel, requestSettings = get
 
 async function startExercisePreview() {
   if (isRecording || mediaRecorder?.state === "recording") return;
-  const breathingExercise = getActiveRecordingExercise();
-  if (breathingExercise?.mode === "breathing") {
-    await unlockInstructionAudio();
-    await startBreathingExercise(breathingExercise, { preview: true });
-    return;
-  }
 
   await unlockInstructionAudio();
   if (!hasActiveMediaStream()) {
@@ -2830,8 +2484,7 @@ async function playVoiceAudioBuffer(audioUrl) {
     return await new Promise((resolve) => {
       const source = instructionAudioContext.createBufferSource();
       const gain = instructionAudioContext.createGain();
-      // Do not stop a valid ElevenLabs introduction after a short fixed timeout.
-      const fallbackMs = Math.max(120000, Math.ceil((audioBuffer.duration || 0) * 1000) + 8000);
+      const fallbackMs = Math.max(1800, Math.ceil((audioBuffer.duration || 0) * 1000) + 1800);
       const fallbackId = window.setTimeout(() => finish(true, { stopSource: true }), fallbackMs);
       const finish = (played, options = {}) => {
         window.clearTimeout(fallbackId);
@@ -2895,13 +2548,13 @@ function getDialogVoiceMeterSignal(now = performance.now()) {
 function playVoiceAudioElement(audioUrl) {
   return new Promise((resolve) => {
     let started = false;
-    let fallbackId = window.setTimeout(() => finish(false), Math.max(INSTRUCTION_TIMEOUT_MS, 15000));
+    let fallbackId = window.setTimeout(() => finish(started), INSTRUCTION_TIMEOUT_MS);
     const refreshFallback = () => {
       if (!Number.isFinite(instructionAudio.duration) || instructionAudio.duration <= 0) return;
       window.clearTimeout(fallbackId);
       fallbackId = window.setTimeout(
         () => finish(true),
-        Math.max(15000, Math.ceil(instructionAudio.duration * 1000) + 4000),
+        Math.max(1800, Math.ceil(instructionAudio.duration * 1000) + 1800),
       );
     };
     const cleanup = () => {
@@ -2910,7 +2563,8 @@ function playVoiceAudioElement(audioUrl) {
       instructionAudio.removeEventListener("loadedmetadata", refreshFallback);
       instructionAudio.removeEventListener("ended", handleEnded);
       instructionAudio.removeEventListener("error", handleError);
-
+      instructionAudio.removeEventListener("abort", handleError);
+      instructionAudio.removeEventListener("stalled", handleError);
     };
     const finish = (played = started) => {
       window.clearTimeout(fallbackId);
@@ -2925,8 +2579,6 @@ function playVoiceAudioElement(audioUrl) {
       if (Number.isFinite(instructionAudio.duration) && instructionAudio.duration > 0) {
         startDialogVoiceMeter(Math.max(0, instructionAudio.duration - instructionAudio.currentTime));
       }
-      window.clearTimeout(fallbackId);
-      fallbackId = window.setTimeout(() => finish(true), 120000);
     };
     const handleEnded = () => finish(true);
     const handleError = () => finish(false);
@@ -2937,7 +2589,8 @@ function playVoiceAudioElement(audioUrl) {
     instructionAudio.addEventListener("loadedmetadata", refreshFallback);
     instructionAudio.addEventListener("ended", handleEnded, { once: true });
     instructionAudio.addEventListener("error", handleError, { once: true });
-
+    instructionAudio.addEventListener("abort", handleError, { once: true });
+    instructionAudio.addEventListener("stalled", handleError, { once: true });
     instructionAudio.muted = false;
     instructionAudio.defaultMuted = false;
     instructionAudio.volume = 1;
@@ -5211,7 +4864,6 @@ function hydrateEditorExercise(exercise) {
   const speed = Number(exercise.speed || 3);
   const timing = exercise.timing || EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
   const content = exercise.content || getDefaultEditorContent(mode);
-  const breathing = mode === "breathing" ? getBreathingSettings(exercise) : null;
   const repeats = Math.max(1, Number(exercise.repeats || 1));
   const assignedPatientName = String(exercise.patientName || "").trim();
   const assignedPatientId = assignedPatientName ? slugify(assignedPatientName) : "";
@@ -5234,9 +4886,7 @@ function hydrateEditorExercise(exercise) {
   const embeddedVoiceProfile = getEmbeddedExerciseVoiceProfile(exercise);
   const contentLabel =
     exercise.contentLabel ||
-    (mode === "breathing"
-      ? `${breathing.repeats} Atemrunden · ${getBreathingExerciseDuration({ breathing })} Sekunden`
-      : mode === "dialog"
+    (mode === "dialog"
       ? `${patientTurnCount || 1} Sprecherteil${patientTurnCount === 1 ? "" : "e"}`
       : mode === "sentences"
       ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
@@ -5254,7 +4904,6 @@ function hydrateEditorExercise(exercise) {
     patientId: assignedPatientId,
     isSharedTemplate: !assignedPatientName,
     content,
-    breathing,
     contentLabel,
     sentences,
     dialogTurns,
@@ -5283,7 +4932,6 @@ function buildEditorExerciseFromForm() {
   const speed = Number(editorSpeed.value);
   const timing = EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
   const sentences = mode === "sentences" ? getEditorSentences() : [];
-  const breathing = mode === "breathing" ? getBreathingSettings() : null;
   const baseExerciseForAudio =
     findSavedEditorExerciseByName(name) ||
     (savedEditorExercise?.name === name ? savedEditorExercise : null);
@@ -5298,9 +4946,7 @@ function buildEditorExerciseFromForm() {
         ? []
         : getEditorTokens();
   const content =
-    mode === "breathing"
-      ? "Ruhige Atemübung"
-      : mode === "dialog"
+    mode === "dialog"
       ? editorContent.value.trim() || getDefaultEditorContent(mode)
       : mode === "sentences"
       ? sentences.join(" | ") || getDefaultEditorContent(mode)
@@ -5332,9 +4978,7 @@ function buildEditorExerciseFromForm() {
     rawContent: isTextLikeMode(mode) ? content : "",
     textPassages,
     contentLabel:
-      mode === "breathing"
-        ? `${breathing.repeats} Atemrunden · ${getBreathingExerciseDuration({ breathing })} Sekunden`
-        : mode === "dialog"
+      mode === "dialog"
         ? `${patientTurnCount || 1} Sprecherteil${patientTurnCount === 1 ? "" : "e"}`
         : mode === "sentences"
         ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
@@ -5374,7 +5018,6 @@ function buildEditorExerciseFromForm() {
     demoSpeed: savedEditorExercise?.name === name ? savedEditorExercise.demoSpeed || 0 : 0,
     demoCreatedAt: savedEditorExercise?.name === name ? savedEditorExercise.demoCreatedAt || "" : "",
     repeats,
-    breathing,
     script,
   };
 }
@@ -5394,7 +5037,6 @@ function getDefaultEditorContent(mode) {
   if (mode === "text") return "Heute lese ich langsam und deutlich.";
   if (mode === "long_text") return "Es blaut die Nacht.\nDie Sternlein blinken.\nSchneeflöcklein leise niedersinken.";
   if (mode === "vowels") return "A E I O U";
-  if (mode === "breathing") return "Ruhige Atemübung";
   if (mode === "dialog") {
     const speakerName = getCurrentPatientName();
     return `System: Guten Morgen, wie geht es Ihnen?\n${speakerName}: Mir geht es heute gut.\nSystem: Was haben Sie heute geübt?\n${speakerName}: Ich habe ruhig und deutlich gesprochen.`;
@@ -5408,7 +5050,6 @@ function getDefaultEditorVoiceInstruction(mode) {
   if (mode === "text") return "Bitte lesen Sie den eingeblendeten Text ruhig und deutlich vor.";
   if (mode === "long_text") return "Bitte lesen Sie jeden eingeblendeten Textabschnitt ruhig und deutlich vor.";
   if (mode === "vowels") return "Bitte sprechen Sie die Vokale nacheinander deutlich aus.";
-  if (mode === "breathing") return "Folgen Sie der Atemkugel in Ihrem eigenen ruhigen Tempo.";
   return "Bitte sprechen Sie die einzelnen Silben ruhig und deutlich.";
 }
 
@@ -6312,7 +5953,6 @@ async function suggestVoiceInstruction() {
 
 async function generateVoiceAudio() {
   const isDialogMode = editorMode.value === "dialog";
-  const isBreathingMode = editorMode.value === "breathing";
   const text = editorVoiceInstruction.value.trim();
   if (!text) {
     editorVoiceState.textContent = "Bitte zuerst einen Voice-Text eintragen.";
@@ -6395,19 +6035,14 @@ function updateEditorForm() {
   exerciseEditor?.classList.toggle("text-mode", isTextMode);
   exerciseEditor?.classList.toggle("long-text-mode", isLongTextModeSelected);
   const isDialogMode = editorMode.value === "dialog";
-  const isBreathingMode = editorMode.value === "breathing";
   exerciseEditor?.classList.toggle("dialog-mode", isDialogMode);
-  exerciseEditor?.classList.toggle("breathing-mode", isBreathingMode);
-  breathingSettings?.classList.toggle("is-hidden", !isBreathingMode);
-  editorTimingOptions?.classList.toggle("is-hidden", isBreathingMode);
   const canUseRepeats = supportsEditorRepeats(editorMode.value);
   if (!canUseRepeats) editorUseRepeats.checked = false;
   editorRepeatGroup?.classList.toggle("is-hidden", !canUseRepeats);
   repeatControl.classList.toggle("is-hidden", !canUseRepeats || !editorUseRepeats.checked);
   editorUseRepeats.disabled = !canUseRepeats;
-  editorSentenceBuilder?.classList.toggle("is-hidden", !isSentenceMode || isBreathingMode);
+  editorSentenceBuilder?.classList.toggle("is-hidden", !isSentenceMode);
   editorDialogBuilder?.classList.toggle("is-hidden", !isDialogMode);
-  editorContent?.closest(".editor-section-content")?.classList.toggle("breathing-content-mode", isBreathingMode);
   editorSpeedValue.textContent = EDITOR_SPEEDS[editorSpeed.value]?.label || "Normal";
   updateEditorKaraokeTimingHint();
   renderEditorPreview(buildEditorExerciseFromForm());
@@ -6624,8 +6259,6 @@ function applyEditorModeDefaults() {
     editorExerciseName.value = "Vokale nacheinander";
   } else if (editorMode.value === "dialog") {
     editorExerciseName.value = "Dialog";
-  } else if (editorMode.value === "breathing") {
-    editorExerciseName.value = "Ruhige Bauchatmung";
   } else {
     editorExerciseName.value = "Neue SilbenÜbung";
   }
@@ -6846,8 +6479,6 @@ function resetEditorForm(options = {}) {
   editorMode.value = options.blank ? "syllables" : "sentences";
   renderEditorPatientScopeOptions(getCurrentPatientName());
   editorDialogTurnsState = [];
-  breathingExtraStepsState = [];
-  renderBreathingExtraSteps();
   editorContent.value = options.blank ? "" : "";
   if (editorSentenceInput) editorSentenceInput.value = "";
   editorVoiceInstruction.value = options.blank ? "" : getDefaultEditorVoiceInstruction(editorMode.value);
@@ -7154,15 +6785,6 @@ function applyEditorExerciseToForm(exercise) {
     exercise.mode !== "sentences" &&
     exercise.mode !== "dialog";
   editorRepeats.value = String(exercise.repeats || 1);
-  const breathing = getBreathingSettings(exercise);
-  if (breathingInhale) breathingInhale.value = String(breathing.inhale);
-  if (breathingHold) breathingHold.value = String(breathing.hold);
-  if (breathingExhale) breathingExhale.value = String(breathing.exhale);
-  if (breathingPause) breathingPause.value = String(breathing.pause);
-  if (breathingRepeats) breathingRepeats.value = String(breathing.repeats);
-  if (breathingUseVoice) breathingUseVoice.checked = Boolean(breathing.useVoice);
-  breathingExtraStepsState = getBreathingExtraSteps(exercise);
-  renderBreathingExtraSteps();
   editorSpeed.value = String(exercise.speed || 3);
 }
 
@@ -7186,7 +6808,6 @@ function saveEditorDraft() {
     useRepeats: editorUseRepeats.checked,
     repeats: editorRepeats.value,
     speed: editorSpeed.value,
-    breathing: getBreathingSettings(),
   };
   localStorage.setItem(EDITOR_DRAFT_KEY, JSON.stringify(draft));
 }
@@ -7444,15 +7065,6 @@ function loadEditorDraft() {
       }
       editorUseRepeats.checked = draft.useRepeats ?? editorUseRepeats.checked;
       editorRepeats.value = draft.repeats || editorRepeats.value;
-      const breathing = getBreathingSettings({ breathing: draft.breathing || {} });
-      if (breathingInhale) breathingInhale.value = String(breathing.inhale);
-      if (breathingHold) breathingHold.value = String(breathing.hold);
-      if (breathingExhale) breathingExhale.value = String(breathing.exhale);
-      if (breathingPause) breathingPause.value = String(breathing.pause);
-      if (breathingRepeats) breathingRepeats.value = String(breathing.repeats);
-      if (breathingUseVoice) breathingUseVoice.checked = Boolean(breathing.useVoice);
-      breathingExtraStepsState = getBreathingExtraSteps({ breathing: draft.breathing || {} });
-      renderBreathingExtraSteps();
       editorSpeed.value = draft.speed || editorSpeed.value;
     }
   } catch (error) {
@@ -12187,7 +11799,6 @@ function getCourseTemplates() {
 
 function getExerciseCategory(exercise) {
   const mode = normalizeEditorExerciseModeValue(exercise?.mode || "");
-  if (mode === "breathing") return "atmung";
   if (mode === "vowels") return "stimme";
   if (mode === "syllables") return "artikulation";
   if (mode === "sentences" || mode === "text" || mode === "long_text" || mode === "dialog") return "sprechen";
@@ -12235,9 +11846,6 @@ function getExerciseLibraryItems() {
       mediaUrl: item.downloadUrl,
       mediaType: item.mediaType,
       mimeType: item.mimeType,
-      thumbnailDataUrl: item.thumbnailDataUrl || "",
-      thumbnailUrl: item.thumbnailUrl || item.posterUrl || "",
-      topic: String(item.topic || "Kein Thema"),
     }));
 
   // Uploaded media are shown first so newly added audio/video modules do not
@@ -12249,7 +11857,6 @@ function getExerciseLibraryItems() {
 }
 
 function estimateExerciseDurationSeconds(exercise) {
-  if (exercise?.mode === "breathing") return getBreathingExerciseDuration(exercise);
   const timing = exercise?.timing || EDITOR_SPEEDS[exercise?.speed || 3] || EDITOR_SPEEDS[3];
   const text = String(exercise?.script || exercise?.content || exercise?.exerciseId || "");
   const units = text.split(/\s+/).filter(Boolean).length || 1;
@@ -12259,7 +11866,6 @@ function estimateExerciseDurationSeconds(exercise) {
 function buildCourseExercise(libraryItem) {
   const pauseDuration = Math.max(0, Math.min(300, Number(coursePauseDuration?.value) || 30));
   const isMediaPause = libraryItem.mode === "media_pause";
-  const isBreathingExercise = libraryItem.mode === "breathing";
   return {
     exerciseId: libraryItem.exerciseId,
     title: libraryItem.name,
@@ -12274,13 +11880,13 @@ function buildCourseExercise(libraryItem) {
     mediaUrl: libraryItem.mediaUrl || "",
     mediaType: libraryItem.mediaType || "",
     mimeType: libraryItem.mimeType || "",
-    recordAudio: !isMediaPause && !isBreathingExercise,
-    recordVideo: !isMediaPause && !isBreathingExercise,
-    useVideo: !isBreathingExercise,
+    recordAudio: !isMediaPause,
+    recordVideo: !isMediaPause,
+    useVideo: true,
     useAudioGuide: true,
     useAvatarGuide: false,
-    volumeAnalysis: !isBreathingExercise,
-    frequencyAnalysis: !isBreathingExercise,
+    volumeAnalysis: true,
+    frequencyAnalysis: true,
     canSkip: true,
     autoEvaluation: true,
     patientHint: "",
@@ -12580,7 +12186,6 @@ function refreshMediaLibraryFromCloud() {
   mediaLibraryRefreshPromise = loadMediaLibraryFromCloud()
     .then(() => {
       persistCourseModuleData();
-      renderDailyPlanIntroImageSelect(dailyPlans.find((plan) => plan.id === editingDailyPlanId) || null);
       renderDailyPlanExerciseLibrary();
       renderMediaLibraryList();
     })
@@ -12650,88 +12255,6 @@ function uploadMediaFileToCloud(file, item) {
   });
 }
 
-function formatMediaAspectRatio(width, height) {
-  const sourceWidth = Math.max(0, Math.round(Number(width) || 0));
-  const sourceHeight = Math.max(0, Math.round(Number(height) || 0));
-  if (!sourceWidth || !sourceHeight) return "";
-  const divisor = (left, right) => right ? divisor(right, left % right) : left;
-  const factor = divisor(sourceWidth, sourceHeight);
-  return `${sourceWidth / factor}:${sourceHeight / factor}`;
-}
-
-function createVideoThumbnailDataUrl(source) {
-  return new Promise((resolve) => {
-    const video = document.createElement("video");
-    const isBlob = source instanceof Blob;
-    const objectUrl = isBlob ? URL.createObjectURL(source) : "";
-    let finished = false;
-    const timeout = window.setTimeout(() => finish(""), 10000);
-
-    function finish(dataUrl = "") {
-      if (finished) return;
-      finished = true;
-      window.clearTimeout(timeout);
-      video.pause();
-      video.removeAttribute("src");
-      video.load();
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-      resolve(dataUrl);
-    }
-
-    function capture() {
-      const width = Number(video.videoWidth || 0);
-      const height = Number(video.videoHeight || 0);
-      if (!width || !height) {
-        finish();
-        return;
-      }
-      const targetWidth = Math.min(420, width);
-      const targetHeight = Math.max(1, Math.round((height / width) * targetWidth));
-      const canvas = document.createElement("canvas");
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      const context = canvas.getContext("2d");
-      if (!context) {
-        finish();
-        return;
-      }
-      try {
-        context.drawImage(video, 0, 0, targetWidth, targetHeight);
-        finish({ dataUrl: canvas.toDataURL("image/jpeg", 0.72), width, height });
-      } catch (error) {
-        finish();
-      }
-    }
-
-    video.muted = true;
-    video.playsInline = true;
-    video.preload = "auto";
-    video.addEventListener("loadeddata", capture, { once: true });
-    video.addEventListener("error", () => finish(), { once: true });
-    video.src = isBlob ? objectUrl : resolveAppUrl(String(source || ""));
-    video.load();
-  });
-}
-
-async function ensureMediaLibraryVideoThumbnail(item, source = "") {
-  if (!item || item.mediaType !== "video" || item.thumbnailDataUrl || pendingMediaThumbnailIds.has(item.id)) return;
-  pendingMediaThumbnailIds.add(item.id);
-  try {
-    const thumbnailDataUrl = await createVideoThumbnailDataUrl(source || item.downloadUrl || "");
-    if (!thumbnailDataUrl) return;
-    const updated = { ...item, thumbnailDataUrl, updatedAt: new Date().toISOString() };
-    const payload = await requestMediaLibraryApi("POST", { item: updated });
-    mediaLibraryItems = mergeById(mediaLibraryItems, [payload.item || updated]);
-    persistCourseModuleData();
-    renderMediaLibraryList();
-    renderDailyPlanExerciseLibrary();
-  } catch (error) {
-    console.warn("Video thumbnail creation failed", error);
-  } finally {
-    pendingMediaThumbnailIds.delete(item.id);
-  }
-}
-
 async function saveMediaLibraryFromForm() {
   const file = mediaLibraryFile?.files?.[0];
   const title = String(mediaLibraryTitle?.value || file?.name || "").trim();
@@ -12763,18 +12286,11 @@ async function saveMediaLibraryFromForm() {
       mimeType: file.type || "application/octet-stream",
       fileName: file.name,
       active: true,
-      topic: "Kein Thema",
-      playbackMode: getMediaFileType(file.type, file.name) === "video" ? "once" : "once",
       createdAt: now,
       updatedAt: now,
     };
     const payload = await uploadMediaFileToCloud(file, item);
-    let savedItem = payload.item || item;
-    mediaLibraryItems = mergeById(mediaLibraryItems, [savedItem]);
-    if (savedItem.mediaType === "video") {
-      setMediaLibraryState("Video gespeichert. Vorschaubild wird erstellt ...");
-      await ensureMediaLibraryVideoThumbnail(savedItem, file);
-    }
+    mediaLibraryItems = mergeById(mediaLibraryItems, [payload.item || item]);
     persistCourseModuleData();
     if (mediaLibraryTitle) mediaLibraryTitle.value = "";
     if (mediaLibraryDescription) mediaLibraryDescription.value = "";
@@ -12796,223 +12312,66 @@ async function saveMediaLibraryFromForm() {
   }
 }
 
-function openMediaLibraryPlayerOverlay() {
-  if (!mediaLibraryPlayer) return;
-  mediaLibraryPlayer.classList.add("is-overlay-open");
-  document.body.classList.add("has-media-library-player-overlay");
-  window.requestAnimationFrame(() => closeMediaLibraryPlayerOverlayButton?.focus());
-}
-
-function closeMediaLibraryPlayerOverlay() {
-  if (!mediaLibraryPlayer?.classList.contains("is-overlay-open")) return;
-  mediaLibraryPlayerVideo?.pause();
-  mediaLibraryPlayerAudio?.pause();
-  mediaLibraryPlayer.classList.remove("is-overlay-open");
-  document.body.classList.remove("has-media-library-player-overlay");
-}
-function clearMediaLibraryPlayer() {
-  [mediaLibraryPlayerVideo, mediaLibraryPlayerAudio].forEach((player) => {
-    if (!player) return;
-    player.pause();
-    player.removeAttribute("src");
-    player.load();
-    player.classList.add("is-hidden");
-  });
-  if (mediaLibraryPlayerImage) {
-    mediaLibraryPlayerImage.removeAttribute("src");
-    mediaLibraryPlayerImage.classList.add("is-hidden");
-  }
-}
-
-function showMediaLibraryItem(item, autoplay = false) {
-  if (!item) return;
+function renderMediaPreview(item, controls = true) {
   const source = resolveAppUrl(String(item.downloadUrl || ""));
-  if (!source) {
-    setMediaLibraryState("Für dieses Medium ist keine Datei verfügbar.", "warning");
-    return;
-  }
-  selectedMediaLibraryItemId = item.id;
-  clearMediaLibraryPlayer();
-  if (mediaLibraryPlayerTitle) mediaLibraryPlayerTitle.textContent = item.title || "Medium";
-  mediaLibraryPlayerEmpty?.classList.add("is-hidden");
-  const player = item.mediaType === "video"
-    ? mediaLibraryPlayerVideo
-    : (item.mediaType === "audio" ? mediaLibraryPlayerAudio : mediaLibraryPlayerImage);
-  if (!player) return;
-  player.src = source;
-  if (player instanceof HTMLVideoElement) player.loop = item.playbackMode === "loop";
-  player.classList.remove("is-hidden");
-  if (player instanceof HTMLImageElement) return;
-  player.load();
-  if (autoplay) player.play().catch(() => {});
-}
-
-function mediaLibraryEscape(value = "") {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function getMediaLibraryTypeLabel(item) {
-  if (item.mediaType === "video") return "Video";
-  if (item.mediaType === "image") return "Bild";
-  return "Sound";
-}
-
-function renderMediaLibraryThumbnail(item) {
-  const source = String(item.thumbnailDataUrl || "") || resolveAppUrl(String(item.thumbnailUrl || item.posterUrl || (item.mediaType === "image" ? item.downloadUrl || "" : "")));
-  const type = item.mediaType === "video" ? "video" : (item.mediaType === "image" ? "image" : "audio");
-  if ((type === "image" || type === "video") && source) {
-    if (type === "video") {
-      return `<span class="media-library-thumbnail media-library-thumbnail-video"><img src="${mediaLibraryEscape(source)}" alt=""><span class="media-library-thumbnail-icon">&#9654;</span><small>Video</small></span>`;
-    }
-    return `<span class="media-library-thumbnail media-library-thumbnail-image"><img src="${mediaLibraryEscape(source)}" alt=""></span>`;
-  }
-  const icon = type === "video" ? "&#9654;" : (type === "image" ? "&#9635;" : "&#9835;");
-  const label = type === "video" ? "Video" : (type === "image" ? "Bild" : "Sound");
-  return `<span class="media-library-thumbnail media-library-thumbnail-${type}" aria-hidden="true"><span class="media-library-thumbnail-icon">${icon}</span><small>${label}</small></span>`;
-}
-
-
-async function backfillMediaLibraryThumbnails() {
-  const videos = mediaLibraryItems.filter((item) => item.mediaType === "video" && !item.thumbnailDataUrl);
-  if (!videos.length) {
-    setMediaLibraryState("Alle Videos haben bereits ein Vorschaubild.", "success");
-    return;
-  }
-  if (backfillMediaLibraryThumbnailsButton) backfillMediaLibraryThumbnailsButton.disabled = true;
-  let completed = 0;
-  try {
-    for (const item of videos) {
-      setMediaLibraryState(`Vorschaubild ${completed + 1} von ${videos.length} wird erstellt ...`);
-      await ensureMediaLibraryVideoThumbnail(item);
-      if (mediaLibraryItems.find((entry) => entry.id === item.id)?.thumbnailDataUrl) completed += 1;
-    }
-    setMediaLibraryState(`${completed} von ${videos.length} Vorschaubildern gespeichert.`, completed === videos.length ? "success" : "warning");
-  } finally {
-    if (backfillMediaLibraryThumbnailsButton) backfillMediaLibraryThumbnailsButton.disabled = false;
-  }
-}function getMediaLibraryRatioLabel(item) {
-  if (item?.mediaType !== "video") return "";
-  return String(item.aspectRatio || formatMediaAspectRatio(item.videoWidth, item.videoHeight) || "");
-}
-
-function getMediaLibraryTopicOptions(selected = "Kein Thema") {
-  const normalized = MEDIA_LIBRARY_TOPICS.includes(selected) ? selected : "Kein Thema";
-  return MEDIA_LIBRARY_TOPICS.map((topic) => `<option value="${mediaLibraryEscape(topic)}"${topic === normalized ? " selected" : ""}>${mediaLibraryEscape(topic)}</option>`).join("");
-}
-
-async function saveMediaLibraryItemEdit(item, card) {
-  const titleInput = card.querySelector('[data-field="title"]');
-  const topicSelect = card.querySelector('[data-field="topic"]');
-  const playbackSelect = card.querySelector('[data-field="playbackMode"]');
-  const title = String(titleInput?.value || "").trim();
-  if (!title) {
-    setMediaLibraryState("Bitte einen Titel eingeben.", "warning");
-    titleInput?.focus();
-    return;
-  }
-  const updated = {
-    ...item,
-    title,
-    topic: String(topicSelect?.value || "Kein Thema"),
-    playbackMode: item.mediaType === "video" ? String(playbackSelect?.value || item.playbackMode || "once") : "once",
-    updatedAt: new Date().toISOString(),
-  };
-  try {
-    const payload = await requestMediaLibraryApi("POST", { item: updated });
-    mediaLibraryItems = mergeById(mediaLibraryItems, [payload.item || updated]);
-    editingMediaLibraryItemId = "";
-    persistCourseModuleData();
-    setMediaLibraryState(`Gespeichert: ${title}`, "success");
-    renderCourseViews();
-  } catch (error) {
-    setMediaLibraryState(`Speichern fehlgeschlagen: ${error.message}`, "error");
-  }
+  if (!source) return "";
+  const safeSource = source.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  if (item.mediaType === "video") return `<video class="media-library-preview" src="${safeSource}" ${controls ? "controls" : ""} playsinline preload="metadata"></video>`;
+  if (item.mediaType === "image") return `<img class="media-library-preview" src="${safeSource}" alt="" />`;
+  return `<audio class="media-library-audio" src="${safeSource}" ${controls ? "controls" : ""} preload="metadata"></audio>`;
 }
 
 function renderMediaLibraryList() {
   if (!mediaLibraryList) return;
   mediaLibraryList.innerHTML = "";
-  const items = mediaLibraryItems
-    .slice()
-    .sort((left, right) => String(right.updatedAt || "").localeCompare(String(left.updatedAt || "")));
-  if (!items.length) {
-    clearMediaLibraryPlayer();
-    if (mediaLibraryPlayerTitle) mediaLibraryPlayerTitle.textContent = "Noch keine Medien";
-    mediaLibraryPlayerEmpty?.classList.remove("is-hidden");
+  if (!mediaLibraryItems.length) {
     mediaLibraryList.innerHTML = '<div class="course-empty">Noch keine Medien gespeichert.</div>';
     return;
   }
-  if (!items.some((item) => item.id === selectedMediaLibraryItemId)) selectedMediaLibraryItemId = items[0].id;
-  const selectedItem = items.find((item) => item.id === selectedMediaLibraryItemId);
-  if (selectedItem && !mediaLibraryPlayerVideo?.src && !mediaLibraryPlayerAudio?.src && !mediaLibraryPlayerImage?.src) showMediaLibraryItem(selectedItem);
-
-  items.forEach((item) => {
-    const editing = item.id === editingMediaLibraryItemId;
-    const topic = String(item.topic || "Kein Thema");
-    const ratio = getMediaLibraryRatioLabel(item);
-    const card = document.createElement("article");
-    card.className = `course-card media-library-card${item.active === false ? " is-inactive" : ""}${item.id === selectedMediaLibraryItemId ? " is-selected" : ""}${editing ? " is-editing" : ""}`;
-    card.innerHTML = `
-      <button class="media-library-select" type="button" data-action="preview" aria-label="${mediaLibraryEscape(item.title)} im Player öffnen">
-        ${renderMediaLibraryThumbnail(item)}
-        <span class="media-library-card-copy">
-          <strong title="${mediaLibraryEscape(item.title)}">${mediaLibraryEscape(item.title)}</strong>
-          <small>${getMediaLibraryTypeLabel(item)} · ${formatCourseDuration(item.duration)}${ratio ? ` · <span class="media-library-ratio">${mediaLibraryEscape(ratio)}</span>` : ""}${item.playbackMode === "loop" ? " · Loop" : ""}</small>
-          <small class="media-library-topic-label">Thema: ${mediaLibraryEscape(topic)}</small>
-        </span>
-      </button>
-      <div class="media-library-card-actions">
-        <button class="icon-button" type="button" data-action="${editing ? "save" : "edit"}" title="${editing ? "Änderungen speichern" : "Titel und Thema bearbeiten"}" aria-label="${editing ? "Änderungen speichern" : "Titel und Thema bearbeiten"}">${editing ? "&#10003;" : "&#9998;"}</button>
-        <button class="icon-button danger-action" type="button" data-action="delete" title="Medium löschen" aria-label="Medium löschen">&#128465;</button>
-      </div>
-      ${editing ? `
-        <div class="media-library-edit-fields">
-          <label>Titel<input type="text" data-field="title" value="${mediaLibraryEscape(item.title)}"></label>
-          <label>Thema<select data-field="topic">${getMediaLibraryTopicOptions(topic)}</select></label>
-          ${item.mediaType === "video" ? `<label>Wiedergabe<select data-field="playbackMode"><option value="once"${item.playbackMode !== "loop" ? " selected" : ""}>Einmal abspielen</option><option value="loop"${item.playbackMode === "loop" ? " selected" : ""}>Als Loop wiederholen</option></select></label>` : ""}
-        </div>` : ""}
-    `;
-    card.addEventListener("click", async (event) => {
-      const action = event.target.closest("button")?.dataset.action;
-      if (!action) return;
-      if (action === "preview") {
-        showMediaLibraryItem(item, true);
-        openMediaLibraryPlayerOverlay();
-        renderMediaLibraryList();
-        return;
-      }
-      if (action === "edit") {
-        editingMediaLibraryItemId = item.id;
-        renderMediaLibraryList();
-        return;
-      }
-      if (action === "save") {
-        await saveMediaLibraryItemEdit(item, card);
-        return;
-      }
-      if (action === "delete") {
-        if (!window.confirm(`„${item.title}“ dauerhaft aus Firebase löschen?`)) return;
-        try {
+  mediaLibraryItems
+    .slice()
+    .sort((left, right) => String(right.updatedAt || "").localeCompare(String(left.updatedAt || "")))
+    .forEach((item) => {
+      const card = document.createElement("article");
+      card.className = `course-card media-library-card${item.active === false ? " is-inactive" : ""}`;
+      card.innerHTML = `
+        <div class="course-card-head">
+          <span class="course-symbol">${item.kind === "pause" ? "PA" : "ME"}</span>
+          <div><h3>${item.title}</h3><p>${item.kind === "pause" ? "Pauseneinheit" : "Medienübung"} · ${formatCourseDuration(item.duration)}</p></div>
+          <strong class="course-status ${item.active === false ? "" : "is-active"}">${item.active === false ? "Aus" : "Aktiv"}</strong>
+        </div>
+        ${item.description ? `<p>${item.description}</p>` : ""}
+        ${renderMediaPreview(item)}
+        <div class="course-actions">
+          <button class="secondary-action" type="button" data-action="toggle">${item.active === false ? "Aktivieren" : "Deaktivieren"}</button>
+          <button class="secondary-action danger-action" type="button" data-action="delete" aria-label="Medium löschen">Löschen</button>
+        </div>
+      `;
+      card.addEventListener("click", async (event) => {
+        const action = event.target.closest("button")?.dataset.action;
+        if (!action) return;
+        if (action === "toggle") {
+          const updated = { ...item, active: item.active === false, updatedAt: new Date().toISOString() };
+          const payload = await requestMediaLibraryApi("POST", { item: updated });
+          mediaLibraryItems = mergeById(mediaLibraryItems, [payload.item || updated]);
+          persistCourseModuleData();
+          setMediaLibraryState(`${updated.title} ist ${updated.active ? "aktiv" : "deaktiviert"}.`, "success");
+          renderCourseViews();
+          return;
+        }
+        if (action === "delete") {
+          if (!window.confirm(`„${item.title}“ dauerhaft aus Firebase löschen?`)) return;
           await requestMediaLibraryApi("DELETE", { id: item.id });
           mediaLibraryItems = mediaLibraryItems.filter((entry) => entry.id !== item.id);
-          if (selectedMediaLibraryItemId === item.id) selectedMediaLibraryItemId = "";
-          if (editingMediaLibraryItemId === item.id) editingMediaLibraryItemId = "";
           persistCourseModuleData();
           setMediaLibraryState(`Gelöscht: ${item.title}`, "success");
           renderCourseViews();
-        } catch (error) {
-          setMediaLibraryState(`Löschen fehlgeschlagen: ${error.message}`, "error");
         }
-      }
+      });
+      mediaLibraryList.append(card);
     });
-    mediaLibraryList.append(card);
-  });
 }
+
 function updateRoleMenuVisibility() {
   const isPatient = userRole === "patient";
   document.querySelectorAll("[data-role-menu='staff']").forEach((button) => {
@@ -13029,7 +12388,6 @@ function renderCourseViews() {
   renderDailyPlanExerciseLibrary();
   renderDailyPlanSelectedExercises();
   renderDailyPlanList();
-  renderOpenDailyPlanSelect();
   renderCourseExerciseLibrary();
   renderCourseSelectedExercises();
   renderCourseList();
@@ -13064,43 +12422,6 @@ function renderCourseAssignOptions() {
   if (assignCourseToPatientButton) assignCourseToPatientButton.disabled = false;
 }
 
-function renderDailyPlanMediaAndTopicFilters(items) {
-  if (dailyPlanMediaFilter) {
-    const currentMediaValue = dailyPlanMediaFilter.value;
-    const availableMediaTypes = new Set(items.filter((item) => item.isMedia).map((item) => item.mediaType));
-    const pauseAvailable = items.some((item) => item.mode === "media_pause");
-    [...dailyPlanMediaFilter.options].forEach((option) => {
-      if (!option.value) return;
-      const available = option.value === "voice"
-        ? items.some((item) => !item.isMedia && normalizeEditorExerciseModeValue(item.mode) !== "breathing")
-        : option.value === "breathing"
-          ? items.some((item) => normalizeEditorExerciseModeValue(item.mode) === "breathing")
-          : option.value === "pause"
-            ? pauseAvailable
-            : availableMediaTypes.has(option.value);
-      option.hidden = !available;
-      option.disabled = !available;
-    });
-    const activeOption = dailyPlanMediaFilter.querySelector(`option[value="${currentMediaValue}"]`);
-    if (!activeOption || activeOption.disabled) dailyPlanMediaFilter.value = "";
-  }
-
-  if (dailyPlanTopicFilter) {
-    const currentTopic = dailyPlanTopicFilter.value;
-    const topics = [...new Set(items
-      .filter((item) => item.isMedia && item.topic && item.topic !== "Kein Thema")
-      .map((item) => item.topic))]
-      .sort((left, right) => left.localeCompare(right, "de"));
-    dailyPlanTopicFilter.innerHTML = '<option value="">Alle Themen</option>';
-    topics.forEach((topic) => {
-      const option = document.createElement("option");
-      option.value = topic;
-      option.textContent = topic;
-      dailyPlanTopicFilter.append(option);
-    });
-    dailyPlanTopicFilter.value = topics.includes(currentTopic) ? currentTopic : "";
-  }
-}
 function renderDailyPlanFunctionFilter(items) {
   if (!dailyPlanExerciseFilter) return;
   const currentValue = dailyPlanExerciseFilter.value;
@@ -13175,35 +12496,6 @@ function enableDailyPlanLibrarySwipe(card, foreground) {
   });
 }
 
-function setDailyPlanLibraryOpen(open, options = {}) {
-  const isOpen = Boolean(open);
-  dailyPlanWorkspace?.classList.toggle("is-library-open", isOpen);
-  dailyPlanLibrary?.setAttribute("aria-hidden", String(!isOpen));
-  openDailyPlanLibraryButton?.setAttribute("aria-expanded", String(isOpen));
-  if (isOpen) renderDailyPlanExerciseLibrary();
-  if (options.focus === false) return;
-  window.requestAnimationFrame(() => {
-    const target = isOpen ? dailyPlanLibrary : dailyPlanSelectedExercises;
-    target?.scrollIntoView({ behavior: "smooth", block: "start" });
-    if (isOpen) dailyPlanExerciseSearch?.focus();
-  });
-}
-
-function renderDailyPlanLibraryVisual(item, isPause = false) {
-  const type = String(item?.mediaType || "");
-  const source = String(item?.thumbnailDataUrl || item?.thumbnailUrl || (type === "image" ? item?.mediaUrl || "" : ""));
-  if (item?.isMedia && source && (type === "video" || type === "image")) {
-    const icon = type === "video" ? "&#9654;" : "&#9635;";
-    const label = type === "video" ? "Video" : "Bild";
-    return `<div class="course-library-visual has-thumbnail"><img src="${mediaLibraryEscape(resolveAppUrl(source))}" alt=""><span class="course-library-visual-play">${icon}</span><small>${label}</small></div>`;
-  }
-  if (isPause) return '<div class="course-library-visual is-pause"><span aria-hidden="true">Ⅱ</span><small>Pause</small></div>';
-  if (item?.isMedia && type === "audio") return '<div class="course-library-visual is-audio"><span aria-hidden="true">♪</span><small>Sound</small></div>';
-  if (item?.mode === "breathing") return '<div class="course-library-visual is-breathing"><span aria-hidden="true">○</span><small>Atem</small></div>';
-  if (item?.mode === "dialog") return '<div class="course-library-visual is-dialog"><span aria-hidden="true">…</span><small>Dialog</small></div>';
-  if (item?.mode === "long_text" || item?.mode === "karaoke") return '<div class="course-library-visual is-text"><span aria-hidden="true">T</span><small>Text</small></div>';
-  return `<div class="course-library-visual"><span aria-hidden="true">Aa</span><small>${mediaLibraryEscape(getEditorModeLabel(item?.mode))}</small></div>`;
-}
 function renderDailyPlanExerciseLibrary() {
   if (!dailyPlanExerciseLibrary) return;
   const libraryItemsById = new Map();
@@ -13213,24 +12505,12 @@ function renderDailyPlanExerciseLibrary() {
     if (!current || (!current.isCustom && item.isCustom)) libraryItemsById.set(key, item);
   });
   const libraryItems = [...libraryItemsById.values()];
-renderDailyPlanFunctionFilter(libraryItems);
-  renderDailyPlanMediaAndTopicFilters(libraryItems);
+  renderDailyPlanFunctionFilter(libraryItems);
   const filter = dailyPlanExerciseFilter?.value || "";
-  const mediaFilter = dailyPlanMediaFilter?.value || "";
-  const topicFilter = dailyPlanTopicFilter?.value || "";
   const search = String(dailyPlanExerciseSearch?.value || "").trim().toLowerCase();
   dailyPlanExerciseLibrary.innerHTML = "";
   const visibleItems = libraryItems
     .filter((item) => !filter || normalizeEditorExerciseModeValue(item.mode) === filter)
-    .filter((item) => {
-      if (!mediaFilter) return true;
-      const mode = normalizeEditorExerciseModeValue(item.mode);
-      if (mediaFilter === "voice") return !item.isMedia && mode !== "breathing";
-      if (mediaFilter === "breathing") return mode === "breathing";
-      if (mediaFilter === "pause") return item.mode === "media_pause";
-      return item.isMedia && item.mediaType === mediaFilter;
-    })
-    .filter((item) => !topicFilter || (item.isMedia && item.topic === topicFilter))
     .filter((item) => {
       if (!search) return true;
       const haystack = [item.name, item.description, getEditorModeLabel(item.mode), item.mode].join(" ").toLowerCase();
@@ -13252,7 +12532,7 @@ renderDailyPlanFunctionFilter(libraryItems);
           </div>
         ` : ""}
         <div class="course-exercise-content">
-          ${renderDailyPlanLibraryVisual(item, isPause)}
+          <div class="course-module-type">${isPause ? "Pause" : getEditorModeLabel(item.mode)}</div>
           <div class="course-exercise-copy">
             <strong>${item.name}</strong>
             <small>${item.description}</small>
@@ -13407,29 +12687,6 @@ function setPatientManagerState(message, type = "info") {
   else patientManagerState.classList.add("is-info");
 }
 
-function getDailyPlanIntroImages() {
-  return mediaLibraryItems
-    .filter((item) => item.active !== false && item.mediaType === "image" && item.downloadUrl)
-    .sort((left, right) => String(left.title || "").localeCompare(String(right.title || ""), "de"));
-}
-
-function renderDailyPlanIntroImageSelect(plan = null) {
-  if (!dailyPlanIntroImageSelect) return;
-  const selectedId = String(plan?.introImageId || dailyPlanIntroImageSelect.value || "");
-  const images = getDailyPlanIntroImages();
-  dailyPlanIntroImageSelect.innerHTML = `<option value="">Kein Hintergrundbild</option>${images
-    .map((item) => `<option value="${mediaLibraryEscape(item.id)}">${mediaLibraryEscape(item.title || "Bild")}</option>`)
-    .join("")}`;
-  dailyPlanIntroImageSelect.value = images.some((item) => item.id === selectedId) ? selectedId : "";
-}
-
-function getDailyPlanIntroImage(plan = null) {
-  const imageId = String(plan?.introImageId || dailyPlanIntroImageSelect?.value || "");
-  const libraryImage = mediaLibraryItems.find((item) => item.id === imageId && item.mediaType === "image" && item.downloadUrl);
-  if (libraryImage) return libraryImage;
-  if (plan?.introImageUrl) return { id: imageId, title: plan.introImageTitle || "Hintergrundbild", downloadUrl: plan.introImageUrl };
-  return null;
-}
 function setDailyPlanIntroPreview(audioUrl = "") {
   if (!dailyPlanIntroPreview) return;
   dailyPlanIntroPreview.pause();
@@ -13512,38 +12769,10 @@ async function generateDailyPlanIntroAudio(options = {}) {
   }
 }
 
-function renderOpenDailyPlanSelect() {
-  if (!openDailyPlanSelect) return;
-  const selectedId = editingDailyPlanId || openDailyPlanSelect.value || "";
-  openDailyPlanSelect.innerHTML = '<option value="">Tagesplan auswählen</option>';
-  dailyPlans
-    .slice()
-    .sort((left, right) => String(left.name || "").localeCompare(String(right.name || ""), "de"))
-    .forEach((plan) => {
-      const option = document.createElement("option");
-      option.value = plan.id;
-      option.textContent = plan.name || "Unbenannter Tagesplan";
-      openDailyPlanSelect.append(option);
-    });
-  openDailyPlanSelect.value = dailyPlans.some((plan) => plan.id === selectedId) ? selectedId : "";
-}
-
-function setDailyPlanEditorMode(mode = "new") {
-  const opening = mode === "open";
-  openDailyPlanControl?.classList.toggle("is-hidden", !opening);
-  newDailyPlanButton?.classList.toggle("is-active", !opening);
-  openDailyPlanButton?.classList.toggle("is-active", opening);
-  if (opening) {
-    renderOpenDailyPlanSelect();
-    openDailyPlanSelect?.focus();
-  }
-}
 function resetDailyPlanEditor(plan = null) {
-  setDailyPlanLibraryOpen(false, { focus: false });
   editingDailyPlanId = plan?.id || "";
   if (dailyPlanName) dailyPlanName.value = plan?.name || "";
   if (dailyPlanDescription) dailyPlanDescription.value = plan?.description || "";
-  renderDailyPlanIntroImageSelect(plan);
   const settings = getElevenLabsSettings();
   const savedVoice = getDailyPlanVoice(plan, settings);
   renderDailyPlanVoiceSelect(settings, savedVoice?.key || settings.activeVoiceKey);
@@ -13567,7 +12796,6 @@ async function saveDailyPlanFromForm() {
   const now = new Date().toISOString();
   const description = dailyPlanDescription?.value.trim() || "";
   const voice = getDailyPlanSelectedVoice();
-  const introImage = getDailyPlanIntroImage();
   const requestSettings = getDailyPlanVoiceRequestSettings();
   if (description && !isDailyPlanIntroAudioCurrent(dailyPlanIntroDraftAudio, description, requestSettings)) {
     dailyPlanIntroDraftAudio = await generateDailyPlanIntroAudio({ silent: true });
@@ -13576,9 +12804,6 @@ async function saveDailyPlanFromForm() {
     id: editingDailyPlanId || createId("dayplan"),
     name: dailyPlanName?.value.trim() || "Neuer Tagesplan",
     description,
-    introImageId: introImage?.id || "",
-    introImageUrl: introImage?.downloadUrl || "",
-    introImageTitle: introImage?.title || "",
     introVoiceProfileKey: voice?.key || "",
     introVoiceProfileName: voice?.name || "",
     introVoiceProfileGender: voice?.gender || "neutral",
@@ -13773,17 +12998,17 @@ function getCourseDayPlans(course) {
 
 function resolveCourseDayPlan(planRef) {
   if (!planRef) return null;
+  if (Array.isArray(planRef.exercises) && planRef.exercises.length) return planRef;
   const storedPlan = dailyPlans.find((item) => item.id === planRef.id);
   if (storedPlan) {
     return {
-      ...planRef,
       ...storedPlan,
       id: storedPlan.id,
-      title: storedPlan.name || storedPlan.title || planRef.title || "Tagesplan",
+      title: storedPlan.name,
       description: storedPlan.description || "",
-      exerciseCount: storedPlan.exerciseCount || storedPlan.exercises?.length || 0,
+      exerciseCount: storedPlan.exerciseCount || storedPlan.exercises.length,
       estimatedDuration: storedPlan.estimatedDuration || getCourseEstimatedDuration(storedPlan),
-      exercises: Array.isArray(storedPlan.exercises) ? storedPlan.exercises : [],
+      exercises: storedPlan.exercises || [],
     };
   }
   return {
@@ -13793,7 +13018,7 @@ function resolveCourseDayPlan(planRef) {
     description: planRef.description || "",
     exerciseCount: planRef.exerciseCount || 0,
     estimatedDuration: planRef.estimatedDuration || 0,
-    exercises: Array.isArray(planRef.exercises) ? planRef.exercises : [],
+    exercises: [],
   };
 }
 
@@ -13803,7 +13028,6 @@ function renderCourseNameControls(selectedCourseId = editingCourseId) {
   courseNameSelectGroup?.classList.toggle("is-hidden", !isEditing);
   newCourseButton?.classList.toggle("is-active", !isEditing);
   editCourseButton?.classList.toggle("is-active", isEditing);
-  document.querySelector(".courses-panel")?.classList.toggle("is-editing-course", isEditing);
   if (!courseNameSelect) return;
 
   courseNameSelect.innerHTML = "";
@@ -14297,7 +13521,6 @@ function showCourseMediaLockMessage() {
 }
 
 function clearActiveCourseRun() {
-  setCourseVideoFullscreen(false);
   activeCourseRun = null;
   courseIntroPlaybackPromise = null;
   coursePlaylistVideoAudioUnlocked = false;
@@ -14672,109 +13895,6 @@ function renderCoursePatientSwitcher() {
   coursePatientSwitcher.value = currentPatient;
 }
 
-function closeCourseTodayOverlay() {
-  if (!courseTodayOverlay) return;
-  courseTodayOverlay.classList.add("is-hidden");
-  courseTodayOverlay.setAttribute("aria-hidden", "true");
-  courseTodayOverlay.setAttribute("hidden", "");
-  document.body.classList.remove("has-course-today-overlay");
-}
-
-function getCourseTodayItemType(exercise) {
-  if (isCoursePauseExercise(exercise)) return "Pauseneinheit";
-  if (exercise?.mode === "breathing") return "Atemübung";
-  if (exercise?.mediaType === "video") return "Video";
-  if (exercise?.mediaType === "image") return "Bild";
-  if (exercise?.mediaType === "audio") return "Audio";
-  if (exercise?.mode === "dialog") return "Dialog";
-  if (exercise?.mode === "karaoke") return "Karaoke-Text";
-  if (exercise?.mode === "long_text") return "Langer Text";
-  return "Übung";
-}
-
-async function startCourseExerciseFromToday(course, assignment, selectedDayIndex, exerciseIndex) {
-  if (!course || !assignment || isCourseMediaLocked()) return;
-  const dayState = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
-  if (!dayState.plan?.exercises?.[exerciseIndex]) return;
-
-  const now = new Date().toISOString();
-  const session = {
-    id: createId("courseSession"),
-    patientId: assignment.patientId,
-    patientName: assignment.patientName,
-    courseId: course.id,
-    courseName: course.name,
-    planId: dayState.plan.id,
-    planTitle: dayState.plan.title,
-    startedAt: now,
-    introPlayedAt: now,
-    currentExerciseIndex: exerciseIndex,
-    status: "started",
-    completedExerciseIds: [],
-    skippedExerciseIds: [],
-    pauseDurations: [],
-    recordings: [],
-    measurementResults: [],
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  const instructionUnlock = unlockInstructionAudio();
-  const contextUnlock = unlockCoursePlaylistAudioContext();
-  Promise.allSettled([
-    instructionUnlock,
-    contextUnlock,
-    unlockCoursePlaylistAudio(),
-    primeCoursePlaylistVideo(course, assignment, selectedDayIndex),
-    primeCoursePauseAudio(course, assignment, selectedDayIndex),
-  ]).catch(() => {});
-  closeCourseTodayOverlay();
-  return startCoursePreview(course, session, assignment, selectedDayIndex);
-}
-function openCourseTodayOverlay(course, assignment, selectedDayIndex = null) {
-  if (!courseTodayOverlay || !courseTodayOverlayList) return;
-  const { index, total, plan } = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
-  const exercises = Array.isArray(plan?.exercises) ? plan.exercises : [];
-  courseTodayOverlayTitle.textContent = plan?.title || plan?.name || "Übungen heute";
-  courseTodayOverlayMeta.textContent = `${course?.name || "Kurs"} · Tag ${index + 1} von ${Math.max(total, 1)} · ${exercises.length} Übungen`;
-  courseTodayOverlayList.replaceChildren();
-
-  if (!exercises.length) {
-    const empty = document.createElement("p");
-    empty.className = "course-empty";
-    empty.textContent = "Für diesen Trainingstag sind noch keine Übungen hinterlegt.";
-    courseTodayOverlayList.append(empty);
-  } else {
-    exercises.forEach((exercise, exerciseIndex) => {
-      const item = document.createElement("button");
-      const isPause = isCoursePauseExercise(exercise);
-      item.type = "button";
-      item.className = `course-today-overlay-item${isPause ? " is-pause" : ""}`;
-      item.title = `${exercise?.title || exercise?.name || (isPause ? "Pause" : "Übung")} starten`;
-      const order = document.createElement("span");
-      order.className = "course-today-order";
-      order.textContent = String(exerciseIndex + 1);
-      const copy = document.createElement("div");
-      const title = document.createElement("strong");
-      title.textContent = exercise?.title || exercise?.name || (isPause ? "Pause" : "Übung");
-      const detail = document.createElement("small");
-      const seconds = Number(exercise?.estimatedDuration || exercise?.durationSeconds || exercise?.duration || 0);
-      detail.textContent = `${getCourseTodayItemType(exercise)}${seconds > 0 ? ` · ${formatCourseDuration(seconds)}` : ""}`;
-      copy.append(title, detail);
-      item.append(order, copy);
-      item.addEventListener("click", () => {
-        startCourseExerciseFromToday(course, assignment, index, exerciseIndex).catch(() => {});
-      });
-      courseTodayOverlayList.append(item);
-    });
-  }
-
-  courseTodayOverlay.removeAttribute("hidden");
-  courseTodayOverlay.classList.remove("is-hidden");
-  courseTodayOverlay.setAttribute("aria-hidden", "false");
-  document.body.classList.add("has-course-today-overlay");
-  closeCourseTodayOverlayButton?.focus();
-}
 function renderMyCourses() {
   if (!myCourseList) return;
   syncCourseMediaLock();
@@ -14806,9 +13926,8 @@ function renderMyCourses() {
     const exerciseCount = plan?.exerciseCount || (plan?.exercises || []).length || 0;
     const progress = exerciseCount ? Math.round((completedCount / Math.max(1, exerciseCount)) * 100) : 0;
     const isRunning = activeCourseRun?.course?.id === course.id;
-    const isExpanded = expandedMyCourseAssignmentId === assignment.id;
     const card = document.createElement("article");
-    card.className = `course-card course-card-primary course-card-collapsible${isRunning ? " is-running" : ""}${isExpanded ? " is-expanded" : ""}`;
+    card.className = `course-card course-card-primary${isRunning ? " is-running" : ""}`;
     card.innerHTML = `
       <div class="course-card-head">
         <span class="course-symbol">${course.symbol || "LS"}</span>
@@ -14817,80 +13936,44 @@ function renderMyCourses() {
           <h3>${course.name}</h3>
           <p>Heute: ${plan?.title || "Kein Tagesplan"} · Tag ${Math.min(index + 1, Math.max(total, 1))} von ${Math.max(total, 1)}</p>
         </div>
-        <div class="course-card-heading-actions">
-          ${isRunning ? '<strong class="course-status is-active">Läuft</strong>' : ""}
-          <button class="course-collapse-button" type="button" aria-expanded="${isExpanded}" title="${isExpanded ? "Kurs schließen" : "Kurs öffnen"}" aria-label="${isExpanded ? "Kurs schließen" : "Kurs öffnen"}">${isExpanded ? "&#8722;" : "+"}</button>
-        </div>
+        ${isRunning ? '<strong class="course-status is-active">Läuft</strong>' : ""}
       </div>
-      ${isExpanded ? `
-        <div class="course-card-details">
-          <p>${course.description || "Ihr aktueller Kurs."}</p>
-          <label class="course-day-picker">
-            <span>Trainingstag auswählen</span>
-            <select aria-label="Trainingstag auswählen">
-              ${dayPlans.map((dayPlan, dayIndex) => `
-                <option value="${dayIndex}"${dayIndex === index ? " selected" : ""}>
-                  Tag ${dayIndex + 1} · ${dayPlan.title || `Tagesplan ${dayIndex + 1}`}
-                </option>
-              `).join("")}
-            </select>
-          </label>
-          <dl class="course-overview-grid">
-            <div><dt>Start</dt><dd>${formatCourseDate(assignment.startDate)}</dd></div>
-            <div class="course-today-stat"><dt>Übungen heute</dt><dd><button class="course-today-count-button" type="button" aria-label="Übungen der gewählten Tageseinheit anzeigen">${exerciseCount}</button></dd></div>
-            <div><dt>Dauer heute</dt><dd data-course-selected-duration>${formatCourseDuration(plan?.estimatedDuration || getCourseEstimatedDuration(plan || { exercises: [] }))}</dd></div>
-          </dl>
-          <div class="course-progress"><span data-course-selected-progress style="width:${progress}%"></span></div>
-          <small data-course-selected-session>${lastSession?.startedAt ? `Zuletzt gestartet: ${new Date(lastSession.startedAt).toLocaleString("de-DE")}` : "Noch nicht gestartet"}</small>
-          <div class="course-actions course-actions-single">
-            <button class="primary-action" type="button">${isRunning ? "Playlist fortsetzen" : "Playlist starten"}</button>
-          </div>
-        </div>` : ""}
+      <p>${course.description || "Ihr aktueller Kurs."}</p>
+      <label class="course-day-picker">
+        <span>Trainingstag ausw&auml;hlen</span>
+        <select aria-label="Trainingstag ausw&auml;hlen">
+          ${dayPlans.map((dayPlan, dayIndex) => `
+            <option value="${dayIndex}"${dayIndex === index ? " selected" : ""}>
+              Tag ${dayIndex + 1} &middot; ${dayPlan.title || `Tagesplan ${dayIndex + 1}`}
+            </option>
+          `).join("")}
+        </select>
+      </label>
+      <dl class="course-overview-grid">
+        <div><dt>Start</dt><dd>${formatCourseDate(assignment.startDate)}</dd></div>
+        <div><dt>Übungen heute</dt><dd>${exerciseCount}</dd></div>
+        <div><dt>Dauer heute</dt><dd>${formatCourseDuration(plan?.estimatedDuration || getCourseEstimatedDuration(plan || { exercises: [] }))}</dd></div>
+      </dl>
+      <div class="course-progress"><span style="width:${progress}%"></span></div>
+      <small>${lastSession?.startedAt ? `Zuletzt gestartet: ${new Date(lastSession.startedAt).toLocaleString("de-DE")}` : "Noch nicht gestartet"}</small>
+      <div class="course-actions course-actions-single">
+        <button class="primary-action" type="button">${isRunning ? "Playlist fortsetzen" : "Playlist starten"}</button>
+      </div>
     `;
-    const toggleButton = card.querySelector(".course-collapse-button");
-    toggleButton.addEventListener("click", () => {
-      expandedMyCourseAssignmentId = isExpanded ? "" : assignment.id;
-      renderMyCourses();
-    });
-    if (isExpanded) {
-      const startButton = card.querySelector(".primary-action");
-      const daySelect = card.querySelector(".course-day-picker select");
-      const anotherCourseIsRunning = isCourseMediaLocked() && !isRunning;
-      startButton.disabled = anotherCourseIsRunning;
-      daySelect.disabled = Boolean(isRunning || anotherCourseIsRunning || dayPlans.length < 2);
-      if (anotherCourseIsRunning) {
-        startButton.textContent = "Anderer Kurs läuft";
-        startButton.title = "Den laufenden Kurs zuerst beenden, stoppen oder abbrechen.";
-      }
-      const refreshSelectedDaySummary = () => {
-        const selectedDay = getCurrentCourseDayPlan(course, assignment, daySelect.value);
-        const selectedPlan = selectedDay.plan || { exercises: [] };
-        const selectedExerciseCount = Number(selectedPlan.exerciseCount || selectedPlan.exercises?.length || 0);
-        const selectedSession = getLatestCourseSession(course.id, assignment.patientId, selectedPlan.id);
-        const selectedCompleted = Number(selectedSession?.completedExerciseIds?.length || 0);
-        const selectedProgress = selectedExerciseCount
-          ? Math.round((selectedCompleted / Math.max(1, selectedExerciseCount)) * 100)
-          : 0;
-        const countButton = card.querySelector(".course-today-count-button");
-        if (countButton) countButton.textContent = String(selectedExerciseCount);
-        const duration = card.querySelector("[data-course-selected-duration]");
-        if (duration) duration.textContent = formatCourseDuration(selectedPlan.estimatedDuration || getCourseEstimatedDuration(selectedPlan));
-        const progressBar = card.querySelector("[data-course-selected-progress]");
-        if (progressBar) progressBar.style.width = `${selectedProgress}%`;
-        const sessionLabel = card.querySelector("[data-course-selected-session]");
-        if (sessionLabel) sessionLabel.textContent = selectedSession?.startedAt
-          ? `Zuletzt gestartet: ${new Date(selectedSession.startedAt).toLocaleString("de-DE")}`
-          : "Noch nicht gestartet";
-      };
-      daySelect.addEventListener("change", refreshSelectedDaySummary);
-      card.querySelector(".course-today-count-button")?.addEventListener("click", () => {
-        openCourseTodayOverlay(course, assignment, daySelect.value);
-      });
-      startButton.addEventListener("click", () => resumeOrStartCourse(course, assignment, daySelect.value));
+    const startButton = card.querySelector("button");
+    const daySelect = card.querySelector(".course-day-picker select");
+    const anotherCourseIsRunning = isCourseMediaLocked() && !isRunning;
+    startButton.disabled = anotherCourseIsRunning;
+    daySelect.disabled = Boolean(isRunning || anotherCourseIsRunning || dayPlans.length < 2);
+    if (anotherCourseIsRunning) {
+      startButton.textContent = "Anderer Kurs läuft";
+      startButton.title = "Den laufenden Kurs zuerst beenden, stoppen oder abbrechen.";
     }
+    startButton.addEventListener("click", () => resumeOrStartCourse(course, assignment, daySelect.value));
     myCourseList.append(card);
   });
 }
+
 async function ensureDailyPlanIntroAudio(plan) {
   const description = String(plan?.description || "").trim();
   if (!description) return "";
@@ -14933,22 +14016,13 @@ async function ensureDailyPlanIntroAudio(plan) {
   }
 }
 
-function setCourseVideoFullscreen(active) {
-  document.body.classList.toggle("course-video-fullscreen", Boolean(active));
-}
-
 function renderDailyPlanIntroduction() {
-  setCourseVideoFullscreen(false);
   if (!coursePlayer || !activeCourseRun) return;
   const { course, plan } = activeCourseRun;
-  const introImage = getDailyPlanIntroImage(plan);
-  const introImageUrl = introImage?.downloadUrl ? resolveAppUrl(introImage.downloadUrl) : "";
   myCoursesPanel?.classList.add("has-active-course");
   coursePlayer.classList.remove("is-hidden");
   coursePlayer.innerHTML = `
-    <div class="course-player-card course-intro-card${introImageUrl ? " has-intro-image" : ""}">
-      ${introImageUrl ? `<img class="course-intro-background" src="${mediaLibraryEscape(introImageUrl)}" alt="">` : ""}
-      <div class="course-intro-content">
+    <div class="course-player-card course-intro-card">
       <div class="course-player-context">
         <span>Kurs</span>
         <strong>${course?.name || "Kurs"}</strong>
@@ -14959,7 +14033,6 @@ function renderDailyPlanIntroduction() {
       <p class="course-intro-description"></p>
       <p class="course-intro-state" aria-live="polite">Einleitung wird vorgelesen...</p>
       <button class="secondary-action danger-action" type="button" data-action="stopIntro">Stoppen</button>
-      </div>
     </div>
   `;
   coursePlayer.querySelector(".course-intro-description").textContent = plan?.description || "";
@@ -15016,13 +14089,6 @@ async function startCoursePreview(
   selectedDayIndex = null,
 ) {
   if (!coursePlayer || !assignment) return;
-  // Refresh the course and day plan so edits from another device are used immediately.
-  try {
-    await refreshCourseDataForCurrentPatient();
-    course = courses.find((item) => item.id === course?.id) || course;
-  } catch (error) {
-    // Local data remains available while offline.
-  }
   const dayState = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
   if (!dayState.plan) return;
   const currentSession = session || {
@@ -15256,7 +14322,7 @@ async function startCourseUnitMedia(exercise) {
     const mediaElement = coursePlaylistVideo;
     const mediaUrl = resolveAppUrl(media.downloadUrl);
     mediaElement.className = "media-library-preview course-playlist-video";
-    mediaElement.controls = false;
+    mediaElement.controls = true;
     mediaElement.style.position = "";
     mediaElement.style.width = "";
     mediaElement.style.height = "";
@@ -15274,9 +14340,8 @@ async function startCourseUnitMedia(exercise) {
     mediaElement.volume = 1;
     mediaElement.currentTime = 0;
     const isTimedPause = isCoursePauseExercise(exercise);
-    const shouldLoop = isTimedPause || media.playbackMode === "loop";
-    mediaElement.loop = shouldLoop;
-    if (!shouldLoop) {
+    mediaElement.loop = isTimedPause;
+    if (!isTimedPause) {
       mediaElement.addEventListener("ended", () => coursePlayer.querySelector("[data-action='done']")?.click(), { once: true });
     }
     try {
@@ -15319,7 +14384,7 @@ async function startCourseUnitMedia(exercise) {
   coursePlaylistAudio.muted = false;
   coursePlaylistAudio.defaultMuted = false;
   coursePlaylistAudio.volume = 1;
-  coursePlaylistAudio.loop = isTimedPause || media.playbackMode === "loop";
+  coursePlaylistAudio.loop = isTimedPause;
   container?.replaceChildren(coursePlaylistAudio);
   coursePlaylistAudioEndHandler = isTimedPause
     ? null
@@ -15370,7 +14435,6 @@ function renderCoursePlayer() {
   const exercises = plan?.exercises || [];
   const exercise = exercises[index];
   if (!exercise) {
-    setCourseVideoFullscreen(false);
     session.status = "completed";
     syncCourseMediaLock();
     session.completedAt = new Date().toISOString();
@@ -15402,11 +14466,8 @@ function renderCoursePlayer() {
   const progress = Math.round((index / Math.max(1, exercises.length)) * 100);
   const isMediaPause = isCoursePauseExercise(exercise);
   const isMediaExercise = exercise.mode === "media_exercise";
-  const media = resolveCourseUnitMedia(exercise);
-  const isFullscreenVideo = media?.mediaType === "video";
-  setCourseVideoFullscreen(isFullscreenVideo);
   coursePlayer.innerHTML = `
-    <div class="course-player-card${isMediaPause ? " course-player-pause-mode" : ""}${isFullscreenVideo ? " course-video-card" : ""}">
+    <div class="course-player-card${isMediaPause ? " course-player-pause-mode" : ""}">
       ${isMediaPause ? '<div class="course-pause-ambient" aria-hidden="true"><span></span><span></span><span></span></div>' : ""}
       <div class="course-player-context">
         <span>Kurs</span>
@@ -15548,7 +14609,6 @@ function handleCoursePlayerClick(event) {
     return;
   }
   if (action === "record") {
-    setCourseVideoFullscreen(false);
     session.status = "in_progress";
     session.updatedAt = new Date().toISOString();
     courseSessions = mergeById(courseSessions, [session]);
@@ -16939,8 +15999,6 @@ function prepareRecordViewFromNavigation() {
 }
 
 function setActiveView(viewName) {
-  const previousView = document.body.dataset.activeView || "";
-  if (viewName === "myCourses" && previousView !== "myCourses") expandedMyCourseAssignmentId = "";
   document.body.dataset.activeView = viewName;
   updateTopBarTitle(viewName);
   appMenu?.classList.add("is-hidden");

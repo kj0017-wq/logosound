@@ -1,12 +1,9 @@
 const { onRequest } = require("firebase-functions/v2/https");
-const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
 
 admin.initializeApp();
 
-const elevenLabsApiKey = defineSecret("ELEVENLABS_API_KEY");
-const openAiApiKey = defineSecret("OPENAI_API_KEY");
 const DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
 const ELEVENLABS_TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech";
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
@@ -275,8 +272,14 @@ exports.mediaLibrary = onRequest(
           }
 
           const contentLength = fileSize > 0 ? end - start + 1 : 0;
-          response.set("Content-Type", item.mimeType || fileMetadata.contentType || "application/octet-stream");
-          response.set("Cache-Control", "private, max-age=3600");
+          const responseMimeType = inferMediaMimeType(
+            item.mimeType || fileMetadata.contentType,
+            item.fileName || storagePath,
+          );
+          response.set("Content-Type", responseMimeType);
+          response.set("Content-Disposition", `inline; filename="${safeStorageFileName(item.fileName || "medium")}"`);
+          response.set("Cache-Control", "public, max-age=3600");
+          response.set("X-Content-Type-Options", "nosniff");
           response.set("Accept-Ranges", "bytes");
           if (fileSize > 0) response.set("Content-Length", String(contentLength));
           if (partialContent) {
@@ -338,7 +341,10 @@ exports.mediaLibrary = onRequest(
           }
           const fileName = safeStorageFileName(metadata.fileName || "medium");
           const storagePath = `media-library/${id}/${fileName}`;
-          const mimeType = String(metadata.mimeType || request.get("Content-Type") || "application/octet-stream");
+           const mimeType = inferMediaMimeType(
+             metadata.mimeType || request.get("Content-Type"),
+             metadata.fileName || fileName,
+           );
           await admin.storage().bucket(STORAGE_BUCKET).file(storagePath).save(rawBody, {
             resumable: false,
             metadata: { contentType: mimeType },
@@ -348,7 +354,7 @@ exports.mediaLibrary = onRequest(
             ...metadata,
             id,
             title,
-            kind: metadata.kind === "pause" ? "pause" : "exercise",
+            kind: metadata.kind === "pause" ? "pause" : (metadata.kind === "loop" ? "loop" : "exercise"),
             mimeType,
             storagePath,
             downloadUrl: `/api/media-library?file=${encodeURIComponent(id)}`,
@@ -375,7 +381,7 @@ exports.mediaLibrary = onRequest(
         ...item,
         id,
         title,
-        kind: item.kind === "pause" ? "pause" : "exercise",
+        kind: item.kind === "pause" ? "pause" : (item.kind === "loop" ? "loop" : "exercise"),
         updatedAt: new Date().toISOString(),
       };
       try {
@@ -414,7 +420,6 @@ exports.mediaLibrary = onRequest(
 exports.settings = onRequest(
   {
     region: "europe-west3",
-    secrets: [openAiApiKey],
     maxInstances: 5,
   },
   async (request, response) => {
@@ -434,7 +439,7 @@ exports.settings = onRequest(
             ? {
                 ...rawChatGptSettings,
                 apiKey: "",
-                hasApiKey: Boolean(rawChatGptSettings.apiKey || openAiApiKey.value()),
+                hasApiKey: Boolean(rawChatGptSettings.apiKey),
               }
             : null,
         });
@@ -588,7 +593,6 @@ exports.editorExercises = onRequest(
 exports.chatgpt = onRequest(
   {
     region: "europe-west3",
-    secrets: [openAiApiKey],
     maxInstances: 5,
   },
   async (request, response) => {
@@ -609,7 +613,7 @@ exports.chatgpt = onRequest(
     if (!apiKey || !apiKey.startsWith("sk-")) {
       const snapshot = await admin.firestore().collection(SETTINGS_COLLECTION).doc(CHATGPT_SETTINGS_DOC).get().catch(() => null);
       const storedSettings = snapshot?.exists ? normalizeChatGptSettings(snapshot.data()) : null;
-      apiKey = String(storedSettings?.apiKey || openAiApiKey.value() || "").trim();
+      apiKey = String(storedSettings?.apiKey || process.env.OPENAI_API_KEY || "").trim();
     }
 
     if (!apiKey || !apiKey.startsWith("sk-")) {
@@ -734,7 +738,6 @@ exports.chatgpt = onRequest(
 exports.voice = onRequest(
   {
     region: "europe-west3",
-    secrets: [elevenLabsApiKey],
     maxInstances: 5,
   },
   async (request, response) => {
@@ -799,6 +802,18 @@ exports.voice = onRequest(
     }
 
     try {
+      let apiKey = String(request.body?.apiKey || "").trim();
+      if (!apiKey || !apiKey.startsWith("sk-")) {
+        const settingsSnapshot = await admin.firestore().collection(SETTINGS_COLLECTION).doc(ELEVENLABS_SETTINGS_DOC).get().catch(() => null);
+        const storedSettings = settingsSnapshot?.exists ? normalizeElevenLabsSettings(settingsSnapshot.data()) : null;
+        apiKey = String(storedSettings?.apiKey || process.env.ELEVENLABS_API_KEY || "").trim();
+      }
+
+      if (!apiKey) {
+        response.status(400).json({ error: "missing-elevenlabs-api-key" });
+        return;
+      }
+
       if (shouldStore) {
         const cachedFile = admin.storage().bucket(STORAGE_BUCKET).file(cachedPath);
         const [exists] = await cachedFile.exists();
@@ -821,7 +836,7 @@ exports.voice = onRequest(
         headers: {
           "Content-Type": "application/json",
           Accept: "audio/mpeg",
-          "xi-api-key": elevenLabsApiKey.value(),
+          "xi-api-key": apiKey,
         },
         body: JSON.stringify({
           text,
@@ -948,6 +963,28 @@ function safeStorageFileName(fileName = "medium") {
   return `${base}${extension}`;
 }
 
+function inferMediaMimeType(mimeType = "", fileName = "") {
+  const normalizedMimeType = String(mimeType || "").trim().toLowerCase();
+  if (normalizedMimeType && normalizedMimeType !== "application/octet-stream") return normalizedMimeType;
+  const extension = String(fileName || "").split(".").pop()?.toLowerCase() || "";
+  const byExtension = {
+    mp4: "video/mp4",
+    m4v: "video/x-m4v",
+    mov: "video/quicktime",
+    webm: "video/webm",
+    mp3: "audio/mpeg",
+    m4a: "audio/mp4",
+    wav: "audio/wav",
+    ogg: "audio/ogg",
+    aac: "audio/aac",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+  };
+  return byExtension[extension] || "application/octet-stream";
+}
+
 function slugify(value) {
   return String(value || "neue-uebung")
     .normalize("NFD")
@@ -1044,6 +1081,8 @@ function normalizeElevenLabsSettings(settings = {}) {
     similarity: Math.round(clampVoiceSetting(Number(settings.similarity) / 100, 0.82) * 100),
     style: Math.round(clampVoiceSetting(Number(settings.style) / 100, 0.12) * 100),
     speakerBoost: settings.speakerBoost !== false,
+    apiKey: String(settings.apiKey || "").trim(),
+    hasApiKey: Boolean(String(settings.apiKey || "").trim()) || Boolean(settings.hasApiKey),
   };
 }
 

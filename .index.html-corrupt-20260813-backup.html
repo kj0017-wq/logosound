@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260817-current-plan-intro-image1" />
+<link rel="stylesheet" href="styles.css?v=20260813-amp373" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-10 amp317</div>
+<div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-13 amp373</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -96,21 +96,15 @@
         </div>
         <div id="countdownOverlay" class="countdown-overlay is-hidden">3</div>
         <div id="karaokeOverlay" class="karaoke-overlay"></div>
-        <section id="breathingOverlay" class="breathing-overlay is-hidden" aria-live="polite">
-          <div class="breathing-visual">
-            <div id="breathingBall" class="breathing-ball"></div>
-            <p id="breathingPhase" class="breathing-phase">Einatmen</p>
-            <p id="breathingRound" class="breathing-round">Runde 1 von 5</p>
-            <p id="breathingCountdown" class="breathing-countdown">4 s</p>
-            <button id="breathingStopButton" class="breathing-stop" type="button">Stoppen</button>
-          </div>
-        </section>
         <div class="camera-overlay">
           <div>
             <p class="eyebrow">Sprachübung</p>
             <h1>LogoSound</h1>
           </div>
-          <span id="permissionState" class="status-pill">Zugriff wird angefragt</span>
+          <div class="camera-status-group">
+            <span id="permissionState" class="status-pill">Kamera bereit</span>
+            <span id="micState" class="status-pill is-muted">Mic fehlt</span>
+          </div>
         </div>
       </section>
 
@@ -119,22 +113,34 @@
         <button id="previewStopButton" class="secondary-action preview-stop-action" type="button">Vorführung stoppen</button>
       </section>
 
+      <section id="breathingSessionBar" class="preview-session-bar breathing-session-bar app-section is-hidden" data-view="record" aria-label="Atemübung aktiv">
+        <strong id="breathingSessionLabel" class="preview-session-status">Atemübung aktiv</strong>
+        <button id="breathingStopButton" class="secondary-action preview-stop-action" type="button">Atemübung stoppen</button>
+      </section>
+
       <section class="controls-panel app-section" data-view="record" aria-label="Aufnahmesteuerung">
         <div class="recording-start-card">
           <label class="field-label" for="recordingModeFilter">Funktionsart</label>
           <select id="recordingModeFilter" class="select-input compact-select">
             <option value="">Alle Funktionsarten</option>
+            <option value="breathing">Atemübung</option>
             <option value="syllables">Silben / Laute</option>
             <option value="sentences">Kurze Sätze</option>
             <option value="text">Karaoke-Text</option>
             <option value="long_text">Langer Text</option>
             <option value="vowels">Vokale</option>
             <option value="dialog">Dialog</option>
-                <option value="breathing">Atemübung</option>
           </select>
           <label class="field-label" for="exerciseName">Übung</label>
           <select id="exerciseName" class="select-input">
             <option value="Vokal A halten" data-mode="vowels">Vokal A halten</option>
+            <option
+              value="Ruhige Bauchatmung"
+              data-mode="breathing"
+              data-script="Einatmen | Halten | Ausatmen | Pause"
+            >
+              Ruhige Bauchatmung
+            </option>
             <option value="A E I O U" data-mode="vowels">Vokale nacheinander</option>
             <option
               value="Pa Ta Ka"
@@ -153,8 +159,10 @@
             <option value="custom-editor" data-mode="">Gespeicherte Editor-Übung</option>
           </select>
           <div id="recordingExerciseShortcuts" class="recording-exercise-shortcuts"></div>
-          <button id="recordButton" class="primary-action recording-start-action" type="button">Übung starten</button>
-          <button id="previewExerciseButton" class="secondary-action preview-exercise-action" type="button">Vorführung</button>
+          <div class="recording-start-actions">
+            <button id="recordButton" class="primary-action recording-start-action" type="button">Übung starten</button>
+            <button id="previewExerciseButton" class="secondary-action preview-exercise-action" type="button">Vorführung</button>
+          </div>
         </div>
 
         <div class="meters">
@@ -348,18 +356,21 @@
             <span>Funktionsart filtern</span>
             <select id="editorSavedModeFilter" class="select-input compact-select">
               <option value="">Alle Funktionsarten</option>
+              <option value="breathing">Atemübung</option>
               <option value="syllables">Silben / Laute</option>
               <option value="sentences">Kurze Sätze</option>
               <option value="text">Karaoke-Text</option>
               <option value="long_text">Langer Text</option>
               <option value="vowels">Vokale</option>
               <option value="dialog">Dialog</option>
-                <option value="breathing">Atemübung</option>
             </select>
           </label>
           <button id="editorSavedListToggle" class="secondary-action editor-saved-list-toggle" type="button">Vorlagen verwalten</button>
           <div id="editorSavedExerciseList" class="editor-saved-exercise-list is-hidden" aria-label="Gespeicherte Übungen löschen"></div>
           <p id="editorModeState" class="editor-mode-state">Neue Übung</p>
+          <button id="editorDeleteExerciseButton" class="secondary-action danger-action editor-delete-exercise-button is-hidden" type="button">
+            Diese Übung löschen
+          </button>
 
           <div class="editor-section editor-section-basic">
             <label class="field-label" for="editorExerciseName">Name der Übung</label>
@@ -368,13 +379,13 @@
             <div class="editor-field-stack">
               <label class="field-label" for="editorMode">Funktionsart</label>
               <select id="editorMode" class="select-input compact-select">
+                <option value="breathing">Atemübung</option>
                 <option value="syllables" selected>Silben / Laute</option>
                 <option value="sentences">Kurze Sätze</option>
                 <option value="text">Karaoke-Text</option>
                 <option value="long_text">Langer Text</option>
                 <option value="vowels">Vokale</option>
                 <option value="dialog">Dialog</option>
-                <option value="breathing">Atemübung</option>
               </select>
             </div>
 
@@ -388,25 +399,6 @@
           <div class="editor-section editor-section-content">
             <label class="field-label" for="editorContent">Text, Vokal oder Laute</label>
             <textarea id="editorContent" rows="4">Pa Ta Ka</textarea>
-            <div id="breathingSettings" class="breathing-settings is-hidden">
-              <div class="breathing-settings-heading">
-                <strong>Atemablauf</strong>
-                <span>Zeiten und Wiederholungen für diese Atemübung</span>
-              </div>
-              <div class="breathing-settings-grid">
-                <label class="field-label">Einatmen<input id="breathingInhale" type="number" min="1" max="30" value="4" inputmode="numeric" /><span>Sekunden</span></label>
-                <label class="field-label">Halten<input id="breathingHold" type="number" min="0" max="30" value="2" inputmode="numeric" /><span>Sekunden</span></label>
-                <label class="field-label">Ausatmen<input id="breathingExhale" type="number" min="1" max="30" value="6" inputmode="numeric" /><span>Sekunden</span></label>
-                <label class="field-label">Pause<input id="breathingPause" type="number" min="0" max="30" value="2" inputmode="numeric" /><span>Sekunden</span></label>
-                <label class="field-label breathing-repeat-field">Wiederholungen<input id="breathingRepeats" type="number" min="1" max="30" value="5" inputmode="numeric" /><span>Runden</span></label>
-              </div>
-              <div class="breathing-extra-header">
-                <strong>Zusätzliche Atemschritte</strong>
-                <button id="addBreathingStepButton" class="compact-action secondary-action" type="button">+ Atemschritt</button>
-              </div>
-              <div id="breathingExtraSteps" class="breathing-extra-steps"></div>
-              <label class="editor-check breathing-voice-option" for="breathingUseVoice"><input id="breathingUseVoice" type="checkbox" checked /><span>Atemphasen ansagen</span></label>
-            </div>
             <div id="editorSentenceBuilder" class="editor-sentence-builder is-hidden">
               <label class="field-label" for="editorSentenceInput">Kurzer Satz</label>
               <div class="editor-sentence-row">
@@ -426,6 +418,31 @@
                 Dialogzeile hinzufügen
               </button>
             </div>
+            <div id="editorBreathingBuilder" class="editor-breathing-builder is-hidden">
+              <div class="editor-breathing-grid">
+                <label class="editor-field-stack" for="editorBreathInhale">
+                  <span class="field-label">Einatmen (Sek.)</span>
+                  <input id="editorBreathInhale" type="number" min="1" max="30" step="1" value="4" inputmode="numeric" />
+                </label>
+                <label class="editor-field-stack" for="editorBreathHold">
+                  <span class="field-label">Halten (Sek.)</span>
+                  <input id="editorBreathHold" type="number" min="0" max="30" step="1" value="2" inputmode="numeric" />
+                </label>
+                <label class="editor-field-stack" for="editorBreathExhale">
+                  <span class="field-label">Ausatmen (Sek.)</span>
+                  <input id="editorBreathExhale" type="number" min="1" max="30" step="1" value="6" inputmode="numeric" />
+                </label>
+                <label class="editor-field-stack" for="editorBreathPause">
+                  <span class="field-label">Pause (Sek.)</span>
+                  <input id="editorBreathPause" type="number" min="0" max="30" step="1" value="2" inputmode="numeric" />
+                </label>
+                <label class="editor-field-stack" for="editorBreathRepeats">
+                  <span class="field-label">Wiederholungen</span>
+                  <input id="editorBreathRepeats" type="number" min="1" max="20" step="1" value="5" inputmode="numeric" />
+                </label>
+              </div>
+              <p class="field-help">Einfach halten: Zeiten und Wiederholungen einstellen, dann wie jede andere Übung speichern.</p>
+            </div>
             <button id="openEditorAiButton" class="secondary-action editor-ai-open-button" type="button">
               Mit KI erstellen
             </button>
@@ -433,7 +450,7 @@
             <p id="editorPreview" class="editor-preview">1 Pa Ta Ka</p>
           </div>
 
-          <div id="editorTimingOptions" class="editor-section editor-section-options">
+          <div class="editor-section editor-section-options">
             <div class="editor-grid">
               <div id="editorRepeatGroup" class="editor-repeat-group">
                 <label class="editor-check" for="editorUseRepeats">
@@ -874,24 +891,24 @@
         </div>
       </section>
       <section class="daily-plans-panel app-section" data-view="dailyPlans" aria-label="Tagespläne">
-        <div class="section-header daily-plan-header">
+        <div class="section-header">
           <div>
             <p class="eyebrow">Tagespläne</p>
           </div>
-          <div class="daily-plan-mode-switch" aria-label="Tagesplan auswählen">
+          <div class="course-editor-mode-switch" aria-label="Tagesplan-Editor-Modus">
             <button id="newDailyPlanButton" class="secondary-action compact-action is-active" type="button">Neuer Tagesplan</button>
             <button id="openDailyPlanButton" class="secondary-action compact-action" type="button">Tagesplan öffnen</button>
           </div>
         </div>
-        <div id="openDailyPlanControl" class="daily-plan-open-control is-hidden">
-          <label class="field-label" for="openDailyPlanSelect">Vorhandenen Tagesplan auswählen</label>
-          <select id="openDailyPlanSelect" class="highlight-select">
-            <option value="">Tagesplan auswählen</option>
-          </select>
-        </div>
 
         <div class="course-editor settings-group daily-plan-editor">
           <div class="daily-plan-form">
+            <div id="dailyPlanOpenControl" class="course-name-control is-hidden">
+              <label class="field-label" for="dailyPlanSelect">Tagesplan auswählen</label>
+              <select id="dailyPlanSelect" class="highlight-select">
+                <option value="">Tagesplan wählen</option>
+              </select>
+            </div>
             <label class="field-label" for="dailyPlanName">Name des Tagesplans</label>
             <input id="dailyPlanName" type="text" placeholder="Montag Stimme und Artikulation" />
             <details class="daily-plan-intro-details">
@@ -899,24 +916,25 @@
               <div class="daily-plan-intro-content">
                 <label class="field-label" for="dailyPlanDescription">Einleitungstext</label>
                 <textarea id="dailyPlanDescription" rows="2" placeholder="Kurzes Trainingspaket für einen Tag."></textarea>
-                <div class="daily-plan-intro-image">
-                  <label class="field-label" for="dailyPlanIntroImageSelect">Hintergrundbild für die Einleitung</label>
-                  <select id="dailyPlanIntroImageSelect" class="highlight-select"><option value="">Kein Hintergrundbild</option></select>
-                  <p class="field-hint">Bild aus der Mediathek auswählen. Im Kurs erscheint es als Hintergrund der Einleitung.</p>
-                </div><div class="daily-plan-intro-voice">
+                <div class="daily-plan-intro-voice">
                   <label class="field-label" for="dailyPlanVoiceSelect">Stimme für die Einleitung</label>
                   <select id="dailyPlanVoiceSelect" class="highlight-select" aria-describedby="dailyPlanVoiceHint"></select>
                   <p id="dailyPlanVoiceHint" class="field-hint">Die Beschreibung wird vor der ersten Übung einmal vorgelesen.</p>
+                  <label class="field-label" for="dailyPlanIntroBackgroundSelect">Hintergrundbild 9:16</label>
+                  <select id="dailyPlanIntroBackgroundSelect" class="highlight-select">
+                    <option value="">Ohne Hintergrundbild</option>
+                  </select>
+                  <p class="field-hint">9:16-Bilder werden beim Kursstart vollflächig hinter der Einleitung angezeigt.</p>
                   <button id="dailyPlanIntroAudioButton" class="secondary-action" type="button">Einleitung anhören</button>
                   <audio id="dailyPlanIntroPreview" class="daily-plan-intro-preview" controls preload="metadata"></audio>
                 </div>
               </div>
             </details>
-
+            <p id="dailyPlanEditorState" class="cloud-state" aria-live="polite">Tagesplan bereit.</p>
           </div>
 
           <div class="daily-plan-workspace">
-            <section class="daily-plan-selection" aria-labelledby="dailyPlanSelectionTitle">
+            <section id="dailyPlanSelectedStage" class="daily-plan-selection" aria-labelledby="dailyPlanSelectionTitle">
               <div class="daily-plan-panel-heading">
                 <div>
                   <p class="eyebrow">Tagesablauf</p>
@@ -924,26 +942,32 @@
                 </div>
                 <span id="dailyPlanSelectionSummary" class="daily-plan-summary">0 Übungen</span>
               </div>
-              <button id="openDailyPlanLibraryButton" class="secondary-action daily-plan-library-open-button" type="button" aria-expanded="false">
-                Übungen und Medien auswählen
-              </button>
               <div id="dailyPlanSelectedExercises" class="course-selected-list"></div>
-              <div class="daily-plan-save-area">
-                <p id="dailyPlanEditorState" class="cloud-state" aria-live="polite">Tagesplan bereit.</p>
-                <button id="saveDailyPlanButton" class="primary-action" type="button">Tagesplan speichern</button>
+              <div class="course-actions course-actions-single daily-plan-inline-actions">
+                <button id="openDailyPlanLibraryButton" class="secondary-action" type="button">Übungen auswählen</button>
               </div>
             </section>
 
-            <section class="exercise-picker daily-plan-library" aria-labelledby="dailyPlanLibraryTitle" aria-hidden="true">
+            <section id="dailyPlanLibraryStage" class="exercise-picker daily-plan-library is-hidden" aria-labelledby="dailyPlanLibraryTitle">
               <div class="daily-plan-panel-heading">
                 <div>
                   <p class="eyebrow">Bibliothek</p>
-                  <h3 id="dailyPlanLibraryTitle">Übungen und Medien auswählen</h3>
+                  <h3 id="dailyPlanLibraryTitle">Übungen auswählen</h3>
                 </div>
                 <span id="dailyPlanLibrarySummary" class="daily-plan-summary"></span>
               </div>
-              <p class="daily-plan-library-intro">Wählen Sie Übungen, Pausen und Medien für diesen Tagesplan aus.</p>
               <div class="daily-plan-library-tools">
+                <label>
+                  <span class="field-label">Block</span>
+                  <select id="dailyPlanExerciseBlockFilter" class="select-input compact-select">
+                    <option value="">Alle Blöcke</option>
+                    <option value="speech">Sprechübungen</option>
+                    <option value="breathing">Atemübungen</option>
+                    <option value="video">Video</option>
+                    <option value="image">Bilder</option>
+                    <option value="audio">Audio</option>
+                  </select>
+                </label>
                 <label>
                   <span class="field-label">Funktionsart</span>
                   <select id="dailyPlanExerciseFilter" class="select-input compact-select">
@@ -951,35 +975,23 @@
                   </select>
                 </label>
                 <label>
-                  <span class="field-label">Inhalt</span>
-                  <select id="dailyPlanMediaFilter" class="select-input compact-select">
-                    <option value="">Alle Inhalte</option>
-                    <option value="voice">Stimmübungen</option>
-                    <option value="breathing">Atemübungen</option>
-                    <option value="video">Video</option>
-                    <option value="audio">Audio</option>
-                    <option value="image">Bild</option>
-                    <option value="pause">Pausen</option>
-                  </select>
-                </label>
-                <label>
-                  <span class="field-label">Thema</span>
-                  <select id="dailyPlanTopicFilter" class="select-input compact-select">
-                    <option value="">Alle Themen</option>
-                  </select>
-                </label>
-                <label class="daily-plan-search-field">
                   <span class="field-label">Suchen</span>
-                  <input id="dailyPlanExerciseSearch" type="search" class="text-input" placeholder="Übung oder Medium suchen" />
+                  <input id="dailyPlanExerciseSearch" type="search" class="text-input" placeholder="Übung suchen" />
                 </label>
               </div>
               <div id="dailyPlanExerciseLibrary" class="course-exercise-library"></div>
-              <button id="closeDailyPlanLibraryButton" class="primary-action daily-plan-library-done-button" type="button">Auswahl übernehmen</button>
+              <div class="course-actions daily-plan-library-actions">
+                <button id="closeDailyPlanLibraryButton" class="primary-action" type="button">Auswahl übernehmen</button>
+                <button id="cancelDailyPlanLibraryButton" class="secondary-action" type="button">Zurück</button>
+              </div>
             </section>
+
+            <div id="dailyPlanFooterActions" class="course-actions daily-plan-footer-actions">
+              <button id="saveDailyPlanButton" class="primary-action" type="button">Tagesplan speichern</button>
+              <button id="cancelDailyPlanButton" class="secondary-action" type="button">Abbrechen</button>
+            </div>
           </div>
         </div>
-
-
       </section>
 
       <section class="courses-panel app-section" data-view="courses" aria-label="Kurse">
@@ -1028,27 +1040,39 @@
             <p class="eyebrow">Medien</p>
             <h2>Übungen und Pausenmedien</h2>
           </div>
-        </div>
-        <section id="mediaLibraryPlayer" class="media-library-player" aria-label="Medienvorschau">
-          <button id="closeMediaLibraryPlayerOverlayButton" class="media-library-player-close" type="button" aria-label="Vorschau schliessen" title="Vorschau schliessen">&times;</button>
-          <p id="mediaLibraryPlayerTitle" class="media-library-player-title">Medium auswählen</p>
-          <div class="media-library-player-stage">
-            <p id="mediaLibraryPlayerEmpty" class="media-library-player-empty">Wählen Sie unten ein Medium für die Vorschau aus.</p>
-            <video id="mediaLibraryPlayerVideo" class="is-hidden" controls playsinline preload="metadata"></video>
-            <audio id="mediaLibraryPlayerAudio" class="is-hidden" controls preload="metadata"></audio>
-            <img id="mediaLibraryPlayerImage" class="is-hidden" alt="" />
+          <div class="media-library-header-filter">
+            <label class="field-label" for="mediaLibraryThemeFilter">Thema filtern</label>
+            <select id="mediaLibraryThemeFilter" class="select-input compact-select">
+              <option value="">Alle Themen</option>
+            </select>
           </div>
-        </section>
-        <button id="backfillMediaLibraryThumbnailsButton" class="secondary-action media-thumbnail-backfill" type="button">Vorschaubilder nachholen</button>
+        </div>
         <div class="settings-group media-upload-form">
-          <label class="field-label" for="mediaLibraryFile">Datei auswählen</label>
+          <p class="eyebrow">1. Datei auswählen</p>
+          <div class="media-library-picker-actions">
+            <button id="pickMediaLibraryFileButton" class="secondary-action" type="button">Dateien auswählen</button>
+          </div>
           <input
             id="mediaLibraryFile"
             type="file"
             accept=".mp3,.m4a,.wav,.ogg,.aac,.flac,.webm,.mp4,.mov,.m4v,.jpg,.jpeg,.png,.webp,.heic,.heif,audio/*,video/*,image/*"
+            class="media-library-hidden-input"
+            multiple
           />
+
           <button id="saveMediaLibraryButton" class="primary-action" type="button">Medium hochladen</button>
-          <p id="mediaLibraryState" class="cloud-state">Audio, Video oder Bild auswählen. Titel und Thema lassen sich danach mit dem Bleistift bearbeiten.</p>
+          <p id="mediaLibraryState" class="cloud-state">Audio, Video oder Bild auswählen.</p>
+        </div>
+        <div id="mediaLibraryPreviewPanel" class="settings-group media-library-preview-panel is-hidden">
+          <div class="media-library-preview-header">
+            <div>
+              <p class="eyebrow">Vorschau</p>
+              <h3 id="mediaLibraryPreviewTitle">Medium</h3>
+              <p id="mediaLibraryPreviewMeta" class="field-hint"></p>
+            </div>
+          </div>
+          <p id="mediaLibraryPreviewDescription" class="media-library-preview-description"></p>
+          <div id="mediaLibraryPreviewStage" class="media-library-preview-stage"></div>
         </div>
         <div id="mediaLibraryList" class="course-list"></div>
       </section>
@@ -1101,6 +1125,20 @@
         <div id="myCourseList" class="course-list"></div>
         <div id="coursePlayer" class="course-player is-hidden" aria-label="Kurs-Player"></div>
       </section>
+
+      <div id="courseDayExercisesModal" class="editor-ai-modal is-hidden" aria-hidden="true" hidden>
+        <div class="editor-ai-dialog course-day-exercises-dialog" role="dialog" aria-modal="true" aria-labelledby="courseDayExercisesTitle">
+          <div class="editor-ai-header">
+            <div>
+              <p class="eyebrow">Tagesplan</p>
+              <h3 id="courseDayExercisesTitle">Übungen heute</h3>
+              <p id="courseDayExercisesSubtitle" class="course-day-exercises-subtitle"></p>
+            </div>
+            <button id="closeCourseDayExercisesButton" class="editor-ai-close" type="button" aria-label="Fenster schließen">×</button>
+          </div>
+          <div id="courseDayExercisesList" class="course-day-exercises-list"></div>
+        </div>
+      </div>
 
       <section class="help-panel app-section" data-view="help" aria-label="Hilfe und Erklärtexte">
         <div class="section-header">
@@ -1178,19 +1216,6 @@
       </nav>
     </main>
 
-    <div id="courseTodayOverlay" class="course-today-overlay is-hidden" aria-hidden="true" hidden>
-      <section class="course-today-dialog" role="dialog" aria-modal="true" aria-labelledby="courseTodayOverlayTitle">
-        <div class="course-today-header">
-          <div>
-            <p class="eyebrow">Tagesplan</p>
-            <h2 id="courseTodayOverlayTitle">Übungen heute</h2>
-            <p id="courseTodayOverlayMeta" class="course-today-overlay-meta"></p>
-          </div>
-          <button id="closeCourseTodayOverlayButton" class="course-today-close" type="button" aria-label="Tagesplan schließen">×</button>
-        </div>
-        <div id="courseTodayOverlayList" class="course-today-overlay-list"></div>
-      </section>
-    </div>
     <div id="editorAiModal" class="editor-ai-modal is-hidden" aria-hidden="true" hidden>
       <div class="editor-ai-dialog" role="dialog" aria-modal="true" aria-labelledby="editorAiTitle">
         <div class="editor-ai-header">
@@ -1226,6 +1251,7 @@
       </div>
     </div>
 
-    <script type="module" src="app.js?v=20260817-current-plan-intro-image1"></script>
+<script type="module" src="app.js?v=20260813-amp374"></script>
   </body>
 </html>
+

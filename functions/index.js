@@ -752,10 +752,59 @@ exports.voice = onRequest(
       }
 
       try {
-        const [audioBuffer] = await admin.storage().bucket(STORAGE_BUCKET).file(path).download();
+        // Safari requests MP3s in byte ranges. Serving the whole buffer works
+        // in many browsers, but can make an audio element stop after its start
+        // on iPhone. Mirror the media endpoint's range-capable stream here.
+        const storageFile = admin.storage().bucket(STORAGE_BUCKET).file(path);
+        const [fileMetadata] = await storageFile.getMetadata();
+        const fileSize = Math.max(0, Number(fileMetadata.size || 0));
+        const rangeHeader = String(request.get("range") || "").trim();
+        let start = 0;
+        let end = Math.max(0, fileSize - 1);
+        let partialContent = false;
+
+        if (rangeHeader && fileSize > 0) {
+          const match = /^bytes=(\d*)-(\d*)$/i.exec(rangeHeader);
+          if (!match) {
+            response.set("Content-Range", `bytes */${fileSize}`);
+            response.status(416).end();
+            return;
+          }
+          if (match[1]) {
+            start = Number(match[1]);
+            end = match[2] ? Math.min(Number(match[2]), fileSize - 1) : fileSize - 1;
+          } else if (match[2]) {
+            const suffixLength = Math.min(Number(match[2]), fileSize);
+            start = Math.max(0, fileSize - suffixLength);
+            end = fileSize - 1;
+          }
+          if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || start > end || start >= fileSize) {
+            response.set("Content-Range", `bytes */${fileSize}`);
+            response.status(416).end();
+            return;
+          }
+          partialContent = true;
+        }
+
+        const contentLength = fileSize > 0 ? end - start + 1 : 0;
         response.set("Content-Type", "audio/mpeg");
         response.set("Cache-Control", "private, max-age=3600");
-        response.status(200).send(audioBuffer);
+        response.set("X-Content-Type-Options", "nosniff");
+        response.set("Accept-Ranges", "bytes");
+        if (fileSize > 0) response.set("Content-Length", String(contentLength));
+        if (partialContent) {
+          response.set("Content-Range", `bytes ${start}-${end}/${fileSize}`);
+          response.status(206);
+        } else {
+          response.status(200);
+        }
+        storageFile.createReadStream(fileSize > 0 ? { start, end } : {})
+          .on("error", (error) => {
+            console.error("Voice stream failed", error);
+            if (!response.headersSent) response.status(404).json({ error: "voice-not-found" });
+            else response.end();
+          })
+          .pipe(response);
       } catch (error) {
         console.error("Voice download failed", error);
         response.status(404).json({ error: "voice-not-found" });

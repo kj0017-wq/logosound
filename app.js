@@ -2771,10 +2771,19 @@ function speakWithBrowserVoice(instruction) {
   });
 }
 
-async function playVoiceAudio(audioUrl) {
-  const webAudioPlayed = await playVoiceAudioBuffer(audioUrl);
+function estimateSpeechDurationSeconds(text = "") {
+  const cleaned = String(text || "").trim();
+  if (!cleaned) return 0;
+  const wordCount = cleaned.split(/\s+/).filter(Boolean).length;
+  const byWords = wordCount / 2.35;
+  const byChars = cleaned.length / 16;
+  return Math.max(2.5, Math.min(90, Math.max(byWords, byChars) + 1.2));
+}
+
+async function playVoiceAudio(audioUrl, options = {}) {
+  const webAudioPlayed = await playVoiceAudioBuffer(audioUrl, options);
   if (webAudioPlayed) return true;
-  return playVoiceAudioElement(audioUrl);
+  return playVoiceAudioElement(audioUrl, options);
 }
 
 async function unlockInstructionAudio() {
@@ -2810,7 +2819,7 @@ async function unlockInstructionAudio() {
   }
 }
 
-async function playVoiceAudioBuffer(audioUrl) {
+async function playVoiceAudioBuffer(audioUrl, options = {}) {
   try {
     await unlockInstructionAudio();
     if (!instructionAudioContext || instructionAudioContext.state === "closed") return false;
@@ -2826,6 +2835,10 @@ async function playVoiceAudioBuffer(audioUrl) {
     const audioData = await response.arrayBuffer();
     if (!audioData.byteLength) return false;
     const audioBuffer = await instructionAudioContext.decodeAudioData(audioData.slice(0));
+    const minDurationSeconds = Number(options.minDurationSeconds || 0);
+    if (minDurationSeconds > 0 && audioBuffer.duration > 0 && audioBuffer.duration < minDurationSeconds * 0.45) {
+      return false;
+    }
 
     return await new Promise((resolve) => {
       const source = instructionAudioContext.createBufferSource();
@@ -2892,7 +2905,7 @@ function getDialogVoiceMeterSignal(now = performance.now()) {
   };
 }
 
-function playVoiceAudioElement(audioUrl) {
+function playVoiceAudioElement(audioUrl, options = {}) {
   return new Promise((resolve) => {
     let started = false;
     let lastProgressAt = performance.now();
@@ -2955,7 +2968,12 @@ function playVoiceAudioElement(audioUrl) {
       window.clearTimeout(fallbackId);
       fallbackId = window.setTimeout(() => finish(true), 120000);
     };
-    const handleEnded = () => finish(true);
+    const handleEnded = () => {
+      const minDurationSeconds = Number(options.minDurationSeconds || 0);
+      const playedSeconds = Number(instructionAudio.currentTime || 0);
+      const tooShort = minDurationSeconds > 0 && playedSeconds < minDurationSeconds * 0.45;
+      finish(!tooShort);
+    };
     const handleError = () => finish(false);
 
     cleanup();
@@ -14360,15 +14378,13 @@ async function resumeOrStartCourse(course, assignment, selectedDayIndex = null) 
   const instructionUnlock = unlockInstructionAudio();
   const contextUnlock = unlockCoursePlaylistAudioContext();
   const introAudio = getDailyPlanIntroAudioData(dayState.plan);
-  const videoPrime = primeCoursePlaylistVideo(course, assignment, selectedDayIndex);
   courseIntroPlaybackPromise = dayState.plan?.description && introAudio?.url
-    ? playVoiceAudioElement(introAudio.url)
+    ? playVoiceAudioElement(introAudio.url, {
+      minDurationSeconds: estimateSpeechDurationSeconds(dayState.plan.description),
+    })
     : null;
-  Promise.resolve(videoPrime).then(() => Promise.allSettled([
-    unlockCoursePlaylistAudio(),
-    primeCoursePauseAudio(course, assignment, selectedDayIndex),
-    contextUnlock,
-  ])).catch(() => {});
+  Promise.resolve(instructionUnlock).catch(() => {});
+  Promise.resolve(contextUnlock).catch(() => {});
   return startCoursePreview(course, null, assignment, selectedDayIndex);
 }
 
@@ -14916,12 +14932,12 @@ function renderMyCourses() {
     myCourseList.append(card);
   });
 }
-async function ensureDailyPlanIntroAudio(plan) {
+async function ensureDailyPlanIntroAudio(plan, options = {}) {
   const description = String(plan?.description || "").trim();
   if (!description) return "";
   const requestSettings = getDailyPlanVoiceRequestSettings(plan);
   const existingAudio = getDailyPlanIntroAudioData(plan);
-  if (isDailyPlanIntroAudioCurrent(existingAudio, description, requestSettings)) return existingAudio.url;
+  if (!options.force && isDailyPlanIntroAudioCurrent(existingAudio, description, requestSettings)) return existingAudio.url;
 
   try {
     const storedAudio = await createStoredVoiceAudio(
@@ -15019,7 +15035,18 @@ async function playDailyPlanIntroduction() {
   } else {
     const audioUrl = await ensureDailyPlanIntroAudio(run.plan);
     if (!activeCourseRun || activeCourseRun.session?.id !== sessionId) return false;
-    if (audioUrl) played = await playVoiceAudio(audioUrl);
+    if (audioUrl) played = await playVoiceAudio(audioUrl, {
+      minDurationSeconds: estimateSpeechDurationSeconds(run.plan.description),
+    });
+  }
+  if (!played && activeCourseRun?.session?.id === sessionId) {
+    const replacementUrl = await ensureDailyPlanIntroAudio(run.plan, { force: true });
+    if (!activeCourseRun || activeCourseRun.session?.id !== sessionId) return false;
+    if (replacementUrl) {
+      played = await playVoiceAudio(replacementUrl, {
+        minDurationSeconds: estimateSpeechDurationSeconds(run.plan.description),
+      });
+    }
   }
   if (!played && activeCourseRun?.session?.id === sessionId) {
     await speakWithBrowserVoice(run.plan.description);
@@ -15028,6 +15055,11 @@ async function playDailyPlanIntroduction() {
   run.session.introPlayedAt = new Date().toISOString();
   run.session.updatedAt = run.session.introPlayedAt;
   run.phase = "exercise";
+  Promise.allSettled([
+    unlockCoursePlaylistAudio(),
+    primeCoursePlaylistVideo(run.course, run.assignment, run.dayIndex),
+    primeCoursePauseAudio(run.course, run.assignment, run.dayIndex),
+  ]).catch(() => {});
   courseSessions = mergeById(courseSessions, [run.session]);
   persistCourseModuleData();
   await saveCourseSessionToCloud(run.session).catch(() => {});
@@ -17168,6 +17200,4 @@ function transactionDone(transaction) {
     transaction.onabort = () => reject(transaction.error);
   });
 }
-
-
 

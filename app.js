@@ -14359,8 +14359,11 @@ async function resumeOrStartCourse(course, assignment, selectedDayIndex = null) 
   const dayState = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
   const instructionUnlock = unlockInstructionAudio();
   const contextUnlock = unlockCoursePlaylistAudioContext();
+  const introAudio = getDailyPlanIntroAudioData(dayState.plan);
   const videoPrime = primeCoursePlaylistVideo(course, assignment, selectedDayIndex);
-  courseIntroPlaybackPromise = null;
+  courseIntroPlaybackPromise = dayState.plan?.description && introAudio?.url
+    ? playVoiceAudioElement(introAudio.url)
+    : null;
   Promise.resolve(videoPrime).then(() => Promise.allSettled([
     unlockCoursePlaylistAudio(),
     primeCoursePauseAudio(course, assignment, selectedDayIndex),

@@ -1,12 +1,12 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="de">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LogoSound Sprachübung</title>
+    <title>LogoSound SprachÃ¼bung</title>
     <meta
       name="description"
-      content="Mobile Web-App für logopädische Sprachübungen mit Kamera, Audioaufnahme und Wellenform."
+      content="Mobile Web-App fÃ¼r logopÃ¤dische SprachÃ¼bungen mit Kamera, Audioaufnahme und Wellenform."
     />
     <meta name="theme-color" content="#0f8b8d" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -28,7 +28,7 @@
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-10 amp317</div>
+      <div class="app-splash-subtitle">SprachÃ¼bung startet Â· Version 2026-08-10 amp318</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -41,14 +41,14 @@
           <p class="eyebrow">LogoSound</p>
           <strong id="topBarTitle">Aufnahme</strong>
         </div>
-        <button id="menuButton" class="menu-button" type="button" aria-label="Menü öffnen">&#9776;</button>
+        <button id="menuButton" class="menu-button" type="button" aria-label="MenÃ¼ Ã¶ffnen">&#9776;</button>
       </header>
 
-      <div id="appMenu" class="app-menu is-hidden" aria-label="Menü">
+      <div id="appMenu" class="app-menu is-hidden" aria-label="MenÃ¼">
         <button type="button" data-menu-view="editor">Editor</button>
         <button type="button" data-menu-view="stats">Analyse</button>
         <button type="button" data-menu-view="patients">Patientenverwaltung</button>
-        <button type="button" data-menu-view="dailyPlans" data-role-menu="staff">Tagespläne</button>
+        <button type="button" data-menu-view="dailyPlans" data-role-menu="staff">TagesplÃ¤ne</button>
         <button type="button" data-menu-view="courses" data-role-menu="staff">Kurse</button>
         <button type="button" data-menu-view="mediaLibrary" data-role-menu="staff">Medien</button>
         <button type="button" data-menu-view="relaxMusic" data-role-menu="staff">Entspannungsmusik</button>
@@ -67,7 +67,7 @@
         <div id="courseRecordingContext" class="course-recording-context is-hidden" aria-label="Laufender Kurs">
           <div class="course-recording-copy">
             <span id="courseRecordingCourse">Kurs</span>
-            <strong id="courseRecordingExercise">Aktuelle Übung</strong>
+            <strong id="courseRecordingExercise">Aktuelle Ãœbung</strong>
             <small id="courseRecordingPlan">Tagesplan</small>
           </div>
           <div class="course-progress" aria-hidden="true"><span id="courseRecordingProgress"></span></div>
@@ -77,7 +77,7 @@
           <div>
             <p class="eyebrow">Start</p>
             <h1>LogoSound</h1>
-            <p>Kamera und Mikrofon erst aktivieren, wenn die Übung beginnt.</p>
+            <p>Kamera und Mikrofon erst aktivieren, wenn die Ãœbung beginnt.</p>
           </div>
           <button id="cameraStartButton" class="primary-action" type="button">Kamera aktivieren</button>
         </div>
@@ -107,16 +107,16 @@
         </section>
         <div class="camera-overlay">
           <div>
-            <p class="eyebrow">Sprachübung</p>
+            <p class="eyebrow">SprachÃ¼bung</p>
             <h1>LogoSound</h1>
           </div>
           <span id="permissionState" class="status-pill">Zugriff wird angefragt</span>
         </div>
       </section>
 
-      <section id="previewSessionBar" class="preview-session-bar app-section is-hidden" data-view="record" aria-label="Vorführung aktiv">
-        <strong id="previewSessionLabel" class="preview-session-status">Vorführung aktiv</strong>
-        <button id="previewStopButton" class="secondary-action preview-stop-action" type="button">Vorführung stoppen</button>
+      <section id="previewSessionBar" class="preview-session-bar app-section is-hidden" data-view="record" aria-label="VorfÃ¼hrung aktiv">
+        <strong id="previewSessionLabel" class="preview-session-status">VorfÃ¼hrung aktiv</strong>
+        <button id="previewStopButton" class="secondary-action preview-stop-action" type="button">VorfÃ¼hrung stoppen</button>
       </section>
 
       <section class="controls-panel app-section" data-view="record" aria-label="Aufnahmesteuerung">
@@ -125,14 +125,14 @@
           <select id="recordingModeFilter" class="select-input compact-select">
             <option value="">Alle Funktionsarten</option>
             <option value="syllables">Silben / Laute</option>
-            <option value="sentences">Kurze Sätze</option>
+            <option value="sentences">Kurze SÃ¤tze</option>
             <option value="text">Karaoke-Text</option>
             <option value="long_text">Langer Text</option>
             <option value="vowels">Vokale</option>
             <option value="dialog">Dialog</option>
-                <option value="breathing">Atemübung</option>
+                <option value="breathing">AtemÃ¼bung</option>
           </select>
-          <label class="field-label" for="exerciseName">Übung</label>
+          <label class="field-label" for="exerciseName">Ãœbung</label>
           <select id="exerciseName" class="select-input">
             <option value="Vokal A halten" data-mode="vowels">Vokal A halten</option>
             <option value="A E I O U" data-mode="vowels">Vokale nacheinander</option>
@@ -146,15 +146,15 @@
             <option
               value="Text lesen"
               data-mode="text"
-              data-script="Heute üben wir eine ruhige Stimme. Ich lese langsam, spreche deutlich und achte darauf, dass jeder Satz klar klingt und mein Mund beim Sprechen locker bleibt und die Lippen gut arbeiten."
+              data-script="Heute Ã¼ben wir eine ruhige Stimme. Ich lese langsam, spreche deutlich und achte darauf, dass jeder Satz klar klingt und mein Mund beim Sprechen locker bleibt und die Lippen gut arbeiten."
             >
               Text lesen
             </option>
-            <option value="custom-editor" data-mode="">Gespeicherte Editor-Übung</option>
+            <option value="custom-editor" data-mode="">Gespeicherte Editor-Ãœbung</option>
           </select>
           <div id="recordingExerciseShortcuts" class="recording-exercise-shortcuts"></div>
-          <button id="recordButton" class="primary-action recording-start-action" type="button">Übung starten</button>
-          <button id="previewExerciseButton" class="secondary-action preview-exercise-action" type="button">Vorführung</button>
+          <button id="recordButton" class="primary-action recording-start-action" type="button">Ãœbung starten</button>
+          <button id="previewExerciseButton" class="secondary-action preview-exercise-action" type="button">VorfÃ¼hrung</button>
         </div>
 
         <div class="meters">
@@ -163,7 +163,7 @@
             <strong id="recordingTime">00:00</strong>
           </div>
           <div>
-            <span class="meter-label">Lautstärke</span>
+            <span class="meter-label">LautstÃ¤rke</span>
             <strong id="volumeValue">0</strong>
           </div>
           <div>
@@ -172,28 +172,28 @@
           </div>
         </div>
 
-        <div class="recording-tuning-grid" aria-label="Übungseinstellungen">
+        <div class="recording-tuning-grid" aria-label="Ãœbungseinstellungen">
           <div class="recording-tuning-card">
             <label class="field-label range-label karaoke-speed-label" for="recordingKaraokeSpeed">
               Karaoke-Tempo <strong id="recordingKaraokeSpeedValue">Normal</strong>
             </label>
             <input id="recordingKaraokeSpeed" class="range-input" type="range" min="1" max="12" step="1" value="3" />
-            <p id="recordingKaraokeTimingHint" class="range-help">Standzeit wird nach der Übung berechnet.</p>
+            <p id="recordingKaraokeTimingHint" class="range-help">Standzeit wird nach der Ãœbung berechnet.</p>
           </div>
           <div class="recording-tuning-card">
             <label class="field-label range-label sensitivity-label" for="sensitivitySlider">
               Empfindlichkeit <strong id="sensitivityValue">50</strong>
             </label>
             <input id="sensitivitySlider" class="range-input" type="range" min="1" max="200" step="1" value="30" />
-            <p class="range-help sensitivity-help">Niedrig = ruhiger bei Grundrauschen. Hoch = stärkerer Ausschlag bei leiser Stimme.</p>
+            <p class="range-help sensitivity-help">Niedrig = ruhiger bei Grundrauschen. Hoch = stÃ¤rkerer Ausschlag bei leiser Stimme.</p>
           </div>
         </div>
         <button id="calibrationButton" class="secondary-action calibration-action" type="button">Kalibrieren</button>
         <button id="calibrationTestAudioButton" class="secondary-action calibration-test-audio-action is-hidden" type="button">Testaudio</button>
-        <button id="calibrationBackButton" class="secondary-action calibration-back-action is-hidden" type="button">Zurück</button>
+        <button id="calibrationBackButton" class="secondary-action calibration-back-action is-hidden" type="button">ZurÃ¼ck</button>
 
         <p id="message" class="message" role="status">
-          Kamera und Mikrofon freigeben, dann kann die Übung beginnen.
+          Kamera und Mikrofon freigeben, dann kann die Ãœbung beginnen.
         </p>
         <p id="firebaseState" class="cloud-state">Firebase bereit.</p>
       </section>
@@ -201,7 +201,7 @@
       <section id="playbackEmptyState" class="playback-empty app-section is-hidden" data-view="playback" aria-label="Keine Aufnahme geladen">
         <p class="eyebrow">Playback</p>
         <h2>Noch keine Aufnahme</h2>
-        <p>Wähle unten eine gespeicherte Übung oder Aufzeichnung.</p>
+        <p>WÃ¤hle unten eine gespeicherte Ãœbung oder Aufzeichnung.</p>
         <div class="button-row">
           <button id="emptyRecordButton" class="secondary-action" type="button">Zur Aufnahme</button>
           <button id="emptyHistoryButton" class="quiet-action" type="button">Zur Auswertung</button>
@@ -210,10 +210,10 @@
 
       <section class="playback-library app-section" data-view="playback" aria-label="Player-Auswahl">
         <p class="eyebrow">Player-Auswahl</p>
-        <label class="field-label" for="playbackExerciseSelect">Übung</label>
+        <label class="field-label" for="playbackExerciseSelect">Ãœbung</label>
         <div class="playback-library-row">
           <select id="playbackExerciseSelect" class="select-input compact-select" hidden>
-            <option value="">Alle Übungen</option>
+            <option value="">Alle Ãœbungen</option>
           </select>
           <button id="playbackOpenExerciseButton" class="secondary-action compact-action" type="button">Laden</button>
         </div>
@@ -222,7 +222,7 @@
           <select id="playbackRecordingSelect" class="select-input compact-select">
             <option value="">Keine gespeicherte Aufnahme</option>
           </select>
-          <button id="playbackOpenRecordingButton" class="secondary-action compact-action" type="button">Öffnen</button>
+          <button id="playbackOpenRecordingButton" class="secondary-action compact-action" type="button">Ã–ffnen</button>
         </div>
         <div id="playbackSavedRecordingsList" class="playback-recording-list"></div>
       </section>
@@ -249,7 +249,7 @@
           <div id="resultEvaluationHints" class="voice-progress-hints"></div>
           <dl id="resultEvaluationScores" class="voice-score-grid"></dl>
           <p class="voice-progress-disclaimer">
-            Die Analyse zeigt Veränderungen der Stimme im persönlichen Verlauf. Sie ersetzt keine medizinische oder logopädische Diagnose.
+            Die Analyse zeigt VerÃ¤nderungen der Stimme im persÃ¶nlichen Verlauf. Sie ersetzt keine medizinische oder logopÃ¤dische Diagnose.
           </p>
         </div>
 
@@ -282,7 +282,7 @@
         ></canvas>
 
         <label class="field-label range-label playback-volume-label" for="playbackVolumeSlider">
-          Playback-Verstärkung <strong id="playbackVolumeValue">200%</strong>
+          Playback-VerstÃ¤rkung <strong id="playbackVolumeValue">200%</strong>
         </label>
         <input
           id="playbackVolumeSlider"
@@ -316,31 +316,31 @@
 
         <section id="courseResultActions" class="course-result-actions is-hidden" aria-label="Kursfortsetzung">
           <p class="eyebrow">Tagesplan</p>
-          <strong id="courseResultTitle">Übung abgeschlossen</strong>
-          <p id="courseResultText">Sie können jetzt in den Tagesplan zurückkehren oder direkt weitermachen.</p>
+          <strong id="courseResultTitle">Ãœbung abgeschlossen</strong>
+          <p id="courseResultText">Sie kÃ¶nnen jetzt in den Tagesplan zurÃ¼ckkehren oder direkt weitermachen.</p>
           <div class="course-actions">
             <button id="courseResultBackButton" class="secondary-action" type="button">Zum Tagesplan</button>
-            <button id="courseResultNextButton" class="primary-action" type="button">Nächste Übung</button>
+            <button id="courseResultNextButton" class="primary-action" type="button">NÃ¤chste Ãœbung</button>
           </div>
         </section>
 
       </section>
 
-      <section class="editor-panel app-section" data-view="editor" aria-label="Übungseditor">
+      <section class="editor-panel app-section" data-view="editor" aria-label="Ãœbungseditor">
         <div class="section-header">
           <div>
             <p class="eyebrow">Editor</p>
-            <h2>Neue Übung</h2>
+            <h2>Neue Ãœbung</h2>
           </div>
         </div>
 
-        <div id="exerciseEditor" class="exercise-editor" aria-label="Übung bearbeiten">
+        <div id="exerciseEditor" class="exercise-editor" aria-label="Ãœbung bearbeiten">
           <div class="editor-switch">
-            <button id="newEditorExerciseButton" class="editor-switch-button is-active" type="button">Neue Übung</button>
+            <button id="newEditorExerciseButton" class="editor-switch-button is-active" type="button">Neue Ãœbung</button>
             <label class="editor-load-control" for="editorSavedExercises">
-              <span>Gespeicherte Übung</span>
+              <span>Gespeicherte Ãœbung</span>
               <select id="editorSavedExercises" class="select-input compact-select">
-                <option value="">Gespeicherte Übung auswählen</option>
+                <option value="">Gespeicherte Ãœbung auswÃ¤hlen</option>
               </select>
             </label>
           </div>
@@ -349,32 +349,32 @@
             <select id="editorSavedModeFilter" class="select-input compact-select">
               <option value="">Alle Funktionsarten</option>
               <option value="syllables">Silben / Laute</option>
-              <option value="sentences">Kurze Sätze</option>
+              <option value="sentences">Kurze SÃ¤tze</option>
               <option value="text">Karaoke-Text</option>
               <option value="long_text">Langer Text</option>
               <option value="vowels">Vokale</option>
               <option value="dialog">Dialog</option>
-                <option value="breathing">Atemübung</option>
+                <option value="breathing">AtemÃ¼bung</option>
             </select>
           </label>
           <button id="editorSavedListToggle" class="secondary-action editor-saved-list-toggle" type="button">Vorlagen verwalten</button>
-          <div id="editorSavedExerciseList" class="editor-saved-exercise-list is-hidden" aria-label="Gespeicherte Übungen löschen"></div>
-          <p id="editorModeState" class="editor-mode-state">Neue Übung</p>
+          <div id="editorSavedExerciseList" class="editor-saved-exercise-list is-hidden" aria-label="Gespeicherte Ãœbungen lÃ¶schen"></div>
+          <p id="editorModeState" class="editor-mode-state">Neue Ãœbung</p>
 
           <div class="editor-section editor-section-basic">
-            <label class="field-label" for="editorExerciseName">Name der Übung</label>
-            <input id="editorExerciseName" type="text" value="Neue Silbenübung" inputmode="text" />
+            <label class="field-label" for="editorExerciseName">Name der Ãœbung</label>
+            <input id="editorExerciseName" type="text" value="Neue SilbenÃ¼bung" inputmode="text" />
 
             <div class="editor-field-stack">
               <label class="field-label" for="editorMode">Funktionsart</label>
               <select id="editorMode" class="select-input compact-select">
                 <option value="syllables" selected>Silben / Laute</option>
-                <option value="sentences">Kurze Sätze</option>
+                <option value="sentences">Kurze SÃ¤tze</option>
                 <option value="text">Karaoke-Text</option>
                 <option value="long_text">Langer Text</option>
                 <option value="vowels">Vokale</option>
                 <option value="dialog">Dialog</option>
-                <option value="breathing">Atemübung</option>
+                <option value="breathing">AtemÃ¼bung</option>
               </select>
             </div>
 
@@ -391,7 +391,7 @@
             <div id="breathingSettings" class="breathing-settings is-hidden">
               <div class="breathing-settings-heading">
                 <strong>Atemablauf</strong>
-                <span>Zeiten und Wiederholungen für diese Atemübung</span>
+                <span>Zeiten und Wiederholungen fÃ¼r diese AtemÃ¼bung</span>
               </div>
               <div class="breathing-settings-grid">
                 <label class="field-label">Einatmen<input id="breathingInhale" type="number" min="1" max="30" value="4" inputmode="numeric" /><span>Sekunden</span></label>
@@ -401,7 +401,7 @@
                 <label class="field-label breathing-repeat-field">Wiederholungen<input id="breathingRepeats" type="number" min="1" max="30" value="5" inputmode="numeric" /><span>Runden</span></label>
               </div>
               <div class="breathing-extra-header">
-                <strong>Zusätzliche Atemschritte</strong>
+                <strong>ZusÃ¤tzliche Atemschritte</strong>
                 <button id="addBreathingStepButton" class="compact-action secondary-action" type="button">+ Atemschritt</button>
               </div>
               <div id="breathingExtraSteps" class="breathing-extra-steps"></div>
@@ -423,7 +423,7 @@
             <div id="editorDialogBuilder" class="editor-dialog-builder is-hidden">
               <div id="editorDialogList" class="editor-dialog-list"></div>
               <button id="addEditorDialogTurnButton" class="secondary-action editor-dialog-add" type="button">
-                Dialogzeile hinzufügen
+                Dialogzeile hinzufÃ¼gen
               </button>
             </div>
             <button id="openEditorAiButton" class="secondary-action editor-ai-open-button" type="button">
@@ -451,18 +451,18 @@
               Geschwindigkeit <strong id="editorSpeedValue">Normal</strong>
             </label>
             <input id="editorSpeed" class="range-input" type="range" min="1" max="10" value="3" />
-            <p id="editorKaraokeTimingHint" class="range-help">Standzeit wird aus Tempo und Textlänge berechnet.</p>
+            <p id="editorKaraokeTimingHint" class="range-help">Standzeit wird aus Tempo und TextlÃ¤nge berechnet.</p>
             <button id="testEditorKaraokeButton" class="secondary-action editor-karaoke-test" type="button">
               Karaoke-Tempo testen
             </button>
           </div>
 
           <div class="editor-section editor-section-voice">
-            <label class="field-label" for="editorVoiceSelect">Sprecher für diese Übung</label>
+            <label class="field-label" for="editorVoiceSelect">Sprecher fÃ¼r diese Ãœbung</label>
             <select id="editorVoiceSelect" class="select-input compact-select"></select>
-            <p id="editorVoiceSelectHint" class="range-help">Diese Stimme wird für Voice-Begleitung, Vorführung und Dialog-Audio gespeichert.</p>
+            <p id="editorVoiceSelectHint" class="range-help">Diese Stimme wird fÃ¼r Voice-Begleitung, VorfÃ¼hrung und Dialog-Audio gespeichert.</p>
             <label class="field-label" for="editorVoiceInstruction">Voice-Begleitung</label>
-            <textarea id="editorVoiceInstruction" rows="3">Bitte sprechen Sie die eingeblendete Übung ruhig und deutlich nach.</textarea>
+            <textarea id="editorVoiceInstruction" rows="3">Bitte sprechen Sie die eingeblendete Ãœbung ruhig und deutlich nach.</textarea>
             <div class="button-row editor-actions">
               <button id="suggestVoiceButton" class="secondary-action" type="button">KI-Vorschlag</button>
               <button id="generateVoiceAudioButton" class="secondary-action" type="button">Audio erstellen</button>
@@ -490,11 +490,11 @@
             <dd id="patientRecordingCount">0</dd>
           </div>
           <div>
-            <dt>Ø Dauer</dt>
+            <dt>Ã˜ Dauer</dt>
             <dd id="patientAverageDuration">00:00</dd>
           </div>
           <div>
-            <dt>Ø Lautstärke</dt>
+            <dt>Ã˜ LautstÃ¤rke</dt>
             <dd id="patientAverageVolume">0</dd>
           </div>
         </dl>
@@ -508,21 +508,21 @@
             <span id="voiceProgressScore" class="voice-score-badge is-neutral">0</span>
           </div>
           <p id="voiceProgressSummary" class="voice-progress-summary">
-            Nach dem ersten vollständigen Test wird eine persönliche Ausgangsmessung gespeichert.
+            Nach dem ersten vollstÃ¤ndigen Test wird eine persÃ¶nliche Ausgangsmessung gespeichert.
           </p>
           <div id="voiceProgressHints" class="voice-progress-hints"></div>
           <dl id="voiceProgressScores" class="voice-score-grid"></dl>
           <canvas
             id="voiceProgressChart"
             class="voice-progress-chart"
-            aria-label="Liniendiagramm der persönlichen Entwicklung"
+            aria-label="Liniendiagramm der persÃ¶nlichen Entwicklung"
           ></canvas>
           <div id="voiceProgressList" class="voice-progress-list"></div>
           <button id="resetEvaluationButton" class="secondary-action evaluation-reset-button" type="button">
-            Auswertung zurücksetzen
+            Auswertung zurÃ¼cksetzen
           </button>
           <p class="voice-progress-disclaimer">
-            Die Analyse zeigt Veränderungen der Stimme im persönlichen Verlauf. Sie ersetzt keine medizinische oder logopädische Diagnose.
+            Die Analyse zeigt VerÃ¤nderungen der Stimme im persÃ¶nlichen Verlauf. Sie ersetzt keine medizinische oder logopÃ¤dische Diagnose.
           </p>
         </div>
 
@@ -530,7 +530,7 @@
           <p class="eyebrow">Audioanalyse</p>
           <label class="field-label" for="statisticsRecordingSelect">Aufzeichnung</label>
           <select id="statisticsRecordingSelect" class="select-input compact-select">
-            <option value="">Keine Aufnahme ausgewählt</option>
+            <option value="">Keine Aufnahme ausgewÃ¤hlt</option>
           </select>
           <label class="field-label range-label" for="statisticsPositionSlider">
             Analyseposition <strong id="statisticsPositionValue">00:00</strong>
@@ -553,7 +553,7 @@
             id="statisticsWaveformResizeHandle"
             class="statistics-waveform-resize"
             type="button"
-            aria-label="Höhe der Analyse-Wellenform ziehen"
+            aria-label="HÃ¶he der Analyse-Wellenform ziehen"
           ></button>
           <div id="statisticsRangeControl" class="analysis-range-control">
             <div class="analysis-range-header">
@@ -585,11 +585,11 @@
           </div>
           <div class="analysis-mini-grid">
             <div>
-              <span>Lautstärkepegel</span>
+              <span>LautstÃ¤rkepegel</span>
               <canvas
                 id="statisticsVolumeTimeline"
                 class="statistics-mini-canvas"
-                aria-label="Lautstärkepegel-Verlauf"
+                aria-label="LautstÃ¤rkepegel-Verlauf"
               ></canvas>
             </div>
             <div>
@@ -609,7 +609,7 @@
             <input id="statisticsAmplitudeGain" class="range-input" type="range" min="5" max="260" step="5" value="100" />
 
             <label class="field-label range-label" for="statisticsVolumeGain">
-              Lautstärkehub <strong id="statisticsVolumeGainValue">100%</strong>
+              LautstÃ¤rkehub <strong id="statisticsVolumeGainValue">100%</strong>
             </label>
             <input id="statisticsVolumeGain" class="range-input" type="range" min="30" max="180" step="5" value="100" />
 
@@ -618,9 +618,9 @@
             </label>
             <input id="statisticsFrequencyGain" class="range-input" type="range" min="40" max="240" step="5" value="100" />
           </details>
-          <h3 id="audioAnalysisTitle">Keine Aufnahme geöffnet</h3>
+          <h3 id="audioAnalysisTitle">Keine Aufnahme geÃ¶ffnet</h3>
           <dl id="audioAnalysisGrid" class="analysis-grid"></dl>
-          <p id="audioAnalysisNote" class="message">Öffne eine Aufnahme aus der Auswertung oder erstelle eine neue Aufnahme.</p>
+          <p id="audioAnalysisNote" class="message">Ã–ffne eine Aufnahme aus der Auswertung oder erstelle eine neue Aufnahme.</p>
         </div>
 
         <div id="recordingsList" class="recordings-list"></div>
@@ -649,7 +649,7 @@
             <option value="therapist">Therapeut / Administrator</option>
             <option value="patient">Patient</option>
           </select>
-          <p class="field-help">Die Rolle steuert, welche Kursbereiche im Burger-Menü sichtbar sind.</p>
+          <p class="field-help">Die Rolle steuert, welche Kursbereiche im Burger-MenÃ¼ sichtbar sind.</p>
         </div>
 
         <details class="settings-group settings-collapsible elevenlabs-settings-group" open>
@@ -672,7 +672,7 @@
               <label class="field-label" for="settingsVoiceGender">Typ</label>
               <select id="settingsVoiceGender" class="select-input compact-select">
                 <option value="female">Weiblich</option>
-                <option value="male">Männlich</option>
+                <option value="male">MÃ¤nnlich</option>
                 <option value="neutral">Neutral</option>
               </select>
             </div>
@@ -684,35 +684,35 @@
           <div class="voice-profile-actions">
             <button id="settingsNewVoiceButton" class="quiet-action compact-action" type="button">Neue Stimme</button>
             <button id="settingsSaveVoiceButton" class="secondary-action compact-action" type="button">Stimme speichern</button>
-            <button id="settingsDeleteVoiceButton" class="quiet-action compact-action" type="button">Löschen</button>
+            <button id="settingsDeleteVoiceButton" class="quiet-action compact-action" type="button">LÃ¶schen</button>
           </div>
 
           <label class="field-label range-label" for="settingsVoiceStability">
-            Stabilität <strong id="settingsVoiceStabilityValue">58%</strong>
+            StabilitÃ¤t <strong id="settingsVoiceStabilityValue">58%</strong>
           </label>
           <input id="settingsVoiceStability" class="range-input" type="range" min="0" max="100" value="58" />
-          <p class="range-help">Niedrig = lebendiger, aber schwankender. Hoch = ruhiger und gleichmäßiger.</p>
+          <p class="range-help">Niedrig = lebendiger, aber schwankender. Hoch = ruhiger und gleichmÃ¤ÃŸiger.</p>
 
           <label class="field-label range-label" for="settingsVoiceSimilarity">
-            Ähnlichkeit <strong id="settingsVoiceSimilarityValue">82%</strong>
+            Ã„hnlichkeit <strong id="settingsVoiceSimilarityValue">82%</strong>
           </label>
           <input id="settingsVoiceSimilarity" class="range-input" type="range" min="0" max="100" value="82" />
-          <p class="range-help">Höher hält die Stimme näher an der gewählten Voice-ID.</p>
+          <p class="range-help">HÃ¶her hÃ¤lt die Stimme nÃ¤her an der gewÃ¤hlten Voice-ID.</p>
 
           <label class="field-label range-label" for="settingsVoiceStyle">
             Stil <strong id="settingsVoiceStyleValue">12%</strong>
           </label>
           <input id="settingsVoiceStyle" class="range-input" type="range" min="0" max="100" value="12" />
-          <p class="range-help">Höher klingt ausdrucksstärker. Für Übungsanleitungen meist eher niedrig halten.</p>
+          <p class="range-help">HÃ¶her klingt ausdrucksstÃ¤rker. FÃ¼r Ãœbungsanleitungen meist eher niedrig halten.</p>
 
           <label class="editor-check settings-check" for="settingsSpeakerBoost">
             <input id="settingsSpeakerBoost" type="checkbox" checked />
             <span>Speaker Boost</span>
           </label>
-          <p class="range-help">Speaker Boost macht die Stimme präsenter und klarer.</p>
+          <p class="range-help">Speaker Boost macht die Stimme prÃ¤senter und klarer.</p>
 
           <label class="field-label" for="settingsVoiceDemoText">Demo-Text</label>
-          <textarea id="settingsVoiceDemoText" rows="4">Das ist ein Test der LogoSound Stimme. Bitte hören Sie auf Klarheit, Wärme und Verständlichkeit. Während das Testaudio läuft, können Sie Equalizer und Wiedergabe-Verstärkung verändern. So prüfen Sie direkt, ob die Stimme im Übungsraum natürlich und deutlich klingt.</textarea>
+          <textarea id="settingsVoiceDemoText" rows="4">Das ist ein Test der LogoSound Stimme. Bitte hÃ¶ren Sie auf Klarheit, WÃ¤rme und VerstÃ¤ndlichkeit. WÃ¤hrend das Testaudio lÃ¤uft, kÃ¶nnen Sie Equalizer und Wiedergabe-VerstÃ¤rkung verÃ¤ndern. So prÃ¼fen Sie direkt, ob die Stimme im Ãœbungsraum natÃ¼rlich und deutlich klingt.</textarea>
           <button id="settingsTestVoiceButton" class="secondary-action" type="button">Demo-Stimme testen</button>
           <audio id="settingsVoicePreview" class="editor-audio-preview" controls></audio>
           </div>
@@ -721,12 +721,12 @@
         <details class="settings-group settings-collapsible chatgpt-settings-group">
           <summary>
             <span class="eyebrow">ChatGPT</span>
-            <strong>KI-Vorschläge</strong>
+            <strong>KI-VorschlÃ¤ge</strong>
           </summary>
           <div class="settings-collapsible-content">
           <label class="editor-check settings-check" for="settingsChatGptEnabled">
             <input id="settingsChatGptEnabled" type="checkbox" />
-            <span>ChatGPT für KI-Vorschläge nutzen</span>
+            <span>ChatGPT fÃ¼r KI-VorschlÃ¤ge nutzen</span>
           </label>
 
           <label class="field-label" for="settingsChatGptApiKey">OpenAI API-Key</label>
@@ -735,8 +735,8 @@
           <label class="field-label" for="settingsChatGptModel">Modell</label>
           <input id="settingsChatGptModel" type="text" value="gpt-5" inputmode="text" />
 
-          <label class="field-label" for="settingsChatGptPrompt">Prompt für Übungsleiter-Text</label>
-          <textarea id="settingsChatGptPrompt" rows="4">Erstelle eine kurze, freundliche logopädische Voice-Instruktion auf Deutsch. Sprich den Patienten direkt an. Maximal drei kurze Sätze. Keine Markdown-Zeichen.</textarea>
+          <label class="field-label" for="settingsChatGptPrompt">Prompt fÃ¼r Ãœbungsleiter-Text</label>
+          <textarea id="settingsChatGptPrompt" rows="4">Erstelle eine kurze, freundliche logopÃ¤dische Voice-Instruktion auf Deutsch. Sprich den Patienten direkt an. Maximal drei kurze SÃ¤tze. Keine Markdown-Zeichen.</textarea>
           </div>
         </details>
 
@@ -754,7 +754,7 @@
           <div id="settingsCalibrationStatus" class="helper-text">Kalibrierung misst 2 Sekunden Stille und setzt daraus die Pause-/Sprachschwelle.</div>
           <div class="settings-calibration-actions">
             <button id="settingsCalibrationTestAudioButton" class="secondary-action compact-action is-hidden" type="button">Testaudio</button>
-            <button id="settingsCalibrationBackButton" class="secondary-action compact-action is-hidden" type="button">Zurück</button>
+            <button id="settingsCalibrationBackButton" class="secondary-action compact-action is-hidden" type="button">ZurÃ¼ck</button>
           </div>
           <details class="settings-eq-panel">
             <summary>
@@ -772,7 +772,7 @@
                 <button id="settingsEqResetButton" class="secondary-action compact-action" type="button">Reset EQ</button>
               </div>
             </div>
-            <div class="settings-eq-sliders" aria-label="Equalizer-Bänder">
+            <div class="settings-eq-sliders" aria-label="Equalizer-BÃ¤nder">
               <label>
                 <input type="range" min="-12" max="12" step="1" value="0" data-eq-band="160" />
                 <span>160Hz</span>
@@ -798,7 +798,7 @@
                 <span>12kHz</span>
               </label>
             </div>
-            <p class="settings-help">EQ-Werte werden im Setup gespeichert und später für Klang- und Analysefunktionen genutzt.</p>
+            <p class="settings-help">EQ-Werte werden im Setup gespeichert und spÃ¤ter fÃ¼r Klang- und Analysefunktionen genutzt.</p>
           </details>
           <div class="settings-eq-visuals" aria-label="Equalizer-Testanalyse">
             <div class="settings-eq-visual-head">
@@ -818,11 +818,11 @@
         <div class="settings-group">
           <p class="eyebrow">Playback</p>
           <label class="field-label range-label" for="settingsPlaybackVolume">
-            Wiedergabe-Verstärkung <strong id="settingsPlaybackVolumeValue">200%</strong>
+            Wiedergabe-VerstÃ¤rkung <strong id="settingsPlaybackVolumeValue">200%</strong>
           </label>
           <input id="settingsPlaybackVolume" class="range-input" type="range" min="100" max="400" step="25" value="200" />
-          <p class="settings-help">100% ist normal. 200% und mehr verstärken die Wiedergabe zusätzlich.</p>
-          <div class="playback-gain-presets" aria-label="Playback-Verstärkung">
+          <p class="settings-help">100% ist normal. 200% und mehr verstÃ¤rken die Wiedergabe zusÃ¤tzlich.</p>
+          <div class="playback-gain-presets" aria-label="Playback-VerstÃ¤rkung">
             <button type="button" data-playback-gain="100">Normal</button>
             <button type="button" data-playback-gain="200">Lauter</button>
             <button type="button" data-playback-gain="300">Sehr laut</button>
@@ -847,7 +847,7 @@
             <button id="patientManagerSaveButton" class="secondary-action compact-action" type="button">Aktivieren</button>
           </div>
           <p id="patientManagerState" class="cloud-state">Patient bereit.</p>
-          <p class="field-help">Neuen Namen eingeben oder bestehenden Patienten auswählen. Beim Aktivieren wird das Profil direkt in Firebase gesichert.</p>
+          <p class="field-help">Neuen Namen eingeben oder bestehenden Patienten auswÃ¤hlen. Beim Aktivieren wird das Profil direkt in Firebase gesichert.</p>
         </div>
 
         <div class="settings-group">
@@ -864,8 +864,8 @@
           <div class="button-row">
             <button id="assignCourseToPatientButton" class="secondary-action compact-action" type="button">Kurs zuordnen</button>
           </div>
-          <p id="patientCourseAssignState" class="cloud-state">Bereit für die Kurszuordnung.</p>
-          <p class="field-help">Ein Kurs enthält mehrere Tagespläne. Der heutige Tagesplan ergibt sich aus Startdatum und Reihenfolge.</p>
+          <p id="patientCourseAssignState" class="cloud-state">Bereit fÃ¼r die Kurszuordnung.</p>
+          <p class="field-help">Ein Kurs enthÃ¤lt mehrere TagesplÃ¤ne. Der heutige Tagesplan ergibt sich aus Startdatum und Reihenfolge.</p>
         </div>
 
         <div class="settings-group">
@@ -873,20 +873,20 @@
           <div id="patientAssignedCourseList" class="course-list"></div>
         </div>
       </section>
-      <section class="daily-plans-panel app-section" data-view="dailyPlans" aria-label="Tagespläne">
+      <section class="daily-plans-panel app-section" data-view="dailyPlans" aria-label="TagesplÃ¤ne">
         <div class="section-header daily-plan-header">
           <div>
-            <p class="eyebrow">Tagespläne</p>
+            <p class="eyebrow">TagesplÃ¤ne</p>
           </div>
-          <div class="daily-plan-mode-switch" aria-label="Tagesplan auswählen">
+          <div class="daily-plan-mode-switch" aria-label="Tagesplan auswÃ¤hlen">
             <button id="newDailyPlanButton" class="secondary-action compact-action is-active" type="button">Neuer Tagesplan</button>
-            <button id="openDailyPlanButton" class="secondary-action compact-action" type="button">Tagesplan öffnen</button>
+            <button id="openDailyPlanButton" class="secondary-action compact-action" type="button">Tagesplan Ã¶ffnen</button>
           </div>
         </div>
         <div id="openDailyPlanControl" class="daily-plan-open-control is-hidden">
-          <label class="field-label" for="openDailyPlanSelect">Vorhandenen Tagesplan auswählen</label>
+          <label class="field-label" for="openDailyPlanSelect">Vorhandenen Tagesplan auswÃ¤hlen</label>
           <select id="openDailyPlanSelect" class="highlight-select">
-            <option value="">Tagesplan auswählen</option>
+            <option value="">Tagesplan auswÃ¤hlen</option>
           </select>
         </div>
 
@@ -898,16 +898,16 @@
               <summary>Einleitung vor der Tageseinheit</summary>
               <div class="daily-plan-intro-content">
                 <label class="field-label" for="dailyPlanDescription">Einleitungstext</label>
-                <textarea id="dailyPlanDescription" rows="2" placeholder="Kurzes Trainingspaket für einen Tag."></textarea>
+                <textarea id="dailyPlanDescription" rows="2" placeholder="Kurzes Trainingspaket fÃ¼r einen Tag."></textarea>
                 <div class="daily-plan-intro-image">
-                  <label class="field-label" for="dailyPlanIntroImageSelect">Hintergrundbild für die Einleitung</label>
+                  <label class="field-label" for="dailyPlanIntroImageSelect">Hintergrundbild fÃ¼r die Einleitung</label>
                   <select id="dailyPlanIntroImageSelect" class="highlight-select"><option value="">Kein Hintergrundbild</option></select>
-                  <p class="field-hint">Bild aus der Mediathek auswählen. Im Kurs erscheint es als Hintergrund der Einleitung.</p>
+                  <p class="field-hint">Bild aus der Mediathek auswÃ¤hlen. Im Kurs erscheint es als Hintergrund der Einleitung.</p>
                 </div><div class="daily-plan-intro-voice">
-                  <label class="field-label" for="dailyPlanVoiceSelect">Stimme für die Einleitung</label>
+                  <label class="field-label" for="dailyPlanVoiceSelect">Stimme fÃ¼r die Einleitung</label>
                   <select id="dailyPlanVoiceSelect" class="highlight-select" aria-describedby="dailyPlanVoiceHint"></select>
-                  <p id="dailyPlanVoiceHint" class="field-hint">Die Beschreibung wird vor der ersten Übung einmal vorgelesen.</p>
-                  <button id="dailyPlanIntroAudioButton" class="secondary-action" type="button">Einleitung anhören</button>
+                  <p id="dailyPlanVoiceHint" class="field-hint">Die Beschreibung wird vor der ersten Ãœbung einmal vorgelesen.</p>
+                  <button id="dailyPlanIntroAudioButton" class="secondary-action" type="button">Einleitung anhÃ¶ren</button>
                   <audio id="dailyPlanIntroPreview" class="daily-plan-intro-preview" controls preload="metadata"></audio>
                 </div>
               </div>
@@ -920,12 +920,12 @@
               <div class="daily-plan-panel-heading">
                 <div>
                   <p class="eyebrow">Tagesablauf</p>
-                  <h3 id="dailyPlanSelectionTitle">Ausgewählte Übungen</h3>
+                  <h3 id="dailyPlanSelectionTitle">AusgewÃ¤hlte Ãœbungen</h3>
                 </div>
-                <span id="dailyPlanSelectionSummary" class="daily-plan-summary">0 Übungen</span>
+                <span id="dailyPlanSelectionSummary" class="daily-plan-summary">0 Ãœbungen</span>
               </div>
               <button id="openDailyPlanLibraryButton" class="secondary-action daily-plan-library-open-button" type="button" aria-expanded="false">
-                Übungen und Medien auswählen
+                Ãœbungen und Medien auswÃ¤hlen
               </button>
               <div id="dailyPlanSelectedExercises" class="course-selected-list"></div>
               <div class="daily-plan-save-area">
@@ -938,11 +938,11 @@
               <div class="daily-plan-panel-heading">
                 <div>
                   <p class="eyebrow">Bibliothek</p>
-                  <h3 id="dailyPlanLibraryTitle">Übungen und Medien auswählen</h3>
+                  <h3 id="dailyPlanLibraryTitle">Ãœbungen und Medien auswÃ¤hlen</h3>
                 </div>
                 <span id="dailyPlanLibrarySummary" class="daily-plan-summary"></span>
               </div>
-              <p class="daily-plan-library-intro">Wählen Sie Übungen, Pausen und Medien für diesen Tagesplan aus.</p>
+              <p class="daily-plan-library-intro">WÃ¤hlen Sie Ãœbungen, Pausen und Medien fÃ¼r diesen Tagesplan aus.</p>
               <div class="daily-plan-library-tools">
                 <label>
                   <span class="field-label">Funktionsart</span>
@@ -954,8 +954,8 @@
                   <span class="field-label">Inhalt</span>
                   <select id="dailyPlanMediaFilter" class="select-input compact-select">
                     <option value="">Alle Inhalte</option>
-                    <option value="voice">Stimmübungen</option>
-                    <option value="breathing">Atemübungen</option>
+                    <option value="voice">StimmÃ¼bungen</option>
+                    <option value="breathing">AtemÃ¼bungen</option>
                     <option value="video">Video</option>
                     <option value="audio">Audio</option>
                     <option value="image">Bild</option>
@@ -970,11 +970,11 @@
                 </label>
                 <label class="daily-plan-search-field">
                   <span class="field-label">Suchen</span>
-                  <input id="dailyPlanExerciseSearch" type="search" class="text-input" placeholder="Übung oder Medium suchen" />
+                  <input id="dailyPlanExerciseSearch" type="search" class="text-input" placeholder="Ãœbung oder Medium suchen" />
                 </label>
               </div>
               <div id="dailyPlanExerciseLibrary" class="course-exercise-library"></div>
-              <button id="closeDailyPlanLibraryButton" class="primary-action daily-plan-library-done-button" type="button">Auswahl übernehmen</button>
+              <button id="closeDailyPlanLibraryButton" class="primary-action daily-plan-library-done-button" type="button">Auswahl Ã¼bernehmen</button>
             </section>
           </div>
         </div>
@@ -986,7 +986,7 @@
         <div class="section-header">
           <div>
             <p class="eyebrow">Kurse</p>
-            <h2>Tagespläne zu einem Kurs zusammenstellen</h2>
+            <h2>TagesplÃ¤ne zu einem Kurs zusammenstellen</h2>
           </div>
           <div class="course-editor-mode-switch" aria-label="Kurseditor-Modus">
             <button id="newCourseButton" class="secondary-action compact-action is-active" type="button">Neuer Kurs</button>
@@ -1000,18 +1000,18 @@
             <input id="courseName" type="text" placeholder="Woche 1 Sprachtraining" />
           </div>
           <div id="courseNameSelectGroup" class="course-name-control is-hidden">
-            <label class="field-label" for="courseNameSelect">Kurs auswählen</label>
+            <label class="field-label" for="courseNameSelect">Kurs auswÃ¤hlen</label>
             <select id="courseNameSelect" class="highlight-select"></select>
           </div>
           <label class="field-label" for="courseDescription">Kurze Beschreibung</label>
-          <textarea id="courseDescription" rows="3" placeholder="Einfacher Kurs aus mehreren Tagesplänen."></textarea>
+          <textarea id="courseDescription" rows="3" placeholder="Einfacher Kurs aus mehreren TagesplÃ¤nen."></textarea>
 
           <div class="exercise-picker">
-            <label class="field-label">Tagespläne im Kurs</label>
+            <label class="field-label">TagesplÃ¤ne im Kurs</label>
             <div id="courseExerciseLibrary" class="course-exercise-library"></div>
           </div>
 
-          <p class="eyebrow">Ausgewählte Tagespläne</p>
+          <p class="eyebrow">AusgewÃ¤hlte TagesplÃ¤ne</p>
           <div id="courseSelectedExercises" class="course-selected-list"></div>
 
           <div class="course-actions course-actions-single">
@@ -1026,14 +1026,14 @@
         <div class="section-header">
           <div>
             <p class="eyebrow">Medien</p>
-            <h2>Übungen und Pausenmedien</h2>
+            <h2>Ãœbungen und Pausenmedien</h2>
           </div>
         </div>
         <section id="mediaLibraryPlayer" class="media-library-player" aria-label="Medienvorschau">
           <button id="closeMediaLibraryPlayerOverlayButton" class="media-library-player-close" type="button" aria-label="Vorschau schliessen" title="Vorschau schliessen">&times;</button>
-          <p id="mediaLibraryPlayerTitle" class="media-library-player-title">Medium auswählen</p>
+          <p id="mediaLibraryPlayerTitle" class="media-library-player-title">Medium auswÃ¤hlen</p>
           <div class="media-library-player-stage">
-            <p id="mediaLibraryPlayerEmpty" class="media-library-player-empty">Wählen Sie unten ein Medium für die Vorschau aus.</p>
+            <p id="mediaLibraryPlayerEmpty" class="media-library-player-empty">WÃ¤hlen Sie unten ein Medium fÃ¼r die Vorschau aus.</p>
             <video id="mediaLibraryPlayerVideo" class="is-hidden" controls playsinline preload="metadata"></video>
             <audio id="mediaLibraryPlayerAudio" class="is-hidden" controls preload="metadata"></audio>
             <img id="mediaLibraryPlayerImage" class="is-hidden" alt="" />
@@ -1041,14 +1041,14 @@
         </section>
         <button id="backfillMediaLibraryThumbnailsButton" class="secondary-action media-thumbnail-backfill" type="button">Vorschaubilder nachholen</button>
         <div class="settings-group media-upload-form">
-          <label class="field-label" for="mediaLibraryFile">Datei auswählen</label>
+          <label class="field-label" for="mediaLibraryFile">Datei auswÃ¤hlen</label>
           <input
             id="mediaLibraryFile"
             type="file"
             accept=".mp3,.m4a,.wav,.ogg,.aac,.flac,.webm,.mp4,.mov,.m4v,.jpg,.jpeg,.png,.webp,.heic,.heif,audio/*,video/*,image/*"
           />
           <button id="saveMediaLibraryButton" class="primary-action" type="button">Medium hochladen</button>
-          <p id="mediaLibraryState" class="cloud-state">Audio, Video oder Bild auswählen. Titel und Thema lassen sich danach mit dem Bleistift bearbeiten.</p>
+          <p id="mediaLibraryState" class="cloud-state">Audio, Video oder Bild auswÃ¤hlen. Titel und Thema lassen sich danach mit dem Bleistift bearbeiten.</p>
         </div>
         <div id="mediaLibraryList" class="course-list"></div>
       </section>
@@ -1057,7 +1057,7 @@
         <div class="section-header">
           <div>
             <p class="eyebrow">Entspannungsmusik</p>
-            <h2>Musik für Pausen</h2>
+            <h2>Musik fÃ¼r Pausen</h2>
           </div>
         </div>
         <div class="settings-group">
@@ -1066,16 +1066,16 @@
           <label class="field-label" for="musicCategory">Kategorie</label>
           <select id="musicCategory" class="select-input compact-select">
             <option value="klavier">Ruhiges Klavier</option>
-            <option value="natur">Naturgeräusche</option>
-            <option value="klangflaechen">Sanfte Klangflächen</option>
+            <option value="natur">NaturgerÃ¤usche</option>
+            <option value="klangflaechen">Sanfte KlangflÃ¤chen</option>
             <option value="meer">Meeresrauschen</option>
-            <option value="wald">Waldgeräusche</option>
+            <option value="wald">WaldgerÃ¤usche</option>
             <option value="meditation">Meditation</option>
             <option value="none">Ohne Musik</option>
           </select>
           <label class="field-label" for="musicFile">Musikdatei</label>
           <input id="musicFile" type="file" accept=".mp3,.m4a,.wav,.ogg,audio/*" />
-          <label class="field-label range-label" for="musicDefaultVolume">Standardlautstärke <strong id="musicDefaultVolumeValue">25%</strong></label>
+          <label class="field-label range-label" for="musicDefaultVolume">StandardlautstÃ¤rke <strong id="musicDefaultVolumeValue">25%</strong></label>
           <input id="musicDefaultVolume" class="range-input" type="range" min="0" max="100" value="25" />
           <label class="editor-check settings-check" for="musicIsDefault">
             <input id="musicIsDefault" type="checkbox" />
@@ -1091,7 +1091,7 @@
         <div class="section-header">
           <div>
             <p class="eyebrow">Kurs</p>
-            <h2>Aktiver Übungsplan</h2>
+            <h2>Aktiver Ãœbungsplan</h2>
           </div>
         </div>
         <label class="course-patient-switcher" for="coursePatientSwitcher">
@@ -1102,70 +1102,70 @@
         <div id="coursePlayer" class="course-player is-hidden" aria-label="Kurs-Player"></div>
       </section>
 
-      <section class="help-panel app-section" data-view="help" aria-label="Hilfe und Erklärtexte">
+      <section class="help-panel app-section" data-view="help" aria-label="Hilfe und ErklÃ¤rtexte">
         <div class="section-header">
           <div>
             <p class="eyebrow">Hilfe</p>
-            <h2>LogoSound kurz erklärt</h2>
+            <h2>LogoSound kurz erklÃ¤rt</h2>
           </div>
         </div>
 
         <div class="help-intro">
-          <p>Hier finden Sie die wichtigsten Schritte, ohne die App zu überladen. Die Hilfe liegt bewusst im Menü und führt direkt zu den passenden Bereichen.</p>
+          <p>Hier finden Sie die wichtigsten Schritte, ohne die App zu Ã¼berladen. Die Hilfe liegt bewusst im MenÃ¼ und fÃ¼hrt direkt zu den passenden Bereichen.</p>
         </div>
 
         <div class="help-actions" aria-label="Direkte Hilfe-Links">
-          <button type="button" class="secondary-action" data-help-target="record">Aufnahme öffnen</button>
-          <button type="button" class="secondary-action" data-help-target="playback">Playback öffnen</button>
-          <button type="button" class="secondary-action" data-help-target="history">Auswertung öffnen</button>
-          <button type="button" class="secondary-action" data-help-target="editor">Editor öffnen</button>
-          <button type="button" class="secondary-action" data-help-target="myCourses">Kurs öffnen</button>
-          <button type="button" class="secondary-action" data-help-target="settings">Einstellungen öffnen</button>
+          <button type="button" class="secondary-action" data-help-target="record">Aufnahme Ã¶ffnen</button>
+          <button type="button" class="secondary-action" data-help-target="playback">Playback Ã¶ffnen</button>
+          <button type="button" class="secondary-action" data-help-target="history">Auswertung Ã¶ffnen</button>
+          <button type="button" class="secondary-action" data-help-target="editor">Editor Ã¶ffnen</button>
+          <button type="button" class="secondary-action" data-help-target="myCourses">Kurs Ã¶ffnen</button>
+          <button type="button" class="secondary-action" data-help-target="settings">Einstellungen Ã¶ffnen</button>
         </div>
 
         <div class="help-list">
           <article class="help-card">
             <h3>Aufnahme</h3>
-            <p>Wählen Sie zuerst Funktionsart und Übung. Kamera und Mikrofon laufen erst, wenn die Übung beginnt. Die Amplitude zeigt Sprache orange und Pausen grün.</p>
+            <p>WÃ¤hlen Sie zuerst Funktionsart und Ãœbung. Kamera und Mikrofon laufen erst, wenn die Ãœbung beginnt. Die Amplitude zeigt Sprache orange und Pausen grÃ¼n.</p>
           </article>
           <article class="help-card">
             <h3>Karaoke</h3>
-            <p>Der aktuelle Text wird groß eingeblendet. Tempo und Standzeit richten sich nach der Übung und können im Editor oder bei der Aufnahme angepasst werden.</p>
+            <p>Der aktuelle Text wird groÃŸ eingeblendet. Tempo und Standzeit richten sich nach der Ãœbung und kÃ¶nnen im Editor oder bei der Aufnahme angepasst werden.</p>
           </article>
           <article class="help-card">
             <h3>Editor</h3>
-            <p>Erstellen Sie eigene Übungen mit Silben, Vokalen, kurzen Sätzen, Dialogen oder langen Texten. Tempo, Stimme und Voice-Begleitung werden mit der Übung gespeichert.</p>
+            <p>Erstellen Sie eigene Ãœbungen mit Silben, Vokalen, kurzen SÃ¤tzen, Dialogen oder langen Texten. Tempo, Stimme und Voice-Begleitung werden mit der Ãœbung gespeichert.</p>
           </article>
           <article class="help-card">
             <h3>Playback</h3>
-            <p>Spielen Sie die Aufnahme ab und verfolgen Sie die Position in Wellenform, Lautstärke und Frequenz. Bei Bedarf kann der Karaoke-Text im Playback ein- oder ausgeblendet werden.</p>
+            <p>Spielen Sie die Aufnahme ab und verfolgen Sie die Position in Wellenform, LautstÃ¤rke und Frequenz. Bei Bedarf kann der Karaoke-Text im Playback ein- oder ausgeblendet werden.</p>
           </article>
           <article class="help-card">
             <h3>Analyse</h3>
-            <p>Wählen Sie eine Aufnahme, markieren Sie einen Bereich und zoomen Sie hinein. Die Analyseposition folgt der Wiedergabe und aktualisiert Lautstärke, Frequenz und Impulse live.</p>
+            <p>WÃ¤hlen Sie eine Aufnahme, markieren Sie einen Bereich und zoomen Sie hinein. Die Analyseposition folgt der Wiedergabe und aktualisiert LautstÃ¤rke, Frequenz und Impulse live.</p>
           </article>
           <article class="help-card">
             <h3>Patienten und Kurse</h3>
-            <p>Patienten, Tagespläne und Kurse werden getrennt verwaltet. Ein aktiver Patient bleibt erhalten, bis er bewusst gewechselt wird.</p>
+            <p>Patienten, TagesplÃ¤ne und Kurse werden getrennt verwaltet. Ein aktiver Patient bleibt erhalten, bis er bewusst gewechselt wird.</p>
           </article>
         </div>
 
         <div class="help-faq">
           <details class="help-detail" open>
             <summary>Wie starte ich am schnellsten?</summary>
-            <p>Aufnahme öffnen, Übung auswählen, bei Bedarf Kamera aktivieren und dann <strong>Übung starten</strong> drücken.</p>
+            <p>Aufnahme Ã¶ffnen, Ãœbung auswÃ¤hlen, bei Bedarf Kamera aktivieren und dann <strong>Ãœbung starten</strong> drÃ¼cken.</p>
           </details>
           <details class="help-detail">
-            <summary>Wo ändere ich Stimme, Empfindlichkeit oder KI?</summary>
-            <p>Im Bereich <strong>Einstellungen</strong>. Dort liegen ElevenLabs, ChatGPT, Kalibrierung, EQ und Wiedergabe-Lautstärke.</p>
+            <summary>Wo Ã¤ndere ich Stimme, Empfindlichkeit oder KI?</summary>
+            <p>Im Bereich <strong>Einstellungen</strong>. Dort liegen ElevenLabs, ChatGPT, Kalibrierung, EQ und Wiedergabe-LautstÃ¤rke.</p>
           </details>
           <details class="help-detail">
-            <summary>Wo finde ich frühere Aufnahmen?</summary>
-            <p>Im <strong>Playback</strong> zum Anhören und in der <strong>Auswertung</strong> für Vergleich und Verlauf.</p>
+            <summary>Wo finde ich frÃ¼here Aufnahmen?</summary>
+            <p>Im <strong>Playback</strong> zum AnhÃ¶ren und in der <strong>Auswertung</strong> fÃ¼r Vergleich und Verlauf.</p>
           </details>
           <details class="help-detail">
             <summary>Was ist der Unterschied zwischen Editor und Kurs?</summary>
-            <p>Im <strong>Editor</strong> werden Übungen erstellt oder bearbeitet. Im <strong>Kurs</strong> werden Tagespläne und Übungsfolgen für Patienten abgespielt.</p>
+            <p>Im <strong>Editor</strong> werden Ãœbungen erstellt oder bearbeitet. Im <strong>Kurs</strong> werden TagesplÃ¤ne und Ãœbungsfolgen fÃ¼r Patienten abgespielt.</p>
           </details>
         </div>
       </section>
@@ -1183,10 +1183,10 @@
         <div class="course-today-header">
           <div>
             <p class="eyebrow">Tagesplan</p>
-            <h2 id="courseTodayOverlayTitle">Übungen heute</h2>
+            <h2 id="courseTodayOverlayTitle">Ãœbungen heute</h2>
             <p id="courseTodayOverlayMeta" class="course-today-overlay-meta"></p>
           </div>
-          <button id="closeCourseTodayOverlayButton" class="course-today-close" type="button" aria-label="Tagesplan schließen">×</button>
+          <button id="closeCourseTodayOverlayButton" class="course-today-close" type="button" aria-label="Tagesplan schlieÃŸen">Ã—</button>
         </div>
         <div id="courseTodayOverlayList" class="course-today-overlay-list"></div>
       </section>
@@ -1196,20 +1196,20 @@
         <div class="editor-ai-header">
           <div>
             <p class="eyebrow">KI</p>
-            <h3 id="editorAiTitle">Neue Übungen erstellen</h3>
+            <h3 id="editorAiTitle">Neue Ãœbungen erstellen</h3>
           </div>
-          <button id="closeEditorAiButton" class="editor-ai-close" type="button" aria-label="Fenster schließen">×</button>
+          <button id="closeEditorAiButton" class="editor-ai-close" type="button" aria-label="Fenster schlieÃŸen">Ã—</button>
         </div>
 
         <div id="editorAiInputView" class="editor-ai-view">
-          <label class="field-label" for="editorAiPrompt">Was möchtest du erstellen?</label>
+          <label class="field-label" for="editorAiPrompt">Was mÃ¶chtest du erstellen?</label>
           <textarea
             id="editorAiPrompt"
             rows="4"
-            placeholder="20 kurze Sätze mit O"
+            placeholder="20 kurze SÃ¤tze mit O"
           ></textarea>
           <div class="button-row editor-ai-actions">
-            <button id="generateEditorAiExercisesButton" class="primary-action" type="button">Übungen erstellen</button>
+            <button id="generateEditorAiExercisesButton" class="primary-action" type="button">Ãœbungen erstellen</button>
           </div>
         </div>
 
@@ -1217,7 +1217,7 @@
           <p id="editorAiSummary" class="editor-ai-summary"></p>
           <div id="editorAiPreviewList" class="editor-ai-preview-list"></div>
           <div class="button-row editor-ai-actions">
-            <button id="applyEditorAiExercisesButton" class="primary-action" type="button">Alle übernehmen</button>
+            <button id="applyEditorAiExercisesButton" class="primary-action" type="button">Alle Ã¼bernehmen</button>
             <button id="resetEditorAiButton" class="secondary-action" type="button">Neu erstellen</button>
           </div>
         </div>

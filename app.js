@@ -2895,7 +2895,30 @@ function getDialogVoiceMeterSignal(now = performance.now()) {
 function playVoiceAudioElement(audioUrl) {
   return new Promise((resolve) => {
     let started = false;
+    let lastProgressAt = performance.now();
+    let lastCurrentTime = 0;
+    let stallIntervalId = 0;
     let fallbackId = window.setTimeout(() => finish(false), Math.max(INSTRUCTION_TIMEOUT_MS, 15000));
+    const stopStallWatchdog = () => {
+      if (stallIntervalId) window.clearInterval(stallIntervalId);
+      stallIntervalId = 0;
+    };
+    const startStallWatchdog = () => {
+      if (stallIntervalId) return;
+      stallIntervalId = window.setInterval(() => {
+        if (!started || instructionAudio.paused || instructionAudio.ended) return;
+        const currentTime = Number(instructionAudio.currentTime || 0);
+        if (currentTime > lastCurrentTime + 0.05) {
+          lastCurrentTime = currentTime;
+          lastProgressAt = performance.now();
+          return;
+        }
+        if (performance.now() - lastProgressAt > 3200) {
+          message.textContent = "Gespeichertes Audio stockt. Browser-Stimme wird genutzt.";
+          finish(false);
+        }
+      }, 700);
+    };
     const refreshFallback = () => {
       if (!Number.isFinite(instructionAudio.duration) || instructionAudio.duration <= 0) return;
       window.clearTimeout(fallbackId);
@@ -2914,6 +2937,7 @@ function playVoiceAudioElement(audioUrl) {
     };
     const finish = (played = started) => {
       window.clearTimeout(fallbackId);
+      stopStallWatchdog();
       cleanup();
       instructionAudio.pause();
       stopDialogVoiceMeter();
@@ -2921,6 +2945,9 @@ function playVoiceAudioElement(audioUrl) {
     };
     const handleStarted = () => {
       started = true;
+      lastCurrentTime = Number(instructionAudio.currentTime || 0);
+      lastProgressAt = performance.now();
+      startStallWatchdog();
       message.textContent = "Instruktion wird abgespielt.";
       if (Number.isFinite(instructionAudio.duration) && instructionAudio.duration > 0) {
         startDialogVoiceMeter(Math.max(0, instructionAudio.duration - instructionAudio.currentTime));
@@ -14332,13 +14359,8 @@ async function resumeOrStartCourse(course, assignment, selectedDayIndex = null) 
   const dayState = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
   const instructionUnlock = unlockInstructionAudio();
   const contextUnlock = unlockCoursePlaylistAudioContext();
-  const introAudio = getDailyPlanIntroAudioData(dayState.plan);
   const videoPrime = primeCoursePlaylistVideo(course, assignment, selectedDayIndex);
-  // Start the stored introduction directly from the user's tap. iOS treats
-  // audio-only files more reliably in an Audio element than in a Video element.
-  courseIntroPlaybackPromise = dayState.plan?.description && introAudio?.url
-    ? playVoiceAudioElement(introAudio.url)
-    : null;
+  courseIntroPlaybackPromise = null;
   Promise.resolve(videoPrime).then(() => Promise.allSettled([
     unlockCoursePlaylistAudio(),
     primeCoursePauseAudio(course, assignment, selectedDayIndex),

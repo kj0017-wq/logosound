@@ -644,6 +644,7 @@ let patientProfiles = [];
 let userRole = localStorage.getItem(USER_ROLE_KEY) || "therapist";
 let courses = [];
 let dailyPlans = [];
+let openDailyPlanRefreshToken = 0;
 let courseSessions = [];
 let courseAssignments = [];
 let relaxMusicItems = [];
@@ -1037,7 +1038,7 @@ openDailyPlanButton?.addEventListener("click", () => {
   setDailyPlanEditorMode("open");
 });
 openDailyPlanSelect?.addEventListener("change", () => {
-  const plan = dailyPlans.find((item) => item.id === openDailyPlanSelect.value);
+  const plan = getDailyPlanSelectItems().find((item) => item.id === openDailyPlanSelect.value);
   if (!plan) return;
   resetDailyPlanEditor(plan);
   openDailyPlanControl?.classList.add("is-hidden");
@@ -13557,20 +13558,47 @@ async function generateDailyPlanIntroAudio(options = {}) {
   }
 }
 
+function getDailyPlanSelectItems() {
+  const byId = new Map();
+  dailyPlans.forEach((plan) => {
+    if (!plan?.id) return;
+    const existing = byId.get(plan.id);
+    byId.set(plan.id, !existing || String(plan.updatedAt || "") >= String(existing.updatedAt || "") ? plan : existing);
+  });
+  return [...byId.values()].sort((left, right) => (
+    String(left.name || "").localeCompare(String(right.name || ""), "de", { numeric: true, sensitivity: "base" })
+  ));
+}
+
+async function refreshOpenDailyPlanSelectFromCloud() {
+  const refreshToken = ++openDailyPlanRefreshToken;
+  try {
+    await refreshCourseDataForCurrentPatient();
+  } catch (apiError) {
+    try {
+      const items = await loadCloudCollection("dailyPlans");
+      dailyPlans = mergeById(dailyPlans, items || []);
+      persistCourseModuleData();
+    } catch (fallbackError) {
+      console.warn("Tagesplaene konnten nicht frisch geladen werden", fallbackError || apiError);
+    }
+  }
+  if (refreshToken !== openDailyPlanRefreshToken) return;
+  renderOpenDailyPlanSelect();
+}
+
 function renderOpenDailyPlanSelect() {
   if (!openDailyPlanSelect) return;
   const selectedId = editingDailyPlanId || openDailyPlanSelect.value || "";
+  const plans = getDailyPlanSelectItems();
   openDailyPlanSelect.innerHTML = '<option value="">Tagesplan auswählen</option>';
-  dailyPlans
-    .slice()
-    .sort((left, right) => String(left.name || "").localeCompare(String(right.name || ""), "de"))
-    .forEach((plan) => {
-      const option = document.createElement("option");
-      option.value = plan.id;
-      option.textContent = plan.name || "Unbenannter Tagesplan";
-      openDailyPlanSelect.append(option);
-    });
-  openDailyPlanSelect.value = dailyPlans.some((plan) => plan.id === selectedId) ? selectedId : "";
+  plans.forEach((plan) => {
+    const option = document.createElement("option");
+    option.value = plan.id;
+    option.textContent = plan.name || "Unbenannter Tagesplan";
+    openDailyPlanSelect.append(option);
+  });
+  openDailyPlanSelect.value = plans.some((plan) => plan.id === selectedId) ? selectedId : "";
 }
 
 function setDailyPlanEditorMode(mode = "new") {
@@ -13580,6 +13608,7 @@ function setDailyPlanEditorMode(mode = "new") {
   openDailyPlanButton?.classList.toggle("is-active", opening);
   if (opening) {
     renderOpenDailyPlanSelect();
+    refreshOpenDailyPlanSelectFromCloud().catch(() => renderOpenDailyPlanSelect());
     openDailyPlanSelect?.focus();
   }
 }

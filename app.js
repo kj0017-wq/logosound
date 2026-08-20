@@ -1,4 +1,4 @@
-﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getAuth,
   signInAnonymously,
@@ -355,6 +355,7 @@ coursePlaylistVideo.controls = true;
 coursePlaylistVideo.playsInline = true;
 coursePlaylistVideo.setAttribute("playsinline", "");
 coursePlaylistVideo.setAttribute("webkit-playsinline", "");
+let courseVisibleVideo = null;
 
 const DB_NAME = "logosound-local";
 const STORE_NAME = "recordings";
@@ -590,6 +591,7 @@ let isRecording = false;
 let breathingSessionId = 0;
 let breathingCountdownTimerId = null;
 let breathingBallAnimation = null;
+let breathingSpeechUtterance = null;
 let isBreathingExerciseRunning = false;
 let isCalibrating = false;
 let calibrationReturnView = "record";
@@ -653,6 +655,7 @@ let selectedMediaLibraryItemId = "";
 const pendingMediaThumbnailIds = new Set();
 let expandedMyCourseAssignmentId = "";
 let editingMediaLibraryItemId = "";
+let editingDailyPlanPauseKey = "";
 let editingDailyPlanId = "";
 let editingCourseId = "";
 let dailyPlanDraftExercises = [];
@@ -1705,7 +1708,7 @@ function getBreathingSettings(exercise = null) {
     exhale: clampBreathingSeconds(source.exhale ?? breathingExhale?.value, 6, 1),
     pause: clampBreathingSeconds(source.pause ?? breathingPause?.value, 2),
     repeats: Math.max(1, Math.min(30, Math.round(Number(source.repeats ?? breathingRepeats?.value) || 5))),
-    useVoice: source.useVoice ?? Boolean(breathingUseVoice?.checked),
+    useVoice: true,
     extraSteps: getBreathingExtraSteps(exercise),
   };
 }
@@ -1786,6 +1789,54 @@ async function completeCourseBreathingExercise(exercise) {
   }
 }
 
+function stopBreathingVoice() {
+  if ("speechSynthesis" in window) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch (error) {}
+  }
+  breathingSpeechUtterance = null;
+}
+
+async function unlockBreathingVoice() {
+  await unlockInstructionAudio().catch(() => false);
+  if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return false;
+  try {
+    window.speechSynthesis.getVoices?.();
+    window.speechSynthesis.resume?.();
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function speakBreathingPhase(phase) {
+  if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return false;
+  const text = phase?.key === "exhale" ? "Langsam ausatmen" : String(phase?.label || "").trim();
+  if (!text) return false;
+  stopBreathingVoice();
+  try {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "de-DE";
+    utterance.rate = 0.86;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    utterance.onend = () => {
+      if (breathingSpeechUtterance === utterance) breathingSpeechUtterance = null;
+    };
+    utterance.onerror = () => {
+      if (breathingSpeechUtterance === utterance) breathingSpeechUtterance = null;
+    };
+    breathingSpeechUtterance = utterance;
+    window.speechSynthesis.speak(utterance);
+    window.setTimeout(() => window.speechSynthesis.resume?.(), 80);
+    window.setTimeout(() => window.speechSynthesis.resume?.(), 600);
+    return true;
+  } catch (error) {
+    breathingSpeechUtterance = null;
+    return false;
+  }
+}
 function stopBreathingExercise(statusText = "Atemübung beendet.") {
   breathingSessionId += 1;
   isBreathingExerciseRunning = false;
@@ -1793,6 +1844,7 @@ function stopBreathingExercise(statusText = "Atemübung beendet.") {
   breathingCountdownTimerId = null;
   breathingBallAnimation?.cancel();
   breathingBallAnimation = null;
+  stopBreathingVoice();
   breathingOverlay?.classList.add("is-hidden");
   document.body.classList.remove("breathing-exercise-active");
   recordButton.disabled = false;
@@ -1810,7 +1862,9 @@ async function startBreathingExercise(exercise, options = {}) {
   if (!exercise || isBreathingExerciseRunning) return;
   clearCourseAutoAdvanceTimer();
   stopInstructionAudio();
+  stopBreathingVoice();
   const settings = getBreathingSettings(exercise);
+  await unlockBreathingVoice();
   const sessionId = ++breathingSessionId;
   isBreathingExerciseRunning = true;
   document.body.classList.add("breathing-exercise-active");
@@ -1837,7 +1891,7 @@ async function startBreathingExercise(exercise, options = {}) {
         if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) return;
         updateBreathingOverlay(phase, round, settings, phase.seconds);
         if (settings.useVoice) {
-          Promise.resolve(speakWithBrowserVoice(phase.key === "exhale" ? "Langsam ausatmen" : phase.label)).catch(() => {});
+          speakBreathingPhase(phase);
         }
         const completed = await waitForBreathingPhase(phase.seconds, sessionId, (remaining) => {
           if (sessionId === breathingSessionId) updateBreathingOverlay(phase, round, settings, remaining, false);
@@ -3005,6 +3059,7 @@ function stopInstructionAudio() {
   } catch (error) {}
   instructionAudioSource = null;
   stopDialogVoiceMeter();
+  stopBreathingVoice();
 }
 async function startRecording() {
   if (!mediaStream) return;
@@ -3024,6 +3079,7 @@ async function startRecording() {
   silentSignalStartedAt = 0;
   analyserRestartInProgress = false;
   stopDialogVoiceMeter();
+  stopBreathingVoice();
   activeKaraokeIndex = 0;
   recordingKaraokeEvents = [];
   activeRecordingKaraokeEvent = null;
@@ -7206,7 +7262,7 @@ function applyEditorExerciseToForm(exercise) {
   if (breathingExhale) breathingExhale.value = String(breathing.exhale);
   if (breathingPause) breathingPause.value = String(breathing.pause);
   if (breathingRepeats) breathingRepeats.value = String(breathing.repeats);
-  if (breathingUseVoice) breathingUseVoice.checked = Boolean(breathing.useVoice);
+  if (breathingUseVoice) breathingUseVoice.checked = true;
   breathingExtraStepsState = getBreathingExtraSteps(exercise);
   renderBreathingExtraSteps();
   editorSpeed.value = String(exercise.speed || 3);
@@ -7496,7 +7552,7 @@ function loadEditorDraft() {
       if (breathingExhale) breathingExhale.value = String(breathing.exhale);
       if (breathingPause) breathingPause.value = String(breathing.pause);
       if (breathingRepeats) breathingRepeats.value = String(breathing.repeats);
-      if (breathingUseVoice) breathingUseVoice.checked = Boolean(breathing.useVoice);
+      if (breathingUseVoice) breathingUseVoice.checked = true;
       breathingExtraStepsState = getBreathingExtraSteps({ breathing: draft.breathing || {} });
       renderBreathingExtraSteps();
       editorSpeed.value = draft.speed || editorSpeed.value;
@@ -12320,6 +12376,13 @@ function buildCourseExercise(libraryItem) {
     mediaUrl: libraryItem.mediaUrl || "",
     mediaType: libraryItem.mediaType || "",
     mimeType: libraryItem.mimeType || "",
+    pauseDuration: isMediaPause ? pauseDuration : 0,
+    backgroundImageId: "",
+    backgroundImageUrl: "",
+    backgroundImageTitle: "",
+    backgroundImage: null,
+    transitionType: "fade",
+    transitionDuration: 1000,
     recordAudio: !isMediaPause && !isBreathingExercise,
     recordVideo: !isMediaPause && !isBreathingExercise,
     useVideo: !isBreathingExercise,
@@ -12348,6 +12411,8 @@ function normalizeCourseExercise(exercise, index = 0) {
   if (!isCoursePauseExercise(normalized)) {
     return {
       ...normalized,
+      transitionType: getCourseTransitionType(normalized.transitionType),
+      transitionDuration: getCourseTransitionDuration(normalized.transitionDuration),
       pauseAfter: {
         ...(normalized.pauseAfter || {}),
         enabled: false,
@@ -12367,6 +12432,7 @@ function normalizeCourseExercise(exercise, index = 0) {
         : savedDuration)
       || 30
   );
+  const backgroundImage = getDailyPlanIntroImageSnapshot(getDailyPlanPauseBackgroundImage(normalized));
   return {
     ...normalized,
     title: normalized.title || media?.title || "Pauseneinheit",
@@ -12376,7 +12442,14 @@ function normalizeCourseExercise(exercise, index = 0) {
     mediaUrl: normalized.mediaUrl || media?.downloadUrl || "",
     mediaType: normalized.mediaType || media?.mediaType || "audio",
     mimeType: normalized.mimeType || media?.mimeType || "",
+    pauseDuration: Math.max(1, Math.min(300, configuredPauseDuration)),
     duration: Math.max(1, Math.min(300, configuredPauseDuration)),
+    backgroundImageId: backgroundImage?.id || "",
+    backgroundImageUrl: backgroundImage?.downloadUrl || "",
+    backgroundImageTitle: backgroundImage?.title || "",
+    backgroundImage,
+    transitionType: getCourseTransitionType(normalized.transitionType),
+    transitionDuration: getCourseTransitionDuration(normalized.transitionDuration),
     recordAudio: false,
     recordVideo: false,
     pauseAfter: {
@@ -13357,6 +13430,69 @@ function normalizeDailyPlanDraftPositions() {
   dailyPlanDraftExercises = dailyPlanDraftExercises.map((exercise, index) => normalizeCourseExercise(exercise, index));
 }
 
+function getCourseTransitionType(value = "") {
+  const type = String(value || "fade").trim();
+  return ["none", "fade", "fadeThrough"].includes(type) ? type : "fade";
+}
+
+function getCourseTransitionDuration(value = 1000) {
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds)) return 1000;
+  const ms = seconds > 20 ? seconds : seconds * 1000;
+  return Math.max(150, Math.min(5000, Math.round(ms)));
+}
+
+function renderCourseTransitionOptions(selected = "fade") {
+  const current = getCourseTransitionType(selected);
+  return [["fade", "Fade"], ["fadeThrough", "Fade out / Fade in"], ["none", "Kein Übergang"]]
+    .map(([value, label]) => "<option value=\"" + value + "\"" + (value === current ? " selected" : "") + ">" + label + "</option>")
+    .join("");
+}
+
+function formatCourseTransitionDuration(value = 1000) {
+  const ms = getCourseTransitionDuration(value);
+  return String(Math.round(ms / 100) / 10).replace(".", ",") + " s";
+}
+function getDailyPlanPauseEditKey(exercise, index = 0) {
+  return `${String(exercise?.exerciseId || exercise?.mediaId || exercise?.title || "pause")}-${index}`;
+}
+
+function getDailyPlanPauseBackgroundImage(exercise = null) {
+  const imageId = String(exercise?.backgroundImageId || exercise?.pauseBackgroundImageId || exercise?.backgroundImage?.id || "");
+  const libraryImage = mediaLibraryItems.find((item) => item.id === imageId && item.mediaType === "image" && item.downloadUrl);
+  if (libraryImage) return libraryImage;
+  if (exercise?.backgroundImage?.downloadUrl) return { ...exercise.backgroundImage, id: exercise.backgroundImage.id || imageId };
+  if (exercise?.backgroundImageUrl) {
+    return {
+      id: imageId,
+      title: exercise.backgroundImageTitle || "Hintergrundbild",
+      mediaType: "image",
+      downloadUrl: exercise.backgroundImageUrl,
+    };
+  }
+  return null;
+}
+
+function renderDailyPlanPauseImageOptions(exercise = null) {
+  const savedImage = getDailyPlanPauseBackgroundImage(exercise);
+  const selectedId = String(exercise?.backgroundImageId || savedImage?.id || "");
+  const images = getDailyPlanIntroImages();
+  const hasSelected = images.some((item) => item.id === selectedId);
+  const savedOption = savedImage?.downloadUrl && selectedId && !hasSelected ? [savedImage] : [];
+  return `<option value="">Kein Hintergrundbild</option>${[...savedOption, ...images]
+    .map((item) => `<option value="${mediaLibraryEscape(item.id)}"${item.id === selectedId ? " selected" : ""}>${mediaLibraryEscape(item.title || "Bild")}</option>`)
+    .join("")}`;
+}
+
+function updateDailyPlanPauseBackground(exercise, imageId = "") {
+  const image = imageId ? getDailyPlanIntroImage({ introImageId: imageId }) : null;
+  const snapshot = getDailyPlanIntroImageSnapshot(image);
+  exercise.backgroundImageId = snapshot?.id || "";
+  exercise.backgroundImageUrl = snapshot?.downloadUrl || "";
+  exercise.backgroundImageTitle = snapshot?.title || "";
+  exercise.backgroundImage = snapshot;
+}
+
 function renderDailyPlanSelectedExercises() {
   if (!dailyPlanSelectedExercises) return;
   dailyPlanSelectedExercises.innerHTML = "";
@@ -13376,33 +13512,83 @@ function renderDailyPlanSelectedExercises() {
   dailyPlanDraftExercises.forEach((exercise, index) => {
     const item = document.createElement("div");
     const isPause = isCoursePauseExercise(exercise);
-    item.className = `course-selected-item${isPause ? " is-pause" : ""}`;
+    const editKey = getDailyPlanPauseEditKey(exercise, index);
+    const isEditingItem = editingDailyPlanPauseKey === editKey;
+    const backgroundImage = isPause ? getDailyPlanPauseBackgroundImage(exercise) : null;
+    item.className = `course-selected-item${isPause ? " is-pause" : ""}${isEditingItem ? " is-editing" : ""}`;
     item.innerHTML = `
       <span class="course-selected-index">${index + 1}</span>
       <div class="course-selected-copy">
-        <strong>${exercise.title}</strong>
-        <small>${isPause ? "Pausenmusik" : getEditorModeLabel(exercise.mode)} · ${formatCourseDuration(exercise.duration)}</small>
+        <strong>${mediaLibraryEscape(exercise.title)}</strong>
+        <small>${isPause ? "Pausenmusik" : getEditorModeLabel(exercise.mode)} · ${formatCourseDuration(exercise.duration)} · Übergang: ${formatCourseTransitionDuration(exercise.transitionDuration)}${backgroundImage ? ` · Bild: ${mediaLibraryEscape(backgroundImage.title || "Hintergrund")}` : ""}</small>
       </div>
-      <div class="course-item-actions">
+      <div class="course-item-actions has-edit">
+        <button type="button" data-action="editItem" aria-label="Einstellungen bearbeiten" title="Einstellungen bearbeiten">${isEditingItem ? "&#10003;" : "&#9998;"}</button>
         <button type="button" data-action="up" aria-label="Nach oben" title="Nach oben">&#8593;</button>
         <button type="button" data-action="down" aria-label="Nach unten" title="Nach unten">&#8595;</button>
         <button type="button" data-action="remove" aria-label="Entfernen" title="Entfernen">&times;</button>
       </div>
+      ${isEditingItem ? `
+        <div class="course-pause-inline-edit">
+          <label>Übergang
+            <select data-field="transitionType">${renderCourseTransitionOptions(exercise.transitionType)}</select>
+          </label>
+          <label>Dauer
+            <input type="number" min="0.15" max="5" step="0.1" data-field="transitionDuration" value="${Math.round(getCourseTransitionDuration(exercise.transitionDuration) / 100) / 10}">
+          </label>
+          ${isPause ? `
+            <label>Standzeit
+              <input type="number" min="1" max="300" step="1" data-field="pauseDuration" value="${Math.max(1, Math.min(300, Number(exercise.duration || 30)))}">
+            </label>
+            <label>Hintergrundbild
+              <select data-field="pauseBackgroundImage">${renderDailyPlanPauseImageOptions(exercise)}</select>
+            </label>` : ""}
+        </div>` : ""}
     `;
     item.querySelector("[data-action='up']").disabled = index === 0;
     item.querySelector("[data-action='down']").disabled = index === dailyPlanDraftExercises.length - 1;
+    item.querySelector("[data-field='transitionType']")?.addEventListener("change", (event) => {
+      exercise.transitionType = getCourseTransitionType(event.target.value);
+      normalizeDailyPlanDraftPositions();
+      renderDailyPlanSelectedExercises();
+    });
+    item.querySelector("[data-field='transitionDuration']")?.addEventListener("change", (event) => {
+      exercise.transitionDuration = getCourseTransitionDuration(event.target.value);
+      normalizeDailyPlanDraftPositions();
+      renderDailyPlanSelectedExercises();
+    });
     item.addEventListener("click", (event) => {
       const action = event.target.closest("button")?.dataset.action;
       if (!action) return;
+      if (action === "editItem") {
+        editingDailyPlanPauseKey = editingDailyPlanPauseKey === editKey ? "" : editKey;
+        renderDailyPlanSelectedExercises();
+        return;
+      }
       if (action === "up" && index > 0) {
         [dailyPlanDraftExercises[index - 1], dailyPlanDraftExercises[index]] = [dailyPlanDraftExercises[index], dailyPlanDraftExercises[index - 1]];
       }
       if (action === "down" && index < dailyPlanDraftExercises.length - 1) {
         [dailyPlanDraftExercises[index + 1], dailyPlanDraftExercises[index]] = [dailyPlanDraftExercises[index], dailyPlanDraftExercises[index + 1]];
       }
-      if (action === "remove") dailyPlanDraftExercises.splice(index, 1);
+      if (action === "remove") {
+        dailyPlanDraftExercises.splice(index, 1);
+        if (editingDailyPlanPauseKey === editKey) editingDailyPlanPauseKey = "";
+      }
       normalizeDailyPlanDraftPositions();
       renderDailyPlanExerciseLibrary();
+      renderDailyPlanSelectedExercises();
+    });
+    item.querySelector("[data-field='pauseDuration']")?.addEventListener("change", (event) => {
+      const duration = Math.max(1, Math.min(300, Math.round(Number(event.target.value) || 30)));
+      exercise.duration = duration;
+      exercise.pauseDuration = duration;
+      normalizeDailyPlanDraftPositions();
+      renderDailyPlanSelectedExercises();
+    });
+    item.querySelector("[data-field='pauseBackgroundImage']")?.addEventListener("change", (event) => {
+      updateDailyPlanPauseBackground(exercise, event.target.value);
+      normalizeDailyPlanDraftPositions();
       renderDailyPlanSelectedExercises();
     });
     dailyPlanSelectedExercises.append(item);
@@ -13459,20 +13645,38 @@ function getDailyPlanIntroImages() {
     .sort((left, right) => String(left.title || "").localeCompare(String(right.title || ""), "de"));
 }
 
+function getDailyPlanIntroImageSnapshot(image = null) {
+  if (!image?.downloadUrl) return null;
+  return {
+    id: image.id || "",
+    title: image.title || image.name || "Hintergrundbild",
+    mediaType: "image",
+    downloadUrl: image.downloadUrl,
+    storagePath: image.storagePath || image.path || "",
+    thumbnailUrl: image.thumbnailUrl || "",
+    ratio: image.ratio || "",
+    updatedAt: image.updatedAt || "",
+  };
+}
+
 function renderDailyPlanIntroImageSelect(plan = null) {
   if (!dailyPlanIntroImageSelect) return;
-  const selectedId = String(plan?.introImageId || dailyPlanIntroImageSelect.value || "");
+  const savedImage = getDailyPlanIntroImage(plan);
+  const selectedId = String(plan?.introImageId || savedImage?.id || dailyPlanIntroImageSelect.value || "");
   const images = getDailyPlanIntroImages();
-  dailyPlanIntroImageSelect.innerHTML = `<option value="">Kein Hintergrundbild</option>${images
+  const hasSelected = images.some((item) => item.id === selectedId);
+  const savedOption = savedImage?.downloadUrl && selectedId && !hasSelected ? [savedImage] : [];
+  dailyPlanIntroImageSelect.innerHTML = `<option value="">Kein Hintergrundbild</option>${[...savedOption, ...images]
     .map((item) => `<option value="${mediaLibraryEscape(item.id)}">${mediaLibraryEscape(item.title || "Bild")}</option>`)
     .join("")}`;
-  dailyPlanIntroImageSelect.value = images.some((item) => item.id === selectedId) ? selectedId : "";
+  dailyPlanIntroImageSelect.value = selectedId && (hasSelected || savedOption.length) ? selectedId : "";
 }
 
 function getDailyPlanIntroImage(plan = null) {
   const imageId = String(plan?.introImageId || dailyPlanIntroImageSelect?.value || "");
   const libraryImage = mediaLibraryItems.find((item) => item.id === imageId && item.mediaType === "image" && item.downloadUrl);
   if (libraryImage) return libraryImage;
+  if (plan?.introImage?.downloadUrl) return { ...plan.introImage, id: plan.introImage.id || imageId };
   if (plan?.introImageUrl) return { id: imageId, title: plan.introImageTitle || "Hintergrundbild", downloadUrl: plan.introImageUrl };
   return null;
 }
@@ -13614,6 +13818,7 @@ function setDailyPlanEditorMode(mode = "new") {
 }
 function resetDailyPlanEditor(plan = null) {
   setDailyPlanLibraryOpen(false, { focus: false });
+  editingDailyPlanPauseKey = "";
   editingDailyPlanId = plan?.id || "";
   if (dailyPlanName) dailyPlanName.value = plan?.name || "";
   if (dailyPlanDescription) dailyPlanDescription.value = plan?.description || "";
@@ -13641,7 +13846,9 @@ async function saveDailyPlanFromForm() {
   const now = new Date().toISOString();
   const description = dailyPlanDescription?.value.trim() || "";
   const voice = getDailyPlanSelectedVoice();
-  const introImage = getDailyPlanIntroImage();
+  const selectedIntroImageId = String(dailyPlanIntroImageSelect?.value || "");
+  const introImage = selectedIntroImageId ? getDailyPlanIntroImage({ introImageId: selectedIntroImageId }) : null;
+  const introImageSnapshot = getDailyPlanIntroImageSnapshot(introImage);
   const requestSettings = getDailyPlanVoiceRequestSettings();
   if (description && !isDailyPlanIntroAudioCurrent(dailyPlanIntroDraftAudio, description, requestSettings)) {
     dailyPlanIntroDraftAudio = await generateDailyPlanIntroAudio({ silent: true });
@@ -13650,9 +13857,10 @@ async function saveDailyPlanFromForm() {
     id: editingDailyPlanId || createId("dayplan"),
     name: dailyPlanName?.value.trim() || "Neuer Tagesplan",
     description,
-    introImageId: introImage?.id || "",
-    introImageUrl: introImage?.downloadUrl || "",
-    introImageTitle: introImage?.title || "",
+    introImageId: introImageSnapshot?.id || "",
+    introImageUrl: introImageSnapshot?.downloadUrl || "",
+    introImageTitle: introImageSnapshot?.title || "",
+    introImage: introImageSnapshot,
     introVoiceProfileKey: voice?.key || "",
     introVoiceProfileName: voice?.name || "",
     introVoiceProfileGender: voice?.gender || "neutral",
@@ -14223,6 +14431,41 @@ function openNextCourseExercise(exercise, options = {}) {
   if (autoStart) scheduleCourseExerciseStart(exercise);
 }
 
+function getOrCreateCourseTransitionOverlay() {
+  let overlay = document.querySelector(".course-transition-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.className = "course-transition-overlay";
+    overlay.setAttribute("aria-hidden", "true");
+    document.body.append(overlay);
+  }
+  return overlay;
+}
+
+function runCourseTransition(previousExercise, nextStep) {
+  const type = getCourseTransitionType(previousExercise?.transitionType);
+  const duration = getCourseTransitionDuration(previousExercise?.transitionDuration);
+  if (type === "none" || duration <= 150) {
+    nextStep?.();
+    return;
+  }
+  const overlay = getOrCreateCourseTransitionOverlay();
+  const half = Math.max(90, Math.round(duration / 2));
+  overlay.style.setProperty("--course-transition-duration", `${half}ms`);
+  overlay.classList.toggle("is-through", type === "fadeThrough");
+  overlay.classList.remove("is-leaving");
+  overlay.classList.add("is-visible");
+  window.setTimeout(() => {
+    nextStep?.();
+    window.requestAnimationFrame(() => {
+      overlay.classList.add("is-leaving");
+      overlay.classList.remove("is-visible");
+      window.setTimeout(() => {
+        overlay.classList.remove("is-leaving", "is-through");
+      }, half + 40);
+    });
+  }, half);
+}
 function continueCoursePlaylist() {
   if (!activeCourseRun) return;
   clearCourseAutoAdvanceTimer();
@@ -15026,13 +15269,14 @@ function renderDailyPlanIntroduction() {
       </div>
       <p class="eyebrow">Einleitung zur Tageseinheit</p>
       <h2>${plan?.title || plan?.name || "Tagesplan"}</h2>
-      <p class="course-intro-description"></p>
+      ${introImageUrl ? "" : '<p class="course-intro-description"></p>'}
       <p class="course-intro-state" aria-live="polite">Einleitung wird vorgelesen...</p>
-      <button class="secondary-action danger-action" type="button" data-action="stopIntro">Stoppen</button>
+      <button class="course-intro-stop" type="button" data-action="stopIntro">Stoppen</button>
       </div>
     </div>
   `;
-  coursePlayer.querySelector(".course-intro-description").textContent = plan?.description || "";
+  const introDescription = coursePlayer.querySelector(".course-intro-description");
+  if (introDescription) introDescription.textContent = plan?.description || "";
   coursePlayer.querySelector("[data-action='stopIntro']")?.addEventListener("click", async () => {
     const session = activeCourseRun?.session;
     stopInstructionAudio();
@@ -15207,13 +15451,22 @@ function resolveCourseUnitMedia(exercise) {
 function isCoursePauseExercise(exercise) {
   if (!exercise) return false;
   const media = resolveCourseUnitMedia(exercise);
-  const title = String(exercise.title || media?.title || "").toLocaleLowerCase("de-DE");
-  const isKnownPauseTitle = /\b(pause|ruhe|stille|entspann|klänge|klaenge)\b/.test(title);
-  return exercise.unitType === "pause"
+  const explicitPause = exercise.unitType === "pause"
     || exercise.mode === "media_pause"
     || exercise.kind === "pause"
-    || media?.kind === "pause"
-    || (isKnownPauseTitle && (exercise.mediaUrl || exercise.mediaId || media?.downloadUrl));
+    || media?.kind === "pause";
+  if (explicitPause) return true;
+
+  const title = String(exercise.title || media?.title || "").toLocaleLowerCase("de-DE");
+  const isKnownPauseTitle = /\b(pause|ruhe|stille|klaenge|klange)\b/.test(title.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+  // A video named "Entspannung" is still a video exercise unless it was
+  // explicitly inserted as a pause module. Otherwise course videos can be
+  // routed through the pause countdown and appear as a black, non-progressing unit.
+  return Boolean(
+    isKnownPauseTitle
+    && media?.mediaType === "audio"
+    && (exercise.mediaUrl || exercise.mediaId || media?.downloadUrl)
+  );
 }
 
 function stopCourseUnitMedia(clearSource = true) {
@@ -15239,6 +15492,16 @@ function stopCourseUnitMedia(clearSource = true) {
       videoElement.load();
     }
   });
+  if (courseVisibleVideo) {
+    courseVisibleVideo.pause();
+    courseVisibleVideo.loop = false;
+    if (clearSource) {
+      courseVisibleVideo.removeAttribute("src");
+      courseVisibleVideo.load();
+      courseVisibleVideo.remove();
+      courseVisibleVideo = null;
+    }
+  }
   coursePlaylistVideo.pause();
   coursePlaylistVideo.loop = false;
   if (clearSource) {
@@ -15326,6 +15589,38 @@ function fadeOutCoursePauseAudio(durationMs = 700) {
   });
 }
 
+function getCourseMediaPosterUrl(media) {
+  return String(media?.thumbnailDataUrl || "")
+    || resolveAppUrl(String(media?.thumbnailUrl || media?.posterUrl || (media?.mediaType === "image" ? media?.downloadUrl || "" : "")));
+}
+
+function waitForCourseVideoReady(videoElement, timeoutMs = 5000) {
+  if (!videoElement) return Promise.reject(new Error("Videoelement fehlt."));
+  if (videoElement.readyState >= 2) return Promise.resolve(true);
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const cleanup = () => {
+      videoElement.removeEventListener("loadeddata", handleReady);
+      videoElement.removeEventListener("canplay", handleReady);
+      videoElement.removeEventListener("error", handleError);
+      videoElement.removeEventListener("abort", handleError);
+      window.clearTimeout(timer);
+    };
+    const finish = (callback) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      callback();
+    };
+    const handleReady = () => finish(() => resolve(true));
+    const handleError = () => finish(() => reject(new Error("Video konnte nicht geladen werden.")));
+    const timer = window.setTimeout(() => finish(() => resolve(false)), timeoutMs);
+    videoElement.addEventListener("loadeddata", handleReady);
+    videoElement.addEventListener("canplay", handleReady);
+    videoElement.addEventListener("error", handleError);
+    videoElement.addEventListener("abort", handleError);
+  });
+}
 async function startCourseUnitMedia(exercise) {
   if (!coursePlayer || !activeCourseRun) return false;
   const media = resolveCourseUnitMedia(exercise);
@@ -15339,40 +15634,74 @@ async function startCourseUnitMedia(exercise) {
     const container = coursePlayer.querySelector("[data-course-video-container]")
       || coursePlayer.querySelector(".course-unit-media");
     if (!container) return false;
-    const mediaElement = coursePlaylistVideo;
     const mediaUrl = resolveAppUrl(media.downloadUrl);
+    const posterUrl = getCourseMediaPosterUrl(media);
+    if (courseVisibleVideo) {
+      courseVisibleVideo.pause();
+      courseVisibleVideo.removeAttribute("src");
+      courseVisibleVideo.load();
+      courseVisibleVideo.remove();
+    }
+    const mediaElement = document.createElement("video");
+    courseVisibleVideo = mediaElement;
+    mediaElement.src = mediaUrl;
     mediaElement.className = "media-library-preview course-playlist-video";
     mediaElement.controls = false;
+    mediaElement.preload = "auto";
+    mediaElement.playsInline = true;
     mediaElement.style.position = "";
     mediaElement.style.width = "";
     mediaElement.style.height = "";
     mediaElement.style.opacity = "";
     mediaElement.style.pointerEvents = "";
+    mediaElement.onended = null;
+    mediaElement.onerror = null;
+    mediaElement.onabort = null;
+    mediaElement.onplaying = null;
+    if (posterUrl) mediaElement.poster = posterUrl;
+    else mediaElement.removeAttribute("poster");
     container.replaceChildren(mediaElement);
-    if (coursePlaylistPrimedVideoUrl !== mediaUrl || mediaElement.src !== mediaUrl) {
-      mediaElement.src = mediaUrl;
-      coursePlaylistPrimedVideoUrl = mediaUrl;
-    }
+    mediaElement.load();
     mediaElement.setAttribute("playsinline", "");
     mediaElement.setAttribute("webkit-playsinline", "");
     mediaElement.muted = false;
     mediaElement.defaultMuted = false;
     mediaElement.volume = 1;
-    mediaElement.currentTime = 0;
     const isTimedPause = isCoursePauseExercise(exercise);
     const shouldLoop = isTimedPause || media.playbackMode === "loop";
     mediaElement.loop = shouldLoop;
+    mediaElement.onerror = () => {
+      if (state) {
+        state.innerHTML = '<span>Video konnte nicht geladen werden.</span> <button class="primary-action course-media-start" type="button" data-action="playMedia">Erneut versuchen</button>';
+      }
+    };
+    mediaElement.onabort = mediaElement.onerror;
+    mediaElement.onplaying = () => {
+      coursePlaylistVideoAudioUnlocked = true;
+      if (state) state.textContent = "";
+    };
     if (!shouldLoop) {
-      mediaElement.addEventListener("ended", () => coursePlayer.querySelector("[data-action='done']")?.click(), { once: true });
+      mediaElement.onended = () => coursePlayer.querySelector("[data-action='done']")?.click();
     }
+    if (state) state.textContent = "Video wird geladen ...";
     try {
+      await waitForCourseVideoReady(mediaElement, 5000);
+      try {
+        mediaElement.currentTime = 0;
+      } catch (seekError) {
+        // Some mobile browsers only allow seeking after playback starts.
+      }
       await mediaElement.play();
       coursePlaylistVideoAudioUnlocked = true;
-      if (state) {
-        state.textContent = "";
-      }
+      if (state) state.textContent = "";
       return true;
     } catch (error) {
+      if (mediaElement.error) {
+        if (state) {
+          state.innerHTML = '<span>Video konnte nicht geladen werden.</span> <button class="primary-action course-media-start" type="button" data-action="playMedia">Erneut versuchen</button>';
+        }
+        return false;
+      }
       // Mobile Safari commonly blocks audible autoplay after an automatic
       // playlist transition. Muted playback remains permitted.
       mediaElement.muted = true;
@@ -15487,13 +15816,16 @@ function renderCoursePlayer() {
   }
   const progress = Math.round((index / Math.max(1, exercises.length)) * 100);
   const isMediaPause = isCoursePauseExercise(exercise);
-  const isMediaExercise = exercise.mode === "media_exercise";
   const media = resolveCourseUnitMedia(exercise);
+  const isMediaExercise = Boolean(media?.downloadUrl) && !isMediaPause;
+  const pauseBackground = isMediaPause ? getDailyPlanPauseBackgroundImage(exercise) : null;
+  const pauseBackgroundUrl = pauseBackground?.downloadUrl ? resolveAppUrl(pauseBackground.downloadUrl) : "";
   const isFullscreenVideo = media?.mediaType === "video";
   setCourseVideoFullscreen(isFullscreenVideo);
   coursePlayer.innerHTML = `
-    <div class="course-player-card${isMediaPause ? " course-player-pause-mode" : ""}${isFullscreenVideo ? " course-video-card" : ""}">
-      ${isMediaPause ? '<div class="course-pause-ambient" aria-hidden="true"><span></span><span></span><span></span></div>' : ""}
+    <div class="course-player-card${isMediaPause ? " course-player-pause-mode" : ""}${pauseBackgroundUrl ? " has-pause-background" : ""}${isFullscreenVideo ? " course-video-card" : ""}">
+      ${pauseBackgroundUrl ? `<img class="course-pause-background" src="${mediaLibraryEscape(pauseBackgroundUrl)}" alt="" aria-hidden="true">` : ""}
+      ${isMediaPause && !pauseBackgroundUrl ? '<div class="course-pause-ambient" aria-hidden="true"><span></span><span></span><span></span></div>' : ""}
       <div class="course-player-context">
         <span>Kurs</span>
         <strong>${course?.name || "Kurs"}</strong>
@@ -15673,7 +16005,7 @@ function handleCoursePlayerClick(event) {
   persistCourseModuleData();
   saveCourseSessionToCloud(session).catch(() => {});
   if (activeCourseRun.playlistMode) {
-    continueCoursePlaylist();
+    runCourseTransition(exercise, () => continueCoursePlaylist());
   } else {
     renderCoursePause(activeCourseRun.course, exercise);
   }
@@ -17229,4 +17561,3 @@ function transactionDone(transaction) {
     transaction.onabort = () => reject(transaction.error);
   });
 }
-

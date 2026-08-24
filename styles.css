@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   color-scheme: light;
   --ink: #17202a;
   --muted: #637083;
@@ -2316,24 +2316,36 @@ body.course-media-locked .playback-stage #recordingPlayer {
   font-size: 0.72rem;
   line-height: 1.2;
 }
-.course-intro-stop {
-  justify-self: center;
-  min-width: 132px;
-  min-height: 42px;
-  margin-top: 4px;
-  padding: 0 22px;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  border-radius: 999px;
-  background: rgba(8, 17, 26, 0.34);
-  color: #fff;
-  font-size: 0.95rem;
-  font-weight: 900;
-  box-shadow: none;
-}
-.course-intro-stop:active {
-  transform: translateY(1px);
+.course-intro-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
 }
 
+.course-intro-action {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 8px;
+  background: rgba(8, 17, 26, 0.62);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 950;
+  box-shadow: none;
+  backdrop-filter: blur(10px);
+}
+
+.course-intro-action.is-danger {
+  background: rgba(8, 17, 26, 0.72);
+  color: #ffe6eb;
+}
+
+.course-intro-action:active {
+  transform: translateY(1px);
+}
 .course-intro-description {
   margin: 0;
   color: var(--ink);
@@ -5284,7 +5296,7 @@ body.recording-focus.recording-overview .result-panel {
 .breathing-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 1200;
   display: grid;
   place-items: center;
   padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
@@ -5316,17 +5328,14 @@ body.recording-focus.recording-overview .result-panel {
 }
 
 .breathing-overlay[data-phase="hold"] .breathing-ball {
-  transform: scale(1);
   background: radial-gradient(circle at 34% 26%, #fffde9 0, #ffe8a0 12%, #f6ba4c 48%, #ba7315 100%);
 }
 
 .breathing-overlay[data-phase="exhale"] .breathing-ball {
-  transform: scale(1);
   background: radial-gradient(circle at 34% 26%, #f2fbff 0, #a9ddff 12%, #4d9fee 48%, #1c5d9d 100%);
 }
 
 .breathing-overlay[data-phase="pause"] .breathing-ball {
-  transform: scale(0.64);
   background: radial-gradient(circle at 34% 26%, #ffffff 0, #dde5e8 18%, #91a2a9 75%, #55636a 100%);
 }
 
@@ -5372,9 +5381,6 @@ body.breathing-exercise-active .repeat-counter-overlay {
 
 body.breathing-exercise-active .camera-panel {
   background: #101820;
-}
-
-  to { transform: scale(0.64); }
 }
 
 @media (max-width: 420px) {
@@ -6062,4 +6068,208 @@ body.course-video-fullscreen .course-video-card .course-media-state {
   .course-pause-inline-edit {
     grid-template-columns: 1fr;
   }
+}
+
+.course-player-card .course-actions-bd,
+.course-intro-card .course-actions-bd,
+body.course-video-fullscreen .course-video-card .course-actions.course-actions-bd,
+.breathing-course-actions.course-actions-bd {
+  position: absolute;
+  right: 18px;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 18px;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: auto;
+}
+
+.course-actions-bd .primary-action {
+  display: none;
+}
+
+.course-actions-bd .secondary-action,
+body.course-video-fullscreen .course-video-card .course-actions.course-actions-bd .secondary-action {
+  min-width: 0;
+  min-height: 52px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(8, 17, 26, 0.68);
+  color: #fff;
+  box-shadow: none;
+  font-size: clamp(0.95rem, 3.5vw, 1.15rem);
+  font-weight: 950;
+  backdrop-filter: blur(10px);
+}
+
+.course-actions-bd .danger-action,
+body.course-video-fullscreen .course-video-card .course-actions.course-actions-bd .danger-action {
+  background: rgba(8, 17, 26, 0.74);
+  color: #ffe6eb;
+}
+
+.course-actions-bd .secondary-action:active {
+  transform: translateY(1px);
+}
+
+
+body.course-breathing-active .camera-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  border-radius: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(37, 198, 184, 0.18), transparent 30%),
+    #101820;
+}
+
+body.course-breathing-active .breathing-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-rows: minmax(70px, 0.18fr) minmax(280px, 1fr) auto;
+  place-items: stretch;
+  padding: max(16px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 50% 34%, rgba(43, 205, 190, 0.22), transparent 34%),
+    #101820;
+}
+
+body.course-breathing-active .breathing-overlay.is-hidden {
+  display: none !important;
+}
+
+body.course-breathing-active .breathing-visual {
+  grid-row: 2;
+  align-self: center;
+  justify-self: center;
+  width: min(88vw, 420px);
+  transform: translateY(-12px);
+}
+
+body.course-breathing-active .breathing-ball {
+  width: clamp(160px, 42vw, 260px);
+}
+
+body.course-breathing-active .breathing-stop {
+  min-width: 128px;
+  padding: 9px 18px;
+  background: rgba(255,255,255,0.16);
+}
+
+body.course-breathing-active .breathing-course-context.course-player-context {
+  top: auto;
+  right: 18px;
+  bottom: calc(max(18px, env(safe-area-inset-bottom)) + 86px);
+  left: 18px;
+}
+
+body.course-breathing-active .breathing-course-actions.course-actions-bd {
+  right: 18px;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 18px;
+}
+
+@media (max-width: 520px) {
+  body.course-breathing-active .breathing-overlay {
+    grid-template-rows: minmax(58px, 0.14fr) minmax(270px, 1fr) auto;
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+  }
+
+  body.course-breathing-active .breathing-visual {
+    width: min(90vw, 360px);
+    transform: translateY(-18px);
+  }
+
+  body.course-breathing-active .breathing-ball {
+    width: clamp(150px, 52vw, 220px);
+  }
+}.breathing-course-context.course-player-context {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  right: 18px;
+  left: 18px;
+  z-index: 8;
+  width: auto;
+  margin: 0;
+  color: #fff;
+  background: rgba(8, 17, 26, 0.58);
+  border-color: rgba(255, 255, 255, 0.24);
+  backdrop-filter: blur(10px);
+}
+
+.breathing-course-context.course-player-context strong,
+.breathing-course-context.course-player-context small {
+  color: #fff;
+}
+
+.breathing-course-actions.is-hidden,
+.breathing-course-context.is-hidden {
+  display: none !important;
+}
+
+@media (max-width: 520px) {
+  .course-player-card .course-actions-bd,
+  .course-intro-card .course-actions-bd,
+  body.course-video-fullscreen .course-video-card .course-actions.course-actions-bd,
+  .breathing-course-actions.course-actions-bd {
+    right: 14px;
+    left: 14px;
+    gap: 8px;
+  }
+
+  .course-actions-bd .secondary-action,
+  body.course-video-fullscreen .course-video-card .course-actions.course-actions-bd .secondary-action {
+    min-height: 48px;
+    padding: 0 8px;
+  }
+}
+
+body.breathing-preview-idle .camera-panel {
+  position: relative;
+  min-height: min(64vh, 560px);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(43, 205, 190, 0.20), transparent 34%),
+    #101820;
+}
+
+body.breathing-preview-idle .camera-panel video,
+body.breathing-preview-idle .camera-overlay,
+body.breathing-preview-idle .karaoke-overlay,
+body.breathing-preview-idle #liveWaveform,
+body.breathing-preview-idle #frequencyTimeline,
+body.breathing-preview-idle .voice-frequency-overlay,
+body.breathing-preview-idle .repeat-counter-overlay,
+body.breathing-preview-idle .camera-start-overlay,
+body.breathing-preview-idle .course-player-context,
+body.breathing-preview-idle .course-actions-bd {
+  display: none !important;
+}
+
+body.breathing-preview-idle .breathing-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: transparent;
+  pointer-events: none;
+}
+
+body.breathing-preview-idle .breathing-stop,
+body.breathing-preview-idle .breathing-course-context,
+body.breathing-preview-idle .breathing-course-actions {
+  display: none !important;
+}
+
+body.breathing-preview-idle .breathing-visual {
+  transform: translateY(-10px);
 }

@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getAuth,
   signInAnonymously,
@@ -204,6 +204,8 @@ const breathingPhase = document.querySelector("#breathingPhase");
 const breathingRound = document.querySelector("#breathingRound");
 const breathingCountdown = document.querySelector("#breathingCountdown");
 const breathingStopButton = document.querySelector("#breathingStopButton");
+const breathingCourseContext = document.querySelector("#breathingCourseContext");
+const breathingCourseActions = document.querySelector("#breathingCourseActions");
 const breathingSettings = document.querySelector("#breathingSettings");
 const breathingInhale = document.querySelector("#breathingInhale");
 const breathingHold = document.querySelector("#breathingHold");
@@ -349,6 +351,9 @@ instructionAudio.preload = "auto";
 const coursePlaylistAudio = new Audio();
 coursePlaylistAudio.preload = "auto";
 coursePlaylistAudio.playsInline = true;
+const breathingVoiceAudio = new Audio();
+breathingVoiceAudio.preload = "auto";
+breathingVoiceAudio.playsInline = true;
 const coursePlaylistVideo = document.createElement("video");
 coursePlaylistVideo.preload = "auto";
 coursePlaylistVideo.controls = true;
@@ -592,6 +597,7 @@ let breathingSessionId = 0;
 let breathingCountdownTimerId = null;
 let breathingBallAnimation = null;
 let breathingSpeechUtterance = null;
+let breathingPhaseAudioCache = new Map();
 let isBreathingExerciseRunning = false;
 let isCalibrating = false;
 let calibrationReturnView = "record";
@@ -892,6 +898,7 @@ async function init() {
   drawWaveform(playbackWaveform, [], { mode: "playback" });
   updateEditorForm();
   setupKaraokeText();
+  syncBreathingRecordPreview();
   permissionState.textContent = "Bereit";
   message.textContent = "Kamera und Mikrofon vor der ersten Übung aktivieren.";
   recordButton.disabled = false;
@@ -957,7 +964,7 @@ recordButton.addEventListener("click", async (event) => {
 
   stopExercisePreview();
   const selectedBreathingExercise = getActiveRecordingExercise();
-  if (selectedBreathingExercise?.mode === "breathing") {
+  if (isBreathingExercise(selectedBreathingExercise)) {
     await startBreathingExercise(selectedBreathingExercise);
     return;
   }
@@ -995,6 +1002,11 @@ previewStopButton?.addEventListener("click", () => {
 
 breathingStopButton?.addEventListener("click", () => {
   stopBreathingExercise("Atemübung beendet.");
+});
+breathingCourseActions?.addEventListener("click", (event) => {
+  const action = event.target.closest("button")?.dataset.action;
+  if (!action) return;
+  finishCourseBreathingAction(action);
 });
 
 savePatientButton.addEventListener("click", async () => {
@@ -1092,6 +1104,7 @@ exerciseName.addEventListener("change", () => {
   loadRecordingKaraokeSpeedForCurrentExercise();
   setupKaraokeText();
   renderRecordingExerciseShortcuts();
+  syncBreathingRecordPreview();
   message.textContent = `Übung ausgewählt: ${getExerciseLabel()}`;
 });
 
@@ -1100,6 +1113,7 @@ recordingModeFilter?.addEventListener("change", () => {
   renderRecordingExerciseOptions(exerciseName.value);
   loadRecordingKaraokeSpeedForCurrentExercise();
   setupKaraokeText();
+  syncBreathingRecordPreview();
   message.textContent = recordingModeFilter.value
     ? `Funktionsart gefiltert: ${getEditorModeLabel(recordingModeFilter.value)}`
     : "Alle Funktionsarten sichtbar.";
@@ -1702,13 +1716,14 @@ function renderBreathingExtraSteps() {
 
 function getBreathingSettings(exercise = null) {
   const source = exercise?.breathing || exercise?.breathingSettings || {};
+  const useVoice = true;
   return {
     inhale: clampBreathingSeconds(source.inhale ?? breathingInhale?.value, 4, 1),
     hold: clampBreathingSeconds(source.hold ?? breathingHold?.value, 2),
     exhale: clampBreathingSeconds(source.exhale ?? breathingExhale?.value, 6, 1),
     pause: clampBreathingSeconds(source.pause ?? breathingPause?.value, 2),
     repeats: Math.max(1, Math.min(30, Math.round(Number(source.repeats ?? breathingRepeats?.value) || 5))),
-    useVoice: true,
+    useVoice,
     extraSteps: getBreathingExtraSteps(exercise),
   };
 }
@@ -1719,22 +1734,40 @@ function getBreathingExerciseDuration(exercise) {
   return (settings.inhale + settings.hold + settings.exhale + settings.pause + extraSeconds) * settings.repeats;
 }
 
-function updateBreathingOverlay(phase, round, settings, remaining, startAnimation = true) {
+function getBreathingPhaseScale(phaseKey) {
+  if (phaseKey === "inhale" || phaseKey === "hold") return 1;
+  return 0.64;
+}
+
+function updateBreathingOverlay(phase, round, settings, remaining, startAnimation = true, previousPhase = null) {
   if (!breathingOverlay) return;
   breathingOverlay.classList.remove("is-hidden");
   breathingOverlay.dataset.phase = phase.key;
   if (startAnimation && breathingBall) {
-    breathingBallAnimation?.cancel();
-    const fromScale = phase.key === "inhale" ? 0.64 : 1;
-    const toScale = phase.key === "inhale" ? 1 : (phase.key === "exhale" ? 0.64 : fromScale);
+    breathingBallAnimation?.cancel?.();
+    const fromScale = previousPhase ? getBreathingPhaseScale(previousPhase.key) : (phase.key === "inhale" ? 0.64 : getBreathingPhaseScale(phase.key));
+    const toScale = getBreathingPhaseScale(phase.key);
+    const duration = Math.max(400, phase.seconds * 1000);
+    breathingBall.style.transition = "none";
     breathingBall.style.transform = `scale(${fromScale})`;
-    breathingBallAnimation = breathingBall.animate(
-      [{ transform: `scale(${fromScale})` }, { transform: `scale(${toScale})` }],
-      { duration: Math.max(400, phase.seconds * 1000), easing: "ease-in-out", fill: "forwards" },
-    );
-    breathingBallAnimation.onfinish = () => {
+    void breathingBall.offsetWidth;
+    breathingBall.style.transition = `transform ${duration}ms ease-in-out`;
+    window.requestAnimationFrame(() => {
+      breathingBall.style.transform = `scale(${toScale})`;
+    });
+    let cancelled = false;
+    const animationTimeoutId = window.setTimeout(() => {
+      if (cancelled) return;
+      breathingBall.style.transition = "";
       breathingBall.style.transform = `scale(${toScale})`;
       breathingBallAnimation = null;
+    }, duration + 80);
+    breathingBallAnimation = {
+      cancel() {
+        cancelled = true;
+        window.clearTimeout(animationTimeoutId);
+        breathingBall.style.transition = "none";
+      },
     };
   }
   if (breathingPhase) breathingPhase.textContent = phase.label;
@@ -1744,24 +1777,29 @@ function updateBreathingOverlay(phase, round, settings, remaining, startAnimatio
 
 function waitForBreathingPhase(seconds, sessionId, onTick) {
   return new Promise((resolve) => {
+    window.clearInterval(breathingCountdownTimerId);
+    let settled = false;
+    let timerId = null;
     const endAt = Date.now() + seconds * 1000;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      if (timerId) window.clearInterval(timerId);
+      if (breathingCountdownTimerId === timerId) breathingCountdownTimerId = null;
+      resolve(value);
+    };
     const tick = () => {
       if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) {
-        window.clearInterval(breathingCountdownTimerId);
-        breathingCountdownTimerId = null;
-        resolve(false);
+        finish(false);
         return;
       }
       const remaining = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
       onTick(remaining);
-      if (remaining <= 0) {
-        window.clearInterval(breathingCountdownTimerId);
-        breathingCountdownTimerId = null;
-        resolve(true);
-      }
+      if (remaining <= 0) finish(true);
     };
+    timerId = window.setInterval(tick, 120);
+    breathingCountdownTimerId = timerId;
     tick();
-    breathingCountdownTimerId = window.setInterval(tick, 120);
   });
 }
 
@@ -1789,12 +1827,24 @@ async function completeCourseBreathingExercise(exercise) {
   }
 }
 
+function clearBreathingPhaseAudioCache() {
+  breathingPhaseAudioCache.forEach((url) => {
+    if (String(url || "").startsWith("blob:")) URL.revokeObjectURL(url);
+  });
+  breathingPhaseAudioCache = new Map();
+}
+
 function stopBreathingVoice() {
   if ("speechSynthesis" in window) {
     try {
       window.speechSynthesis.cancel();
     } catch (error) {}
   }
+  try {
+    breathingVoiceAudio.pause();
+    breathingVoiceAudio.removeAttribute("src");
+    breathingVoiceAudio.load();
+  } catch (error) {}
   breathingSpeechUtterance = null;
 }
 
@@ -1810,34 +1860,157 @@ async function unlockBreathingVoice() {
   }
 }
 
+function getBreathingPhaseVoiceText(phase) {
+  if (!phase) return "";
+  if (phase.key === "exhale") return "Langsam ausatmen";
+  return String(phase.label || "").trim();
+}
+
+function getGermanSpeechVoice() {
+  const voices = window.speechSynthesis?.getVoices?.() || [];
+  return voices.find((voice) => String(voice.lang || "").toLowerCase().startsWith("de")) || null;
+}
+
+function createBreathingUtterance(text) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  const germanVoice = getGermanSpeechVoice();
+  if (germanVoice) utterance.voice = germanVoice;
+  utterance.lang = "de-DE";
+  utterance.rate = 0.82;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  return utterance;
+}
+
 function speakBreathingPhase(phase) {
   if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return false;
-  const text = phase?.key === "exhale" ? "Langsam ausatmen" : String(phase?.label || "").trim();
+  const text = getBreathingPhaseVoiceText(phase);
   if (!text) return false;
   stopBreathingVoice();
+
+  const speak = (retry = false) => {
+    try {
+      window.speechSynthesis.resume?.();
+      const utterance = createBreathingUtterance(text);
+      utterance.onend = () => {
+        if (breathingSpeechUtterance === utterance) breathingSpeechUtterance = null;
+      };
+      utterance.onerror = () => {
+        if (breathingSpeechUtterance === utterance) breathingSpeechUtterance = null;
+        if (!retry) window.setTimeout(() => speak(true), 180);
+      };
+      breathingSpeechUtterance = utterance;
+      window.speechSynthesis.speak(utterance);
+      return true;
+    } catch (error) {
+      if (breathingSpeechUtterance) breathingSpeechUtterance = null;
+      return false;
+    }
+  };
+
+  const started = speak(false);
+  window.setTimeout(() => window.speechSynthesis.resume?.(), 80);
+  window.setTimeout(() => {
+    if (breathingSpeechUtterance && !window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+      speak(true);
+    }
+  }, 320);
+  return started;
+}
+async function prepareBreathingPhaseAudio(phases) {
+  clearBreathingPhaseAudioCache();
+  const texts = [...new Set(phases.map((phase) => getBreathingPhaseVoiceText(phase)).filter(Boolean))];
+  const entries = await Promise.all(texts.map(async (text) => {
+    const url = await createTemporaryVoiceAudio(text).catch(() => "");
+    return url ? [text, url] : null;
+  }));
+  breathingPhaseAudioCache = new Map(entries.filter(Boolean));
+}
+
+function playBreathingPhaseVoice(phase) {
+  const text = getBreathingPhaseVoiceText(phase);
+  const audioUrl = text ? breathingPhaseAudioCache.get(text) : "";
+  if (!audioUrl) return speakBreathingPhase(phase);
+  stopBreathingVoice();
   try {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "de-DE";
-    utterance.rate = 0.86;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    utterance.onend = () => {
-      if (breathingSpeechUtterance === utterance) breathingSpeechUtterance = null;
-    };
-    utterance.onerror = () => {
-      if (breathingSpeechUtterance === utterance) breathingSpeechUtterance = null;
-    };
-    breathingSpeechUtterance = utterance;
-    window.speechSynthesis.speak(utterance);
-    window.setTimeout(() => window.speechSynthesis.resume?.(), 80);
-    window.setTimeout(() => window.speechSynthesis.resume?.(), 600);
+    breathingVoiceAudio.src = audioUrl;
+    breathingVoiceAudio.currentTime = 0;
+    breathingVoiceAudio.muted = false;
+    breathingVoiceAudio.volume = 1;
+    breathingVoiceAudio.play().catch(() => speakBreathingPhase(phase));
     return true;
   } catch (error) {
-    breathingSpeechUtterance = null;
-    return false;
+    return speakBreathingPhase(phase);
   }
 }
-function stopBreathingExercise(statusText = "Atemübung beendet.") {
+
+function getCourseBreathingMode() {
+  return Boolean(activeCourseRun && !isPreviewingExercise && isBreathingExercise(getActiveCourseExercise()));
+}
+
+function setBreathingCourseUiVisible(visible) {
+  breathingCourseContext?.classList.toggle("is-hidden", !visible);
+  breathingCourseActions?.classList.toggle("is-hidden", !visible);
+  breathingStopButton?.classList.toggle("is-hidden", Boolean(visible));
+  if (!visible) {
+    if (breathingCourseContext) breathingCourseContext.innerHTML = "";
+    return;
+  }
+  const run = activeCourseRun;
+  const index = Number(run?.index || 0);
+  const total = run?.plan?.exercises?.length || 0;
+  if (breathingCourseContext) {
+    breathingCourseContext.innerHTML = `
+      <span>Kurs</span>
+      <strong>${escapeHtml(run?.course?.name || "Kurs")}</strong>
+      <small>${escapeHtml(run?.plan?.title || run?.plan?.name || "Tagesplan")} · Übung ${index + 1} von ${total}</small>
+    `;
+  }
+}
+
+async function finishCourseBreathingAction(action) {
+  const exercise = getActiveCourseExercise();
+  if (!activeCourseRun || !isBreathingExercise(exercise)) {
+    stopBreathingExercise("Atemübung beendet.");
+    return;
+  }
+  if (action === "cancel") {
+    stopBreathingExercise("Atemübung beendet.");
+    return;
+  }
+  const session = activeCourseRun.session;
+  session.completedExerciseIds = Array.isArray(session.completedExerciseIds) ? session.completedExerciseIds : [];
+  session.skippedExerciseIds = Array.isArray(session.skippedExerciseIds) ? session.skippedExerciseIds : [];
+  if (action === "skip" && exercise.exerciseId && !session.skippedExerciseIds.includes(exercise.exerciseId)) {
+    session.skippedExerciseIds.push(exercise.exerciseId);
+  }
+  stopBreathingExercise(action === "skip" ? "Atemübung übersprungen." : "Atemübung beendet.", { keepCourseRun: true });
+  if (action === "done") {
+    await completeCourseBreathingExercise(exercise);
+    return;
+  }
+  activeCourseRun.index += 1;
+  session.currentExerciseIndex = activeCourseRun.index;
+  session.status = activeCourseRun.index >= (activeCourseRun.plan?.exercises?.length || 0)
+    ? "completed"
+    : (activeCourseRun.playlistMode ? "in_progress" : "paused");
+  session.updatedAt = new Date().toISOString();
+  courseSessions = mergeById(courseSessions, [session]);
+  persistCourseModuleData();
+  await saveCourseSessionToCloud(session).catch(() => {});
+  if (session.status !== "completed" && activeCourseRun.playlistMode) {
+    runCourseTransition(exercise, () => continueCoursePlaylist());
+  } else {
+    renderCourseViews();
+  }
+}
+function stopBreathingExercise(statusText = "Atemübung beendet.", options = {}) {
+  const shouldCancelCourseRun = Boolean(
+    activeCourseRun
+    && !isPreviewingExercise
+    && isBreathingExercise(getActiveCourseExercise())
+    && !options.keepCourseRun
+  );
   breathingSessionId += 1;
   isBreathingExerciseRunning = false;
   window.clearInterval(breathingCountdownTimerId);
@@ -1845,8 +2018,10 @@ function stopBreathingExercise(statusText = "Atemübung beendet.") {
   breathingBallAnimation?.cancel();
   breathingBallAnimation = null;
   stopBreathingVoice();
+  clearBreathingPhaseAudioCache();
   breathingOverlay?.classList.add("is-hidden");
-  document.body.classList.remove("breathing-exercise-active");
+  setBreathingCourseUiVisible(false);
+  document.body.classList.remove("breathing-exercise-active", "course-breathing-active", "breathing-preview-idle");
   recordButton.disabled = false;
   recordButton.textContent = "Übung starten";
   if (isPreviewingExercise) {
@@ -1856,24 +2031,45 @@ function stopBreathingExercise(statusText = "Atemübung beendet.") {
     previewExerciseButton.textContent = "Vorführung";
   }
   message.textContent = statusText;
+  if (shouldCancelCourseRun) {
+    cancelActiveCourseRunFromBreathing();
+  } else {
+    window.setTimeout(syncBreathingRecordPreview, 0);
+  }
 }
 
 async function startBreathingExercise(exercise, options = {}) {
-  if (!exercise || isBreathingExerciseRunning) return;
+  if (!exercise) return;
+  if (isBreathingExerciseRunning) {
+    const overlayVisible = breathingOverlay && !breathingOverlay.classList.contains("is-hidden");
+    if (overlayVisible) return;
+    resetBreathingRuntimeState();
+  }
   clearCourseAutoAdvanceTimer();
+  setCourseVideoFullscreen(false);
+  stopCourseUnitMedia();
+  stopCoursePauseMusic();
   stopInstructionAudio();
   stopBreathingVoice();
+  clearBreathingPhaseAudioCache();
+
   const settings = getBreathingSettings(exercise);
-  await unlockBreathingVoice();
+  unlockBreathingVoice().catch(() => false);
+
   const sessionId = ++breathingSessionId;
   isBreathingExerciseRunning = true;
+  document.body.classList.remove("breathing-preview-idle");
   document.body.classList.add("breathing-exercise-active");
+  const courseBreathingMode = Boolean(activeCourseRun && !options.preview && isBreathingExercise(getActiveCourseExercise()));
+  if (courseBreathingMode) clearCourseRecordingContext();
+  setBreathingCourseUiVisible(courseBreathingMode);
   recordButton.disabled = true;
   recordButton.textContent = options.preview ? "Vorführung läuft" : "Atemübung läuft";
   if (options.preview) {
     isPreviewingExercise = true;
     setPreviewSessionState(true, "Vorführung aktiv");
   }
+
   const phases = [
     { key: "inhale", label: "Einatmen", seconds: settings.inhale },
     { key: "hold", label: "Halten", seconds: settings.hold },
@@ -1885,22 +2081,33 @@ async function startBreathingExercise(exercise, options = {}) {
       seconds: step.seconds,
     })),
   ].filter((phase) => phase.seconds > 0);
+
+  if (phases[0]) {
+    updateBreathingOverlay(phases[0], 1, settings, phases[0].seconds, true, null);
+  }
+
+  if (settings.useVoice) {
+    prepareBreathingPhaseAudio(phases).catch(() => clearBreathingPhaseAudioCache());
+  }
+
   try {
+    let previousPhase = null;
     for (let round = 1; round <= settings.repeats; round += 1) {
       for (const phase of phases) {
         if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) return;
-        updateBreathingOverlay(phase, round, settings, phase.seconds);
+        updateBreathingOverlay(phase, round, settings, phase.seconds, true, previousPhase);
         if (settings.useVoice) {
-          speakBreathingPhase(phase);
+          playBreathingPhaseVoice(phase);
         }
         const completed = await waitForBreathingPhase(phase.seconds, sessionId, (remaining) => {
-          if (sessionId === breathingSessionId) updateBreathingOverlay(phase, round, settings, remaining, false);
+          if (sessionId === breathingSessionId) updateBreathingOverlay(phase, round, settings, remaining, false, previousPhase);
         });
         if (!completed) return;
+        previousPhase = phase;
       }
     }
     if (sessionId !== breathingSessionId) return;
-    stopBreathingExercise("Sehr gut. Die Atemübung ist beendet.");
+    stopBreathingExercise("Sehr gut. Die Atemübung ist beendet.", { keepCourseRun: !options.preview });
     if (!options.preview) await completeCourseBreathingExercise(exercise);
   } catch (error) {
     stopBreathingExercise("Atemübung wurde unterbrochen.");
@@ -2071,7 +2278,7 @@ async function createStoredVoiceAudio(text, exerciseLabel, requestSettings = get
 async function startExercisePreview() {
   if (isRecording || mediaRecorder?.state === "recording") return;
   const breathingExercise = getActiveRecordingExercise();
-  if (breathingExercise?.mode === "breathing") {
+  if (isBreathingExercise(breathingExercise)) {
     await unlockInstructionAudio();
     await startBreathingExercise(breathingExercise, { preview: true });
     return;
@@ -5267,7 +5474,7 @@ function getActiveEditorExercise() {
 
 function getActiveRecordingExercise() {
   const courseExercise = getActiveCourseExercise();
-  if (courseExercise?.mode === "media_exercise" && courseExercise.exerciseId === exerciseName.value) {
+  if (normalizeEditorExerciseModeValue(courseExercise?.mode) === "media_exercise" && courseExercise.exerciseId === exerciseName.value) {
     return hydrateEditorExercise({
       name: courseExercise.title || "Medienübung",
       mode: "long_text",
@@ -5303,13 +5510,29 @@ function getActiveRecordingExercise() {
     ),
   );
   if (standardExercise) return hydrateEditorExercise(standardExercise);
+
+  const fallbackBreathingName = candidates.find((candidate) => looksLikeBreathingExerciseName(candidate));
+  if (fallbackBreathingName) {
+    return hydrateEditorExercise({
+      name: selectedLabel || fallbackBreathingName || "Ruhige Bauchatmung",
+      mode: "breathing",
+      content: "Folgen Sie der Atemkugel in Ihrem eigenen ruhigen Tempo.",
+      breathing: getBreathingSettings(),
+      recordAudio: false,
+      recordVideo: false,
+      useVideo: false,
+      volumeAnalysis: false,
+      frequencyAnalysis: false,
+    });
+  }
+
   return null;
 }
 
 function hydrateEditorExercise(exercise) {
   if (!exercise) return null;
 
-  const mode = exercise.mode || "syllables";
+  const mode = normalizeEditorExerciseModeValue(exercise.mode || "syllables");
   const speed = Number(exercise.speed || 3);
   const timing = exercise.timing || EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
   const content = exercise.content || getDefaultEditorContent(mode);
@@ -7029,8 +7252,23 @@ function getFilteredSavedEditorExercises() {
 }
 
 function normalizeEditorExerciseModeValue(mode) {
-  const normalizedMode = String(mode || "syllables").trim();
+  const normalizedMode = String(mode || "syllables").trim().toLowerCase();
+  if (["breathing", "breath", "breathing_exercise", "atem", "atemuebung", "atemübung"].includes(normalizedMode)) return "breathing";
+  if (["media", "media_exercise", "video", "image", "bild"].includes(normalizedMode)) return "media_exercise";
+  if (["media_pause", "pause", "audio_pause", "sound_pause"].includes(normalizedMode)) return "media_pause";
   return normalizedMode || "syllables";
+}
+
+function looksLikeBreathingExerciseName(value) {
+  const normalizedName = normalizeEditorExerciseName(value || "");
+  return /\b(atem|atmung|bauchatmung|atemuebung|atemübung|breathing)\b/.test(normalizedName);
+}
+
+function isBreathingExercise(exercise) {
+  if (!exercise) return false;
+  if (normalizeEditorExerciseModeValue(exercise.mode || exercise.type || exercise.kind || exercise.functionType) === "breathing") return true;
+  if (exercise.breathing || exercise.breathingSettings) return true;
+  return looksLikeBreathingExerciseName(exercise.name || exercise.title || exercise.exerciseName || exercise.exerciseId);
 }
 
 function getEditorModeLabel(mode) {
@@ -7116,6 +7354,7 @@ function renderRecordingExerciseOptions(preferredValue = exerciseName.value) {
   const fallbackValue = optionValues.find((value) => value !== "custom-editor") || "custom-editor";
   exerciseName.value = optionValues.includes(currentValue) ? currentValue : fallbackValue;
   renderRecordingExerciseShortcuts();
+  syncBreathingRecordPreview();
 }
 
 function getFilteredRecordingEditorExercises() {
@@ -12351,7 +12590,7 @@ function getExerciseLibraryItems() {
 }
 
 function estimateExerciseDurationSeconds(exercise) {
-  if (exercise?.mode === "breathing") return getBreathingExerciseDuration(exercise);
+  if (isBreathingExercise(exercise)) return getBreathingExerciseDuration(exercise);
   const timing = exercise?.timing || EDITOR_SPEEDS[exercise?.speed || 3] || EDITOR_SPEEDS[3];
   const text = String(exercise?.script || exercise?.content || exercise?.exerciseId || "");
   const units = text.split(/\s+/).filter(Boolean).length || 1;
@@ -12360,18 +12599,19 @@ function estimateExerciseDurationSeconds(exercise) {
 
 function buildCourseExercise(libraryItem) {
   const pauseDuration = Math.max(0, Math.min(300, Number(coursePauseDuration?.value) || 30));
-  const isMediaPause = libraryItem.mode === "media_pause";
-  const isBreathingExercise = libraryItem.mode === "breathing";
+  const normalizedLibraryMode = normalizeEditorExerciseModeValue(libraryItem.mode || libraryItem.type || libraryItem.kind || libraryItem.functionType);
+  const isMediaPause = normalizedLibraryMode === "media_pause";
+  const isBreathingExerciseItem = normalizedLibraryMode === "breathing";
   return {
     exerciseId: libraryItem.exerciseId,
     title: libraryItem.name,
     position: dailyPlanDraftExercises.length + 1,
-    duration: isMediaPause ? pauseDuration : (libraryItem.duration || 90),
+    duration: isBreathingExerciseItem ? getBreathingExerciseDuration(libraryItem) : (isMediaPause ? pauseDuration : (libraryItem.duration || 90)),
     repetitions: 1,
     category: libraryItem.category || "individuell",
     difficulty: libraryItem.difficulty || "leicht",
     unitType: isMediaPause ? "pause" : "exercise",
-    mode: libraryItem.mode || "syllables",
+    mode: normalizedLibraryMode || "syllables",
     mediaId: libraryItem.mediaId || "",
     mediaUrl: libraryItem.mediaUrl || "",
     mediaType: libraryItem.mediaType || "",
@@ -12383,13 +12623,13 @@ function buildCourseExercise(libraryItem) {
     backgroundImage: null,
     transitionType: "fade",
     transitionDuration: 1000,
-    recordAudio: !isMediaPause && !isBreathingExercise,
-    recordVideo: !isMediaPause && !isBreathingExercise,
-    useVideo: !isBreathingExercise,
+    recordAudio: !isMediaPause && !isBreathingExerciseItem,
+    recordVideo: !isMediaPause && !isBreathingExerciseItem,
+    useVideo: !isBreathingExerciseItem,
     useAudioGuide: true,
     useAvatarGuide: false,
-    volumeAnalysis: !isBreathingExercise,
-    frequencyAnalysis: !isBreathingExercise,
+    volumeAnalysis: !isBreathingExerciseItem,
+    frequencyAnalysis: !isBreathingExerciseItem,
     canSkip: true,
     autoEvaluation: true,
     patientHint: "",
@@ -12408,9 +12648,19 @@ function buildCourseExercise(libraryItem) {
 
 function normalizeCourseExercise(exercise, index = 0) {
   const normalized = { ...exercise, position: index + 1 };
+  const normalizedMode = normalizeEditorExerciseModeValue(normalized.mode || normalized.type || normalized.kind || normalized.functionType);
+  normalized.mode = normalizedMode;
   if (!isCoursePauseExercise(normalized)) {
+    const breathing = normalizedMode === "breathing";
     return {
       ...normalized,
+      mode: normalizedMode,
+      duration: breathing ? getBreathingExerciseDuration(normalized) : normalized.duration,
+      recordAudio: normalized.recordAudio ?? !breathing,
+      recordVideo: normalized.recordVideo ?? !breathing,
+      useVideo: normalized.useVideo ?? !breathing,
+      volumeAnalysis: normalized.volumeAnalysis ?? !breathing,
+      frequencyAnalysis: normalized.frequencyAnalysis ?? !breathing,
       transitionType: getCourseTransitionType(normalized.transitionType),
       transitionDuration: getCourseTransitionDuration(normalized.transitionDuration),
       pauseAfter: {
@@ -14397,6 +14647,30 @@ function clearCourseRecordingContext() {
   document.body.classList.remove("course-recording-mode");
 }
 
+function syncBreathingRecordPreview() {
+  if (!breathingOverlay) return;
+  if (isBreathingExerciseRunning || isPreviewingExercise || activeCourseRun?.playlistMode) return;
+
+  const shouldShow = document.body.dataset.activeView === "record" && isBreathingExercise(getActiveRecordingExercise());
+  document.body.classList.toggle("breathing-preview-idle", shouldShow);
+
+  if (!shouldShow) {
+    breathingOverlay.classList.add("is-hidden");
+    return;
+  }
+
+  const settings = getBreathingSettings(getActiveRecordingExercise());
+  breathingOverlay.classList.remove("is-hidden");
+  breathingOverlay.dataset.phase = "inhale";
+  breathingBallAnimation?.cancel?.();
+  if (breathingBall) {
+    breathingBall.style.transition = "none";
+    breathingBall.style.transform = "scale(0.64)";
+  }
+  if (breathingPhase) breathingPhase.textContent = "Einatmen";
+  if (breathingRound) breathingRound.textContent = `Bereit - ${settings.repeats} Runden`;
+  if (breathingCountdown) breathingCountdown.textContent = `${settings.inhale}s`;
+}
 function clearCourseAutoAdvanceTimer() {
   window.clearTimeout(courseAutoAdvanceTimerId);
   courseAutoAdvanceTimerId = 0;
@@ -14421,6 +14695,16 @@ function scheduleCourseExerciseStart(exercise) {
 function openNextCourseExercise(exercise, options = {}) {
   if (!exercise) return;
   const autoStart = options.autoStart ?? Boolean(activeCourseRun?.playlistMode);
+  if (isBreathingExercise(exercise)) {
+    prepareCourseExerciseInRecordView(exercise);
+    setActiveView("record");
+    window.setTimeout(() => {
+      startBreathingExercise(exercise, { fromCourse: true }).catch(() => {
+        setCoursePlayerStatus("Atemübung konnte nicht gestartet werden.");
+      });
+    }, autoStart ? 80 : 0);
+    return;
+  }
   if (exercise.mediaUrl || exercise.mediaId || isCoursePauseExercise(exercise)) {
     coursePlayer?.classList.remove("is-hidden");
     renderCoursePlayer();
@@ -14613,6 +14897,26 @@ function showCourseMediaLockMessage() {
   syncCourseMediaLock();
 }
 
+function cancelActiveCourseRunFromBreathing() {
+  const run = activeCourseRun;
+  if (!run?.session) return false;
+  clearCourseAutoAdvanceTimer();
+  window.clearTimeout(coursePauseTimerId);
+  stopCourseUnitMedia();
+  stopCoursePauseMusic();
+  const session = run.session;
+  session.status = "cancelled";
+  session.completedAt = new Date().toISOString();
+  session.updatedAt = session.completedAt;
+  courseSessions = mergeById(courseSessions, [session]);
+  persistCourseModuleData();
+  saveCourseSessionToCloud(session).catch(() => {});
+  coursePlayer?.classList.add("is-hidden");
+  clearActiveCourseRun();
+  renderMyCourses();
+  setActiveView("myCourses");
+  return true;
+}
 function clearActiveCourseRun() {
   setCourseVideoFullscreen(false);
   activeCourseRun = null;
@@ -14995,7 +15299,7 @@ function closeCourseTodayOverlay() {
 
 function getCourseTodayItemType(exercise) {
   if (isCoursePauseExercise(exercise)) return "Pauseneinheit";
-  if (exercise?.mode === "breathing") return "Atemübung";
+  if (isBreathingExercise(exercise)) return "Atemübung";
   if (exercise?.mediaType === "video") return "Video";
   if (exercise?.mediaType === "image") return "Bild";
   if (exercise?.mediaType === "audio") return "Audio";
@@ -15271,12 +15575,18 @@ function renderDailyPlanIntroduction() {
       <h2>${plan?.title || plan?.name || "Tagesplan"}</h2>
       ${introImageUrl ? "" : '<p class="course-intro-description"></p>'}
       <p class="course-intro-state" aria-live="polite">Einleitung wird vorgelesen...</p>
-      <button class="course-intro-stop" type="button" data-action="stopIntro">Stoppen</button>
+            <div class="course-actions course-actions-bd course-intro-actions">
+        <button class="secondary-action" type="button" data-action="finishIntro">Erledigt</button>
+        <button class="secondary-action" type="button" data-action="skipIntro">Überspringen</button>
+        <button class="secondary-action danger-action" type="button" data-action="stopIntro">Stoppen</button>
+      </div>
       </div>
     </div>
   `;
   const introDescription = coursePlayer.querySelector(".course-intro-description");
   if (introDescription) introDescription.textContent = plan?.description || "";
+  coursePlayer.querySelector("[data-action='finishIntro']")?.addEventListener("click", () => finishDailyPlanIntroductionManually());
+  coursePlayer.querySelector("[data-action='skipIntro']")?.addEventListener("click", () => finishDailyPlanIntroductionManually());
   coursePlayer.querySelector("[data-action='stopIntro']")?.addEventListener("click", async () => {
     const session = activeCourseRun?.session;
     stopInstructionAudio();
@@ -15294,6 +15604,22 @@ function renderDailyPlanIntroduction() {
   });
 }
 
+async function finishDailyPlanIntroductionManually() {
+  const run = activeCourseRun;
+  if (!run?.session || run.phase !== "introduction") return;
+  stopInstructionAudio();
+  stopCourseUnitMedia();
+  window.speechSynthesis?.cancel();
+  run.session.introPlayedAt = new Date().toISOString();
+  run.session.updatedAt = run.session.introPlayedAt;
+  run.phase = "exercise";
+  run.introManualAdvance = true;
+  courseSessions = mergeById(courseSessions, [run.session]);
+  persistCourseModuleData();
+  await saveCourseSessionToCloud(run.session).catch(() => {});
+  coursePlayer?.classList.add("is-hidden");
+  continueCoursePlaylist();
+}
 async function playDailyPlanIntroduction() {
   const run = activeCourseRun;
   if (!run?.plan?.description || run.session?.introPlayedAt) return true;
@@ -15402,6 +15728,7 @@ async function startCoursePreview(
   if (nextExercise) {
     if (shouldPlayIntroduction) {
       const introductionFinished = await playDailyPlanIntroduction();
+      if (activeCourseRun?.introManualAdvance) return;
       if (!introductionFinished) return;
     }
     if (!activeCourseRun || activeCourseRun.session?.id !== currentSession.id) return;
@@ -15821,6 +16148,7 @@ function renderCoursePlayer() {
   const pauseBackground = isMediaPause ? getDailyPlanPauseBackgroundImage(exercise) : null;
   const pauseBackgroundUrl = pauseBackground?.downloadUrl ? resolveAppUrl(pauseBackground.downloadUrl) : "";
   const isFullscreenVideo = media?.mediaType === "video";
+  const useCourseControlBar = Boolean(activeCourseRun?.playlistMode);
   setCourseVideoFullscreen(isFullscreenVideo);
   coursePlayer.innerHTML = `
     <div class="course-player-card${isMediaPause ? " course-player-pause-mode" : ""}${pauseBackgroundUrl ? " has-pause-background" : ""}${isFullscreenVideo ? " course-video-card" : ""}">
@@ -15838,10 +16166,10 @@ function renderCoursePlayer() {
       <p>${exercise.patientHint || (isMediaPause ? "Nehmen Sie sich einen ruhigen Moment." : "Bereiten Sie sich auf die nächste Übung vor.")}</p>
       ${isMediaPause ? `<p class="course-media-countdown" aria-live="polite"><strong id="courseMediaPauseCountdown">${Math.max(1, Number(exercise.duration || 30))}</strong><span>Sekunden</span></p>` : ""}
       ${renderCourseUnitMedia(exercise)}
-      <div class="course-actions">
-        ${isMediaPause ? "" : `<button class="primary-action" type="button" data-action="${isMediaExercise ? "record" : "open"}">${isMediaExercise ? "Aufnahme starten" : "Übung öffnen"}</button>`}
-        <button class="secondary-action" type="button" data-action="done">${isMediaPause ? "Pause beenden" : "Erledigt"}</button>
-        ${exercise.canSkip ? `<button class="secondary-action" type="button" data-action="skip">Überspringen</button>` : ""}
+      <div class="course-actions${useCourseControlBar ? " course-actions-bd" : ""}">
+        ${useCourseControlBar || isMediaPause ? "" : `<button class="primary-action" type="button" data-action="${isMediaExercise ? "record" : "open"}">${isMediaExercise ? "Aufnahme starten" : "Übung öffnen"}</button>`}
+        <button class="secondary-action" type="button" data-action="done">${useCourseControlBar ? "Erledigt" : (isMediaPause ? "Pause beenden" : "Erledigt")}</button>
+        ${useCourseControlBar || exercise.canSkip ? `<button class="secondary-action" type="button" data-action="skip">Überspringen</button>` : ""}
         <button class="secondary-action danger-action" type="button" data-action="cancel">Stoppen</button>
       </div>
     </div>
@@ -15973,6 +16301,10 @@ function handleCoursePlayerClick(event) {
     persistCourseModuleData();
     saveCourseSessionToCloud(session).catch(() => {});
     coursePlayer.classList.add("is-hidden");
+    if (isBreathingExercise(exercise)) {
+      openNextCourseExercise(exercise, { autoStart: true });
+      return;
+    }
     prepareCourseExerciseInRecordView(exercise);
     return;
   }
@@ -17354,6 +17686,7 @@ function prepareRecordViewFromNavigation() {
     cameraStartOverlay.classList.remove("is-hidden");
     permissionState.textContent = "Bereit";
   }
+  syncBreathingRecordPreview();
 }
 
 function setActiveView(viewName) {
@@ -17561,3 +17894,6 @@ function transactionDone(transaction) {
     transaction.onabort = () => reject(transaction.error);
   });
 }
+
+
+

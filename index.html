@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260820-course-media-flow332" />
+    <link rel="stylesheet" href="styles.css?v=20260820-course-media-flow338" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-20 amp332</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-20 amp338</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -97,12 +97,18 @@
         <div id="countdownOverlay" class="countdown-overlay is-hidden">3</div>
         <div id="karaokeOverlay" class="karaoke-overlay"></div>
         <section id="breathingOverlay" class="breathing-overlay is-hidden" aria-live="polite">
+          <div id="breathingCourseContext" class="course-player-context breathing-course-context is-hidden"></div>
           <div class="breathing-visual">
             <div id="breathingBall" class="breathing-ball"></div>
             <p id="breathingPhase" class="breathing-phase">Einatmen</p>
             <p id="breathingRound" class="breathing-round">Runde 1 von 5</p>
             <p id="breathingCountdown" class="breathing-countdown">4 s</p>
             <button id="breathingStopButton" class="breathing-stop" type="button">Stoppen</button>
+          </div>
+          <div id="breathingCourseActions" class="course-actions course-actions-bd breathing-course-actions is-hidden">
+            <button class="secondary-action" type="button" data-action="done">Erledigt</button>
+            <button class="secondary-action" type="button" data-action="skip">Überspringen</button>
+            <button class="secondary-action danger-action" type="button" data-action="cancel">Stoppen</button>
           </div>
         </section>
         <div class="camera-overlay">
@@ -1226,6 +1232,6 @@
       </div>
     </div>
 
-    <script type="module" src="app.js?v=20260820-course-media-flow332"></script>
+    <script type="module" src="app.js?v=20260820-course-media-flow338"></script>
   </body>
 </html>

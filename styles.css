@@ -1472,6 +1472,84 @@ body.exercise-visuals-visible:not(.calibration-mode):not(.recording-overview):no
   pointer-events: none;
 }
 
+.exercise-intro-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 320;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 24px;
+  padding: max(18px, env(safe-area-inset-top)) 22px max(22px, env(safe-area-inset-bottom));
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(43, 205, 190, 0.16), transparent 34%),
+    #101820;
+}
+
+.exercise-intro-overlay.is-hidden {
+  display: none;
+}
+
+.exercise-intro-course {
+  align-self: start;
+  min-height: 76px;
+  border: 0;
+  background: rgba(8, 17, 26, 0.68);
+  color: #fff;
+  box-shadow: 0 10px 26px rgba(8, 17, 26, 0.18);
+}
+
+.exercise-intro-course strong,
+.exercise-intro-course small {
+  color: #fff;
+}
+
+.exercise-intro-content {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 14px;
+  max-width: min(88vw, 620px);
+  margin: 0 auto;
+  padding: 24px 0 82px;
+  text-align: center;
+}
+
+.exercise-intro-content .eyebrow {
+  color: #80d8d0;
+}
+
+.exercise-intro-content h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(2rem, 7vw, 3.4rem);
+}
+
+.exercise-intro-content p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: clamp(1rem, 3.5vw, 1.25rem);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+#exerciseIntroState {
+  color: #f6b44b;
+  font-size: clamp(1.15rem, 4vw, 1.55rem);
+  font-weight: 950;
+}
+
+body.exercise-intro-active .course-recording-actions,
+body.exercise-intro-active .course-recording-context,
+body.exercise-intro-active .video-toggle-button,
+body.exercise-intro-active #liveWaveform,
+body.exercise-intro-active #frequencyTimeline,
+body.exercise-intro-active .voice-frequency-overlay,
+body.exercise-intro-active .karaoke-overlay,
+body.exercise-intro-active .camera-overlay {
+  display: none !important;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: currentColor;
@@ -2704,12 +2782,109 @@ body.has-course-today-overlay { overflow: hidden; }
   box-shadow: none;
 }
 
+.my-courses-panel.has-active-course .course-player-live {
+  position: relative;
+  min-height: calc(100dvh - 136px);
+  overflow: hidden;
+  align-content: stretch;
+  gap: 0;
+  padding: 0 22px calc(126px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 50% 30%, rgba(15, 139, 141, 0.10), transparent 34%),
+    linear-gradient(180deg, #f7fbfb 0%, #eef6f7 100%);
+}
+
+.my-courses-panel.has-active-course .course-player-live > .course-player-context,
+.my-courses-panel.has-active-course .course-intro-card .course-player-context,
+body.course-breathing-active .breathing-course-context.course-player-context {
+  position: absolute;
+  top: max(18px, env(safe-area-inset-top));
+  right: 22px;
+  left: 22px;
+  z-index: 12;
+  display: grid;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 10px;
+  border-radius: 8px;
+  border: 0;
+  background: rgba(8, 17, 26, 0.66);
+  color: #fff;
+  box-shadow: 0 10px 26px rgba(8, 17, 26, 0.18);
+  backdrop-filter: blur(8px);
+}
+
+.my-courses-panel.has-active-course .course-player-live > .course-player-context strong,
+.my-courses-panel.has-active-course .course-player-live > .course-player-context small,
+.my-courses-panel.has-active-course .course-intro-card .course-player-context strong,
+.my-courses-panel.has-active-course .course-intro-card .course-player-context small,
+body.course-breathing-active .breathing-course-context.course-player-context strong,
+body.course-breathing-active .breathing-course-context.course-player-context small {
+  color: #fff;
+}
+
+.my-courses-panel.has-active-course .course-player-live > .course-player-context span,
+.my-courses-panel.has-active-course .course-intro-card .course-player-context span,
+body.course-breathing-active .breathing-course-context.course-player-context span {
+  color: #009599;
+}
+
+.course-player-stage {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  align-content: center;
+  gap: 16px;
+  min-height: inherit;
+  padding-top: 112px;
+}
+
+.my-courses-panel.has-active-course .course-intro-card {
+  padding: 0 22px calc(126px + env(safe-area-inset-bottom));
+}
+
+.my-courses-panel.has-active-course .course-intro-card .course-intro-content {
+  align-self: center;
+  padding-top: 124px;
+  padding-bottom: 132px;
+  text-align: center;
+}
+
 .my-courses-panel.has-active-course .course-unit-media video,
 .my-courses-panel.has-active-course .course-unit-media img {
   width: 100%;
   max-height: min(68dvh, 680px);
   aspect-ratio: auto;
   object-fit: contain;
+}
+
+.my-courses-panel.has-active-course .course-video-card {
+  background: #101820;
+  padding: 0 22px calc(126px + env(safe-area-inset-bottom));
+}
+
+.my-courses-panel.has-active-course .course-video-card .course-player-stage {
+  min-height: inherit;
+  padding-top: 0;
+}
+
+.my-courses-panel.has-active-course .course-video-card .course-player-stage > :not(.course-unit-media):not(.course-media-state) {
+  display: none;
+}
+
+.my-courses-panel.has-active-course .course-video-card .course-unit-media {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.my-courses-panel.has-active-course .course-video-card .course-unit-media video,
+.my-courses-panel.has-active-course .course-video-card .course-unit-media img {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
 }
 
 .course-recording-context {
@@ -2730,6 +2905,21 @@ body.has-course-today-overlay { overflow: hidden; }
 }
 
 .course-recording-context.is-hidden {
+  display: none;
+}
+
+.course-recording-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  z-index: 27;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.course-recording-actions.is-hidden {
   display: none;
 }
 
@@ -2791,6 +2981,14 @@ body.recording-focus .course-recording-context {
   left: 3vw;
   right: 3vw;
   z-index: 26;
+}
+
+body.recording-focus .course-recording-actions {
+  position: fixed;
+  right: 3vw;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 3vw;
+  z-index: 28;
 }
 
 body.course-recording-mode.recording-focus:not(.recording-overview) .karaoke-overlay {
@@ -2863,6 +3061,17 @@ body.course-recording-mode.recording-focus:not(.recording-overview) .karaoke-ove
 .course-media-countdown span {
   font-size: 0.82rem;
   font-weight: 900;
+}
+
+.course-inline-media-start {
+  justify-self: center;
+  width: min(100%, 320px);
+  min-height: 54px;
+  padding: 0 18px;
+}
+
+.course-inline-media-start.is-hidden {
+  display: none !important;
 }
 
 .relax-music-panel audio,
@@ -4721,8 +4930,15 @@ body.recording-focus:not(.recording-overview) .camera-panel {
 }
 
 body.recording-focus:not(.recording-overview) .camera-panel video {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
   width: 100%;
   height: 100%;
+  object-fit: contain;
+  object-position: center top;
+  transform: scaleX(-1);
 }
 
 body.recording-focus:not(.recording-overview) .video-toggle-button {
@@ -4763,7 +4979,7 @@ body.recording-focus:not(.recording-overview) .voice-frequency-overlay {
   position: fixed;
   left: 2vw;
   right: 2vw;
-  bottom: calc(15dvh + max(18px, env(safe-area-inset-bottom)));
+  bottom: calc(13dvh + max(42px, env(safe-area-inset-bottom)));
   z-index: 23;
   width: 96vw;
 }
@@ -4772,20 +4988,20 @@ body.recording-focus:not(.recording-overview) #frequencyTimeline {
   position: fixed;
   left: 2vw;
   right: 2vw;
-  bottom: calc(15dvh + max(58px, env(safe-area-inset-bottom)));
+  bottom: calc(13dvh + max(56px, env(safe-area-inset-bottom)));
   z-index: 22;
   display: block !important;
   width: 96vw;
-  height: 8dvh;
-  min-height: 48px;
-  max-height: 72px;
+  height: 7dvh;
+  min-height: 42px;
+  max-height: 62px;
 }
 
 body.recording-focus:not(.recording-overview) .karaoke-overlay {
   position: fixed;
   left: 3vw;
   right: 3vw;
-  bottom: calc(23dvh + max(72px, env(safe-area-inset-bottom)));
+  bottom: calc(20dvh + max(64px, env(safe-area-inset-bottom)));
   z-index: 24;
   max-height: min(30dvh, 230px);
   overflow: hidden;
@@ -5325,6 +5541,28 @@ body.recording-focus.recording-overview .result-panel {
   background: radial-gradient(circle at 34% 26%, #f5ffff 0, #9cf4e7 10%, #48d7c7 42%, #079c9b 100%);
   box-shadow: 0 0 0 18px rgba(38, 196, 183, 0.04), 0 18px 52px rgba(4, 150, 151, 0.28);
   transform: scale(0.64);
+  transition: transform 4s ease-in-out;
+  will-change: transform;
+}
+
+@keyframes breathing-phase-inhale {
+  from { transform: scale(0.64); }
+  to { transform: scale(1); }
+}
+
+@keyframes breathing-phase-hold {
+  from { transform: scale(1); }
+  to { transform: scale(1); }
+}
+
+@keyframes breathing-phase-exhale {
+  from { transform: scale(1); }
+  to { transform: scale(0.64); }
+}
+
+@keyframes breathing-phase-pause {
+  from { transform: scale(0.64); }
+  to { transform: scale(0.64); }
 }
 
 .breathing-overlay[data-phase="hold"] .breathing-ball {
@@ -5636,6 +5874,102 @@ body.breathing-exercise-active .camera-panel {
     min-width: 0;
     padding-inline: 8px;
     white-space: normal;
+  }
+}
+
+/* Course recording overlay: keep the course info at the top of the recording
+   stage so it does not cover the speaking prompt or analysis overlays. */
+body.course-recording-mode.recording-focus:not(.recording-overview) .course-recording-context {
+  position: fixed !important;
+  top: calc(86px + env(safe-area-inset-top)) !important;
+  right: 3vw !important;
+  bottom: auto !important;
+  left: 3vw !important;
+  z-index: 25 !important;
+  padding-right: min(150px, 28vw) !important;
+}
+
+body.course-recording-mode.recording-focus:not(.recording-overview) .course-recording-actions {
+  display: grid !important;
+  position: fixed !important;
+  right: 3vw !important;
+  bottom: max(14px, env(safe-area-inset-bottom)) !important;
+  left: 3vw !important;
+  z-index: 29 !important;
+}
+
+body.course-recording-mode.recording-focus:not(.recording-overview) .video-toggle-button {
+  top: calc(98px + env(safe-area-inset-top)) !important;
+  right: 6vw !important;
+  z-index: 31 !important;
+  min-height: 42px;
+  padding: 0 18px;
+  background: rgba(8, 17, 26, 0.64);
+}
+
+body.course-recording-mode.recording-focus:not(.recording-overview) #liveWaveform {
+  bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+  height: 13dvh !important;
+  min-height: 90px;
+}
+
+body.course-recording-mode.recording-focus:not(.recording-overview) #frequencyTimeline {
+  bottom: calc(12dvh + 112px + env(safe-area-inset-bottom)) !important;
+  height: 6.5dvh !important;
+  min-height: 40px;
+}
+
+body.course-recording-mode.recording-focus:not(.recording-overview) .karaoke-overlay {
+  bottom: calc(20dvh + max(118px, env(safe-area-inset-bottom))) !important;
+}
+
+body.course-recording-mode.recording-focus:not(.recording-overview) .camera-panel video {
+  position: absolute;
+  top: calc(118px + env(safe-area-inset-top));
+  right: 3vw;
+  bottom: calc(104px + env(safe-area-inset-bottom));
+  left: 3vw;
+  display: block !important;
+  opacity: 1;
+  width: auto !important;
+  height: auto !important;
+  max-width: none;
+  max-height: none;
+  border-radius: 8px;
+  background: #0b141b;
+  object-fit: contain;
+  object-position: center top;
+  transform: scaleX(-1);
+}
+
+@media (max-width: 520px) {
+  body.course-recording-mode.recording-focus:not(.recording-overview) .course-recording-context {
+    top: calc(76px + env(safe-area-inset-top)) !important;
+    right: 14px !important;
+    left: 14px !important;
+    padding-right: 118px !important;
+  }
+
+  body.course-recording-mode.recording-focus:not(.recording-overview) .course-recording-actions {
+    right: 14px !important;
+    left: 14px !important;
+    gap: 8px !important;
+  }
+
+  body.course-recording-mode.recording-focus:not(.recording-overview) .video-toggle-button {
+    top: calc(86px + env(safe-area-inset-top)) !important;
+    right: 24px !important;
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 0.82rem;
+  }
+
+  body.course-recording-mode.recording-focus:not(.recording-overview) .camera-panel video {
+    top: calc(104px + env(safe-area-inset-top));
+    right: 14px;
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    left: 14px;
+    object-position: center top;
   }
 }
 .daily-plan-save-area {
@@ -6076,13 +6410,22 @@ body.course-video-fullscreen .course-video-card .course-actions.course-actions-b
 .breathing-course-actions.course-actions-bd {
   position: absolute;
   right: 18px;
-  bottom: max(18px, env(safe-area-inset-bottom));
+  bottom: calc(96px + env(safe-area-inset-bottom));
   left: 18px;
   z-index: 8;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   width: auto;
+}
+
+.my-courses-panel.has-active-course .course-player-card:not(.course-player-live) {
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}
+
+body.course-video-fullscreen .course-video-card .course-actions.course-actions-bd,
+body.course-breathing-active .breathing-course-actions.course-actions-bd {
+  bottom: max(18px, env(safe-area-inset-bottom));
 }
 
 .course-actions-bd .primary-action {
@@ -6092,11 +6435,11 @@ body.course-video-fullscreen .course-video-card .course-actions.course-actions-b
 .course-actions-bd .secondary-action,
 body.course-video-fullscreen .course-video-card .course-actions.course-actions-bd .secondary-action {
   min-width: 0;
-  min-height: 52px;
+  min-height: 58px;
   padding: 0 12px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 8px;
-  background: rgba(8, 17, 26, 0.68);
+  background: rgba(8, 17, 26, 0.78);
   color: #fff;
   box-shadow: none;
   font-size: clamp(0.95rem, 3.5vw, 1.15rem);
@@ -6165,16 +6508,16 @@ body.course-breathing-active .breathing-stop {
 }
 
 body.course-breathing-active .breathing-course-context.course-player-context {
-  top: auto;
-  right: 18px;
-  bottom: calc(max(18px, env(safe-area-inset-bottom)) + 86px);
-  left: 18px;
+  top: max(18px, env(safe-area-inset-top));
+  right: 22px;
+  bottom: auto;
+  left: 22px;
 }
 
 body.course-breathing-active .breathing-course-actions.course-actions-bd {
-  right: 18px;
+  right: 22px;
   bottom: max(14px, env(safe-area-inset-bottom));
-  left: 18px;
+  left: 22px;
 }
 
 @media (max-width: 520px) {
@@ -6191,7 +6534,9 @@ body.course-breathing-active .breathing-course-actions.course-actions-bd {
   body.course-breathing-active .breathing-ball {
     width: clamp(150px, 52vw, 220px);
   }
-}.breathing-course-context.course-player-context {
+}
+
+.breathing-course-context.course-player-context {
   position: absolute;
   top: max(14px, env(safe-area-inset-top));
   right: 18px;
@@ -6272,4 +6617,151 @@ body.breathing-preview-idle .breathing-course-actions {
 
 body.breathing-preview-idle .breathing-visual {
   transform: translateY(-10px);
+}
+
+/* Final active-course layout overrides. Keep these last so intro, video,
+   audio, and breathing course views share the same controls and header. */
+.my-courses-panel.has-active-course .course-player-live > .course-player-context,
+.my-courses-panel.has-active-course .course-intro-card .course-player-context,
+body.course-breathing-active .breathing-course-context.course-player-context {
+  position: absolute !important;
+  top: max(18px, env(safe-area-inset-top)) !important;
+  right: 22px !important;
+  bottom: auto !important;
+  left: 22px !important;
+  z-index: 20 !important;
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  width: auto !important;
+  max-width: none !important;
+  min-height: 76px;
+  margin: 0 !important;
+  padding: 12px 16px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: rgba(8, 17, 26, 0.66) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 26px rgba(8, 17, 26, 0.18) !important;
+  backdrop-filter: blur(8px);
+}
+
+.my-courses-panel.has-active-course .course-intro-card .course-intro-content {
+  position: relative;
+  z-index: 2;
+  align-self: center;
+  max-width: min(92vw, 560px);
+  margin: 0 auto;
+  padding: 150px 0 178px;
+  text-align: center;
+}
+
+.course-intro-card .course-actions-bd {
+  bottom: calc(24px + env(safe-area-inset-bottom)) !important;
+}
+
+.course-player-card .course-actions-bd,
+.course-intro-card .course-actions-bd,
+.breathing-course-actions.course-actions-bd {
+  right: 22px !important;
+  left: 22px !important;
+}
+
+.my-courses-panel.has-active-course .course-intro-card {
+  display: grid;
+  min-height: calc(100dvh - 136px) !important;
+  padding: 0 22px calc(104px + env(safe-area-inset-bottom)) !important;
+}
+
+.my-courses-panel.has-active-course .course-intro-card.has-intro-image {
+  justify-content: stretch;
+}
+
+.my-courses-panel.has-active-course .course-intro-card .course-intro-state {
+  max-width: min(86vw, 520px);
+  margin: 0 auto;
+}
+
+@media (max-width: 520px) {
+  .my-courses-panel.has-active-course .course-player-live > .course-player-context,
+  .my-courses-panel.has-active-course .course-intro-card .course-player-context,
+  body.course-breathing-active .breathing-course-context.course-player-context {
+    top: 18px !important;
+    right: 14px !important;
+    left: 14px !important;
+    min-height: 70px;
+    padding: 10px 12px !important;
+  }
+
+  .my-courses-panel.has-active-course .course-intro-card {
+    min-height: calc(100dvh - 126px) !important;
+    padding-right: 14px !important;
+    padding-left: 14px !important;
+  }
+
+  .my-courses-panel.has-active-course .course-intro-card .course-intro-content {
+    max-width: 100%;
+    padding: 132px 0 164px;
+  }
+
+  .course-player-card .course-actions-bd,
+  .course-intro-card .course-actions-bd,
+  .breathing-course-actions.course-actions-bd {
+    right: 14px !important;
+    left: 14px !important;
+    gap: 8px !important;
+  }
+
+  .course-actions-bd .secondary-action,
+  body.course-video-fullscreen .course-video-card .course-actions.course-actions-bd .secondary-action {
+    min-height: 52px;
+    padding: 0 6px;
+    font-size: clamp(0.82rem, 3.55vw, 1rem);
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+}
+
+body.course-video-fullscreen .course-video-card .course-actions.course-actions-bd {
+  position: absolute !important;
+  right: max(14px, env(safe-area-inset-right)) !important;
+  bottom: max(18px, env(safe-area-inset-bottom)) !important;
+  left: max(14px, env(safe-area-inset-left)) !important;
+  z-index: 40 !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+body.course-breathing-active .breathing-course-context.course-player-context:not(.is-hidden) {
+  position: absolute !important;
+  top: max(18px, env(safe-area-inset-top)) !important;
+  right: 22px !important;
+  bottom: auto !important;
+  left: 22px !important;
+  z-index: 32 !important;
+  opacity: 1 !important;
+}
+
+body.course-breathing-active .course-recording-context,
+body.course-breathing-active .course-recording-actions {
+  display: none !important;
+}
+
+body.course-breathing-active .breathing-course-actions.course-actions-bd:not(.is-hidden) {
+  position: absolute !important;
+  right: 22px !important;
+  bottom: max(16px, env(safe-area-inset-bottom)) !important;
+  left: 22px !important;
+  z-index: 34 !important;
+  display: grid !important;
+  opacity: 1 !important;
+}
+
+body.course-breathing-active .breathing-overlay {
+  z-index: 260 !important;
+  opacity: 1 !important;
+}
+
+body.course-breathing-active.breathing-preview-idle .breathing-course-context,
+body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
+  display: grid !important;
 }

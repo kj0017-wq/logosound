@@ -22,7 +22,7 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260820-course-media-flow338" />
+    <link rel="stylesheet" href="styles.css?v=20260820-course-media-flow357" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
@@ -72,6 +72,11 @@
           </div>
           <div class="course-progress" aria-hidden="true"><span id="courseRecordingProgress"></span></div>
         </div>
+        <div id="courseRecordingActions" class="course-actions course-actions-bd course-recording-actions is-hidden" aria-label="Kurssteuerung">
+          <button class="secondary-action" type="button" data-action="done">Erledigt</button>
+          <button class="secondary-action" type="button" data-action="skip">Überspringen</button>
+          <button class="secondary-action danger-action" type="button" data-action="cancel">Stoppen</button>
+        </div>
         <div id="cameraStartOverlay" class="camera-start-overlay">
           <img class="camera-start-logo" src="icons/homescreen-logo-20260801.png" alt="" />
           <div>
@@ -95,6 +100,15 @@
           </div>
         </div>
         <div id="countdownOverlay" class="countdown-overlay is-hidden">3</div>
+        <section id="exerciseIntroOverlay" class="exercise-intro-overlay is-hidden" aria-live="polite">
+          <div id="exerciseIntroCourse" class="course-player-context exercise-intro-course"></div>
+          <div class="exercise-intro-content">
+            <p class="eyebrow">Einleitung zur Übung</p>
+            <h2 id="exerciseIntroTitle">Übung</h2>
+            <p id="exerciseIntroText">Die Ansage läuft.</p>
+            <p id="exerciseIntroState">Ansage läuft...</p>
+          </div>
+        </section>
         <div id="karaokeOverlay" class="karaoke-overlay"></div>
         <section id="breathingOverlay" class="breathing-overlay is-hidden" aria-live="polite">
           <div id="breathingCourseContext" class="course-player-context breathing-course-context is-hidden"></div>
@@ -1232,6 +1246,6 @@
       </div>
     </div>
 
-    <script type="module" src="app.js?v=20260820-course-media-flow338"></script>
+    <script type="module" src="app.js?v=20260820-course-media-flow357"></script>
   </body>
 </html>

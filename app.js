@@ -117,6 +117,7 @@ const coursePatientSwitcher = document.querySelector("#coursePatientSwitcher");
 const coursePlayer = document.querySelector("#coursePlayer");
 const myCoursesPanel = document.querySelector(".my-courses-panel");
 const courseRecordingContext = document.querySelector("#courseRecordingContext");
+const courseRecordingActions = document.querySelector("#courseRecordingActions");
 const courseRecordingCourse = document.querySelector("#courseRecordingCourse");
 const courseRecordingExercise = document.querySelector("#courseRecordingExercise");
 const courseRecordingPlan = document.querySelector("#courseRecordingPlan");
@@ -197,6 +198,11 @@ const playbackVolumeValue = document.querySelector("#playbackVolumeValue");
 const liveWaveform = document.querySelector("#liveWaveform");
 const frequencyTimeline = document.querySelector("#frequencyTimeline");
 const countdownOverlay = document.querySelector("#countdownOverlay");
+const exerciseIntroOverlay = document.querySelector("#exerciseIntroOverlay");
+const exerciseIntroCourse = document.querySelector("#exerciseIntroCourse");
+const exerciseIntroTitle = document.querySelector("#exerciseIntroTitle");
+const exerciseIntroText = document.querySelector("#exerciseIntroText");
+const exerciseIntroState = document.querySelector("#exerciseIntroState");
 const karaokeOverlay = document.querySelector("#karaokeOverlay");
 const breathingOverlay = document.querySelector("#breathingOverlay");
 const breathingBall = document.querySelector("#breathingBall");
@@ -598,6 +604,7 @@ let breathingCountdownTimerId = null;
 let breathingBallAnimation = null;
 let breathingSpeechUtterance = null;
 let breathingPhaseAudioCache = new Map();
+let courseBreathingAutoStartTimerId = 0;
 let isBreathingExerciseRunning = false;
 let isCalibrating = false;
 let calibrationReturnView = "record";
@@ -950,37 +957,55 @@ function repairStaticUiLabels() {
 
 recordButton.addEventListener("click", async (event) => {
   event.stopImmediatePropagation();
-  clearCourseAutoAdvanceTimer();
+  try {
+    clearCourseAutoAdvanceTimer();
 
-  if (isCourseMediaLocked() && exerciseName.value !== getActiveCourseExercise()?.exerciseId) {
-    showCourseMediaLockMessage();
-    return;
-  }
+    if (isCourseMediaLocked() && exerciseName.value !== getActiveCourseExercise()?.exerciseId) {
+      clearActiveCourseRun();
+    }
 
-  if (isRecording || mediaRecorder?.state === "recording") {
-    stopRecording();
-    return;
-  }
+    if (isRecording || mediaRecorder?.state === "recording") {
+      stopRecording();
+      return;
+    }
 
-  stopExercisePreview();
-  const selectedBreathingExercise = getActiveRecordingExercise();
-  if (isBreathingExercise(selectedBreathingExercise)) {
-    await startBreathingExercise(selectedBreathingExercise);
-    return;
-  }
-  await unlockInstructionAudio();
-  recordButton.disabled = true;
-  recordButton.textContent = "Start wird vorbereitet";
-  const streamReady = await ensureMediaStream();
-  if (!streamReady) {
+    stopExercisePreview();
+    const selectedBreathingExercise = getActiveRecordingExercise();
+    if (!selectedBreathingExercise) {
+      message.textContent = "Übung konnte nicht geladen werden. Bitte Auswahl erneut öffnen.";
+      recordButton.disabled = false;
+      recordButton.textContent = "Übung starten";
+      return;
+    }
+    if (isBreathingExercise(selectedBreathingExercise)) {
+      await startBreathingExercise(selectedBreathingExercise);
+      return;
+    }
+    await withTimeout(unlockInstructionAudio(), 900).catch(() => false);
+    recordButton.disabled = true;
+    recordButton.textContent = "Start wird vorbereitet";
+    message.textContent = "Kamera und Mikrofon werden geprüft.";
+    const streamReady = await withTimeout(ensureMediaStream(), 6500).catch(() => hasActiveMediaStream());
+    if (!streamReady && !hasActiveMediaStream()) {
+      recordButton.disabled = false;
+      recordButton.textContent = "\u00dcbung starten";
+      message.textContent = "Kamera/Mikrofon konnten nicht aktiviert werden.";
+      return;
+    }
+
+    await withTimeout(ensureCameraPreviewPlaying(), 1200).catch(() => false);
+    const activeExercise = getActiveRecordingExercise();
+    const audioPreparation = prepareRecordingAudio({
+      preferExistingStream: activeExercise?.mode === "dialog",
+    });
+    await runCountdownAndStart(audioPreparation);
+  } catch (error) {
     recordButton.disabled = false;
-    recordButton.textContent = "\u00dcbung starten";
-    return;
+    recordButton.textContent = "Übung starten";
+    hideExerciseIntroScreen();
+    countdownOverlay.classList.add("is-hidden");
+    message.textContent = `Startfehler: ${error?.message || error?.name || "Bitte erneut versuchen."}`;
   }
-
-  await ensureCameraPreviewPlaying();
-  const audioPreparation = prepareRecordingAudio();
-  await runCountdownAndStart(audioPreparation);
 }, true);
 
 previewExerciseButton?.addEventListener("click", async () => {
@@ -1007,6 +1032,11 @@ breathingCourseActions?.addEventListener("click", (event) => {
   const action = event.target.closest("button")?.dataset.action;
   if (!action) return;
   finishCourseBreathingAction(action);
+});
+courseRecordingActions?.addEventListener("click", (event) => {
+  const action = event.target.closest("button")?.dataset.action;
+  if (!action) return;
+  finishCourseRecordingAction(action);
 });
 
 savePatientButton.addEventListener("click", async () => {
@@ -1743,16 +1773,18 @@ function updateBreathingOverlay(phase, round, settings, remaining, startAnimatio
   if (!breathingOverlay) return;
   breathingOverlay.classList.remove("is-hidden");
   breathingOverlay.dataset.phase = phase.key;
+  breathingOverlay.style.setProperty("--breathing-phase-duration", `${Math.max(400, phase.seconds * 1000)}ms`);
   if (startAnimation && breathingBall) {
     breathingBallAnimation?.cancel?.();
     const fromScale = previousPhase ? getBreathingPhaseScale(previousPhase.key) : (phase.key === "inhale" ? 0.64 : getBreathingPhaseScale(phase.key));
     const toScale = getBreathingPhaseScale(phase.key);
     const duration = Math.max(400, phase.seconds * 1000);
+    breathingBall.style.animation = "none";
     breathingBall.style.transition = "none";
     breathingBall.style.transform = `scale(${fromScale})`;
     void breathingBall.offsetWidth;
-    breathingBall.style.transition = `transform ${duration}ms ease-in-out`;
     window.requestAnimationFrame(() => {
+      breathingBall.style.animation = `breathing-phase-${phase.key} ${duration}ms ease-in-out both`;
       breathingBall.style.transform = `scale(${toScale})`;
     });
     let cancelled = false;
@@ -1766,6 +1798,7 @@ function updateBreathingOverlay(phase, round, settings, remaining, startAnimatio
       cancel() {
         cancelled = true;
         window.clearTimeout(animationTimeoutId);
+        breathingBall.style.animation = "none";
         breathingBall.style.transition = "none";
       },
     };
@@ -1777,14 +1810,14 @@ function updateBreathingOverlay(phase, round, settings, remaining, startAnimatio
 
 function waitForBreathingPhase(seconds, sessionId, onTick) {
   return new Promise((resolve) => {
-    window.clearInterval(breathingCountdownTimerId);
+    window.clearTimeout(breathingCountdownTimerId);
     let settled = false;
     let timerId = null;
     const endAt = Date.now() + seconds * 1000;
     const finish = (value) => {
       if (settled) return;
       settled = true;
-      if (timerId) window.clearInterval(timerId);
+      if (timerId) window.clearTimeout(timerId);
       if (breathingCountdownTimerId === timerId) breathingCountdownTimerId = null;
       resolve(value);
     };
@@ -1796,9 +1829,11 @@ function waitForBreathingPhase(seconds, sessionId, onTick) {
       const remaining = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
       onTick(remaining);
       if (remaining <= 0) finish(true);
+      else {
+        timerId = window.setTimeout(tick, 180);
+        breathingCountdownTimerId = timerId;
+      }
     };
-    timerId = window.setInterval(tick, 120);
-    breathingCountdownTimerId = timerId;
     tick();
   });
 }
@@ -1948,7 +1983,8 @@ function getCourseBreathingMode() {
   return Boolean(activeCourseRun && !isPreviewingExercise && isBreathingExercise(getActiveCourseExercise()));
 }
 
-function setBreathingCourseUiVisible(visible) {
+function setBreathingCourseUiVisible(visible, exerciseOverride = null) {
+  document.body.classList.toggle("course-breathing-active", Boolean(visible));
   breathingCourseContext?.classList.toggle("is-hidden", !visible);
   breathingCourseActions?.classList.toggle("is-hidden", !visible);
   breathingStopButton?.classList.toggle("is-hidden", Boolean(visible));
@@ -1956,14 +1992,18 @@ function setBreathingCourseUiVisible(visible) {
     if (breathingCourseContext) breathingCourseContext.innerHTML = "";
     return;
   }
-  const run = activeCourseRun;
+  const run = activeCourseRun || {};
+  const exercise = exerciseOverride || getActiveCourseExercise();
   const index = Number(run?.index || 0);
-  const total = run?.plan?.exercises?.length || 0;
+  const total = run?.plan?.exercises?.length || (exercise ? 1 : 0);
+  const courseName = run?.course?.name || "Kurs";
+  const planName = run?.plan?.title || run?.plan?.name || "Tagesplan";
+  const exerciseTitle = exercise?.title || exercise?.name || "Atemübung";
   if (breathingCourseContext) {
     breathingCourseContext.innerHTML = `
       <span>Kurs</span>
-      <strong>${escapeHtml(run?.course?.name || "Kurs")}</strong>
-      <small>${escapeHtml(run?.plan?.title || run?.plan?.name || "Tagesplan")} · Übung ${index + 1} von ${total}</small>
+      <strong>${escapeHtml(courseName)}</strong>
+      <small>${escapeHtml(planName)} · ${escapeHtml(exerciseTitle)} · Übung ${index + 1} von ${total || 1}</small>
     `;
   }
 }
@@ -2013,12 +2053,15 @@ function stopBreathingExercise(statusText = "Atemübung beendet.", options = {})
   );
   breathingSessionId += 1;
   isBreathingExerciseRunning = false;
-  window.clearInterval(breathingCountdownTimerId);
+  window.clearTimeout(courseBreathingAutoStartTimerId);
+  courseBreathingAutoStartTimerId = 0;
+  window.clearTimeout(breathingCountdownTimerId);
   breathingCountdownTimerId = null;
   breathingBallAnimation?.cancel();
   breathingBallAnimation = null;
   stopBreathingVoice();
   clearBreathingPhaseAudioCache();
+  hideExerciseIntroScreen();
   breathingOverlay?.classList.add("is-hidden");
   setBreathingCourseUiVisible(false);
   document.body.classList.remove("breathing-exercise-active", "course-breathing-active", "breathing-preview-idle");
@@ -2041,10 +2084,11 @@ function stopBreathingExercise(statusText = "Atemübung beendet.", options = {})
 async function startBreathingExercise(exercise, options = {}) {
   if (!exercise) return;
   if (isBreathingExerciseRunning) {
-    const overlayVisible = breathingOverlay && !breathingOverlay.classList.contains("is-hidden");
-    if (overlayVisible) return;
-    resetBreathingRuntimeState();
+    stopBreathingExercise("Atemübung wird neu gestartet.", { keepCourseRun: true });
   }
+  clearCourseTransitionOverlay();
+  window.clearTimeout(courseBreathingAutoStartTimerId);
+  courseBreathingAutoStartTimerId = 0;
   clearCourseAutoAdvanceTimer();
   setCourseVideoFullscreen(false);
   stopCourseUnitMedia();
@@ -2053,23 +2097,21 @@ async function startBreathingExercise(exercise, options = {}) {
   stopBreathingVoice();
   clearBreathingPhaseAudioCache();
 
+  // Atemübungen haben keinen Aufnahme-Countdown, brauchen aber denselben
+  // aktiven Kamera-/Mikrofonstream wie die übrigen Übungen.
+  const streamReady = await withTimeout(ensureMediaStream(), 6500).catch(() => hasActiveMediaStream());
+  if (!streamReady && !hasActiveMediaStream()) {
+    recordButton.disabled = false;
+    recordButton.textContent = "Übung starten";
+    message.textContent = "Kamera und Mikrofon konnten nicht aktiviert werden.";
+    hideExerciseIntroScreen();
+    breathingOverlay?.classList.add("is-hidden");
+    return false;
+  }
+  await withTimeout(ensureCameraPreviewPlaying(), 1400).catch(() => false);
+
   const settings = getBreathingSettings(exercise);
   unlockBreathingVoice().catch(() => false);
-
-  const sessionId = ++breathingSessionId;
-  isBreathingExerciseRunning = true;
-  document.body.classList.remove("breathing-preview-idle");
-  document.body.classList.add("breathing-exercise-active");
-  const courseBreathingMode = Boolean(activeCourseRun && !options.preview && isBreathingExercise(getActiveCourseExercise()));
-  if (courseBreathingMode) clearCourseRecordingContext();
-  setBreathingCourseUiVisible(courseBreathingMode);
-  recordButton.disabled = true;
-  recordButton.textContent = options.preview ? "Vorführung läuft" : "Atemübung läuft";
-  if (options.preview) {
-    isPreviewingExercise = true;
-    setPreviewSessionState(true, "Vorführung aktiv");
-  }
-
   const phases = [
     { key: "inhale", label: "Einatmen", seconds: settings.inhale },
     { key: "hold", label: "Halten", seconds: settings.hold },
@@ -2082,12 +2124,58 @@ async function startBreathingExercise(exercise, options = {}) {
     })),
   ].filter((phase) => phase.seconds > 0);
 
-  if (phases[0]) {
-    updateBreathingOverlay(phases[0], 1, settings, phases[0].seconds, true, null);
+  const sessionId = ++breathingSessionId;
+  isBreathingExerciseRunning = true;
+  document.body.classList.remove("breathing-preview-idle");
+  document.body.classList.add("breathing-exercise-active");
+  const courseBreathingMode = Boolean(activeCourseRun && !options.preview && (isBreathingExercise(getActiveCourseExercise()) || options.fromCourse));
+  if (courseBreathingMode) clearCourseRecordingContext();
+  setBreathingCourseUiVisible(courseBreathingMode, exercise);
+  recordButton.disabled = true;
+  recordButton.textContent = options.preview ? "Vorführung läuft" : "Atemübung läuft";
+  if (options.preview) {
+    isPreviewingExercise = true;
+    setPreviewSessionState(true, "Vorführung aktiv");
+  }
+  if (options.skipInstruction && phases[0]) {
+    updateBreathingOverlay(phases[0], 1, settings, phases[0].seconds, false, null);
   }
 
-  if (settings.useVoice) {
-    prepareBreathingPhaseAudio(phases).catch(() => clearBreathingPhaseAudioCache());
+  if (!options.skipInstruction) {
+    message.textContent = "Atemübung wird vorbereitet.";
+    recordButton.textContent = "Intro läuft";
+    breathingOverlay?.classList.remove("is-hidden");
+    if (phases[0]) {
+      updateBreathingOverlay(phases[0], 1, settings, phases[0].seconds, false, null);
+      if (breathingPhase) breathingPhase.textContent = "Bereit";
+      if (breathingRound) breathingRound.textContent = `${settings.repeats} Runden`;
+      if (breathingCountdown) breathingCountdown.textContent = "Start gleich";
+    }
+    const breathingInstruction =
+      String(exercise?.voiceInstruction || "").trim() ||
+      "Bereiten Sie sich auf die Atemübung vor. Folgen Sie gleich ruhig der Atemkugel.";
+    window.speechSynthesis?.cancel?.();
+    showExerciseIntroScreen(exercise, breathingInstruction);
+    await playBreathingExerciseInstruction(exercise).catch(() => {});
+    if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) return;
+    instructionPlaybackActive = false;
+    for (const step of COUNTDOWN_STEPS) {
+      if (breathingCountdown) breathingCountdown.textContent = `Start in ${step}`;
+      await wait(320);
+    }
+    hideExerciseIntroScreen();
+    if (courseBreathingMode) setBreathingCourseUiVisible(true, exercise);
+  }
+
+  if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) return;
+  await unlockBreathingVoice().catch(() => false);
+  try {
+    window.speechSynthesis?.resume?.();
+  } catch (error) {}
+  breathingOverlay?.classList.remove("is-hidden");
+
+  if (phases[0]) {
+    updateBreathingOverlay(phases[0], 1, settings, phases[0].seconds, true, null);
   }
 
   try {
@@ -2097,7 +2185,7 @@ async function startBreathingExercise(exercise, options = {}) {
         if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) return;
         updateBreathingOverlay(phase, round, settings, phase.seconds, true, previousPhase);
         if (settings.useVoice) {
-          playBreathingPhaseVoice(phase);
+          speakBreathingPhase(phase);
         }
         const completed = await waitForBreathingPhase(phase.seconds, sessionId, (remaining) => {
           if (sessionId === breathingSessionId) updateBreathingOverlay(phase, round, settings, remaining, false, previousPhase);
@@ -2113,50 +2201,91 @@ async function startBreathingExercise(exercise, options = {}) {
     stopBreathingExercise("Atemübung wurde unterbrochen.");
   }
 }
+
+function getCurrentExerciseInstructionText() {
+  return (
+    getExerciseInstruction() ||
+    EXERCISE_INSTRUCTIONS[exerciseName.value] ||
+    "Bitte lesen Sie die eingeblendeten Wörter deutlich und ruhig vor."
+  );
+}
+
+function showExerciseIntroScreen(exercise = getActiveRecordingExercise(), instruction = getCurrentExerciseInstructionText()) {
+  if (!exerciseIntroOverlay) return;
+  document.body.classList.add("exercise-intro-active");
+  exerciseIntroOverlay.classList.remove("is-hidden");
+  if (exerciseIntroTitle) exerciseIntroTitle.textContent = exercise?.name || exercise?.title || "Übung";
+  if (exerciseIntroText) exerciseIntroText.textContent = instruction;
+  if (exerciseIntroState) exerciseIntroState.textContent = "Ansage läuft...";
+
+  if (!exerciseIntroCourse) return;
+  if (activeCourseRun) {
+    const courseExercise = getActiveCourseExercise() || exercise;
+    const current = Math.min(activeCourseRun.plan?.exercises?.length || 0, Number(activeCourseRun.index || 0) + 1);
+    const total = activeCourseRun.plan?.exercises?.length || 0;
+    exerciseIntroCourse.innerHTML = `
+      <span>Kurs</span>
+      <strong>${escapeHtml(activeCourseRun.course?.name || "Kurs")}</strong>
+      <small>${escapeHtml(activeCourseRun.plan?.title || "Tagesplan")} · ${escapeHtml(courseExercise?.title || exercise?.name || "Übung")} · Übung ${current} von ${total}</small>
+    `;
+  } else {
+    exerciseIntroCourse.innerHTML = `
+      <span>Übung</span>
+      <strong>${escapeHtml(exercise?.name || exercise?.title || "LogoSound")}</strong>
+      <small>Ansage vor dem Start</small>
+    `;
+  }
+}
+
+function hideExerciseIntroScreen() {
+  document.body.classList.remove("exercise-intro-active");
+  exerciseIntroOverlay?.classList.add("is-hidden");
+}
+
 async function runCountdownAndStart(audioPreparation = Promise.resolve()) {
   try {
     recordButton.disabled = true;
     const activeExercise = getActiveRecordingExercise();
-    if (activeExercise?.mode === "dialog") {
-      recordButton.textContent = "Dialog startet";
-      message.textContent = "Dialog startet direkt mit der gespeicherten ElevenLabs-Zeile.";
-    } else {
-      recordButton.textContent = "Instruktion läuft";
-      await speakExerciseInstruction();
-    }
+    hideExerciseIntroScreen();
+    recordButton.textContent = "Startet";
+    message.textContent = activeExercise?.mode === "dialog"
+      ? "Dialogaufnahme startet."
+      : "Aufnahme startet.";
     instructionPlaybackActive = false;
-    await withTimeout(audioPreparation, 1800);
-    await ensureRecordingAnalyserReady();
+    Promise.resolve(audioPreparation).catch(() => false);
     setExerciseVisualsVisible(true);
 
     for (const step of COUNTDOWN_STEPS) {
       countdownOverlay.textContent = step;
       countdownOverlay.classList.remove("is-hidden");
-      await wait(850);
+      await wait(520);
     }
 
     countdownOverlay.classList.add("is-hidden");
+    hideExerciseIntroScreen();
     stopInstructionAudio();
     recordButton.disabled = false;
-    await startRecording();
+    const started = await withTimeout(startRecording(), 4000).catch(() => false);
+    if (!started) {
+      recordButton.textContent = "Übung starten";
+      message.textContent = "Aufnahme konnte nicht starten. Bitte Kamera/Mikrofon erneut aktivieren.";
+    }
   } catch (error) {
     instructionPlaybackActive = false;
     stopInstructionAudio();
     setExerciseVisualsVisible(false);
+    hideExerciseIntroScreen();
     countdownOverlay.classList.add("is-hidden");
     recordButton.disabled = false;
     recordButton.textContent = "Übung starten";
-    message.textContent = "Start wurde unterbrochen. Bitte erneut versuchen.";
+    message.textContent = `Start wurde unterbrochen: ${error?.message || error?.name || "Bitte erneut versuchen."}`;
   }
 }
 
 async function speakExerciseInstruction() {
   instructionPlaybackActive = true;
   const activeExercise = getActiveRecordingExercise();
-  const instruction =
-    getExerciseInstruction() ||
-    EXERCISE_INSTRUCTIONS[exerciseName.value] ||
-    `Bitte lesen Sie die eingeblendeten Wörter deutlich und ruhig vor.`;
+  const instruction = getCurrentExerciseInstructionText();
 
   const editorAudio = await getCurrentInstructionAudio(activeExercise, instruction);
 
@@ -2176,6 +2305,32 @@ async function speakExerciseInstruction() {
 
   message.textContent = "ElevenLabs stumm, Browser-Stimme läuft.";
   return speakWithBrowserVoice(instruction);
+}
+
+async function playBreathingExerciseInstruction(exercise) {
+  instructionPlaybackActive = true;
+  const activeExercise = hydrateEditorExercise(exercise) || getActiveRecordingExercise();
+  const instruction =
+    String(activeExercise?.voiceInstruction || "").trim() ||
+    "Bereiten Sie sich auf die Atemübung vor. Folgen Sie gleich ruhig der Atemkugel.";
+  const savedAudio = activeExercise?.voiceAudioUrl || activeExercise?.voiceAudioDataUrl || "";
+
+  if (savedAudio && isInstructionVoiceAudioCurrent(activeExercise, instruction)) {
+    message.textContent = "Atem-Intro läuft.";
+    const played = await playVoiceAudio(savedAudio);
+    if (played) return;
+  }
+
+  const generatedAudio = await withTimeout(createTemporaryVoiceAudio(instruction), 6000);
+  if (generatedAudio) {
+    message.textContent = "Atem-Intro läuft.";
+    const played = await playVoiceAudio(generatedAudio);
+    URL.revokeObjectURL(generatedAudio);
+    if (played) return;
+  }
+
+  message.textContent = instruction;
+  await speakWithBrowserVoice(instruction);
 }
 
 async function getCurrentInstructionAudio(exercise, instruction) {
@@ -3006,13 +3161,20 @@ function speakWithBrowserVoice(instruction) {
   return new Promise((resolve) => {
     const fallbackMs = Math.max(
       2500,
-      Math.min(45000, String(instruction || "").length * 85 + 1200),
+      Math.min(120000, String(instruction || "").length * 95 + 1800),
     );
-    const fallbackId = window.setTimeout(resolve, fallbackMs);
+    let settled = false;
+    let retryTimerId = 0;
+    let attempts = 0;
+    let fallbackId = 0;
     const finish = () => {
+      if (settled) return;
+      settled = true;
       window.clearTimeout(fallbackId);
+      window.clearTimeout(retryTimerId);
       resolve();
     };
+    fallbackId = window.setTimeout(finish, fallbackMs);
 
     if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
       message.textContent = instruction;
@@ -3022,14 +3184,34 @@ function speakWithBrowserVoice(instruction) {
 
     window.speechSynthesis.cancel();
     message.textContent = instruction;
-    const utterance = new SpeechSynthesisUtterance(instruction);
-    utterance.lang = "de-DE";
-    utterance.rate = 0.92;
-    utterance.pitch = 1;
-    utterance.onend = finish;
-    utterance.onerror = finish;
-    window.speechSynthesis.speak(utterance);
-    window.setTimeout(() => window.speechSynthesis.resume(), 80);
+    const speak = () => {
+      if (settled) return;
+      try {
+        window.speechSynthesis.resume?.();
+        const utterance = new SpeechSynthesisUtterance(instruction);
+        utterance.lang = "de-DE";
+        utterance.rate = 0.92;
+        utterance.pitch = 1;
+        utterance.onend = finish;
+        utterance.onerror = () => {
+          if (settled || attempts >= 2) {
+            finish();
+            return;
+          }
+          attempts += 1;
+          retryTimerId = window.setTimeout(speak, 180);
+        };
+        window.speechSynthesis.speak(utterance);
+        window.setTimeout(() => window.speechSynthesis.resume?.(), 80);
+      } catch (error) {
+        if (attempts >= 2) finish();
+        else {
+          attempts += 1;
+          retryTimerId = window.setTimeout(speak, 180);
+        }
+      }
+    };
+    speak();
   });
 }
 
@@ -3269,9 +3451,12 @@ function stopInstructionAudio() {
   stopBreathingVoice();
 }
 async function startRecording() {
-  if (!mediaStream) return;
-  if (isRecording) return;
+  if (!mediaStream) return false;
+  if (isRecording) return true;
   if (isCalibrating) stopCalibration();
+  const activeExercise = getActiveRecordingExercise();
+  const isDialogRecording = activeExercise?.mode === "dialog";
+  setVideoPreviewHidden(false);
 
   mediaChunks = [];
   amplitudes = [];
@@ -3315,8 +3500,13 @@ async function startRecording() {
   drawFrequencyTimeline(frequencyTimeline, [], []);
   updateVoiceFrequencyDisplay(0, 0);
 
-  await ensureRecordingAnalyserReady();
-  await waitForCameraFrame();
+  if (isDialogRecording) {
+    await attachCameraPreview(mediaStream).catch(() => {});
+    await withTimeout(ensureCameraPreviewPlaying(), 800).catch(() => false);
+    await withTimeout(waitForCameraFrame(1600), 900).catch(() => {});
+  }
+  await withTimeout(ensureRecordingAnalyserReady({ preferExistingStream: isDialogRecording }), 1000).catch(() => {});
+  await withTimeout(waitForCameraFrame(isDialogRecording ? 1600 : 900), 900).catch(() => {});
   const recordingStream = startComposedVideoStream();
 
   const recordingFormat = getSupportedRecordingFormat();
@@ -3327,7 +3517,7 @@ async function startRecording() {
   } catch (error) {
     message.textContent = "Die Videoaufnahme konnte in diesem Browser nicht gestartet werden.";
     stopComposedVideoStream();
-    return;
+    return false;
   }
 
   mediaRecorder.recordingExtension =
@@ -3362,6 +3552,7 @@ async function startRecording() {
   scheduleAutoStop();
   updateKaraokeHighlight();
   measureAudio();
+  return true;
 }
 
 function stopRecording() {
@@ -3535,9 +3726,12 @@ async function finishRecording() {
   }
 }
 
-async function prepareRecordingAudio() {
+async function prepareRecordingAudio(options = {}) {
   try {
-    await setupAudioAnalyser({ reuseExisting: true });
+    await setupAudioAnalyser({
+      reuseExisting: true,
+      preferExistingStream: Boolean(options.preferExistingStream),
+    });
     if (audioContext?.state === "running" && !instructionPlaybackActive) {
       message.textContent = "Mikrofon-Pegel bereit.";
     }
@@ -3548,7 +3742,7 @@ async function prepareRecordingAudio() {
   }
 }
 
-async function setupAudioAnalyser({ reuseExisting = false, forceDedicatedStream = false } = {}) {
+async function setupAudioAnalyser({ reuseExisting = false, forceDedicatedStream = false, preferExistingStream = false } = {}) {
   await ensureAudioContext();
 
   if (reuseExisting && analyser && audioSource) {
@@ -3559,7 +3753,7 @@ async function setupAudioAnalyser({ reuseExisting = false, forceDedicatedStream 
   disconnectAudioAnalyser();
 
   const existingAudioTrack = mediaStream?.getAudioTracks?.()[0];
-  const preferDedicatedAudioStream = forceDedicatedStream || !isIosMediaDevice();
+  const preferDedicatedAudioStream = !preferExistingStream && (forceDedicatedStream || !isIosMediaDevice());
 
   audioOnlyStreamOwnsTracks = false;
 
@@ -3660,20 +3854,27 @@ async function setupAudioAnalyser({ reuseExisting = false, forceDedicatedStream 
   }
 }
 
-async function ensureRecordingAnalyserReady() {
+async function ensureRecordingAnalyserReady(options = {}) {
   await ensureAudioContext();
 
   if (!analyser || !audioSource) {
-    await setupAudioAnalyser({ reuseExisting: false });
+    await setupAudioAnalyser({
+      reuseExisting: false,
+      preferExistingStream: Boolean(options.preferExistingStream),
+    });
   } else {
-    await setupAudioAnalyser({ reuseExisting: true });
+    await setupAudioAnalyser({
+      reuseExisting: true,
+      preferExistingStream: Boolean(options.preferExistingStream),
+    });
   }
 
   const hasFreshFrames = await waitForAudioProcessorFrames(650);
   if (!hasFreshFrames) {
     await setupAudioAnalyser({
       reuseExisting: false,
-      forceDedicatedStream: !isIosMediaDevice(),
+      forceDedicatedStream: !options.preferExistingStream && !isIosMediaDevice(),
+      preferExistingStream: Boolean(options.preferExistingStream),
     });
     await waitForAudioProcessorFrames(650);
   }
@@ -5393,6 +5594,10 @@ function getExerciseInstruction() {
     return `Bereiten Sie sich auf den Dialog vor. Hören Sie auf die System-Antworten und sprechen Sie Ihren Teil ruhig und deutlich.`;
   }
 
+  if (isBreathingExercise(exercise)) {
+    return `Bereiten Sie sich auf die Atemübung vor. Folgen Sie gleich ruhig der Atemkugel.`;
+  }
+
   if (exercise.mode === "sentences") {
     return `Bereiten Sie sich auf die kurzen Sätze vor. Lesen Sie jeden Satz im Tempo ${exercise.timing.label}. Machen Sie nach jedem Satz eine kurze Pause.`;
   }
@@ -5474,6 +5679,21 @@ function getActiveEditorExercise() {
 
 function getActiveRecordingExercise() {
   const courseExercise = getActiveCourseExercise();
+  if (isBreathingExercise(courseExercise) && courseExercise.exerciseId === exerciseName.value) {
+    return hydrateEditorExercise({
+      name: courseExercise.title || courseExercise.exerciseId || "Ruhige Bauchatmung",
+      mode: "breathing",
+      content: courseExercise.content || courseExercise.patientHint || "Folgen Sie der Atemkugel in Ihrem eigenen ruhigen Tempo.",
+      script: courseExercise.script || courseExercise.content || courseExercise.patientHint || "Folgen Sie der Atemkugel in Ihrem eigenen ruhigen Tempo.",
+      voiceInstruction: courseExercise.voiceInstruction || "Bereiten Sie sich auf die Atemübung vor. Folgen Sie gleich ruhig der Atemkugel.",
+      breathing: courseExercise.breathing || courseExercise.breathingSettings || getBreathingSettings(courseExercise),
+      recordAudio: false,
+      recordVideo: false,
+      useVideo: false,
+      volumeAnalysis: false,
+      frequencyAnalysis: false,
+    });
+  }
   if (normalizeEditorExerciseModeValue(courseExercise?.mode) === "media_exercise" && courseExercise.exerciseId === exerciseName.value) {
     return hydrateEditorExercise({
       name: courseExercise.title || "Medienübung",
@@ -5526,7 +5746,16 @@ function getActiveRecordingExercise() {
     });
   }
 
-  return null;
+  const fallbackName = selectedLabel || exerciseName.value || "Übung";
+  return hydrateEditorExercise({
+    name: fallbackName,
+    mode: "long_text",
+    content: fallbackName,
+    script: fallbackName,
+    repeats: 1,
+    speed: Number(recordingKaraokeSpeed?.value || 3),
+    voiceInstruction: `Bitte sprechen Sie die Übung ${fallbackName} ruhig und deutlich.`,
+  });
 }
 
 function hydrateEditorExercise(exercise) {
@@ -8036,7 +8265,7 @@ function withTimeout(promise, ms) {
   return Promise.race([promise, wait(ms)]);
 }
 
-async function waitForCameraFrame() {
+async function waitForCameraFrame(timeoutMs = 900) {
   await ensureCameraPreviewPlaying();
 
   if (cameraPreview.videoWidth && cameraPreview.videoHeight && cameraPreview.readyState >= 2) {
@@ -8053,7 +8282,7 @@ async function waitForCameraFrame() {
       cameraPreview.addEventListener("loadedmetadata", finish, { once: true });
       cameraPreview.addEventListener("canplay", finish, { once: true });
     }),
-    900,
+    timeoutMs,
   );
 }
 
@@ -8151,6 +8380,22 @@ function scheduleCameraPreviewRetry() {
 }
 
 function startComposedVideoStream() {
+  const hasUsableCameraFrame = Boolean(cameraPreview.videoWidth && cameraPreview.videoHeight && cameraPreview.readyState >= 2);
+  if (!hasUsableCameraFrame) {
+    composedRecordingStream = new MediaStream();
+    mediaStream.getVideoTracks().forEach((track) => {
+      if (track.readyState === "live") composedRecordingStream.addTrack(track.clone());
+    });
+    composedRecordingAudioTrack = createRecordingAudioTrack() || mediaStream.getAudioTracks()[0]?.clone?.();
+    if (composedRecordingAudioTrack) composedRecordingStream.addTrack(composedRecordingAudioTrack);
+    recordingCanvas = null;
+    recordingCanvasContext = null;
+    activeCaptureSourceWidth = 0;
+    activeCaptureSourceHeight = 0;
+    activeCaptureRotationDegrees = 0;
+    return composedRecordingStream;
+  }
+
   recordingCanvas = document.createElement("canvas");
   recordingCanvas.width = RECORDING_WIDTH;
   recordingCanvas.height = RECORDING_HEIGHT;
@@ -12804,11 +13049,11 @@ async function loadCourseCollectionsFromCloud() {
 
 async function refreshCourseDataForCurrentPatient() {
   const cloud = await loadCourseCollectionsFromCloud();
-  dailyPlans = mergeById(dailyPlans, cloud.dailyPlans || []);
-  courses = mergeById(courses, cloud.courses || []);
-  courseSessions = mergeById(courseSessions, cloud.courseSessions || []);
-  courseAssignments = mergeById(courseAssignments, cloud.courseAssignments || []);
-  relaxMusicItems = mergeById(relaxMusicItems, cloud.relaxMusic || []);
+  dailyPlans = Array.isArray(cloud.dailyPlans) ? cloud.dailyPlans : dailyPlans;
+  courses = Array.isArray(cloud.courses) ? cloud.courses : courses;
+  courseSessions = Array.isArray(cloud.courseSessions) ? cloud.courseSessions : courseSessions;
+  courseAssignments = Array.isArray(cloud.courseAssignments) ? cloud.courseAssignments : courseAssignments;
+  relaxMusicItems = Array.isArray(cloud.relaxMusic) ? cloud.relaxMusic : relaxMusicItems;
   courseAssignments = reconcileCourseAssignmentPatients(courseAssignments);
   persistCourseModuleData();
 }
@@ -12830,13 +13075,15 @@ async function loadCourseModuleData() {
     mediaLibraryItems = [];
   }
 
+  let loadedCourseDataFromApi = false;
   try {
     const cloud = await loadCourseCollectionsFromCloud();
-    dailyPlans = mergeById(dailyPlans, cloud.dailyPlans || []);
-    courses = mergeById(courses, cloud.courses || []);
-    courseSessions = mergeById(courseSessions, cloud.courseSessions || []);
-    courseAssignments = mergeById(courseAssignments, cloud.courseAssignments || []);
-    relaxMusicItems = mergeById(relaxMusicItems, cloud.relaxMusic || []);
+    dailyPlans = Array.isArray(cloud.dailyPlans) ? cloud.dailyPlans : dailyPlans;
+    courses = Array.isArray(cloud.courses) ? cloud.courses : courses;
+    courseSessions = Array.isArray(cloud.courseSessions) ? cloud.courseSessions : courseSessions;
+    courseAssignments = Array.isArray(cloud.courseAssignments) ? cloud.courseAssignments : courseAssignments;
+    relaxMusicItems = Array.isArray(cloud.relaxMusic) ? cloud.relaxMusic : relaxMusicItems;
+    loadedCourseDataFromApi = true;
   } catch (apiError) {
     await Promise.all([
       loadCloudCollection("dailyPlans").then((items) => { dailyPlans = mergeById(dailyPlans, items); }),
@@ -12850,7 +13097,7 @@ async function loadCourseModuleData() {
   courseAssignments = reconcileCourseAssignmentPatients(courseAssignments);
 
   persistCourseModuleData();
-  syncCourseModuleDataToCloud().catch(() => {});
+  if (!loadedCourseDataFromApi) syncCourseModuleDataToCloud().catch(() => {});
   if (userRoleSelect) userRoleSelect.value = userRole;
   updateRoleMenuVisibility();
   resetDailyPlanEditor();
@@ -14639,19 +14886,89 @@ function renderCourseRecordingContext(exercise = getActiveCourseExercise()) {
   }
   if (courseRecordingProgress) courseRecordingProgress.style.width = `${progress}%`;
   courseRecordingContext.classList.remove("is-hidden");
+  courseRecordingActions?.classList.remove("is-hidden");
   document.body.classList.add("course-recording-mode");
 }
 
 function clearCourseRecordingContext() {
   courseRecordingContext?.classList.add("is-hidden");
+  courseRecordingActions?.classList.add("is-hidden");
   document.body.classList.remove("course-recording-mode");
+}
+
+async function finishCourseRecordingAction(action) {
+  if (!activeCourseRun) return;
+  const exercise = getActiveCourseExercise();
+  const session = activeCourseRun.session;
+  if (!exercise || !session) return;
+
+  if (isRecording || mediaRecorder?.state === "recording") {
+    if (action === "done") {
+      stopRecording();
+      return;
+    }
+    stopRecording();
+  }
+
+  session.completedExerciseIds = Array.isArray(session.completedExerciseIds) ? session.completedExerciseIds : [];
+  session.skippedExerciseIds = Array.isArray(session.skippedExerciseIds) ? session.skippedExerciseIds : [];
+
+  if (action === "cancel") {
+    clearCourseAutoAdvanceTimer();
+    clearActiveCourseRun();
+    setActiveView("myCourses");
+    renderCourseViews();
+    return;
+  }
+
+  if (action === "skip" && exercise.exerciseId && !session.skippedExerciseIds.includes(exercise.exerciseId)) {
+    session.skippedExerciseIds.push(exercise.exerciseId);
+  }
+  if (action === "done" && exercise.exerciseId && !session.completedExerciseIds.includes(exercise.exerciseId)) {
+    session.completedExerciseIds.push(exercise.exerciseId);
+  }
+
+  activeCourseRun.index += 1;
+  session.currentExerciseIndex = activeCourseRun.index;
+  session.status = activeCourseRun.index >= (activeCourseRun.plan?.exercises?.length || 0)
+    ? "completed"
+    : "in_progress";
+  session.updatedAt = new Date().toISOString();
+  courseSessions = mergeById(courseSessions, [session]);
+  persistCourseModuleData();
+  await saveCourseSessionToCloud(session).catch(() => {});
+  clearCourseRecordingContext();
+  if (session.status === "completed") {
+    renderCoursePlayer();
+    setActiveView("myCourses");
+  } else {
+    runCourseTransition(exercise, () => continueCoursePlaylist());
+  }
 }
 
 function syncBreathingRecordPreview() {
   if (!breathingOverlay) return;
-  if (isBreathingExerciseRunning || isPreviewingExercise || activeCourseRun?.playlistMode) return;
+  if (isBreathingExerciseRunning || isPreviewingExercise) return;
 
   const shouldShow = document.body.dataset.activeView === "record" && isBreathingExercise(getActiveRecordingExercise());
+  const courseExercise = getActiveCourseExercise();
+  const shouldAutoStartCourseBreathing = Boolean(
+    activeCourseRun
+    && shouldShow
+    && isBreathingExercise(courseExercise)
+    && courseExercise?.exerciseId === exerciseName.value
+  );
+
+  if (shouldAutoStartCourseBreathing) {
+    document.body.classList.remove("breathing-preview-idle");
+    clearCourseTransitionOverlay();
+    clearCourseRecordingContext();
+    breathingOverlay.classList.remove("is-hidden");
+    setBreathingCourseUiVisible(true, courseExercise);
+    scheduleCourseBreathingStart(courseExercise, 260);
+    return;
+  }
+
   document.body.classList.toggle("breathing-preview-idle", shouldShow);
 
   if (!shouldShow) {
@@ -14671,6 +14988,28 @@ function syncBreathingRecordPreview() {
   if (breathingRound) breathingRound.textContent = `Bereit - ${settings.repeats} Runden`;
   if (breathingCountdown) breathingCountdown.textContent = `${settings.inhale}s`;
 }
+
+function scheduleCourseBreathingStart(exercise, delayMs = 120) {
+  if (!exercise || !isBreathingExercise(exercise)) return;
+  window.clearTimeout(courseBreathingAutoStartTimerId);
+  const sessionId = activeCourseRun?.session?.id || "";
+  const exerciseId = exercise.exerciseId || "";
+  courseBreathingAutoStartTimerId = window.setTimeout(() => {
+    courseBreathingAutoStartTimerId = 0;
+    if (
+      document.body.dataset.activeView !== "record"
+      || isBreathingExerciseRunning
+      || !activeCourseRun
+      || activeCourseRun.session?.id !== sessionId
+      || getActiveCourseExercise()?.exerciseId !== exerciseId
+    ) return;
+    clearCourseTransitionOverlay();
+    startBreathingExercise(exercise, { fromCourse: true, skipInstruction: false }).catch(() => {
+      setCoursePlayerStatus("Atemübung konnte nicht gestartet werden.");
+    });
+  }, Math.max(0, Number(delayMs) || 0));
+}
+
 function clearCourseAutoAdvanceTimer() {
   window.clearTimeout(courseAutoAdvanceTimerId);
   courseAutoAdvanceTimerId = 0;
@@ -14696,13 +15035,13 @@ function openNextCourseExercise(exercise, options = {}) {
   if (!exercise) return;
   const autoStart = options.autoStart ?? Boolean(activeCourseRun?.playlistMode);
   if (isBreathingExercise(exercise)) {
+    if (isBreathingExerciseRunning) {
+      stopBreathingExercise("Atemübung wird neu gestartet.", { keepCourseRun: true });
+    }
+    clearCourseTransitionOverlay();
     prepareCourseExerciseInRecordView(exercise);
-    setActiveView("record");
-    window.setTimeout(() => {
-      startBreathingExercise(exercise, { fromCourse: true }).catch(() => {
-        setCoursePlayerStatus("Atemübung konnte nicht gestartet werden.");
-      });
-    }, autoStart ? 80 : 0);
+    setBreathingCourseUiVisible(Boolean(activeCourseRun), exercise);
+    scheduleCourseBreathingStart(exercise, 180);
     return;
   }
   if (exercise.mediaUrl || exercise.mediaId || isCoursePauseExercise(exercise)) {
@@ -14724,6 +15063,12 @@ function getOrCreateCourseTransitionOverlay() {
     document.body.append(overlay);
   }
   return overlay;
+}
+
+function clearCourseTransitionOverlay() {
+  const overlay = document.querySelector(".course-transition-overlay");
+  if (!overlay) return;
+  overlay.classList.remove("is-visible", "is-leaving", "is-through");
 }
 
 function runCourseTransition(previousExercise, nextStep) {
@@ -14953,6 +15298,7 @@ async function resumeOrStartCourse(course, assignment, selectedDayIndex = null) 
   const dayState = getCurrentCourseDayPlan(course, assignment, selectedDayIndex);
   const instructionUnlock = unlockInstructionAudio();
   const contextUnlock = unlockCoursePlaylistAudioContext();
+  const breathingUnlock = unlockBreathingVoice();
   const introAudio = getDailyPlanIntroAudioData(dayState.plan);
   courseIntroPlaybackPromise = dayState.plan?.description && introAudio?.url
     ? playVoiceAudioElement(introAudio.url, {
@@ -14961,6 +15307,7 @@ async function resumeOrStartCourse(course, assignment, selectedDayIndex = null) 
     : null;
   Promise.resolve(instructionUnlock).catch(() => {});
   Promise.resolve(contextUnlock).catch(() => {});
+  Promise.resolve(breathingUnlock).catch(() => {});
   return startCoursePreview(course, null, assignment, selectedDayIndex);
 }
 
@@ -15341,6 +15688,7 @@ async function startCourseExerciseFromToday(course, assignment, selectedDayIndex
   Promise.allSettled([
     instructionUnlock,
     contextUnlock,
+    unlockBreathingVoice(),
     unlockCoursePlaylistAudio(),
     primeCoursePlaylistVideo(course, assignment, selectedDayIndex),
     primeCoursePauseAudio(course, assignment, selectedDayIndex),
@@ -15565,21 +15913,21 @@ function renderDailyPlanIntroduction() {
   coursePlayer.innerHTML = `
     <div class="course-player-card course-intro-card${introImageUrl ? " has-intro-image" : ""}">
       ${introImageUrl ? `<img class="course-intro-background" src="${mediaLibraryEscape(introImageUrl)}" alt="">` : ""}
-      <div class="course-intro-content">
       <div class="course-player-context">
         <span>Kurs</span>
         <strong>${course?.name || "Kurs"}</strong>
         <small>${plan?.title || plan?.name || "Tagesplan"}</small>
       </div>
+      <div class="course-intro-content">
       <p class="eyebrow">Einleitung zur Tageseinheit</p>
       <h2>${plan?.title || plan?.name || "Tagesplan"}</h2>
       ${introImageUrl ? "" : '<p class="course-intro-description"></p>'}
       <p class="course-intro-state" aria-live="polite">Einleitung wird vorgelesen...</p>
-            <div class="course-actions course-actions-bd course-intro-actions">
+      </div>
+      <div class="course-actions course-actions-bd course-intro-actions">
         <button class="secondary-action" type="button" data-action="finishIntro">Erledigt</button>
         <button class="secondary-action" type="button" data-action="skipIntro">Überspringen</button>
         <button class="secondary-action danger-action" type="button" data-action="stopIntro">Stoppen</button>
-      </div>
       </div>
     </div>
   `;
@@ -15952,8 +16300,15 @@ async function startCourseUnitMedia(exercise) {
   if (!coursePlayer || !activeCourseRun) return false;
   const media = resolveCourseUnitMedia(exercise);
   const state = coursePlayer.querySelector(".course-media-state");
+  const startButton = coursePlayer.querySelector("[data-course-media-start-button]");
+  const showStartButton = (visible, label = "") => {
+    if (!startButton) return;
+    startButton.classList.toggle("is-hidden", !visible);
+    if (label) startButton.textContent = label;
+  };
   if (!media?.downloadUrl) {
     if (state) state.textContent = "Sounddatei nicht verfügbar.";
+    showStartButton(false);
     return false;
   }
 
@@ -16021,12 +16376,14 @@ async function startCourseUnitMedia(exercise) {
       await mediaElement.play();
       coursePlaylistVideoAudioUnlocked = true;
       if (state) state.textContent = "";
+      showStartButton(false);
       return true;
     } catch (error) {
       if (mediaElement.error) {
         if (state) {
           state.innerHTML = '<span>Video konnte nicht geladen werden.</span> <button class="primary-action course-media-start" type="button" data-action="playMedia">Erneut versuchen</button>';
         }
+        showStartButton(true, "Erneut starten");
         return false;
       }
       // Mobile Safari commonly blocks audible autoplay after an automatic
@@ -16038,11 +16395,13 @@ async function startCourseUnitMedia(exercise) {
         if (state) {
           state.innerHTML = '<button class="primary-action course-media-start" type="button" data-action="enableVideoSound">Ton einschalten</button>';
         }
+        showStartButton(false);
         return true;
       } catch (mutedError) {
         if (state) {
           state.innerHTML = '<button class="primary-action course-media-start" type="button" data-action="playMedia">Video starten</button>';
         }
+        showStartButton(true, "Video starten");
         return false;
       }
     }
@@ -16079,6 +16438,7 @@ async function startCourseUnitMedia(exercise) {
       if (isPrimedPause) coursePlaylistAudio.currentTime = 0;
       await coursePlaylistAudio.play();
       if (state) state.innerHTML = 'Pausenmusik läuft. <button class="secondary-action" type="button" data-action="enablePauseSound">Ton einschalten</button>';
+      showStartButton(false);
       return true;
     } catch (error) {
       coursePlaylistPrimedUrl = "";
@@ -16086,15 +16446,18 @@ async function startCourseUnitMedia(exercise) {
     const bufferedAudioStarted = await playCoursePauseAudio(media);
     if (bufferedAudioStarted) {
       if (state) state.innerHTML = 'Pausenmusik läuft. <button class="secondary-action" type="button" data-action="enablePauseSound">Ton einschalten</button>';
+      showStartButton(false);
       return true;
     }
   }
   try {
     await coursePlaylistAudio.play();
-    if (state) state.textContent = "Pausenmusik läuft.";
+    if (state) state.textContent = isTimedPause ? "Pausenmusik läuft." : "Sound läuft.";
+    showStartButton(false);
     return true;
   } catch (error) {
     if (state) state.innerHTML = '<button class="secondary-action" type="button" data-action="playMedia">Sound starten</button>';
+    showStartButton(true, "Sound starten");
     return false;
   }
 }
@@ -16148,10 +16511,11 @@ function renderCoursePlayer() {
   const pauseBackground = isMediaPause ? getDailyPlanPauseBackgroundImage(exercise) : null;
   const pauseBackgroundUrl = pauseBackground?.downloadUrl ? resolveAppUrl(pauseBackground.downloadUrl) : "";
   const isFullscreenVideo = media?.mediaType === "video";
-  const useCourseControlBar = Boolean(activeCourseRun?.playlistMode);
+  const mediaStartLabel = isFullscreenVideo ? "Video starten" : (isMediaPause ? "Entspannung starten" : "Sound starten");
+  const useCourseControlBar = Boolean(activeCourseRun);
   setCourseVideoFullscreen(isFullscreenVideo);
   coursePlayer.innerHTML = `
-    <div class="course-player-card${isMediaPause ? " course-player-pause-mode" : ""}${pauseBackgroundUrl ? " has-pause-background" : ""}${isFullscreenVideo ? " course-video-card" : ""}">
+    <div class="course-player-card course-player-live${isMediaPause ? " course-player-pause-mode" : ""}${pauseBackgroundUrl ? " has-pause-background" : ""}${isFullscreenVideo ? " course-video-card" : ""}">
       ${pauseBackgroundUrl ? `<img class="course-pause-background" src="${mediaLibraryEscape(pauseBackgroundUrl)}" alt="" aria-hidden="true">` : ""}
       ${isMediaPause && !pauseBackgroundUrl ? '<div class="course-pause-ambient" aria-hidden="true"><span></span><span></span><span></span></div>' : ""}
       <div class="course-player-context">
@@ -16159,14 +16523,17 @@ function renderCoursePlayer() {
         <strong>${course?.name || "Kurs"}</strong>
         <small>${plan?.title || "Tagesplan"} · Tag ${Number(dayIndex || 0) + 1}</small>
       </div>
-      <p class="eyebrow">${isMediaPause ? "Pauseneinheit" : "Aktuelle Übung"}</p>
-      <h2>${exercise.title}</h2>
-      <p>Übung ${index + 1} von ${exercises.length}</p>
-      <div class="course-progress"><span style="width:${progress}%"></span></div>
-      <p>${exercise.patientHint || (isMediaPause ? "Nehmen Sie sich einen ruhigen Moment." : "Bereiten Sie sich auf die nächste Übung vor.")}</p>
-      ${isMediaPause ? `<p class="course-media-countdown" aria-live="polite"><strong id="courseMediaPauseCountdown">${Math.max(1, Number(exercise.duration || 30))}</strong><span>Sekunden</span></p>` : ""}
-      ${renderCourseUnitMedia(exercise)}
-      <div class="course-actions${useCourseControlBar ? " course-actions-bd" : ""}">
+      <div class="course-player-stage">
+        <p class="eyebrow">${isMediaPause ? "Pauseneinheit" : "Aktuelle Übung"}</p>
+        <h2>${exercise.title}</h2>
+        <p>Übung ${index + 1} von ${exercises.length}</p>
+        <div class="course-progress"><span style="width:${progress}%"></span></div>
+        <p>${exercise.patientHint || (isMediaPause ? "Nehmen Sie sich einen ruhigen Moment." : "Bereiten Sie sich auf die nächste Übung vor.")}</p>
+        ${isMediaPause ? `<p class="course-media-countdown" aria-live="polite"><strong id="courseMediaPauseCountdown">${Math.max(1, Number(exercise.duration || 30))}</strong><span>Sekunden</span></p>` : ""}
+        ${renderCourseUnitMedia(exercise)}
+        ${media?.downloadUrl ? `<button class="secondary-action course-inline-media-start" type="button" data-action="playMedia" data-course-media-start-button>${mediaStartLabel}</button>` : ""}
+      </div>
+      <div class="course-actions course-actions-bd">
         ${useCourseControlBar || isMediaPause ? "" : `<button class="primary-action" type="button" data-action="${isMediaExercise ? "record" : "open"}">${isMediaExercise ? "Aufnahme starten" : "Übung öffnen"}</button>`}
         <button class="secondary-action" type="button" data-action="done">${useCourseControlBar ? "Erledigt" : (isMediaPause ? "Pause beenden" : "Erledigt")}</button>
         ${useCourseControlBar || exercise.canSkip ? `<button class="secondary-action" type="button" data-action="skip">Überspringen</button>` : ""}
@@ -16221,6 +16588,7 @@ function handleCoursePlayerClick(event) {
   session.completedExerciseIds = Array.isArray(session.completedExerciseIds) ? session.completedExerciseIds : [];
   session.skippedExerciseIds = Array.isArray(session.skippedExerciseIds) ? session.skippedExerciseIds : [];
   if (action === "playMedia") {
+    window.clearTimeout(coursePauseTimerId);
     unlockCoursePlaylistAudioContext()
       .then(() => startCourseUnitMedia(exercise))
       .then((started) => {
@@ -17683,7 +18051,8 @@ function prepareRecordViewFromNavigation() {
   } else {
     document.body.classList.add("camera-not-ready");
     document.body.classList.remove("camera-ready");
-    cameraStartOverlay.classList.remove("is-hidden");
+    const breathingExerciseSelected = isBreathingExercise(getActiveRecordingExercise());
+    cameraStartOverlay.classList.toggle("is-hidden", breathingExerciseSelected);
     permissionState.textContent = "Bereit";
   }
   syncBreathingRecordPreview();

@@ -1,4 +1,4 @@
-﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getAuth,
   signInAnonymously,
@@ -126,6 +126,7 @@ const recordingModeFilter = document.querySelector("#recordingModeFilter");
 const exerciseName = document.querySelector("#exerciseName");
 const recordingExerciseShortcuts = document.querySelector("#recordingExerciseShortcuts");
 const previewExerciseButton = document.querySelector("#previewExerciseButton");
+const recordToEvaluationButton = document.querySelector("#recordToEvaluationButton");
 const previewSessionBar = document.querySelector("#previewSessionBar");
 const previewSessionLabel = document.querySelector("#previewSessionLabel");
 const previewStopButton = document.querySelector("#previewStopButton");
@@ -376,7 +377,8 @@ const voiceAnalysisReferenceControls = document.querySelector("#voiceAnalysisRef
 const referenceToneSelect = document.querySelector("#referenceToneSelect");
 const referenceToneCustom = document.querySelector("#referenceToneCustom");
 const referenceTonePlayButton = document.querySelector("#referenceTonePlayButton");
-const referenceToneStopButton = document.querySelector("#referenceToneStopButton");
+const referenceVideoPlayButton = document.querySelector("#referenceVideoPlayButton");
+const voiceAnalysisReferenceVideo = document.querySelector("#voiceAnalysisReferenceVideo");
 const referenceToneResult = document.querySelector("#referenceToneResult");
 const voiceAnalysisTextTraining = document.querySelector("#voiceAnalysisTextTraining");
 const voiceTrainingText = document.querySelector("#voiceTrainingText");
@@ -403,10 +405,39 @@ function escapeHtml(value) {
 }
 let activeVoiceAnalysisScreen = "home";
 let voiceAnalysisToneOscillator = null;
+let voiceAnalysisAudioBlob = null;
+
+function isVoiceAnalysisMicActive(snapshot = voiceAnalysisEngine?.getSnapshot?.() || {}) {
+  return snapshot.state === "live" || snapshot.state === "recording" || voiceAnalysisEngine?.recorder?.state === "recording" || voiceAnalysisEngine?.recorder?.state === "paused";
+}
+
+function updateVoiceAnalysisMicButton(snapshot = voiceAnalysisEngine?.getSnapshot?.() || {}) {
+  if (!voiceAnalysisStartButton) return;
+  const isActive = isVoiceAnalysisMicActive(snapshot);
+  const icon = voiceAnalysisStartButton.querySelector(".voice-analysis-action-icon");
+  const label = voiceAnalysisStartButton.querySelector(".voice-analysis-action-label");
+  voiceAnalysisStartButton.setAttribute("aria-pressed", String(isActive));
+  voiceAnalysisStartButton.setAttribute("aria-label", isActive ? "Mikrofon ausschalten" : "Mikrofon einschalten");
+  voiceAnalysisStartButton.title = isActive ? "Mikrofon ausschalten" : "Mikrofon einschalten";
+  if (icon) icon.textContent = "\uD83C\uDFA4";
+  if (label) label.textContent = isActive ? "Mikrofon aus" : "Mikrofon ein";
+}
+function setReferenceToneButtonPlaying(isPlaying) {
+  if (!referenceTonePlayButton) return;
+  const icon = referenceTonePlayButton.querySelector(".voice-analysis-action-icon");
+  const label = referenceTonePlayButton.querySelector(".voice-analysis-action-label");
+  referenceTonePlayButton.setAttribute("aria-pressed", String(isPlaying));
+  referenceTonePlayButton.setAttribute("aria-label", isPlaying ? "Referenzton stoppen" : "Referenzton abspielen");
+  referenceTonePlayButton.title = isPlaying ? "Referenzton stoppen" : "Referenzton abspielen";
+  if (icon) icon.textContent = isPlaying ? "\u25A0" : "\u25B6";
+  if (label) label.textContent = isPlaying ? "Ton stoppen" : "Ton abspielen";
+}
+
 const VOICE_ANALYSIS_SCREENS = {
   volume: { title: "Lautstärke", metric: "volume", unit: "", detail: "Relative Lautstärke · nicht kalibriert" },
   pitch: { title: "Tonhöhe", metric: "pitch", unit: " Hz", detail: "Grundfrequenz der Stimme" },
   pitchCurve: { title: "Pitch-Verlauf", metric: "pitch", unit: " Hz", detail: "Zeitverlauf der erkannten Grundfrequenz" },
+  spectrogram: { title: "Live-Spektrogramm", metric: "spectrogram", unit: " Hz", detail: "Stimmfrequenz von 70 bis 500 Hz" },
   waveform: { title: "Wellenform", metric: "waveform", unit: "%", detail: "Mikrofonsignal als Amplitudenverlauf" },
   monitor: { title: "Voice Monitor", metric: "monitor", unit: "", detail: "Live-Messwerte der aktuellen Session" },
   recording: { title: "Sprachaufnahme", metric: "recording", unit: "", detail: "Lokale Aufnahme mit Analyse" },
@@ -18211,45 +18242,379 @@ function getVoiceAnalysisRouteScreen() {
 
 function drawVoiceAnalysisChart(snapshot, screen = activeVoiceAnalysisScreen) {
   if (!voiceAnalysisChart) return;
+  resizeCanvasToDisplay(voiceAnalysisChart);
   const context = voiceAnalysisChart.getContext("2d");
   const width = voiceAnalysisChart.width;
   const height = voiceAnalysisChart.height;
+  const isPitchView = screen === "pitch" || screen === "pitchCurve" || screen === "monitor";
+  if (screen === "spectrogram") {
+    drawVoiceAnalysisSpectrogram(context, snapshot, width, height);
+    return;
+  }
   context.clearRect(0, 0, width, height);
+  if (isPitchView) {
+    drawVoiceAnalysisPitchChart(context, snapshot, width, height);
+    return;
+  }
+  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  const isPercentView = screen === "volume" || screen === "waveform" || screen === "dynamics";
+  const minimum = isPercentView ? 0 : 70;
+  const maximum = isPercentView ? 100 : 360;
+  const unit = isPercentView ? "%" : "Hz";
+  const leftAxis = 54 * pixelRatio;
+  const rightPad = 10 * pixelRatio;
+  const topPad = 10 * pixelRatio;
+  const bottomPad = 12 * pixelRatio;
+  const chartLeft = leftAxis;
+  const chartRight = width - rightPad;
+  const chartTop = topPad;
+  const chartBottom = height - bottomPad;
+  const chartWidth = Math.max(1, chartRight - chartLeft);
+  const chartHeight = Math.max(1, chartBottom - chartTop);
+  const toY = (value) => chartBottom - ((value - minimum) / Math.max(1, maximum - minimum)) * chartHeight;
+
   context.fillStyle = "#101820";
   context.fillRect(0, 0, width, height);
-  context.strokeStyle = "rgba(210, 235, 238, 0.14)";
-  context.lineWidth = 1;
-  for (let row = 1; row < 4; row += 1) {
-    const y = (height / 4) * row;
+  const ticks = isPercentView ? [0, 25, 50, 75, 100] : [70, 140, 210, 280, 360];
+  ticks.forEach((tick) => {
+    const y = toY(tick);
+    context.strokeStyle = "rgba(210, 235, 238, 0.14)";
+    context.lineWidth = pixelRatio;
+    context.beginPath();
+    context.moveTo(chartLeft, y);
+    context.lineTo(width, y);
+    context.stroke();
+    context.fillStyle = "rgba(226, 241, 243, 0.9)";
+    context.font = `${11 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    context.textAlign = "left";
+    context.textBaseline = "middle";
+    context.fillText(`${tick} ${unit}`, 6 * pixelRatio, y);
+  });
+  context.strokeStyle = "rgba(226, 241, 243, 0.38)";
+  context.lineWidth = pixelRatio;
+  context.beginPath();
+  context.moveTo(chartLeft, chartTop);
+  context.lineTo(chartLeft, chartBottom);
+  context.stroke();
+
+  const values = isPercentView
+    ? snapshot.volumeHistory.map((item) => item.value)
+    : snapshot.pitchHistory.map((item) => item.value);
+  if (!values.length) return;
+  context.strokeStyle = screen === "volume" || screen === "waveform" ? "#39c27a" : "#2bbcd8";
+  context.lineWidth = 3 * pixelRatio;
+  context.lineJoin = "round";
+  context.lineCap = "round";
+  context.beginPath();
+  values.forEach((value, index) => {
+    const x = values.length === 1 ? chartLeft + chartWidth / 2 : chartLeft + (index / (values.length - 1)) * chartWidth;
+    const y = toY(clampCanvas(Number(value), minimum, maximum));
+    if (index === 0) context.moveTo(x, clampCanvas(y, chartTop, chartBottom));
+    else context.lineTo(x, clampCanvas(y, chartTop, chartBottom));
+  });
+  context.stroke();
+}
+
+function getSpectrogramColor(intensity) {
+  const value = clampCanvas(Number(intensity) || 0, 0, 1);
+  const alpha = 0.18 + value * 0.72;
+  if (value < 0.35) return `rgba(${Math.round(58 + value * 140)}, 24, ${Math.round(150 + value * 120)}, ${alpha})`;
+  if (value < 0.7) return `rgba(${Math.round(150 + value * 105)}, ${Math.round(34 + value * 115)}, ${Math.round(160 - value * 90)}, ${alpha})`;
+  return `rgba(255, ${Math.round(130 + value * 95)}, 38, ${alpha})`;
+}
+
+function drawVoiceAnalysisSpectrogram(context, snapshot, width, height) {
+  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  const lowHz = 70;
+  const highHz = 500;
+  const leftAxis = 62 * pixelRatio;
+  const rightPad = 12 * pixelRatio;
+  const topPad = 10 * pixelRatio;
+  const bottomPad = 16 * pixelRatio;
+  const chartLeft = leftAxis;
+  const chartRight = width - rightPad;
+  const chartTop = topPad;
+  const chartBottom = height - bottomPad;
+  const chartWidth = Math.max(1, chartRight - chartLeft);
+  const chartHeight = Math.max(1, chartBottom - chartTop);
+  const toY = (hz) => chartBottom - ((hz - lowHz) / Math.max(1, highHz - lowHz)) * chartHeight;
+  const pitchHistory = Array.isArray(snapshot.pitchHistory) ? snapshot.pitchHistory.slice(-180) : [];
+  const volumeHistory = Array.isArray(snapshot.volumeHistory) ? snapshot.volumeHistory.slice(-180) : [];
+  const count = Math.max(pitchHistory.length, volumeHistory.length);
+
+  context.fillStyle = "#110083";
+  context.fillRect(0, 0, width, height);
+  const gradient = context.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, "rgba(12, 25, 108, 0.28)");
+  gradient.addColorStop(0.65, "rgba(14, 3, 120, 0.08)");
+  gradient.addColorStop(1, "rgba(10, 9, 72, 0.45)");
+  context.fillStyle = gradient;
+  context.fillRect(chartLeft, chartTop, chartWidth, chartHeight);
+
+  if (count) {
+    const columnWidth = Math.max(2 * pixelRatio, chartWidth / Math.max(1, count));
+    for (let index = 0; index < count; index += 1) {
+      const pitchItem = pitchHistory[Math.max(0, pitchHistory.length - count + index)];
+      const volumeItem = volumeHistory[Math.max(0, volumeHistory.length - count + index)];
+      const pitch = Number(pitchItem?.value ?? pitchItem) || 0;
+      const volume = clampCanvas(Number(volumeItem?.value ?? volumeItem) || 0, 0, 100);
+      const x = chartLeft + (index / Math.max(1, count - 1)) * chartWidth;
+      const baseIntensity = clampCanvas(volume / 85, 0.06, 1);
+      if (volume > 2) {
+        const noiseTop = toY(lowHz + volume * 1.25);
+        context.fillStyle = getSpectrogramColor(baseIntensity * 0.42);
+        context.fillRect(x, noiseTop, columnWidth, Math.max(1, chartBottom - noiseTop));
+      }
+      if (pitch > 0) {
+        for (let harmonic = 1; harmonic <= 10; harmonic += 1) {
+          const hz = pitch * harmonic;
+          if (hz > highHz) break;
+          const y = clampCanvas(toY(hz), chartTop, chartBottom);
+          const wobble = Math.sin(index * 0.28 + harmonic * 1.7) * 4 * pixelRatio;
+          const thickness = Math.max(2 * pixelRatio, (harmonic === 1 ? 11 : 8) * pixelRatio * (0.35 + 1 / harmonic));
+          const intensity = baseIntensity * (harmonic === 1 ? 1 : 0.82 / harmonic);
+          context.fillStyle = getSpectrogramColor(intensity);
+          context.fillRect(x, y - thickness / 2 + wobble, columnWidth + pixelRatio, thickness);
+        }
+      }
+    }
+  }
+
+  const ticks = [70, 100, 150, 200, 250, 300, 350, 400, 450, 500];
+  ticks.forEach((tick) => {
+    const y = clampCanvas(toY(tick), chartTop, chartBottom);
+    context.strokeStyle = tick === 70 || tick === 500 || tick % 100 === 0 ? "rgba(226, 241, 243, 0.22)" : "rgba(226, 241, 243, 0.12)";
+    context.lineWidth = pixelRatio;
+    context.beginPath();
+    context.moveTo(chartLeft, y);
+    context.lineTo(chartRight, y);
+    context.stroke();
+    context.fillStyle = "rgba(238, 248, 248, 0.92)";
+    context.font = `${11 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    context.textAlign = "left";
+    context.textBaseline = "middle";
+    context.fillText(`${tick} Hz`, 4 * pixelRatio, y);
+  });
+  context.strokeStyle = "rgba(238, 248, 248, 0.45)";
+  context.lineWidth = 1.5 * pixelRatio;
+  context.beginPath();
+  context.moveTo(chartLeft, chartTop);
+  context.lineTo(chartLeft, chartBottom);
+  context.stroke();
+
+  const pitchValues = pitchHistory.map((item) => Number(item?.value ?? item)).filter((value) => Number.isFinite(value) && value > 0);
+  if (pitchValues.length) {
+    const limitedValues = pitchValues.slice(-180);
+    context.strokeStyle = "rgba(82, 215, 255, 0.95)";
+    context.lineWidth = 2 * pixelRatio;
+    context.lineJoin = "round";
+    context.lineCap = "round";
+    context.beginPath();
+    limitedValues.forEach((value, index) => {
+      const x = limitedValues.length === 1 ? chartLeft + chartWidth / 2 : chartLeft + (index / (limitedValues.length - 1)) * chartWidth;
+      const y = clampCanvas(toY(clampCanvas(value, lowHz, highHz)), chartTop, chartBottom);
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    });
+    context.stroke();
+  } else {
+    context.fillStyle = "rgba(238, 248, 248, 0.82)";
+    context.font = `${15 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText("Mikrofon starten", chartLeft + chartWidth / 2, chartTop + chartHeight / 2);
+  }
+}
+function drawVoiceAnalysisPitchChart(context, snapshot, width, height) {
+  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  const lowHz = 50;
+  const highHz = 450;
+  const leftAxis = 64 * pixelRatio;
+  const rightPad = 14 * pixelRatio;
+  const topPad = 8 * pixelRatio;
+  const bottomPad = 10 * pixelRatio;
+  const chartLeft = leftAxis;
+  const chartRight = width - rightPad;
+  const chartTop = topPad;
+  const chartBottom = height - bottomPad;
+  const chartWidth = Math.max(1, chartRight - chartLeft);
+  const chartHeight = Math.max(1, chartBottom - chartTop);
+  const toY = (hz) => chartBottom - ((hz - lowHz) / Math.max(1, highHz - lowHz)) * chartHeight;
+  const bands = [
+    { from: 175, to: 275, color: "rgba(255, 151, 171, 0.72)", label: "Female", labelHz: 266 },
+    { from: 145, to: 175, color: "rgba(196, 197, 197, 0.86)", label: "Androgyn", labelHz: 166 },
+    { from: 85, to: 145, color: "rgba(125, 204, 225, 0.72)", label: "Male", labelHz: 136 },
+  ];
+  context.fillStyle = "#d6e2e3";
+  context.fillRect(0, 0, width, height);
+  bands.forEach((band) => {
+    const yTop = toY(Math.min(highHz, band.to));
+    const yBottom = toY(Math.max(lowHz, band.from));
+    context.fillStyle = band.color;
+    context.fillRect(chartLeft, yTop, chartWidth, Math.max(1, yBottom - yTop));
+    context.fillStyle = "rgba(12, 20, 28, 0.86)";
+    context.font = `${13 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    context.textAlign = "right";
+    context.textBaseline = "middle";
+    context.fillText(band.label, chartRight - 6 * pixelRatio, toY(band.labelHz));
+  });
+  context.strokeStyle = "rgba(85, 105, 112, 0.38)";
+  context.lineWidth = 1.5 * pixelRatio;
+  context.beginPath();
+  context.moveTo(chartLeft, chartTop);
+  context.lineTo(chartLeft, chartBottom);
+  context.stroke();
+  [50, 100, 150, 200, 250, 300, 350, 400, 450].forEach((hz) => {
+    const y = toY(hz);
+    context.strokeStyle = hz % 100 === 0 || hz === 50 || hz === 450 ? "rgba(82, 99, 108, 0.34)" : "rgba(82, 99, 108, 0.22)";
+    context.lineWidth = pixelRatio;
     context.beginPath();
     context.moveTo(0, y);
     context.lineTo(width, y);
     context.stroke();
-  }
-  const values = screen === "volume" || screen === "waveform" || screen === "monitor" || screen === "dynamics"
-    ? snapshot.volumeHistory.map((item) => item.value)
-    : snapshot.pitchHistory.map((item) => item.value);
+    context.fillStyle = "#101820";
+    context.font = `${12 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    context.textAlign = "left";
+    context.textBaseline = "middle";
+    context.fillText(`${hz} Hz`, 4 * pixelRatio, y - 2 * pixelRatio);
+  });
+  const values = Array.isArray(snapshot.pitchHistory)
+    ? snapshot.pitchHistory.map((item) => Number(item?.value ?? item)).filter((value) => Number.isFinite(value) && value > 0)
+    : [];
   if (!values.length) return;
-  const minimum = screen === "volume" || screen === "waveform" || screen === "monitor" || screen === "dynamics" ? 0 : 70;
-  const maximum = screen === "volume" || screen === "waveform" || screen === "monitor" || screen === "dynamics" ? 100 : 360;
-  context.strokeStyle = screen === "volume" || screen === "waveform" ? "#39c27a" : "#2bbcd8";
-  context.lineWidth = 4;
+  const limitedValues = values.slice(-90);
+  context.lineWidth = 2.5 * pixelRatio;
+  context.lineJoin = "round";
+  context.lineCap = "round";
+  context.strokeStyle = "#df1727";
   context.beginPath();
-  values.forEach((value, index) => {
-    const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * width;
-    const y = height - ((Number(value) - minimum) / Math.max(1, maximum - minimum)) * (height - 24) - 12;
-    if (index === 0) context.moveTo(x, clampCanvas(y, 8, height - 8));
-    else context.lineTo(x, clampCanvas(y, 8, height - 8));
+  limitedValues.forEach((value, index) => {
+    const x = limitedValues.length === 1 ? chartLeft + chartWidth / 2 : chartLeft + (index / (limitedValues.length - 1)) * chartWidth;
+    const y = clampCanvas(toY(clampCanvas(value, lowHz, highHz)), chartTop, chartBottom);
+    if (index === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
   });
   context.stroke();
+  limitedValues.forEach((value, index) => {
+    const x = limitedValues.length === 1 ? chartLeft + chartWidth / 2 : chartLeft + (index / (limitedValues.length - 1)) * chartWidth;
+    const y = clampCanvas(toY(clampCanvas(value, lowHz, highHz)), chartTop, chartBottom);
+    context.fillStyle = "#084cff";
+    context.beginPath();
+    context.arc(x, y, 3 * pixelRatio, 0, Math.PI * 2);
+    context.fill();
+  });
 }
 
 function clampCanvas(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function getSortedFiniteNumbers(values = []) {
+  return values.map(Number).filter(Number.isFinite).sort((left, right) => left - right);
+}
+
+function getVoiceAnalysisPercentile(values = [], percentile = 0.5) {
+  const sorted = getSortedFiniteNumbers(values);
+  if (!sorted.length) return 0;
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.round((sorted.length - 1) * percentile)));
+  return sorted[index];
+}
+
+function getVoiceAnalysisRangeShare(values = [], min = -Infinity, max = Infinity) {
+  const spoken = values.map(Number).filter((value) => Number.isFinite(value) && value > 0);
+  if (!spoken.length) return 0;
+  const matching = spoken.filter((value) => value >= min && value < max).length;
+  return Math.round((matching / spoken.length) * 100);
+}
+
+function formatVoiceAnalysisHz(value, decimals = 0) {
+  const numeric = Number(value) || 0;
+  return `${numeric.toLocaleString("de-DE", { maximumFractionDigits: decimals, minimumFractionDigits: decimals })} Hz`;
+}
+
+function formatVoiceAnalysisDb(value, decimals = 1) {
+  const numeric = Number(value) || 0;
+  return `${numeric.toLocaleString("de-DE", { maximumFractionDigits: decimals, minimumFractionDigits: decimals })} dB`;
+}
+
+function renderVoiceAnalysisEvaluation(snapshot = {}) {
+  const pitchValues = Array.isArray(snapshot.pitchHistory)
+    ? snapshot.pitchHistory.map((item) => Number(item?.value ?? item)).filter((value) => Number.isFinite(value) && value > 0)
+    : [];
+  const volumeValues = Array.isArray(snapshot.volumeHistory)
+    ? snapshot.volumeHistory.map((item) => Number(item?.value ?? item)).filter(Number.isFinite)
+    : [];
+  const pitchAverage = Number(snapshot.pitch?.average) || 0;
+  const pitchMedian = getVoiceAnalysisPercentile(pitchValues, 0.5);
+  const pitchHigh = getVoiceAnalysisPercentile(pitchValues, 0.95);
+  const pitchLow = getVoiceAnalysisPercentile(pitchValues, 0.05);
+  const volumeAverage = Number(snapshot.volume?.average) || 0;
+  const volumeMedian = getVoiceAnalysisPercentile(volumeValues, 0.5);
+  const volumeHigh = getVoiceAnalysisPercentile(volumeValues, 0.95);
+  const volumeLow = getVoiceAnalysisPercentile(volumeValues, 0.05);
+  const maleShare = getVoiceAnalysisRangeShare(pitchValues, 85, 145);
+  const neutralShare = getVoiceAnalysisRangeShare(pitchValues, 145, 175);
+  const femaleShare = getVoiceAnalysisRangeShare(pitchValues, 175, 275);
+  const veryLowShare = getVoiceAnalysisRangeShare(pitchValues, 0, 85);
+  const veryHighShare = getVoiceAnalysisRangeShare(pitchValues, 275, Infinity);
+  const hasPitch = pitchValues.length > 0;
+  const hasVolume = volumeValues.length > 0;
+  return `
+    <div class="voice-test-result-card">
+      <div class="voice-test-result-hero">
+        <div class="voice-test-range-meter" aria-label="Tonhöhenbereich von 50 bis 350 Hertz">
+          <span>350 Hz</span>
+          <div class="voice-test-range-track"><i style="--pitch-pos:${Math.max(0, Math.min(100, ((pitchAverage - 50) / 300) * 100))}%"></i></div>
+          <span>50 Hz</span>
+        </div>
+        <div class="voice-test-bubbles" aria-label="Einordnung nach Tonhöhenbereichen">
+          <strong class="voice-test-main-bubble">${hasPitch ? formatVoiceAnalysisHz(pitchAverage, 1) : "0 Hz"}</strong>
+          <span class="voice-test-bubble voice-test-bubble-female">${femaleShare}%<small>Weiblich</small></span>
+          <span class="voice-test-bubble voice-test-bubble-male">${maleShare}%<small>Männlich</small></span>
+          <span class="voice-test-bubble voice-test-bubble-neutral">${neutralShare}%<small>Androgyn</small></span>
+        </div>
+      </div>
+      <div class="voice-test-result-player">
+        <button id="voiceEvaluationPlayButton" class="voice-evaluation-play-button" type="button" aria-pressed="false" ${snapshot.recordingBlob ? "" : "disabled"}>
+          <span class="voice-analysis-action-icon">▶</span>
+          <span class="voice-analysis-action-label">${snapshot.recordingBlob ? "Analysierte Aufnahme abspielen" : "Keine Aufnahme zum Abspielen"}</span>
+        </button>
+      </div>
+      <div class="voice-test-result-section">
+        <h3>Tonhöhe</h3>
+        <dl>
+          <div><dt>Durchschnitt</dt><dd>${formatVoiceAnalysisHz(pitchAverage, 1)}</dd></div>
+          <div><dt>Median</dt><dd>${formatVoiceAnalysisHz(pitchMedian, 1)}</dd></div>
+          <div><dt>Hoch (95%)</dt><dd>${formatVoiceAnalysisHz(pitchHigh, 1)}</dd></div>
+          <div><dt>Tief (5%)</dt><dd>${formatVoiceAnalysisHz(pitchLow, 1)}</dd></div>
+          <div><dt>Weiblicher Bereich</dt><dd>${femaleShare}%</dd></div>
+          <div><dt>Androgyner Bereich</dt><dd>${neutralShare}%</dd></div>
+          <div><dt>Männlicher Bereich</dt><dd>${maleShare}%</dd></div>
+          <div><dt>Sehr tiefer Bereich</dt><dd>${veryLowShare}%</dd></div>
+          <div><dt>Sehr hoher Bereich</dt><dd>${veryHighShare}%</dd></div>
+        </dl>
+      </div>
+      <div class="voice-test-result-section">
+        <h3>Lautstärke</h3>
+        <dl>
+          <div><dt>Umgebung</dt><dd>${formatVoiceAnalysisDb(Math.max(0, volumeLow), 1)}</dd></div>
+          <div><dt>Durchschnitt</dt><dd>${formatVoiceAnalysisDb(volumeAverage, 1)}</dd></div>
+          <div><dt>Median</dt><dd>${formatVoiceAnalysisDb(volumeMedian, 1)}</dd></div>
+          <div><dt>Hoch (95%)</dt><dd>${formatVoiceAnalysisDb(volumeHigh, 1)}</dd></div>
+          <div><dt>Tief (5%)</dt><dd>${formatVoiceAnalysisDb(volumeLow, 1)}</dd></div>
+          <div><dt>Sprechzeit</dt><dd>${formatVoiceAnalysisTime(snapshot.activeSpeechSeconds)}</dd></div>
+          <div><dt>Pausen</dt><dd>${snapshot.pauses?.count || 0}</dd></div>
+          <div><dt>Messdauer</dt><dd>${formatVoiceAnalysisTime(snapshot.elapsedSeconds)}</dd></div>
+        </dl>
+      </div>
+
+    </div>`;
+}
 function stopVoiceAnalysisTone() {
-  if (!voiceAnalysisToneOscillator) return;
+  if (!voiceAnalysisToneOscillator) {
+    setReferenceToneButtonPlaying(false);
+    return;
+  }
   try {
     voiceAnalysisToneOscillator.stop();
   } catch (error) {
@@ -18261,8 +18626,56 @@ function stopVoiceAnalysisTone() {
     // Disconnecting an already released node is harmless.
   }
   voiceAnalysisToneOscillator = null;
+  setReferenceToneButtonPlaying(false);
 }
 
+
+function getVoiceAnalysisReferenceVideoItem() {
+  return (mediaLibraryItems || []).find((item) => {
+    if (!item || item.mediaType !== "video") return false;
+    return Boolean(item.downloadUrl || item.videoDownloadUrl || item.fileUrl || item.url);
+  });
+}
+
+function getVoiceAnalysisReferenceVideoSource(item) {
+  const source = item?.downloadUrl || item?.videoDownloadUrl || item?.fileUrl || item?.url || "";
+  return source ? resolveAppUrl(String(source)) : "";
+}
+
+function setReferenceVideoButtonPlaying(isPlaying) {
+  if (!referenceVideoPlayButton) return;
+  const icon = referenceVideoPlayButton.querySelector(".voice-analysis-action-icon");
+  const label = referenceVideoPlayButton.querySelector(".voice-analysis-action-label");
+  referenceVideoPlayButton.setAttribute("aria-pressed", String(isPlaying));
+  referenceVideoPlayButton.setAttribute("aria-label", isPlaying ? "Referenzvideo stoppen" : "Referenzvideo abspielen");
+  referenceVideoPlayButton.title = isPlaying ? "Referenzvideo stoppen" : "Referenzvideo abspielen";
+  if (icon) icon.textContent = isPlaying ? "■" : "▶";
+  if (label) label.textContent = isPlaying ? "Video stoppen" : "Video abspielen";
+}
+
+function stopVoiceAnalysisReferenceVideo() {
+  if (!voiceAnalysisReferenceVideo) return;
+  try {
+    voiceAnalysisReferenceVideo.pause();
+  } catch (error) {
+    // Pausing a released video element is harmless.
+  }
+  setReferenceVideoButtonPlaying(false);
+}
+
+function prepareVoiceAnalysisReferenceVideo() {
+  if (!voiceAnalysisReferenceVideo) return null;
+  const item = getVoiceAnalysisReferenceVideoItem();
+  const source = getVoiceAnalysisReferenceVideoSource(item);
+  if (!item || !source) {
+    voiceAnalysisReferenceVideo.classList.add("is-hidden");
+    if (referenceToneResult) referenceToneResult.textContent = "Kein Referenzvideo in der Medienbibliothek gefunden.";
+    return null;
+  }
+  if (voiceAnalysisReferenceVideo.src !== source) voiceAnalysisReferenceVideo.src = source;
+  voiceAnalysisReferenceVideo.classList.remove("is-hidden");
+  return { video: voiceAnalysisReferenceVideo, item };
+}
 function renderVoiceAnalysisDetails(snapshot, screen) {
   if (!voiceAnalysisDetails) return;
   if (screen === "comparison") {
@@ -18278,13 +18691,17 @@ function renderVoiceAnalysisDetails(snapshot, screen) {
     voiceAnalysisDetails.innerHTML = rows.map(([label, value]) => `<div><dt>${escapeHtml(String(label))}</dt><dd>${escapeHtml(String(value))}</dd></div>`).join("");
     return;
   }
+  if (screen === "evaluation") {
+    voiceAnalysisDetails.innerHTML = renderVoiceAnalysisEvaluation(snapshot);
+    return;
+  }
   const details = {
     monitor: [["Lautstärke", `${snapshot.volume.current}`], ["Tonhöhe", `${snapshot.pitch.current} Hz`], ["Dauer", formatVoiceAnalysisTime(snapshot.elapsedSeconds)], ["Pausen", `${snapshot.pauses.count}`]],
     duration: [["Messzeit", formatVoiceAnalysisTime(snapshot.elapsedSeconds)], ["Aktive Sprache", formatVoiceAnalysisTime(snapshot.activeSpeechSeconds)], ["Pausen", formatVoiceAnalysisTime(snapshot.pauses.totalDuration)]],
     pauses: [["Anzahl", snapshot.pauses.count], ["Ø Pause", `${snapshot.pauses.averageDuration} s`], ["Längste Pause", `${snapshot.pauses.longest} s`], ["Gesamt", `${snapshot.pauses.totalDuration} s`]],
     dynamics: [["Tonhöhenbereich", `${snapshot.pitch.min}–${snapshot.pitch.max} Hz`], ["Pitch-Variation", `${snapshot.pitch.variation} Hz`], ["Lautstärke min/max", `${snapshot.volume.min} / ${snapshot.volume.max}`], ["Lautstärke-Ø", `${snapshot.volume.average}`]],
     speechRate: [["Wörter pro Minute", snapshot.speechRate.wordsPerMinute || "Noch kein Transkript"], ["Silben pro Minute", snapshot.speechRate.syllablesPerMinute || "Noch kein Transkript"], ["Effektive Sprechzeit", formatVoiceAnalysisTime(snapshot.activeSpeechSeconds)]],
-    evaluation: [["Dauer", formatVoiceAnalysisTime(snapshot.elapsedSeconds)], ["Ø Lautstärke", snapshot.volume.average], ["Ø Tonhöhe", `${snapshot.pitch.average} Hz`], ["Pausen", snapshot.pauses.count]],
+    evaluation: null,
   }[screen] || [["Lautstärke", snapshot.volume.current], ["Tonhöhe", `${snapshot.pitch.current} Hz`], ["Dauer", formatVoiceAnalysisTime(snapshot.elapsedSeconds)]];
   voiceAnalysisDetails.innerHTML = details.map(([label, value]) => `<div><dt>${escapeHtml(String(label))}</dt><dd>${escapeHtml(String(value))}</dd></div>`).join("");
 }
@@ -18306,28 +18723,77 @@ function renderVoiceAnalysisHistory() {
   voiceAnalysisDetails.innerHTML = history.slice(0, 12).map((entry) => `<div><dt>${escapeHtml(entry.label || "Messung")}</dt><dd>${new Date(entry.date).toLocaleDateString("de-DE")} · ${formatVoiceAnalysisTime(entry.duration)} · Pitch ${Math.round(entry.pitch?.average || 0)} Hz</dd></div>`).join("");
 }
 
-function renderVoiceAnalysis(snapshot = voiceAnalysisEngine?.getSnapshot?.() || {}, screen = activeVoiceAnalysisScreen) {
-  const definition = VOICE_ANALYSIS_SCREENS[screen] || VOICE_ANALYSIS_SCREENS.monitor;
-  const metric = definition.metric;
-  const isVolume = metric === "volume";
-  const isPitch = metric === "pitch";
-  const primary = isVolume ? snapshot.volume?.current : isPitch ? snapshot.pitch?.current : metric === "duration" ? formatVoiceAnalysisTime(snapshot.elapsedSeconds) : metric === "pauses" ? snapshot.pauses?.count : metric === "dynamics" ? snapshot.pitch?.variation : metric === "history" ? voiceAnalysisEngine?.history?.().length || 0 : metric === "speechRate" ? (snapshot.speechRate?.wordsPerMinute || "–") : metric === "waveform" ? snapshot.waveform?.at(-1)?.amplitude || 0 : snapshot.volume?.current;
-  const averageValue = isVolume ? snapshot.volume?.average : isPitch ? snapshot.pitch?.average : metric === "duration" ? formatVoiceAnalysisTime(snapshot.activeSpeechSeconds) : metric === "pauses" ? `${snapshot.pauses?.totalDuration || 0} s` : metric === "history" ? "Messungen" : metric === "dynamics" ? `${snapshot.volume?.max - snapshot.volume?.min || 0}` : metric === "speechRate" ? "WPM" : snapshot.pitch?.average;
-  if (voiceMetricPrimary) voiceMetricPrimary.textContent = `${primary ?? 0}${isVolume || isPitch ? definition.unit : ""}`;
-  if (voiceMetricAverage) voiceMetricAverage.textContent = `${averageValue ?? 0}${isPitch ? " Hz" : ""}`;
-  if (voiceMetricMin) voiceMetricMin.textContent = isPitch ? `${snapshot.pitch?.min || 0} Hz` : isVolume ? snapshot.volume?.min || 0 : formatVoiceAnalysisTime(snapshot.pauses?.averageDuration || 0);
-  if (voiceMetricMax) voiceMetricMax.textContent = isPitch ? `${snapshot.pitch?.max || 0} Hz` : isVolume ? snapshot.volume?.max || 0 : formatVoiceAnalysisTime(snapshot.elapsedSeconds || 0);
-  if (voiceAnalysisState) voiceAnalysisState.textContent = snapshot.state === "recording" ? "Aufnahme läuft" : snapshot.state === "live" ? "Live" : "Bereit";
-  if (voiceAnalysisMessage && snapshot.state) voiceAnalysisMessage.textContent = snapshot.state === "recording" ? "Aufnahme läuft lokal." : snapshot.state === "live" ? "Mikrofon aktiv. Messung läuft." : "Mikrofon noch nicht gestartet.";
-  if (screen === "history") renderVoiceAnalysisHistory();
-  else renderVoiceAnalysisDetails(snapshot, screen);
-  drawVoiceAnalysisChart(snapshot, screen);
-  if (voiceAnalysisAudio && snapshot.recordingBlob) {
+function setVoiceEvaluationPlayButtonPlaying(isPlaying) {
+  const button = document.querySelector("#voiceEvaluationPlayButton");
+  if (!button) return;
+  const icon = button.querySelector(".voice-analysis-action-icon");
+  const label = button.querySelector(".voice-analysis-action-label");
+  button.setAttribute("aria-pressed", String(isPlaying));
+  if (icon) icon.textContent = isPlaying ? "■" : "▶";
+  if (label) label.textContent = isPlaying ? "Aufnahme stoppen" : "Analysierte Aufnahme abspielen";
+}
+
+function prepareVoiceAnalysisAudio(snapshot = voiceAnalysisEngine?.getSnapshot?.() || {}) {
+  if (!voiceAnalysisAudio || !snapshot.recordingBlob) return false;
+  if (voiceAnalysisAudioBlob !== snapshot.recordingBlob) {
     if (voiceAnalysisAudio.dataset.objectUrl) URL.revokeObjectURL(voiceAnalysisAudio.dataset.objectUrl);
     const objectUrl = URL.createObjectURL(snapshot.recordingBlob);
     voiceAnalysisAudio.dataset.objectUrl = objectUrl;
     voiceAnalysisAudio.src = objectUrl;
-    voiceAnalysisAudio.classList.remove("is-hidden");
+    voiceAnalysisAudioBlob = snapshot.recordingBlob;
+  }
+  return Boolean(voiceAnalysisAudio.src);
+}
+
+async function toggleVoiceEvaluationPlayback() {
+  const snapshot = voiceAnalysisEngine?.getSnapshot?.() || {};
+  if (!prepareVoiceAnalysisAudio(snapshot)) {
+    if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Keine analysierte Aufnahme zum Abspielen vorhanden.";
+    return;
+  }
+  try {
+    if (!voiceAnalysisAudio.paused && !voiceAnalysisAudio.ended) {
+      voiceAnalysisAudio.pause();
+      voiceAnalysisAudio.currentTime = 0;
+      setVoiceEvaluationPlayButtonPlaying(false);
+      return;
+    }
+    voiceAnalysisAudio.currentTime = 0;
+    await voiceAnalysisAudio.play();
+    setVoiceEvaluationPlayButtonPlaying(true);
+    if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Analysierte Aufnahme wird abgespielt.";
+  } catch (error) {
+    setVoiceEvaluationPlayButtonPlaying(false);
+    if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Analysierte Aufnahme konnte nicht abgespielt werden.";
+  }
+}
+function renderVoiceAnalysis(snapshot = voiceAnalysisEngine?.getSnapshot?.() || {}, screen = activeVoiceAnalysisScreen) {
+  const definition = VOICE_ANALYSIS_SCREENS[screen] || VOICE_ANALYSIS_SCREENS.monitor;
+  const metric = definition.metric;
+  const isVolume = metric === "volume";
+  const isPitch = metric === "pitch" || metric === "spectrogram";
+  const waveformValues = Array.isArray(snapshot.waveform)
+    ? snapshot.waveform.map((item) => Number(item?.amplitude ?? item?.value ?? item)).filter(Number.isFinite)
+    : [];
+  const waveformCurrent = Math.round(waveformValues.at(-1) || 0);
+  const waveformAverage = Math.round(waveformValues.reduce((sum, value) => sum + value, 0) / Math.max(1, waveformValues.length));
+  const waveformMin = Math.round(waveformValues.length ? Math.min(...waveformValues) : 0);
+  const waveformMax = Math.round(waveformValues.length ? Math.max(...waveformValues) : 0);
+  const primary = isVolume ? snapshot.volume?.current : isPitch ? snapshot.pitch?.current : metric === "duration" ? formatVoiceAnalysisTime(snapshot.elapsedSeconds) : metric === "pauses" ? snapshot.pauses?.count : metric === "dynamics" ? snapshot.pitch?.variation : metric === "history" ? voiceAnalysisEngine?.history?.().length || 0 : metric === "speechRate" ? (snapshot.speechRate?.wordsPerMinute || "–") : metric === "waveform" ? waveformCurrent : snapshot.volume?.current;
+  const averageValue = isVolume ? snapshot.volume?.average : isPitch ? snapshot.pitch?.average : metric === "duration" ? formatVoiceAnalysisTime(snapshot.activeSpeechSeconds) : metric === "pauses" ? `${snapshot.pauses?.totalDuration || 0} s` : metric === "history" ? "Messungen" : metric === "dynamics" ? `${snapshot.volume?.max - snapshot.volume?.min || 0}` : metric === "speechRate" ? "WPM" : metric === "waveform" ? waveformAverage : snapshot.pitch?.average;
+  if (voiceMetricPrimary) voiceMetricPrimary.textContent = `${primary ?? 0}${isVolume || isPitch ? definition.unit : ""}`;
+  if (voiceMetricAverage) voiceMetricAverage.textContent = `${averageValue ?? 0}${isPitch ? " Hz" : ""}`;
+  if (voiceMetricMin) voiceMetricMin.textContent = isPitch ? `${snapshot.pitch?.min || 0} Hz` : isVolume ? snapshot.volume?.min || 0 : metric === "waveform" ? waveformMin : formatVoiceAnalysisTime(snapshot.pauses?.averageDuration || 0);
+  if (voiceMetricMax) voiceMetricMax.textContent = isPitch ? `${snapshot.pitch?.max || 0} Hz` : isVolume ? snapshot.volume?.max || 0 : metric === "waveform" ? waveformMax : formatVoiceAnalysisTime(snapshot.elapsedSeconds || 0);
+  if (voiceAnalysisState) voiceAnalysisState.textContent = snapshot.state === "recording" ? "Aufnahme läuft" : snapshot.state === "live" ? "Live" : "Bereit";
+  if (voiceAnalysisMessage && snapshot.state) voiceAnalysisMessage.textContent = snapshot.state === "recording" ? "Aufnahme läuft lokal." : snapshot.state === "live" ? "Mikrofon aktiv. Messung läuft." : "Mikrofon noch nicht gestartet.";
+  updateVoiceAnalysisMicButton(snapshot);
+  if (screen === "history") renderVoiceAnalysisHistory();
+  else renderVoiceAnalysisDetails(snapshot, screen);
+  drawVoiceAnalysisChart(snapshot, screen);
+  if (voiceAnalysisAudio) {
+    const hasRecordingAudio = prepareVoiceAnalysisAudio(snapshot);
+    voiceAnalysisAudio.classList.toggle("is-hidden", !hasRecordingAudio || screen === "evaluation");
   }
 }
 
@@ -18336,10 +18802,18 @@ function setVoiceAnalysisScreen(screen = "home", updateHash = true) {
   activeVoiceAnalysisScreen = nextScreen;
   voiceAnalysisHome?.classList.toggle("is-hidden", nextScreen !== "home");
   voiceAnalysisWorkspace?.classList.toggle("is-hidden", nextScreen === "home");
+  voiceAnalysisWorkspace?.classList.toggle("is-pitch-view", nextScreen === "pitch" || nextScreen === "pitchCurve" || nextScreen === "monitor");
+  voiceAnalysisWorkspace?.classList.toggle("is-spectrogram-view", nextScreen === "spectrogram");
+  voiceAnalysisWorkspace?.classList.toggle("is-evaluation-view", nextScreen === "evaluation");
   const definition = VOICE_ANALYSIS_SCREENS[nextScreen];
   if (voiceAnalysisTitle) voiceAnalysisTitle.textContent = definition?.title || "Stimmanalyse";
+  voiceAnalysisBackButton?.classList.toggle("is-hidden", nextScreen === "home");
   if (voiceAnalysisScreenTitle) voiceAnalysisScreenTitle.textContent = definition?.title || "Stimmanalyse";
-  voiceAnalysisReferenceControls?.classList.toggle("is-hidden", nextScreen !== "reference");
+  if (voiceAnalysisReferenceControls) {
+    const hideReferenceControls = nextScreen !== "reference";
+    voiceAnalysisReferenceControls.classList.toggle("is-hidden", hideReferenceControls);
+    voiceAnalysisReferenceControls.hidden = hideReferenceControls;
+  }
   voiceAnalysisTextTraining?.classList.toggle("is-hidden", nextScreen !== "textTraining");
   voiceAnalysisHistoryControls?.classList.toggle("is-hidden", nextScreen !== "history");
   if (updateHash) window.history.replaceState(null, "", nextScreen === "home" ? "#stimmanalyse" : `#stimmanalyse/${nextScreen}`);
@@ -18355,6 +18829,11 @@ function initializeVoiceAnalysisUi() {
   voiceAnalysisBackButton?.addEventListener("click", () => setVoiceAnalysisScreen("home"));
   voiceAnalysisStartButton?.addEventListener("click", async () => {
     try {
+      if (isVoiceAnalysisMicActive()) {
+        voiceAnalysisEngine.stop();
+        renderVoiceAnalysis();
+        return;
+      }
       if (activeVoiceAnalysisScreen === "recording" || activeVoiceAnalysisScreen === "textTraining") await voiceAnalysisEngine.startRecording();
       else await voiceAnalysisEngine.start();
       renderVoiceAnalysis();
@@ -18374,7 +18853,34 @@ function initializeVoiceAnalysisUi() {
     renderVoiceAnalysis();
   });
   referenceToneSelect?.addEventListener("change", () => { if (referenceToneCustom) referenceToneCustom.value = referenceToneSelect.value; });
+  referenceVideoPlayButton?.addEventListener("click", async () => {
+    const prepared = prepareVoiceAnalysisReferenceVideo();
+    if (!prepared) return;
+    const { video, item } = prepared;
+    if (!video.paused && !video.ended) {
+      stopVoiceAnalysisReferenceVideo();
+      if (referenceToneResult) referenceToneResult.textContent = "Referenzvideo gestoppt.";
+      return;
+    }
+    try {
+      video.muted = false;
+      video.volume = 1;
+      await video.play();
+      setReferenceVideoButtonPlaying(true);
+      if (referenceToneResult) referenceToneResult.textContent = `Referenzvideo läuft: ${item.title || item.name || "Video"}.`;
+    } catch (error) {
+      setReferenceVideoButtonPlaying(false);
+      if (referenceToneResult) referenceToneResult.textContent = "Referenzvideo konnte nicht gestartet werden.";
+    }
+  });
+  voiceAnalysisReferenceVideo?.addEventListener("ended", () => setReferenceVideoButtonPlaying(false));
+  voiceAnalysisReferenceVideo?.addEventListener("pause", () => setReferenceVideoButtonPlaying(false));
   referenceTonePlayButton?.addEventListener("click", async () => {
+    if (voiceAnalysisToneOscillator) {
+      stopVoiceAnalysisTone();
+      if (referenceToneResult) referenceToneResult.textContent = "Referenzton gestoppt.";
+      return;
+    }
     try {
       const frequency = clampCanvas(Number(referenceToneCustom?.value || referenceToneSelect?.value || 140), 60, 400);
       const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
@@ -18387,8 +18893,15 @@ function initializeVoiceAnalysisUi() {
       oscillator.frequency.value = frequency;
       gain.gain.value = 0.08;
       oscillator.connect(gain).connect(context.destination);
+      oscillator.onended = () => {
+        if (voiceAnalysisToneOscillator === oscillator) {
+          voiceAnalysisToneOscillator = null;
+          setReferenceToneButtonPlaying(false);
+        }
+      };
       oscillator.start();
       voiceAnalysisToneOscillator = oscillator;
+      setReferenceToneButtonPlaying(true);
       if (context.state === "suspended") await context.resume();
       referenceToneResult.textContent = `Referenz: ${frequency} Hz. Jetzt nachsprechen.`;
     } catch (error) {
@@ -18396,13 +18909,23 @@ function initializeVoiceAnalysisUi() {
       referenceToneResult.textContent = error?.message || "Referenzton konnte nicht gestartet werden.";
     }
   });
-  referenceToneStopButton?.addEventListener("click", stopVoiceAnalysisTone);
-  voiceAnalysisHistoryFilter?.addEventListener("change", () => renderVoiceAnalysis());
-  voiceAnalysisEngine.subscribe((snapshot) => renderVoiceAnalysis(snapshot));
+  voiceAnalysisDetails?.addEventListener("click", (event) => {
+    const playButton = event.target.closest("#voiceEvaluationPlayButton");
+    if (playButton) toggleVoiceEvaluationPlayback();
+  });
+  voiceAnalysisAudio?.addEventListener("ended", () => setVoiceEvaluationPlayButtonPlaying(false));
+  voiceAnalysisAudio?.addEventListener("pause", () => setVoiceEvaluationPlayButtonPlaying(false));
+  voiceAnalysisAudio?.addEventListener("play", () => setVoiceEvaluationPlayButtonPlaying(activeVoiceAnalysisScreen === "evaluation"));
+  voiceAnalysisHistoryFilter?.addEventListener("change", () => renderVoiceAnalysis());  voiceAnalysisEngine.subscribe((snapshot) => renderVoiceAnalysis(snapshot));
   window.addEventListener("hashchange", () => {
     if (document.body.dataset.activeView === "voiceAnalysis") setVoiceAnalysisScreen(getVoiceAnalysisRouteScreen(), false);
   });
 }
+
+recordToEvaluationButton?.addEventListener("click", () => {
+  setActiveView("voiceAnalysis");
+  setVoiceAnalysisScreen("evaluation");
+});
 
 function setActiveView(viewName) {
   const previousView = document.body.dataset.activeView || "";
@@ -18614,6 +19137,8 @@ function transactionDone(transaction) {
     transaction.onabort = () => reject(transaction.error);
   });
 }
+
+
 
 
 

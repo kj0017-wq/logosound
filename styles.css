@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   color-scheme: light;
   --ink: #17202a;
   --muted: #637083;
@@ -1654,7 +1654,8 @@ h2 {
   margin: 6px 0 0;
 }
 
-.preview-exercise-action {
+.preview-exercise-action,
+.record-evaluation-action {
   margin-top: 8px;
 }
 
@@ -3647,8 +3648,8 @@ button:disabled {
 
 .help-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
   margin-bottom: 12px;
 }
 
@@ -5472,8 +5473,8 @@ body.recording-focus.recording-overview .result-panel {
 }
 .breathing-settings-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .breathing-settings .field-label {
@@ -6769,16 +6770,43 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
 .voice-analysis-panel {
   padding: 20px;
 }
+.voice-analysis-main-header {
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.voice-analysis-main-header h2 {
+  margin: 0;
+}
+
+.voice-analysis-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.voice-analysis-header-actions #voiceAnalysisBackButton {
+  width: auto;
+  min-height: 32px;
+  padding: 0 2px;
+  border-radius: 0;
+  background: transparent;
+  color: #111827;
+  box-shadow: none;
+  white-space: nowrap;
+}
 
 .voice-analysis-tile-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .voice-analysis-tile {
-  min-height: 92px;
-  padding: 16px;
+  min-height: 68px;
+  padding: 11px 12px;
   border: 1px solid rgba(22, 133, 139, 0.22);
   border-radius: 8px;
   background: #f4fbfb;
@@ -6793,14 +6821,19 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
 }
 
 .voice-analysis-tile strong {
-  font-size: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.15;
 }
 
 .voice-analysis-tile small {
-  margin-top: 7px;
+  margin-top: 4px;
   color: #5d7180;
-  font-size: 0.78rem;
-  line-height: 1.3;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.voice-analysis-tile.is-wide {
+  grid-column: span 2;
 }
 
 .voice-analysis-workspace {
@@ -6808,7 +6841,6 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   gap: 16px;
 }
 
-.voice-analysis-workspace-header,
 .voice-analysis-actions {
   display: flex;
   flex-wrap: wrap;
@@ -6816,19 +6848,16 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   gap: 10px;
 }
 
-.voice-analysis-workspace-header {
-  justify-content: space-between;
-}
-
 .voice-analysis-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
 }
 
 .voice-analysis-metrics > div {
   min-width: 0;
-  padding: 13px 10px;
+  padding: 10px 7px;
   border-radius: 8px;
   background: #eef8f8;
 }
@@ -6863,6 +6892,22 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   height: 190px;
 }
 
+.voice-analysis-workspace.is-pitch-view .voice-analysis-chart-wrap {
+  background: #d6e2e3;
+}
+
+.voice-analysis-workspace.is-pitch-view #voiceAnalysisChart {
+  height: 360px;
+}
+
+.voice-analysis-workspace.is-spectrogram-view .voice-analysis-chart-wrap {
+  background: #110083;
+}
+
+.voice-analysis-workspace.is-spectrogram-view #voiceAnalysisChart {
+  height: 440px;
+}
+
 .voice-analysis-details {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6888,6 +6933,203 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   font-weight: 700;
 }
 
+.voice-analysis-workspace.is-evaluation-view .voice-analysis-details {
+  display: block;
+}
+
+.voice-test-result-card {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgba(22, 133, 139, 0.22);
+  border-radius: 8px;
+  background: #d8e5e7;
+  color: #1d2a36;
+}
+
+.voice-analysis-details > .voice-test-result-card {
+  padding: 0;
+  background: #d8e5e7;
+}
+
+.voice-test-result-hero {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 18px 14px;
+  background: #4b6570;
+  color: #f4fbfb;
+}
+
+.voice-test-range-meter {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  gap: 6px;
+  min-height: 154px;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 700;
+}
+
+.voice-test-range-track {
+  position: relative;
+  width: 30px;
+  min-height: 118px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.voice-test-range-track::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 28%;
+  left: 0;
+  height: 30%;
+  background: rgba(30, 42, 48, 0.35);
+}
+
+.voice-test-range-track i {
+  position: absolute;
+  right: -5px;
+  bottom: var(--pitch-pos, 0%);
+  left: -5px;
+  height: 2px;
+  background: #ff9aad;
+  transform: translateY(50%);
+}
+
+.voice-test-bubbles {
+  position: relative;
+  display: grid;
+  min-height: 170px;
+  place-items: center;
+}
+
+.voice-test-main-bubble,
+.voice-test-bubble {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #111827;
+  text-align: center;
+  font-weight: 800;
+}
+
+.voice-test-main-bubble {
+  width: 132px;
+  height: 132px;
+  background: #e2e9ea;
+  font-size: 1.9rem;
+}
+
+.voice-test-bubble {
+  position: absolute;
+  width: 84px;
+  height: 84px;
+  font-size: 1.45rem;
+}
+
+.voice-test-bubble small {
+  display: block;
+  margin-top: -16px;
+  color: rgba(17, 24, 39, 0.62);
+  font-size: 0.72rem;
+}
+
+.voice-test-bubble-soft,
+.voice-test-bubble-male {
+  right: 12px;
+  bottom: 4px;
+  background: #b8e4ec;
+}
+
+.voice-test-bubble-accent,
+.voice-test-bubble-female {
+  left: 8px;
+  bottom: 16px;
+  background: #ffd5e0;
+}
+
+.voice-test-bubble-neutral {
+  right: 78px;
+  bottom: -6px;
+  width: 72px;
+  height: 72px;
+  background: #dde7ea;
+  font-size: 1.12rem;
+}
+
+
+.voice-test-result-player {
+  padding: 12px 18px 0;
+}
+
+.voice-evaluation-play-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(22, 133, 139, 0.28);
+  border-radius: 8px;
+  background: #eaf8f8;
+  color: #006d70;
+  font-weight: 800;
+}
+
+.voice-evaluation-play-button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.voice-evaluation-play-button[aria-pressed="true"] {
+  background: #0f9494;
+  color: #fff;
+}.voice-test-result-section {
+  padding: 14px 18px 0;
+}
+
+.voice-test-result-section h3 {
+  margin: 0 0 8px;
+  color: #1d2a36;
+  font-size: 1.25rem;
+}
+
+.voice-test-result-section dl {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.voice-test-result-section dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.voice-test-result-section dt,
+.voice-test-result-section dd {
+  margin: 0;
+  color: #314250;
+  font-size: 0.94rem;
+  line-height: 1.22;
+}
+
+.voice-test-result-section dd {
+  font-weight: 800;
+  text-align: right;
+}
+
+.voice-test-result-note {
+  margin: 14px 18px 16px;
+  color: #506474;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
 .voice-analysis-reference,
 .voice-analysis-text-training {
   display: grid;
@@ -6895,6 +7137,15 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   padding: 14px;
   border-radius: 8px;
   background: #f4fbfb;
+}
+
+
+.voice-analysis-reference-video {
+  width: 100%;
+  max-height: 240px;
+  border-radius: 8px;
+  background: #0d1720;
+  object-fit: contain;
 }
 
 .voice-analysis-reference-fields {
@@ -6948,9 +7199,18 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   .voice-analysis-workspace {
     gap: 8px;
   }
+  .voice-analysis-main-header {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
 
-  .voice-analysis-workspace-header {
-    min-height: 34px;
+  .voice-analysis-header-actions {
+    gap: 6px;
+  }
+
+  .voice-analysis-header-actions #voiceAnalysisBackButton {
+    min-height: 30px;
+    font-size: 0.82rem;
   }
 
   .voice-analysis-chart-wrap {
@@ -6959,6 +7219,10 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
 
   #voiceAnalysisChart {
     height: 138px;
+  }
+
+  .voice-analysis-workspace.is-pitch-view #voiceAnalysisChart {
+    height: 330px;
   }
 
   .voice-analysis-details {
@@ -6971,31 +7235,123 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   }
 
   .voice-analysis-metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 4px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3px;
   }
 
   .voice-analysis-metrics > div {
-    padding: 8px 5px;
+    padding: 7px 4px;
   }
 
   .voice-analysis-metrics span {
     overflow: hidden;
-    font-size: 0.56rem;
+    font-size: 0.52rem;
+    line-height: 1.1;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .voice-analysis-metrics strong {
-    font-size: 0.9rem;
+    margin-top: 3px;
+    font-size: 0.82rem;
+    line-height: 1.05;
+    white-space: nowrap;
   }
 
+  .voice-analysis-details > .voice-test-result-card {
+  padding: 0;
+  background: #d8e5e7;
+}
+
+.voice-test-result-hero {
+    grid-template-columns: 66px 1fr;
+    gap: 10px;
+    padding: 12px 10px;
+  }
+
+  .voice-test-range-meter {
+    min-height: 126px;
+    font-size: 0.8rem;
+  }
+
+  .voice-test-range-track {
+    width: 24px;
+    min-height: 92px;
+  }
+
+  .voice-test-main-bubble {
+    width: 104px;
+    height: 104px;
+    font-size: 1.35rem;
+  }
+
+  .voice-test-bubbles {
+    min-height: 142px;
+  }
+
+  .voice-test-bubble {
+    width: 62px;
+    height: 62px;
+    font-size: 1.05rem;
+  }
+
+  .voice-test-bubble small {
+    margin-top: -10px;
+    font-size: 0.58rem;
+  }
+
+  .voice-test-bubble-soft,
+  .voice-test-bubble-male {
+    right: 0;
+  }
+
+  .voice-test-bubble-accent,
+  .voice-test-bubble-female {
+    left: 0;
+    bottom: 10px;
+  }
+
+  .voice-test-bubble-neutral {
+    right: 50px;
+    bottom: -8px;
+    width: 56px;
+    height: 56px;
+    font-size: 0.88rem;
+  }
+
+  .voice-test-result-section {
+    padding: 11px 12px 0;
+  }
+
+  .voice-test-result-section h3 {
+    font-size: 1.05rem;
+  }
+
+  .voice-test-result-section dt,
+  .voice-test-result-section dd {
+    font-size: 0.84rem;
+  }
+
+  .voice-test-result-note {
+    margin: 12px;
+    font-size: 0.75rem;
+  }
   .voice-analysis-reference,
   .voice-analysis-text-training {
     gap: 4px;
     padding: 8px;
   }
 
-  .voice-analysis-reference-fields {
+  
+.voice-analysis-reference-video {
+  width: 100%;
+  max-height: 240px;
+  border-radius: 8px;
+  background: #0d1720;
+  object-fit: contain;
+}
+
+.voice-analysis-reference-fields {
     gap: 4px;
   }
 
@@ -7024,18 +7380,18 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   }
 
   .voice-analysis-tile-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
   }
 
   .voice-analysis-tile {
-    min-height: 58px;
-    padding: 9px 7px;
-    text-align: center;
+    min-height: 56px;
+    padding: 9px 10px;
+    text-align: left;
   }
 
   .voice-analysis-tile strong {
-    font-size: 0.82rem;
+    font-size: 0.84rem;
     line-height: 1.15;
   }
 
@@ -7082,10 +7438,43 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
 
 @media (min-width: 421px) and (max-width: 600px) {
   .voice-analysis-metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .voice-analysis-details {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+
+@media (max-width: 620px) {
+  .voice-analysis-workspace.is-spectrogram-view #voiceAnalysisChart {
+    height: 430px;
+  }
+}
+
+
+.voice-analysis-header-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.voice-analysis-header-actions .voice-analysis-mic-toggle {
+  width: auto;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 11px;
+  border-radius: 999px;
+  box-shadow: none;
+  gap: 6px;
+}
+
+.voice-analysis-mic-toggle .voice-analysis-action-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.voice-analysis-mic-toggle[aria-pressed="true"] {
+  background: #0f9494;
+  color: #fff;
 }

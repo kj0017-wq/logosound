@@ -176,6 +176,7 @@
           <div id="recordingExerciseShortcuts" class="recording-exercise-shortcuts"></div>
           <button id="recordButton" class="primary-action recording-start-action" type="button">Übung starten</button>
           <button id="previewExerciseButton" class="secondary-action preview-exercise-action" type="button">Vorführung</button>
+          <button id="recordToEvaluationButton" class="secondary-action record-evaluation-action" type="button">Zur Stimmauswertung</button>
         </div>
 
         <div class="meters">
@@ -517,40 +518,34 @@
       </section>
 
       <section id="voiceAnalysisPanel" class="voice-analysis-panel app-section" data-view="voiceAnalysis" aria-label="Stimmanalyse">
-        <div class="section-header">
+        <div class="section-header voice-analysis-main-header">
           <div>
-            <p class="eyebrow">Stimmanalyse</p>
             <h2 id="voiceAnalysisTitle">Voice Monitor</h2>
           </div>
-          <span id="voiceAnalysisState" class="status-pill">Bereit</span>
+          <div class="voice-analysis-header-actions">
+            <button id="voiceAnalysisBackButton" class="quiet-action is-hidden" type="button">Zur Übersicht</button>
+            <button id="voiceAnalysisStartButton" class="primary-action voice-analysis-icon-action voice-analysis-mic-toggle" type="button" aria-label="Mikrofon einschalten" title="Mikrofon einschalten" aria-pressed="false"><span class="voice-analysis-action-icon" aria-hidden="true">&#127908;</span><span class="voice-analysis-action-label">Mikrofon ein</span></button>
+            <span id="voiceAnalysisState" class="status-pill">Bereit</span>
+          </div>
         </div>
 
         <div id="voiceAnalysisHome" class="voice-analysis-home" data-analysis-screen="home">
-          <p class="field-help">Jede Messung kann unabhängig gestartet werden. Die Daten bleiben zunächst lokal auf diesem Gerät.</p>
+          <p class="field-help">Die wichtigsten Live-Werte sind gebündelt. Details öffnen sich bei Bedarf einzeln.</p>
           <div class="voice-analysis-tile-grid">
-            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="volume"><strong>Lautstärke</strong><small>Live-Pegel und Zielbereich</small></button>
+            <button class="voice-analysis-tile is-wide" type="button" data-analysis-screen-target="monitor"><strong>Live-Überblick</strong><small>Lautstärke, Tonhöhe, Dauer, Pausen und Dynamik</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="pitch"><strong>Tonhöhe</strong><small>Grundfrequenz in Hz</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="pitchCurve"><strong>Pitch-Verlauf</strong><small>Frequenzkurve über Zeit</small></button>
+            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="spectrogram"><strong>Live-Spektrogramm</strong><small>Frequenzenergie farbig sehen</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="waveform"><strong>Wellenform</strong><small>Signal live beobachten</small></button>
-            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="monitor"><strong>Voice Monitor</strong><small>Mehrere Werte gleichzeitig</small></button>
-            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="recording"><strong>Sprachaufnahme</strong><small>Aufnehmen und lokal speichern</small></button>
-            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="comparison"><strong>Aufnahmevergleich</strong><small>Zwei Messungen gegenüberstellen</small></button>
-            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="duration"><strong>Sprechdauer</strong><small>Aktive Sprache und Messzeit</small></button>
-            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="pauses"><strong>Sprechpausen</strong><small>Pausen zählen und messen</small></button>
-            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="speechRate"><strong>Sprechtempo</strong><small>Vorbereitung für WPM</small></button>
-            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="dynamics"><strong>Stimmdynamik</strong><small>Lautstärke und Pitch-Variation</small></button>
-            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="reference"><strong>Referenzton</strong><small>Ton abspielen und vergleichen</small></button>
+            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="recording"><strong>Aufnahme</strong><small>Sprachprobe aufnehmen und lokal speichern</small></button>
+            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="reference"><strong>Referenz</strong><small>Ton oder Video abspielen</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="textTraining"><strong>Texttraining</strong><small>Übungssatz aufnehmen</small></button>
-            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="evaluation"><strong>Trainingsauswertung</strong><small>Aktuelle Messung zusammenfassen</small></button>
+            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="evaluation"><strong>Auswertung</strong><small>Messung verständlich zusammenfassen</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="history"><strong>Verlauf</strong><small>Gespeicherte Messungen öffnen</small></button>
           </div>
         </div>
 
         <div id="voiceAnalysisWorkspace" class="voice-analysis-workspace is-hidden">
-          <div class="voice-analysis-workspace-header">
-            <button id="voiceAnalysisBackButton" class="quiet-action" type="button">Zur Übersicht</button>
-            <strong id="voiceAnalysisScreenTitle">Voice Monitor</strong>
-          </div>
           <div class="voice-analysis-metrics">
             <div><span>Aktuell</span><strong id="voiceMetricPrimary">0</strong></div>
             <div><span>Durchschnitt</span><strong id="voiceMetricAverage">0</strong></div>
@@ -564,7 +559,11 @@
               <label class="field-label" for="referenceToneSelect">Referenzton<select id="referenceToneSelect" class="select-input compact-select"><option value="120">120 Hz</option><option value="130">130 Hz</option><option value="140" selected>140 Hz</option><option value="150">150 Hz</option><option value="160">160 Hz</option></select></label>
               <label class="field-label" for="referenceToneCustom">Eigene Frequenz<input id="referenceToneCustom" type="number" min="60" max="400" value="140" inputmode="numeric" /></label>
             </div>
-            <div class="button-row voice-analysis-reference-actions"><button id="referenceTonePlayButton" class="primary-action voice-analysis-icon-action" type="button" aria-label="Referenzton abspielen" title="Referenzton abspielen"><span class="voice-analysis-action-icon" aria-hidden="true">▶</span><span class="voice-analysis-action-label">Ton abspielen</span></button><button id="referenceToneStopButton" class="secondary-action voice-analysis-icon-action" type="button" aria-label="Referenzton stoppen" title="Referenzton stoppen"><span class="voice-analysis-action-icon" aria-hidden="true">■</span><span class="voice-analysis-action-label">Stoppen</span></button></div>
+            <div class="button-row voice-analysis-reference-actions">
+              <button id="referenceTonePlayButton" class="primary-action voice-analysis-icon-action" type="button" aria-label="Referenzton abspielen" title="Referenzton abspielen" aria-pressed="false"><span class="voice-analysis-action-icon" aria-hidden="true">&#9654;</span><span class="voice-analysis-action-label">Ton abspielen</span></button>
+              <button id="referenceVideoPlayButton" class="secondary-action voice-analysis-icon-action" type="button" aria-label="Referenzvideo abspielen" title="Referenzvideo abspielen" aria-pressed="false"><span class="voice-analysis-action-icon" aria-hidden="true">&#9654;</span><span class="voice-analysis-action-label">Video abspielen</span></button>
+            </div>
+            <video id="voiceAnalysisReferenceVideo" class="voice-analysis-reference-video is-hidden" playsinline controls preload="metadata"></video>
             <p id="referenceToneResult" class="message">Noch kein Vergleich.</p>
           </div>
           <div id="voiceAnalysisTextTraining" class="voice-analysis-text-training is-hidden">
@@ -576,9 +575,7 @@
             <select id="voiceAnalysisHistoryFilter" class="select-input compact-select"><option value="all">Gesamter Zeitraum</option><option value="today">Heute</option><option value="7">Letzte 7 Tage</option><option value="30">Letzte 30 Tage</option></select>
           </div>
           <div class="voice-analysis-actions">
-            <button id="voiceAnalysisStartButton" class="primary-action voice-analysis-icon-action" type="button" aria-label="Mikrofon starten" title="Mikrofon starten"><span class="voice-analysis-action-icon" aria-hidden="true">▶</span><span class="voice-analysis-action-label">Mikrofon starten</span></button>
             <button id="voiceAnalysisPauseButton" class="secondary-action voice-analysis-icon-action" type="button" aria-label="Pause" title="Pause"><span class="voice-analysis-action-icon" aria-hidden="true">Ⅱ</span><span class="voice-analysis-action-label">Pause</span></button>
-            <button id="voiceAnalysisStopButton" class="secondary-action voice-analysis-icon-action" type="button" aria-label="Stoppen" title="Stoppen"><span class="voice-analysis-action-icon" aria-hidden="true">■</span><span class="voice-analysis-action-label">Stoppen</span></button>
             <button id="voiceAnalysisResetButton" class="quiet-action voice-analysis-icon-action" type="button" aria-label="Reset" title="Reset"><span class="voice-analysis-action-icon" aria-hidden="true">↻</span><span class="voice-analysis-action-label">Reset</span></button>
             <button id="voiceAnalysisSaveButton" class="secondary-action voice-analysis-icon-action" type="button" aria-label="Messung speichern" title="Messung speichern"><span class="voice-analysis-action-icon" aria-hidden="true">▣</span><span class="voice-analysis-action-label">Messung speichern</span></button>
           </div>

@@ -6765,3 +6765,327 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-context,
 body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   display: grid !important;
 }
+/* Modular voice analysis */
+.voice-analysis-panel {
+  padding: 20px;
+}
+
+.voice-analysis-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.voice-analysis-tile {
+  min-height: 92px;
+  padding: 16px;
+  border: 1px solid rgba(22, 133, 139, 0.22);
+  border-radius: 8px;
+  background: #f4fbfb;
+  color: #126d73;
+  text-align: left;
+  cursor: pointer;
+}
+
+.voice-analysis-tile strong,
+.voice-analysis-tile small {
+  display: block;
+}
+
+.voice-analysis-tile strong {
+  font-size: 1rem;
+}
+
+.voice-analysis-tile small {
+  margin-top: 7px;
+  color: #5d7180;
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.voice-analysis-workspace {
+  display: grid;
+  gap: 16px;
+}
+
+.voice-analysis-workspace-header,
+.voice-analysis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.voice-analysis-workspace-header {
+  justify-content: space-between;
+}
+
+.voice-analysis-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.voice-analysis-metrics > div {
+  min-width: 0;
+  padding: 13px 10px;
+  border-radius: 8px;
+  background: #eef8f8;
+}
+
+.voice-analysis-metrics span,
+.voice-analysis-metrics strong {
+  display: block;
+}
+
+.voice-analysis-metrics span {
+  color: #647886;
+  font-size: 0.72rem;
+}
+
+.voice-analysis-metrics strong {
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  color: #126d73;
+  font-size: 1.05rem;
+}
+
+.voice-analysis-chart-wrap {
+  overflow: hidden;
+  border: 1px solid rgba(22, 133, 139, 0.22);
+  border-radius: 8px;
+  background: #101820;
+}
+
+#voiceAnalysisChart {
+  display: block;
+  width: 100%;
+  height: 190px;
+}
+
+.voice-analysis-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.voice-analysis-details > div {
+  padding: 11px 12px;
+  border: 1px solid #dce9ea;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.voice-analysis-details dt {
+  color: #647886;
+  font-size: 0.75rem;
+}
+
+.voice-analysis-details dd {
+  margin: 5px 0 0;
+  color: #1d2a36;
+  font-weight: 700;
+}
+
+.voice-analysis-reference,
+.voice-analysis-text-training {
+  display: grid;
+  gap: 9px;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f4fbfb;
+}
+
+.voice-analysis-reference-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.voice-analysis-reference-fields .field-label {
+  display: grid;
+  gap: 6px;
+}
+
+.editor-analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.compact-section-header {
+  margin-bottom: 10px;
+}
+
+.voice-analysis-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.voice-analysis-action-icon {
+  display: inline-grid;
+  width: 1.35em;
+  height: 1.35em;
+  place-items: center;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+@media (min-width: 680px) {
+  .voice-analysis-tile-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .voice-analysis-panel {
+    padding: 8px;
+  }
+
+  .voice-analysis-workspace {
+    gap: 8px;
+  }
+
+  .voice-analysis-workspace-header {
+    min-height: 34px;
+  }
+
+  .voice-analysis-chart-wrap {
+    border-radius: 7px;
+  }
+
+  #voiceAnalysisChart {
+    height: 138px;
+  }
+
+  .voice-analysis-details {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .voice-analysis-details > div {
+    padding: 8px 9px;
+  }
+
+  .voice-analysis-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .voice-analysis-metrics > div {
+    padding: 8px 5px;
+  }
+
+  .voice-analysis-metrics span {
+    overflow: hidden;
+    font-size: 0.56rem;
+    white-space: nowrap;
+  }
+
+  .voice-analysis-metrics strong {
+    font-size: 0.9rem;
+  }
+
+  .voice-analysis-reference,
+  .voice-analysis-text-training {
+    gap: 4px;
+    padding: 8px;
+  }
+
+  .voice-analysis-reference-fields {
+    gap: 4px;
+  }
+
+  .voice-analysis-reference .field-label,
+  .voice-analysis-text-training .field-label {
+    margin: 0;
+  }
+
+  .voice-analysis-reference .select-input,
+  .voice-analysis-reference input {
+    min-height: 44px;
+    height: 44px;
+    padding: 8px 12px;
+  }
+
+  .voice-analysis-reference-actions {
+    margin-top: 1px;
+  }
+
+  #voiceTrainingText {
+    min-height: 84px;
+  }
+
+  #voiceAnalysisMessage {
+    margin: 0;
+  }
+
+  .voice-analysis-tile-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .voice-analysis-tile {
+    min-height: 58px;
+    padding: 9px 7px;
+    text-align: center;
+  }
+
+  .voice-analysis-tile strong {
+    font-size: 0.82rem;
+    line-height: 1.15;
+  }
+
+  .voice-analysis-tile small {
+    display: none;
+  }
+
+  .voice-analysis-actions {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .voice-analysis-reference-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .voice-analysis-icon-action {
+    min-width: 0;
+    min-height: 52px;
+    padding: 9px 4px;
+  }
+
+  .voice-analysis-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .voice-analysis-action-icon {
+    width: 1.6em;
+    height: 1.6em;
+    font-size: 1.25rem;
+  }
+}
+
+@media (min-width: 421px) and (max-width: 600px) {
+  .voice-analysis-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .voice-analysis-details {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

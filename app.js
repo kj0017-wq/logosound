@@ -360,12 +360,20 @@ const voiceAnalysisTitle = document.querySelector("#voiceAnalysisTitle");
 const voiceAnalysisState = document.querySelector("#voiceAnalysisState");
 const voiceAnalysisScreenTitle = document.querySelector("#voiceAnalysisScreenTitle");
 const voiceAnalysisBackButton = document.querySelector("#voiceAnalysisBackButton");
+const voiceAnalysisPlaybackButton = document.querySelector("#voiceAnalysisPlaybackButton");
+const voiceAnalysisPlaybackSelect = document.querySelector("#voiceAnalysisPlaybackSelect");
+const voiceAnalysisOpenPlaybackButton = document.querySelector("#voiceAnalysisOpenPlaybackButton");
 const voiceAnalysisChart = document.querySelector("#voiceAnalysisChart");
 const voiceAnalysisDetails = document.querySelector("#voiceAnalysisDetails");
 const voiceMetricPrimary = document.querySelector("#voiceMetricPrimary");
 const voiceMetricAverage = document.querySelector("#voiceMetricAverage");
 const voiceMetricMin = document.querySelector("#voiceMetricMin");
 const voiceMetricMax = document.querySelector("#voiceMetricMax");
+const voiceMetricLabels = [voiceMetricPrimary, voiceMetricAverage, voiceMetricMin, voiceMetricMax].map((item) => item?.parentElement?.querySelector("span") || null);
+const voiceAnalysisTimeline = document.querySelector("#voiceAnalysisTimeline");
+const voiceAnalysisTimelinePlayButton = document.querySelector("#voiceAnalysisTimelinePlayButton");
+const voiceAnalysisTimelineSeek = document.querySelector("#voiceAnalysisTimelineSeek");
+const voiceAnalysisTimelineTime = document.querySelector("#voiceAnalysisTimelineTime");
 const voiceAnalysisStartButton = document.querySelector("#voiceAnalysisStartButton");
 const voiceAnalysisPauseButton = document.querySelector("#voiceAnalysisPauseButton");
 const voiceAnalysisStopButton = document.querySelector("#voiceAnalysisStopButton");
@@ -406,19 +414,99 @@ function escapeHtml(value) {
 let activeVoiceAnalysisScreen = "home";
 let voiceAnalysisToneOscillator = null;
 let voiceAnalysisAudioBlob = null;
+let voiceAnalysisTimelineAudioSync = false;
+let voiceTextTrainingSpeechStarted = false;
+let voiceTextTrainingSilenceStartedAt = 0;
+let voiceTextTrainingStopScheduled = false;
+let voiceTextTrainingPeakVolume = 0;
+
+const TEXT_TRAINING_END_SILENCE_MS = 1300;
+const TEXT_TRAINING_FAST_END_SILENCE_MS = 800;
+const TEXT_TRAINING_MIN_ELAPSED_SECONDS = 1.4;
 
 function isVoiceAnalysisMicActive(snapshot = voiceAnalysisEngine?.getSnapshot?.() || {}) {
   return snapshot.state === "live" || snapshot.state === "recording" || voiceAnalysisEngine?.recorder?.state === "recording" || voiceAnalysisEngine?.recorder?.state === "paused";
 }
 
+function resetVoiceTextTrainingAutoStop() {
+  voiceTextTrainingSpeechStarted = false;
+  voiceTextTrainingSilenceStartedAt = 0;
+  voiceTextTrainingStopScheduled = false;
+  voiceTextTrainingPeakVolume = 0;
+}
+
+function getVoiceTextTrainingExpectedSeconds(text = "") {
+  const value = String(text || "").trim();
+  if (!value) return TEXT_TRAINING_MIN_ELAPSED_SECONDS;
+  const words = value.split(/\s+/).filter(Boolean).length;
+  const letters = (value.match(/[A-Za-zÄÖÜäöüß]/g) || []).length;
+  const sentenceMarks = (value.match(/[.!?;:]/g) || []).length;
+  return Math.max(TEXT_TRAINING_MIN_ELAPSED_SECONDS, Math.min(90, words * 0.42 + letters * 0.018 + sentenceMarks * 0.25));
+}
+
+function stopVoiceTextTrainingAfterDetectedEnd() {
+  if (voiceTextTrainingStopScheduled) return;
+  voiceTextTrainingStopScheduled = true;
+  window.setTimeout(() => {
+    const snapshot = voiceAnalysisEngine?.getSnapshot?.() || {};
+    if (activeVoiceAnalysisScreen === "textTraining" && snapshot.state === "recording") {
+      voiceAnalysisEngine.stopRecording?.();
+      if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Texttraining automatisch beendet.";
+    }
+    resetVoiceTextTrainingAutoStop();
+    renderVoiceAnalysis();
+  }, 120);
+}
+
+function handleVoiceTextTrainingAutoStop(snapshot = {}) {
+  if (activeVoiceAnalysisScreen !== "textTraining" || snapshot.state !== "recording") {
+    if (snapshot.state !== "recording") resetVoiceTextTrainingAutoStop();
+    return;
+  }
+  if (voiceTextTrainingStopScheduled) return;
+  const elapsed = Number(snapshot.elapsedSeconds) || 0;
+  const volume = Number(snapshot.volume?.current) || 0;
+  voiceTextTrainingPeakVolume = Math.max(voiceTextTrainingPeakVolume, volume);
+  const dynamicSpeechThreshold = Math.max(8, Math.min(22, voiceTextTrainingPeakVolume * 0.34 || 10));
+  const isSpeechActive = volume >= dynamicSpeechThreshold;
+  if (isSpeechActive) {
+    voiceTextTrainingSpeechStarted = true;
+    voiceTextTrainingSilenceStartedAt = 0;
+    return;
+  }
+  if (!voiceTextTrainingSpeechStarted) return;
+  const now = performance.now();
+  if (!voiceTextTrainingSilenceStartedAt) voiceTextTrainingSilenceStartedAt = now;
+  const silenceMs = now - voiceTextTrainingSilenceStartedAt;
+  const text = String(snapshot.trainingText || voiceTrainingText?.value || "");
+  const expectedSeconds = getVoiceTextTrainingExpectedSeconds(text);
+  const hasReachedLikelyEnd = elapsed >= Math.max(TEXT_TRAINING_MIN_ELAPSED_SECONDS, expectedSeconds * 0.48);
+  const isLateEnoughForFastEnd = elapsed >= expectedSeconds + 2.5;
+  if ((hasReachedLikelyEnd && silenceMs >= TEXT_TRAINING_END_SILENCE_MS) || (isLateEnoughForFastEnd && silenceMs >= TEXT_TRAINING_FAST_END_SILENCE_MS)) {
+    stopVoiceTextTrainingAfterDetectedEnd();
+  }
+}
 function updateVoiceAnalysisMicButton(snapshot = voiceAnalysisEngine?.getSnapshot?.() || {}) {
   if (!voiceAnalysisStartButton) return;
+  const hideInEvaluation = activeVoiceAnalysisScreen === "evaluation";
+  voiceAnalysisStartButton.hidden = hideInEvaluation;
+  if (hideInEvaluation) {
+    voiceAnalysisStartButton.setAttribute("aria-hidden", "true");
+    voiceAnalysisStartButton.setAttribute("tabindex", "-1");
+    return;
+  }
+  voiceAnalysisStartButton.removeAttribute("aria-hidden");
+  voiceAnalysisStartButton.removeAttribute("tabindex");
   const isActive = isVoiceAnalysisMicActive(snapshot);
+  const state = snapshot.state || "idle";
   const icon = voiceAnalysisStartButton.querySelector(".voice-analysis-action-icon");
   const label = voiceAnalysisStartButton.querySelector(".voice-analysis-action-label");
   voiceAnalysisStartButton.setAttribute("aria-pressed", String(isActive));
   voiceAnalysisStartButton.setAttribute("aria-label", isActive ? "Mikrofon ausschalten" : "Mikrofon einschalten");
   voiceAnalysisStartButton.title = isActive ? "Mikrofon ausschalten" : "Mikrofon einschalten";
+  voiceAnalysisStartButton.classList.toggle("is-mic-live", state === "live");
+  voiceAnalysisStartButton.classList.toggle("is-mic-recording", state === "recording");
+  voiceAnalysisStartButton.classList.toggle("is-mic-playback", state === "playback");
   if (icon) icon.textContent = "\uD83C\uDFA4";
   if (label) label.textContent = isActive ? "Mikrofon aus" : "Mikrofon ein";
 }
@@ -430,7 +518,7 @@ function setReferenceToneButtonPlaying(isPlaying) {
   referenceTonePlayButton.setAttribute("aria-label", isPlaying ? "Referenzton stoppen" : "Referenzton abspielen");
   referenceTonePlayButton.title = isPlaying ? "Referenzton stoppen" : "Referenzton abspielen";
   if (icon) icon.textContent = isPlaying ? "\u25A0" : "\u25B6";
-  if (label) label.textContent = isPlaying ? "Ton stoppen" : "Ton abspielen";
+  if (label) label.textContent = isPlaying ? "Stop" : "Start";
 }
 
 const VOICE_ANALYSIS_SCREENS = {
@@ -438,6 +526,7 @@ const VOICE_ANALYSIS_SCREENS = {
   pitch: { title: "Tonhöhe", metric: "pitch", unit: " Hz", detail: "Grundfrequenz der Stimme" },
   pitchCurve: { title: "Pitch-Verlauf", metric: "pitch", unit: " Hz", detail: "Zeitverlauf der erkannten Grundfrequenz" },
   spectrogram: { title: "Live-Spektrogramm", metric: "spectrogram", unit: " Hz", detail: "Stimmfrequenz von 70 bis 500 Hz" },
+  spectrum: { title: "Live-Spektrum", metric: "spectrum", unit: "", detail: "Frequenzenergie von 50 Hz bis 3,5 kHz" },
   waveform: { title: "Wellenform", metric: "waveform", unit: "%", detail: "Mikrofonsignal als Amplitudenverlauf" },
   monitor: { title: "Voice Monitor", metric: "monitor", unit: "", detail: "Live-Messwerte der aktuellen Session" },
   recording: { title: "Sprachaufnahme", metric: "recording", unit: "", detail: "Lokale Aufnahme mit Analyse" },
@@ -840,6 +929,15 @@ init().catch((error) => {
   hideSplashAfterStartup();
 });
 
+
+document.querySelector("#voiceAnalysisExerciseAnalysisButton")?.addEventListener("click", () => {
+  setActiveView("stats");
+});
+
+document.querySelector("#exerciseAnalysisBackButton")?.addEventListener("click", () => {
+  setActiveView("voiceAnalysis");
+  setVoiceAnalysisScreen("home");
+});
 navButtons.forEach((button) => {
   button.addEventListener("click", () => {
     setActiveView(button.dataset.targetView);
@@ -3605,7 +3703,7 @@ async function startRecording() {
     await withTimeout(ensureCameraPreviewPlaying(), 800).catch(() => false);
     await withTimeout(waitForCameraFrame(1600), 900).catch(() => {});
   }
-  await withTimeout(ensureRecordingAnalyserReady({ preferExistingStream: isDialogRecording }), 1000).catch(() => {});
+  await withTimeout(ensureRecordingAnalyserReady({ preferExistingStream: isDialogRecording }), 2600).catch(() => {});
   await withTimeout(waitForCameraFrame(isDialogRecording ? 1600 : 900), 900).catch(() => {});
   const recordingStream = startComposedVideoStream();
 
@@ -3870,10 +3968,17 @@ async function prepareRecordingAudio(options = {}) {
   }
 }
 
-async function setupAudioAnalyser({ reuseExisting = false, forceDedicatedStream = false, preferExistingStream = false } = {}) {
+function getRecordingAudioConstraints(relaxed = false) {
+  if (relaxed) {
+    return { echoCancellation: false, noiseSuppression: false, autoGainControl: true };
+  }
+  return { echoCancellation: true, noiseSuppression: true, autoGainControl: false };
+}
+
+async function setupAudioAnalyser({ reuseExisting = false, forceDedicatedStream = false, preferExistingStream = false, relaxedAudioConstraints = false } = {}) {
   await ensureAudioContext();
 
-  if (reuseExisting && analyser && audioSource) {
+  if (reuseExisting && analyser && audioSource && audioOnlyStreamHasLiveTrack()) {
     await ensureAudioContext();
     return;
   }
@@ -3888,11 +3993,7 @@ async function setupAudioAnalyser({ reuseExisting = false, forceDedicatedStream 
   if (preferDedicatedAudioStream) {
     try {
       audioOnlyStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: false,
-        },
+        audio: getRecordingAudioConstraints(relaxedAudioConstraints),
         video: false,
       });
       audioOnlyStreamOwnsTracks = true;
@@ -3911,11 +4012,7 @@ async function setupAudioAnalyser({ reuseExisting = false, forceDedicatedStream 
   } else {
     try {
       audioOnlyStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: false,
-        },
+        audio: getRecordingAudioConstraints(relaxedAudioConstraints),
         video: false,
       });
       audioOnlyStreamOwnsTracks = true;
@@ -3938,6 +4035,8 @@ async function setupAudioAnalyser({ reuseExisting = false, forceDedicatedStream 
     }
     return;
   }
+
+  audioTrack.enabled = true;
 
   if (!audioTrack.enabled || audioTrack.muted) {
     if (!instructionPlaybackActive) {
@@ -4004,7 +4103,15 @@ async function ensureRecordingAnalyserReady(options = {}) {
       forceDedicatedStream: !options.preferExistingStream && !isIosMediaDevice(),
       preferExistingStream: Boolean(options.preferExistingStream),
     });
-    await waitForAudioProcessorFrames(650);
+    const recovered = await waitForAudioProcessorFrames(650);
+    if (!recovered && (!options.preferExistingStream || !isIosMediaDevice())) {
+      await setupAudioAnalyser({
+        reuseExisting: false,
+        forceDedicatedStream: true,
+        relaxedAudioConstraints: true,
+      });
+      await waitForAudioProcessorFrames(900);
+    }
   }
 }
 
@@ -4112,8 +4219,13 @@ function disconnectAudioAnalyser() {
   audioOnlyStreamOwnsTracks = false;
 }
 
+function audioOnlyStreamHasLiveTrack() {
+  const tracks = audioOnlyStream?.getAudioTracks?.() || [];
+  return tracks.some((track) => track.readyState === "live" && track.enabled);
+}
+
 async function restartAudioAnalyser() {
-  if (analyserRestartInProgress || !isRecording) return;
+  if (analyserRestartInProgress || (!isRecording && !isCalibrating)) return;
 
   analyserRestartInProgress = true;
   silentSignalStartedAt = 0;
@@ -4460,12 +4572,12 @@ function setupKaraokeText() {
     karaokeTimeline = buildSentenceTimeline(sentences);
   } else if (isLongTextMode(activeExercise?.mode)) {
     const passages = getExerciseTextPassages(activeExercise);
-    karaokeWords = passages.length ? passages : getExerciseScript().split(/\s+/).filter(Boolean);
+    karaokeWords = passages.length ? passages : splitExerciseSpeechUnits(getExerciseScript(), activeExercise?.mode);
     karaokeTimeline = passages.length
       ? buildTextPassageTimeline(passages, getCurrentKaraokeTiming())
       : buildKaraokeTimeline(karaokeWords, getCurrentKaraokeTiming());
   } else {
-    karaokeWords = getExerciseScript().split(/\s+/).filter(Boolean);
+    karaokeWords = splitExerciseSpeechUnits(activeExercise?.content || getExerciseScript(), activeExercise?.mode);
     karaokeTimeline = applyRepeatMetadata(
       buildKaraokeTimeline(karaokeWords, getCurrentKaraokeTiming()),
       activeExercise?.repeats || 1,
@@ -4503,6 +4615,26 @@ function getExerciseTextPassages(exercise = getActiveRecordingExercise()) {
     : exercise.rawContent || exercise.content || exercise.script || "";
 
   return splitTextPassages(rawText);
+}
+
+function splitExerciseSpeechUnits(text, mode = "") {
+  const normalizedMode = normalizeEditorExerciseModeValue(mode || "");
+  const source = String(text || "").trim();
+  if (!source) return [];
+
+  if (normalizedMode === "vowels" || normalizedMode === "syllables") {
+    return source
+      .split(/[\s,;|/\\]+/)
+      .map((unit) => unit.trim())
+      .filter(Boolean);
+  }
+
+  return source.split(/\s+/).map((unit) => unit.trim()).filter(Boolean);
+}
+
+function formatExerciseContentLabel(content, mode = "") {
+  const units = splitExerciseSpeechUnits(content, mode);
+  return units.length ? units.join(", ") : String(content || "").trim();
 }
 
 function isLongTextMode(mode) {
@@ -5926,7 +6058,7 @@ function hydrateEditorExercise(exercise) {
       ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
       : isLongTextMode(mode)
       ? `${getExerciseTextPassages({ ...exercise, mode, content }).length || 1} Textabschnitt${getExerciseTextPassages({ ...exercise, mode, content }).length === 1 ? "" : "e"}`
-      : content.split(/\s+/).filter(Boolean).join(", ")) ||
+      : formatExerciseContentLabel(content, mode)) ||
     content;
 
   return {
@@ -8487,11 +8619,7 @@ async function ensureMediaStream() {
         height: { ideal: 1280 },
         aspectRatio: { ideal: 9 / 16 },
       },
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: false,
-      },
+      audio: getRecordingAudioConstraints(false),
     });
 
     await attachCameraPreview(mediaStream);
@@ -18039,6 +18167,7 @@ async function openStoredRecording(id) {
   showResult(metadata, storedBlob);
   renderPlaybackRecordingAccess(getPatientRecordings(), metadata.id);
   renderAudioAnalysis(metadata);
+  updateVoiceAnalysisPlaybackButton();
   message.textContent = "Aufnahme aus der Auswertung geöffnet.";
 }
 
@@ -18100,6 +18229,7 @@ function clearCurrentRecording() {
   currentMetadata = null;
   if (currentVideoUrl) URL.revokeObjectURL(currentVideoUrl);
   currentVideoUrl = null;
+  updateVoiceAnalysisPlaybackButton();
   drawWaveform(playbackWaveform, [], { mode: "playback" });
 }
 
@@ -18235,6 +18365,251 @@ function formatVoiceAnalysisTime(seconds) {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
+function formatVoiceAnalysisDialogTrainingText(turns = []) {
+  return turns
+    .map((turn) => normalizeDialogTurn(turn))
+    .filter((turn) => turn.role === "patient" && turn.text)
+    .map((turn) => turn.text)
+    .join("\n");
+}
+
+function getSelectedVoiceAnalysisTrainingText() {
+  const exercise = getActiveRecordingExercise();
+  if (!exercise) return "";
+  if (exercise.mode === "dialog") return formatVoiceAnalysisDialogTrainingText(getExerciseDialogTurns(exercise), exercise);
+  if (Array.isArray(exercise.sentences) && exercise.sentences.length) return exercise.sentences.join("\n");
+  if (Array.isArray(exercise.textPassages) && exercise.textPassages.length) return exercise.textPassages.join("\n\n");
+  if (Array.isArray(exercise.syllables) && exercise.syllables.length) return exercise.syllables.join(" ");
+  return String(exercise.content || exercise.script || exercise.rawContent || exercise.name || "").trim();
+}
+
+function getVoiceAnalysisTrainingText(metadata = currentMetadata) {
+  const config = metadata?.uebungKonfiguration || {};
+  const selectedText = metadata ? "" : getSelectedVoiceAnalysisTrainingText();
+  const directText = metadata?.uebungText || config.inhalt || config.text || metadata?.text || metadata?.uebung || "";
+  const dialogTurns = Array.isArray(config.dialogTurns) && config.dialogTurns.length
+    ? config.dialogTurns
+    : Array.isArray(config.dialog) && config.dialog.length
+      ? config.dialog
+      : [];
+  if (Array.isArray(config.saetze) && config.saetze.length) return config.saetze.join("\n");
+  if (Array.isArray(config.textAbschnitte) && config.textAbschnitte.length) return config.textAbschnitte.join("\n\n");
+  if (dialogTurns.length) return formatVoiceAnalysisDialogTrainingText(dialogTurns);
+  if (String(config.mode || metadata?.uebungArt || "").toLowerCase() === "dialog") {
+    const patientDialogText = formatVoiceAnalysisDialogTrainingText(parseDialogTurns(directText));
+    if (patientDialogText) return patientDialogText;
+  }
+  return String(directText || selectedText || "Wir wollen heute wieder deutlich und kräftig sprechen.").trim();
+}
+
+function syncVoiceAnalysisTextTrainingField(metadata = null) {
+  if (!voiceTrainingText) return;
+  const text = metadata ? getVoiceAnalysisTrainingText(metadata) : getSelectedVoiceAnalysisTrainingText() || getVoiceAnalysisTrainingText(null);
+  if (text) voiceTrainingText.value = text;
+  voiceAnalysisEngine?.setTrainingText?.(voiceTrainingText.value);
+}
+
+function buildVoiceAnalysisPlaybackSnapshot(metadata = currentMetadata, blob = currentVideoBlob) {
+  if (!metadata) return null;
+  const storedDuration = Number(metadata.dauerSekunden || metadata.duration || metadata.gesamtdauer || 0);
+  const storedAmplitudes = getBestPlaybackAmplitudeSeries(metadata).map((value) => Number(value) || 0);
+  const storedVolumeValues = (metadata.lautstaerkePegel || metadata.lautstaerken || metadata.amplituden || [])
+    .map((value) => Number(value) || 0);
+  const storedPitchValues = (metadata.stimmfrequenzenHz || [])
+    .map((value) => Number(value) || 0);
+  const fallbackCount = Math.max(storedAmplitudes.length, storedVolumeValues.length, storedPitchValues.length, 90);
+  const duration = storedDuration || Math.max(1, fallbackCount / 12);
+  const amplitudes = storedAmplitudes.length
+    ? storedAmplitudes
+    : storedVolumeValues.length
+      ? storedVolumeValues.map((value) => clampCanvas(value, 0, 100))
+      : Array.from({ length: fallbackCount }, () => 0);
+  const volumeValues = storedVolumeValues.length
+    ? storedVolumeValues
+    : amplitudes.map((value) => clampCanvas(Math.round(value), 0, 100));
+  const averagePitch = Number(metadata.durchschnittlicheStimmfrequenzHz || metadata.pitch?.average || 0) || 0;
+  const pitchValues = storedPitchValues.length
+    ? storedPitchValues
+    : averagePitch
+      ? Array.from({ length: Math.max(volumeValues.length, amplitudes.length, 1) }, (_, index) => {
+          const sourceLevel = Number(volumeValues[index % Math.max(1, volumeValues.length)] || amplitudes[index % Math.max(1, amplitudes.length)] || 0);
+          return sourceLevel > 6 ? averagePitch : 0;
+        })
+      : [];
+  const timeFor = (index, length) => duration && length > 1 ? (index / (length - 1)) * duration : index / Math.max(1, length);
+  const volumeStats = calculateAmplitudeStats(volumeValues.length ? volumeValues : amplitudes);
+  const pitchStats = calculatePitchStats(pitchValues.filter((value) => value > 0));
+  return {
+    state: "playback",
+    label: metadata.uebung || "Playback",
+    trainingText: getVoiceAnalysisTrainingText(metadata),
+    elapsedSeconds: duration,
+    activeSpeechSeconds: duration,
+    volume: {
+      current: volumeStats.average,
+      average: volumeStats.average,
+      min: volumeStats.minimum,
+      max: volumeStats.maximum,
+    },
+    pitch: {
+      current: pitchStats.average,
+      average: pitchStats.average,
+      min: pitchStats.minimum,
+      max: pitchStats.maximum,
+      variation: Math.max(0, pitchStats.maximum - pitchStats.minimum),
+    },
+    pauses: { count: 0, totalDuration: 0, averageDuration: 0, longest: 0 },
+    speechRate: { wordsPerMinute: 0, syllablesPerMinute: 0 },
+    waveform: amplitudes.map((value, index) => ({ time: timeFor(index, amplitudes.length), amplitude: value })),
+    pitchHistory: pitchValues.map((value, index) => ({ time: timeFor(index, pitchValues.length), value })),
+    volumeHistory: (volumeValues.length ? volumeValues : amplitudes).map((value, index, list) => ({ time: timeFor(index, list.length), value })),
+    recordingBlob: blob || null,
+  };
+}
+
+async function loadStoredRecordingIntoVoiceAnalysis(id, targetScreen = "evaluation") {
+  if (!id || !voiceAnalysisEngine?.loadSnapshot) return false;
+  const storedRecording = await getRecording(id);
+  if (!storedRecording) {
+    if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Aufnahme konnte nicht geladen werden.";
+    return false;
+  }
+  const { videoBlob, audioBlob, ...metadata } = storedRecording;
+  const storedBlob = videoBlob || audioBlob || null;
+  currentMetadata = metadata;
+  selectedAnalysisRecordingId = metadata.id;
+  currentVideoBlob = storedBlob;
+  rawAmplitudes = metadata.rawAmplituden || [];
+  const snapshot = buildVoiceAnalysisPlaybackSnapshot(metadata, storedBlob);
+  if (!snapshot) {
+    if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Aufnahme enthält keine auswertbaren Analysedaten.";
+    return false;
+  }
+  voiceAnalysisEngine.loadSnapshot(snapshot);
+  syncVoiceAnalysisTextTrainingField(metadata);
+  renderPlaybackRecordingAccess(getPatientRecordings(), metadata.id);
+  updateVoiceAnalysisPlaybackButton();
+  renderVoiceAnalysisPlaybackPicker();
+  setVoiceAnalysisScreen(targetScreen);
+  if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = `Analyse geladen: ${snapshot.label}.`;
+  return true;
+}
+
+function updateVoiceAnalysisPlaybackButton() {
+  if (!voiceAnalysisPlaybackButton) return;
+  const hasPlayback = Boolean(currentMetadata && (currentVideoBlob || currentVideoUrl || recordingPlayer?.currentSrc));
+  voiceAnalysisPlaybackButton.disabled = !hasPlayback;
+  voiceAnalysisPlaybackButton.title = hasPlayback
+    ? "Geladene Aufnahme analysieren"
+    : "Keine gespeicherte Aufnahme geladen";
+  voiceAnalysisPlaybackButton.setAttribute(
+    "aria-label",
+    hasPlayback ? "Geladene Aufnahme analysieren" : "Keine gespeicherte Aufnahme geladen",
+  );
+}
+
+function updateVoiceAnalysisTimeline(snapshot = voiceAnalysisEngine?.getSnapshot?.() || {}) {
+  if (!voiceAnalysisTimeline || !voiceAnalysisTimelineSeek || !voiceAnalysisTimelineTime) return;
+  const playback = snapshot.playback;
+  const hasTimeline = Boolean(playback && Number(playback.duration) > 0);
+  voiceAnalysisTimeline.classList.toggle("is-hidden", !hasTimeline);
+  voiceAnalysisTimeline.hidden = !hasTimeline;
+  if (!hasTimeline) return;
+  const duration = Math.max(0, Number(playback.duration) || 0);
+  const position = Math.max(0, Math.min(duration, Number(playback.position) || 0));
+  const nextValue = duration ? Math.round((position / duration) * 1000) : 0;
+  if (document.activeElement !== voiceAnalysisTimelineSeek) voiceAnalysisTimelineSeek.value = String(nextValue);
+  voiceAnalysisTimelineTime.textContent = `${formatVoiceAnalysisTime(position)} / ${formatVoiceAnalysisTime(duration)}`;
+  if (voiceAnalysisTimelinePlayButton) {
+    const icon = voiceAnalysisTimelinePlayButton.querySelector(".voice-analysis-action-icon");
+    const label = voiceAnalysisTimelinePlayButton.querySelector(".voice-analysis-action-label");
+    if (icon) icon.textContent = playback.playing ? "Ⅱ" : "▶";
+    if (label) label.textContent = "";
+    voiceAnalysisTimelinePlayButton.setAttribute("aria-label", playback.playing ? "Analyse pausieren" : "Analyse abspielen");
+  }
+}
+
+function syncVoiceAnalysisAudioToTimeline(positionSeconds = 0) {
+  if (!voiceAnalysisAudio || !Number.isFinite(Number(positionSeconds))) return;
+  if (!prepareVoiceAnalysisAudio(voiceAnalysisEngine?.getSnapshot?.() || {})) return;
+  if (Number.isFinite(voiceAnalysisAudio.duration) && voiceAnalysisAudio.duration > 0) {
+    voiceAnalysisEngine?.setImportedDuration?.(voiceAnalysisAudio.duration);
+  }
+  const nextTime = Math.max(0, Number(positionSeconds) || 0);
+  if (Math.abs((voiceAnalysisAudio.currentTime || 0) - nextTime) > 0.18) {
+    try {
+      voiceAnalysisAudio.currentTime = nextTime;
+    } catch (error) {
+      // Some formats are only seekable after metadata is ready.
+    }
+  }
+}
+
+async function playVoiceAnalysisTimelineWithAudio() {
+  const snapshot = voiceAnalysisEngine?.getSnapshot?.() || {};
+  if (!snapshot.playback) return;
+  const duration = Number(snapshot.playback.duration) || 0;
+  if (duration && Number(snapshot.playback.position) >= duration - 0.05) {
+    voiceAnalysisEngine.seekImportedTimeline?.(0);
+  }
+  const nextSnapshot = voiceAnalysisEngine?.getSnapshot?.() || snapshot;
+  const hasAudio = prepareVoiceAnalysisAudio(snapshot);
+  if (hasAudio && voiceAnalysisAudio) {
+    if (Number.isFinite(voiceAnalysisAudio.duration) && voiceAnalysisAudio.duration > 0) {
+      voiceAnalysisEngine?.setImportedDuration?.(voiceAnalysisAudio.duration);
+    }
+    syncVoiceAnalysisAudioToTimeline(nextSnapshot.playback?.position || 0);
+    try {
+      voiceAnalysisTimelineAudioSync = true;
+      await voiceAnalysisAudio.play();
+    } catch (error) {
+      voiceAnalysisTimelineAudioSync = false;
+      if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Audio konnte nicht abgespielt werden. Analyse läuft ohne Ton.";
+    }
+  }
+  voiceAnalysisEngine.playImportedTimeline?.();
+}
+
+function pauseVoiceAnalysisTimelineWithAudio() {
+  if (voiceAnalysisAudio && !voiceAnalysisAudio.paused) voiceAnalysisAudio.pause();
+  voiceAnalysisTimelineAudioSync = false;
+  voiceAnalysisEngine?.pauseImportedTimeline?.();
+}
+
+function pauseVoiceAnalysisPlayers() {
+  pauseVoiceAnalysisTimelineWithAudio();
+  if (voiceAnalysisAudio) {
+    voiceAnalysisAudio.pause();
+  }
+  stopVoiceAnalysisTone();
+  setVoiceEvaluationPlayButtonPlaying(false);
+}
+
+function renderVoiceAnalysisPlaybackPicker() {
+  if (!voiceAnalysisPlaybackSelect || !voiceAnalysisOpenPlaybackButton) return;
+  const recordings = getPatientRecordings();
+  const currentValue = voiceAnalysisPlaybackSelect.value || currentMetadata?.id || "";
+  voiceAnalysisPlaybackSelect.innerHTML = "";
+  if (!recordings.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Keine gespeicherte Aufnahme";
+    voiceAnalysisPlaybackSelect.append(option);
+    voiceAnalysisOpenPlaybackButton.disabled = true;
+    return;
+  }
+  recordings.forEach((recording) => {
+    const option = document.createElement("option");
+    option.value = recording.id;
+    option.textContent = `${formatDateTime(recording.datum)} · ${recording.uebung || "Aufnahme"}`;
+    voiceAnalysisPlaybackSelect.append(option);
+  });
+  voiceAnalysisPlaybackSelect.value = recordings.some((recording) => recording.id === currentValue)
+    ? currentValue
+    : recordings[0].id;
+  voiceAnalysisOpenPlaybackButton.disabled = !voiceAnalysisPlaybackSelect.value;
+}
+
 function getVoiceAnalysisRouteScreen() {
   const route = window.location.hash.replace(/^#\/?/, "").split("/");
   return route[0] === "stimmanalyse" && VOICE_ANALYSIS_SCREENS[route[1]] ? route[1] : "home";
@@ -18251,7 +18626,31 @@ function drawVoiceAnalysisChart(snapshot, screen = activeVoiceAnalysisScreen) {
     drawVoiceAnalysisSpectrogram(context, snapshot, width, height);
     return;
   }
+  if (screen === "spectrum") {
+    drawVoiceAnalysisSpectrum(context, snapshot, width, height);
+    return;
+  }
   context.clearRect(0, 0, width, height);
+  if (screen === "reference") {
+    drawVoiceAnalysisReferenceChart(context, snapshot, width, height);
+    return;
+  }
+  if (screen === "recording") {
+    drawVoiceAnalysisRecordingChart(context, snapshot, width, height);
+    return;
+  }
+  if (screen === "textTraining") {
+    drawVoiceAnalysisTextTrainingChart(context, snapshot, width, height);
+    return;
+  }
+  if (screen === "history") {
+    drawVoiceAnalysisHistoryChart(context, width, height);
+    return;
+  }
+  if (screen === "pitch") {
+    drawVoiceAnalysisPitchMeter(context, snapshot, width, height);
+    return;
+  }
   if (isPitchView) {
     drawVoiceAnalysisPitchChart(context, snapshot, width, height);
     return;
@@ -18263,7 +18662,7 @@ function drawVoiceAnalysisChart(snapshot, screen = activeVoiceAnalysisScreen) {
   const unit = isPercentView ? "%" : "Hz";
   const leftAxis = 54 * pixelRatio;
   const rightPad = 10 * pixelRatio;
-  const topPad = 10 * pixelRatio;
+  const topPad = 12 * pixelRatio;
   const bottomPad = 12 * pixelRatio;
   const chartLeft = leftAxis;
   const chartRight = width - rightPad;
@@ -18297,9 +18696,11 @@ function drawVoiceAnalysisChart(snapshot, screen = activeVoiceAnalysisScreen) {
   context.lineTo(chartLeft, chartBottom);
   context.stroke();
 
-  const values = isPercentView
-    ? snapshot.volumeHistory.map((item) => item.value)
-    : snapshot.pitchHistory.map((item) => item.value);
+  const values = screen === "waveform"
+    ? snapshot.waveform.map((item) => Number(item?.amplitude ?? item?.value ?? item) || 0)
+    : isPercentView
+      ? snapshot.volumeHistory.map((item) => item.value)
+      : snapshot.pitchHistory.map((item) => item.value);
   if (!values.length) return;
   context.strokeStyle = screen === "volume" || screen === "waveform" ? "#39c27a" : "#2bbcd8";
   context.lineWidth = 3 * pixelRatio;
@@ -18308,19 +18709,565 @@ function drawVoiceAnalysisChart(snapshot, screen = activeVoiceAnalysisScreen) {
   context.beginPath();
   values.forEach((value, index) => {
     const x = values.length === 1 ? chartLeft + chartWidth / 2 : chartLeft + (index / (values.length - 1)) * chartWidth;
-    const y = toY(clampCanvas(Number(value), minimum, maximum));
+    const visibleValue = screen === "waveform"
+      ? Math.pow(clampCanvas(Number(value) / 100, 0, 1), 0.72) * 100
+      : Number(value);
+    const y = toY(clampCanvas(visibleValue, minimum, maximum));
     if (index === 0) context.moveTo(x, clampCanvas(y, chartTop, chartBottom));
     else context.lineTo(x, clampCanvas(y, chartTop, chartBottom));
   });
   context.stroke();
 }
 
+function drawVoiceAnalysisReferenceChart(context, snapshot, width, height) {
+  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  const referenceHz = clampCanvas(Number(referenceToneCustom?.value || referenceToneSelect?.value || 140), 60, 400);
+  const spokenHz = Number(snapshot.pitch?.current || snapshot.pitch?.average) || 0;
+  const deviation = spokenHz ? spokenHz - referenceHz : 0;
+  const maximumDeviation = 80;
+  const centerX = width / 2;
+  const centerY = height * 0.56;
+  const barWidth = width * 0.72;
+  const barLeft = centerX - barWidth / 2;
+  const barRight = centerX + barWidth / 2;
+  const markerX = centerX + clampCanvas(deviation / maximumDeviation, -1, 1) * (barWidth / 2);
+
+  context.fillStyle = "#101820";
+  context.fillRect(0, 0, width, height);
+  const gradient = context.createLinearGradient(barLeft, 0, barRight, 0);
+  gradient.addColorStop(0, "rgba(82, 215, 255, 0.62)");
+  gradient.addColorStop(0.5, "rgba(120, 224, 200, 0.96)");
+  gradient.addColorStop(1, "rgba(255, 181, 70, 0.8)");
+  context.lineCap = "round";
+  context.lineWidth = 12 * pixelRatio;
+  context.strokeStyle = "rgba(226, 241, 243, 0.14)";
+  context.beginPath();
+  context.moveTo(barLeft, centerY);
+  context.lineTo(barRight, centerY);
+  context.stroke();
+  context.lineWidth = 8 * pixelRatio;
+  context.strokeStyle = gradient;
+  context.beginPath();
+  context.moveTo(barLeft, centerY);
+  context.lineTo(barRight, centerY);
+  context.stroke();
+
+  context.strokeStyle = "rgba(255, 255, 255, 0.72)";
+  context.lineWidth = 2 * pixelRatio;
+  context.beginPath();
+  context.moveTo(centerX, centerY - 28 * pixelRatio);
+  context.lineTo(centerX, centerY + 28 * pixelRatio);
+  context.stroke();
+
+  context.fillStyle = spokenHz ? "#ffb546" : "rgba(226, 241, 243, 0.45)";
+  context.beginPath();
+  context.arc(spokenHz ? markerX : centerX, centerY, 13 * pixelRatio, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = "rgba(255,255,255,0.88)";
+  context.lineWidth = 2.5 * pixelRatio;
+  context.stroke();
+
+  context.fillStyle = "#78e0c8";
+  context.font = `800 ${18 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(`Referenz ${Math.round(referenceHz)} Hz`, centerX, 28 * pixelRatio);
+  context.fillStyle = "#ffb546";
+  context.font = `800 ${24 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  context.fillText(spokenHz ? `${Math.round(spokenHz)} Hz` : "Nachsprechen", centerX, 62 * pixelRatio);
+  context.fillStyle = "rgba(226, 241, 243, 0.82)";
+  context.font = `${13 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  context.fillText(spokenHz ? `${deviation >= 0 ? "+" : ""}${Math.round(deviation)} Hz Abweichung` : "Ton starten oder Mikrofon einschalten", centerX, height - 22 * pixelRatio);
+}
+
+function drawVoiceAnalysisRecordingChart(context, snapshot, width, height) {
+  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  const waveform = Array.isArray(snapshot.waveform) ? snapshot.waveform.slice(-96) : [];
+  const values = waveform.map((item) => Number(item?.amplitude ?? item?.value ?? item) || 0);
+  const centerY = height * 0.58;
+  const barWidth = Math.max(2 * pixelRatio, width / Math.max(36, values.length || 64) * 0.48);
+  const gap = Math.max(1 * pixelRatio, barWidth * 0.78);
+  const startX = Math.max(14 * pixelRatio, (width - values.length * (barWidth + gap)) / 2);
+
+  context.fillStyle = "#101820";
+  context.fillRect(0, 0, width, height);
+  context.fillStyle = snapshot.state === "recording" ? "#39c27a" : "rgba(226, 241, 243, 0.82)";
+  context.font = `800 ${20 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(snapshot.state === "recording" ? "Aufnahme läuft" : "Sprachaufnahme", width / 2, 30 * pixelRatio);
+  context.fillStyle = "rgba(226, 241, 243, 0.78)";
+  context.font = `${14 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  context.fillText(formatVoiceAnalysisTime(snapshot.elapsedSeconds), width / 2, 56 * pixelRatio);
+
+  context.strokeStyle = "rgba(226, 241, 243, 0.12)";
+  context.lineWidth = pixelRatio;
+  context.beginPath();
+  context.moveTo(12 * pixelRatio, centerY);
+  context.lineTo(width - 12 * pixelRatio, centerY);
+  context.stroke();
+
+  if (!values.length) {
+    context.fillStyle = "rgba(226, 241, 243, 0.68)";
+    context.font = `${14 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    context.fillText("Start drücken", width / 2, centerY + 34 * pixelRatio);
+    return;
+  }
+  values.forEach((value, index) => {
+    const normalized = Math.pow(clampCanvas(value / 100, 0, 1), 0.72);
+    const barHeight = Math.max(6 * pixelRatio, normalized * height * 0.44);
+    const x = startX + index * (barWidth + gap);
+    const y = centerY - barHeight / 2;
+    context.fillStyle = snapshot.state === "recording" ? "#39c27a" : "#2bbcd8";
+    context.fillRect(x, y, barWidth, barHeight);
+  });
+}
+
+function wrapCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines = 2) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+  words.forEach((word) => {
+    const testLine = line ? `${line} ${word}` : word;
+    if (context.measureText(testLine).width <= maxWidth || !line) {
+      line = testLine;
+      return;
+    }
+    lines.push(line);
+    line = word;
+  });
+  if (line) lines.push(line);
+  const visibleLines = lines.slice(0, maxLines);
+  if (lines.length > maxLines && visibleLines.length) {
+    visibleLines[visibleLines.length - 1] = `${visibleLines[visibleLines.length - 1].replace(/[,.!?;:]*$/, "")}...`;
+  }
+  const startY = y - ((visibleLines.length - 1) * lineHeight) / 2;
+  visibleLines.forEach((visibleLine, index) => context.fillText(visibleLine, x, startY + index * lineHeight));
+}
+
+function drawVoiceAnalysisTextTrainingChart(context, snapshot, width, height) {
+  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  const volume = clampCanvas(Number(snapshot.volume?.current) || 0, 0, 100);
+  const pitch = clampCanvas(Number(snapshot.pitch?.current) || 0, 0, 360);
+  const duration = Math.max(0, Number(snapshot.elapsedSeconds) || 0);
+  const playbackDuration = Math.max(0, Number(snapshot.playback?.duration) || 0);
+  const position = Math.max(0, Number(snapshot.playback?.position) || duration);
+  const progress = playbackDuration ? clampCanvas(position / playbackDuration, 0, 1) : clampCanvas(duration / 60, 0, 1);
+  const text = String(snapshot.trainingText || voiceTrainingText?.value || "Texttraining").trim();
+  const words = text.split(/\s+/).filter(Boolean);
+  const activeIndex = words.length ? Math.min(words.length - 1, Math.floor(progress * words.length)) : -1;
+  const currentWords = activeIndex >= 0
+    ? words.slice(Math.max(0, activeIndex - 1), Math.min(words.length, activeIndex + 4)).join(" ")
+    : "Texttraining";
+  const nextWords = activeIndex >= 0
+    ? words.slice(activeIndex + 4, activeIndex + 10).join(" ")
+    : "";
+  context.fillStyle = "#101820";
+  context.fillRect(0, 0, width, height);
+  context.fillStyle = "#78e0c8";
+  context.font = `800 ${15 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(snapshot.playback ? "Playback Texttraining" : "Texttraining", width / 2, 23 * pixelRatio);
+  context.fillStyle = "#ffb546";
+  context.font = `900 ${Math.max(18, Math.min(28, width / pixelRatio / 18)) * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  wrapCanvasText(context, currentWords, width / 2, 62 * pixelRatio, width - 28 * pixelRatio, 30 * pixelRatio, 2);
+  if (nextWords) {
+    context.fillStyle = "rgba(226, 241, 243, 0.58)";
+    context.font = `800 ${12 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    wrapCanvasText(context, nextWords, width / 2, 122 * pixelRatio, width - 40 * pixelRatio, 18 * pixelRatio, 1);
+  }
+  const left = 18 * pixelRatio;
+  const right = width - 18 * pixelRatio;
+  const trackTop = height - 44 * pixelRatio;
+  context.fillStyle = "rgba(226, 241, 243, 0.14)";
+  context.fillRect(left, trackTop, right - left, 8 * pixelRatio);
+  context.fillStyle = "#149a9a";
+  context.fillRect(left, trackTop, (right - left) * progress, 8 * pixelRatio);
+  context.fillStyle = "rgba(226, 241, 243, 0.78)";
+  context.font = `800 ${11 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  context.textAlign = "left";
+  context.fillText(`L ${Math.round(volume)}`, left, height - 18 * pixelRatio);
+  context.textAlign = "center";
+  context.fillText(`${Math.round(pitch)} Hz`, width / 2, height - 18 * pixelRatio);
+  context.textAlign = "right";
+  context.fillText(`${formatVoiceAnalysisTime(position)} / ${formatVoiceAnalysisTime(playbackDuration || duration)}`, right, height - 18 * pixelRatio);
+}
+
+function getVoiceAnalysisHistoryEntries(filter = voiceAnalysisHistoryFilter?.value || "all") {
+  const now = Date.now();
+  const matchesFilter = (dateValue) => {
+    if (filter === "all") return true;
+    const date = new Date(dateValue).getTime();
+    if (!Number.isFinite(date)) return false;
+    if (filter === "today") return new Date(dateValue).toDateString() === new Date().toDateString();
+    return now - date <= Number(filter) * 24 * 60 * 60 * 1000;
+  };
+  const recordings = getPatientRecordings()
+    .filter((recording) => matchesFilter(recording.datum))
+    .map((recording) => {
+      const values = recording.werte || getVoiceAnalysisValues(recording);
+      const pitchAverage = Number(recording.durchschnittlicheStimmfrequenzHz || values?.mittlereTonhoeheHz || 0) || 0;
+      const volumeAverage = Number(recording.durchschnittlicherLautstaerkePegel || recording.durchschnittlicheLautstaerke || values?.mittlereLautstaerke || 0) || 0;
+      return {
+        source: "recording",
+        id: recording.id,
+        label: recording.uebung || recording.courseExerciseTitle || "Aufnahme",
+        date: recording.datum,
+        duration: Number(recording.dauerSekunden || values?.gesamtdauer || 0) || 0,
+        volume: { average: volumeAverage },
+        pitch: { average: pitchAverage },
+      };
+    });
+  const localHistory = (voiceAnalysisEngine?.history?.() || [])
+    .filter((entry) => matchesFilter(entry.date))
+    .map((entry) => ({ ...entry, source: "analysis", id: entry.id || "" }));
+  return [...recordings, ...localHistory]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+function drawVoiceAnalysisHistoryChart(context, width, height) {
+  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  const entries = getVoiceAnalysisHistoryEntries().slice(0, 12).reverse();
+  const left = 28 * pixelRatio;
+  const right = width - 16 * pixelRatio;
+  const top = 30 * pixelRatio;
+  const bottom = height - 24 * pixelRatio;
+  const chartWidth = Math.max(1, right - left);
+  const chartHeight = Math.max(1, bottom - top);
+  context.fillStyle = "#101820";
+  context.fillRect(0, 0, width, height);
+  context.fillStyle = "#78e0c8";
+  context.font = `800 ${18 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText("Verlauf", width / 2, 18 * pixelRatio);
+  context.strokeStyle = "rgba(226, 241, 243, 0.15)";
+  context.lineWidth = pixelRatio;
+  [0, 0.5, 1].forEach((ratio) => {
+    const y = top + ratio * chartHeight;
+    context.beginPath();
+    context.moveTo(left, y);
+    context.lineTo(right, y);
+    context.stroke();
+  });
+  if (!entries.length) {
+    context.fillStyle = "rgba(226, 241, 243, 0.72)";
+    context.font = `${14 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    context.fillText("Noch keine gespeicherten Messungen", width / 2, height / 2);
+    return;
+  }
+  const pitchValues = entries.map((entry) => Number(entry.pitch?.average) || 0);
+  const minPitch = Math.min(...pitchValues.filter(Boolean), 70);
+  const maxPitch = Math.max(...pitchValues.filter(Boolean), 280);
+  const toX = (index) => entries.length === 1 ? left + chartWidth / 2 : left + (index / (entries.length - 1)) * chartWidth;
+  const toY = (value) => bottom - ((value - minPitch) / Math.max(1, maxPitch - minPitch)) * chartHeight;
+  context.strokeStyle = "#2bbcd8";
+  context.lineWidth = 3 * pixelRatio;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.beginPath();
+  pitchValues.forEach((value, index) => {
+    const x = toX(index);
+    const y = clampCanvas(toY(value || minPitch), top, bottom);
+    if (index === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  });
+  context.stroke();
+  pitchValues.forEach((value, index) => {
+    const x = toX(index);
+    const y = clampCanvas(toY(value || minPitch), top, bottom);
+    context.fillStyle = "#ffb546";
+    context.beginPath();
+    context.arc(x, y, 4 * pixelRatio, 0, Math.PI * 2);
+    context.fill();
+  });
+}
+
+function formatSpectrumFrequencyLabel(hz) {
+  if (hz >= 1000) return `${String(hz / 1000).replace(".", ",")}k`;
+  return String(hz);
+}
+
+function drawVoiceAnalysisPitchMeter(context, snapshot, width, height) {
+  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  const lowHz = 50;
+  const highHz = 450;
+  const currentHz = Number(snapshot.pitch?.current) || 0;
+  const averageHz = Number(snapshot.pitch?.average) || 0;
+  const minHz = Number(snapshot.pitch?.min) || 0;
+  const maxHz = Number(snapshot.pitch?.max) || 0;
+  const leftPad = 22 * pixelRatio;
+  const rightPad = 22 * pixelRatio;
+  const topPad = 18 * pixelRatio;
+  const bottomPad = 32 * pixelRatio;
+  const centerY = Math.round(height * 0.52);
+  const trackLeft = leftPad;
+  const trackRight = width - rightPad;
+  const trackWidth = Math.max(1, trackRight - trackLeft);
+  const valueToX = (hz) => trackLeft + ((clampCanvas(hz, lowHz, highHz) - lowHz) / (highHz - lowHz)) * trackWidth;
+
+  context.fillStyle = "#101820";
+  context.fillRect(0, 0, width, height);
+
+  const glow = context.createRadialGradient(width * 0.5, centerY, 0, width * 0.5, centerY, width * 0.55);
+  glow.addColorStop(0, "rgba(42, 198, 204, 0.22)");
+  glow.addColorStop(1, "rgba(42, 198, 204, 0)");
+  context.fillStyle = glow;
+  context.fillRect(0, 0, width, height);
+
+  context.fillStyle = "rgba(226, 241, 243, 0.82)";
+  context.font = `${12 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText("50 Hz", trackLeft, height - 13 * pixelRatio);
+  context.fillText("250 Hz", trackLeft + trackWidth / 2, height - 13 * pixelRatio);
+  context.fillText("450 Hz", trackRight, height - 13 * pixelRatio);
+
+  const trackGradient = context.createLinearGradient(trackLeft, 0, trackRight, 0);
+  trackGradient.addColorStop(0, "rgba(82, 215, 255, 0.42)");
+  trackGradient.addColorStop(0.42, "rgba(120, 224, 200, 0.9)");
+  trackGradient.addColorStop(0.56, "rgba(235, 237, 238, 0.9)");
+  trackGradient.addColorStop(1, "rgba(255, 151, 171, 0.72)");
+  context.lineCap = "round";
+  context.lineWidth = 16 * pixelRatio;
+  context.strokeStyle = "rgba(226, 241, 243, 0.12)";
+  context.beginPath();
+  context.moveTo(trackLeft, centerY);
+  context.lineTo(trackRight, centerY);
+  context.stroke();
+  context.lineWidth = 10 * pixelRatio;
+  context.strokeStyle = trackGradient;
+  context.beginPath();
+  context.moveTo(trackLeft, centerY);
+  context.lineTo(trackRight, centerY);
+  context.stroke();
+
+  if (minHz && maxHz) {
+    context.lineWidth = 5 * pixelRatio;
+    context.strokeStyle = "rgba(255, 181, 70, 0.9)";
+    context.beginPath();
+    context.moveTo(valueToX(minHz), centerY + 20 * pixelRatio);
+    context.lineTo(valueToX(maxHz), centerY + 20 * pixelRatio);
+    context.stroke();
+  }
+
+  if (averageHz) {
+    const averageX = valueToX(averageHz);
+    context.strokeStyle = "rgba(238, 248, 248, 0.75)";
+    context.lineWidth = 2 * pixelRatio;
+    context.beginPath();
+    context.moveTo(averageX, centerY - 28 * pixelRatio);
+    context.lineTo(averageX, centerY + 34 * pixelRatio);
+    context.stroke();
+  }
+
+  const currentX = currentHz ? valueToX(currentHz) : trackLeft + trackWidth / 2;
+  context.fillStyle = currentHz ? "#ffb546" : "rgba(226, 241, 243, 0.45)";
+  context.beginPath();
+  context.arc(currentX, centerY, 15 * pixelRatio, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = "rgba(255, 255, 255, 0.86)";
+  context.lineWidth = 3 * pixelRatio;
+  context.stroke();
+
+  context.fillStyle = currentHz ? "#ffb546" : "rgba(226, 241, 243, 0.82)";
+  context.font = `700 ${24 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(currentHz ? `${Math.round(currentHz)} Hz` : "Mikrofon starten", width / 2, topPad + 19 * pixelRatio);
+
+  context.fillStyle = "rgba(226, 241, 243, 0.8)";
+  context.font = `${12 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  context.fillText(`Ø ${Math.round(averageHz || 0)} Hz   ${Math.round(minHz || 0)}-${Math.round(maxHz || 0)} Hz`, width / 2, Math.min(height - bottomPad - 2 * pixelRatio, centerY + 48 * pixelRatio));
+}
+
+function drawVoiceAnalysisSpectrum(context, snapshot, width, height) {
+  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  const spectrum = getVoiceAnalysisDisplaySpectrum(snapshot);
+  const bins = Array.isArray(spectrum.bins) ? spectrum.bins : [];
+  const minHz = Number(spectrum.minHz) || 50;
+  const maxHz = Number(spectrum.maxHz) || 3500;
+  const maxLevel = Number(spectrum.maxLevel) || 40;
+  const leftAxis = 40 * pixelRatio;
+  const rightPad = 14 * pixelRatio;
+  const topPad = 16 * pixelRatio;
+  const bottomPad = 34 * pixelRatio;
+  const chartLeft = leftAxis;
+  const chartRight = width - rightPad;
+  const chartTop = topPad;
+  const chartBottom = height - bottomPad;
+  const chartWidth = Math.max(1, chartRight - chartLeft);
+  const chartHeight = Math.max(1, chartBottom - chartTop);
+  const toX = (hz) => chartLeft + ((hz - minHz) / Math.max(1, maxHz - minHz)) * chartWidth;
+  const toY = (level) => chartBottom - (clampCanvas(Number(level) || 0, 0, maxLevel) / maxLevel) * chartHeight;
+
+  context.fillStyle = "#63818a";
+  context.fillRect(0, 0, width, height);
+  const background = context.createLinearGradient(0, 0, 0, height);
+  background.addColorStop(0, "rgba(255, 255, 255, 0.06)");
+  background.addColorStop(1, "rgba(20, 42, 50, 0.24)");
+  context.fillStyle = background;
+  context.fillRect(0, 0, width, height);
+
+  [0, 10, 20, 30, 40].forEach((tick) => {
+    const y = toY(tick);
+    context.strokeStyle = "rgba(222, 237, 240, 0.26)";
+    context.lineWidth = pixelRatio;
+    context.beginPath();
+    context.moveTo(chartLeft, y);
+    context.lineTo(chartRight, y);
+    context.stroke();
+    context.fillStyle = "rgba(244, 250, 251, 0.92)";
+    context.font = `${12 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    context.textAlign = "right";
+    context.textBaseline = "middle";
+    context.fillText(String(tick), chartLeft - 8 * pixelRatio, y);
+  });
+
+  const frequencyTicks = [500, 1000, 1500, 2000, 2500, 3000, 3500];
+  frequencyTicks.forEach((hz) => {
+    const x = clampCanvas(toX(hz), chartLeft, chartRight);
+    context.strokeStyle = "rgba(222, 237, 240, 0.14)";
+    context.lineWidth = pixelRatio;
+    context.beginPath();
+    context.moveTo(x, chartTop);
+    context.lineTo(x, chartBottom);
+    context.stroke();
+    context.fillStyle = "rgba(244, 250, 251, 0.82)";
+    context.font = `${11 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    context.textAlign = "center";
+    context.textBaseline = "top";
+    context.fillText(formatSpectrumFrequencyLabel(hz), x, chartBottom + 8 * pixelRatio);
+  });
+
+  context.strokeStyle = "rgba(244, 250, 251, 0.55)";
+  context.lineWidth = 1.5 * pixelRatio;
+  context.beginPath();
+  context.moveTo(chartLeft, chartTop);
+  context.lineTo(chartLeft, chartBottom);
+  context.lineTo(chartRight, chartBottom);
+  context.stroke();
+
+  if (!bins.length) {
+    context.fillStyle = "rgba(244, 250, 251, 0.78)";
+    context.font = `${15 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText("Mikrofon starten", chartLeft + chartWidth / 2, chartTop + chartHeight / 2);
+    return;
+  }
+
+  context.beginPath();
+  context.moveTo(chartLeft, chartBottom);
+  bins.forEach((bin) => {
+    context.lineTo(clampCanvas(toX(Number(bin.hz) || minHz), chartLeft, chartRight), toY(bin.level));
+  });
+  context.lineTo(chartRight, chartBottom);
+  context.closePath();
+  context.fillStyle = "rgba(160, 223, 238, 0.54)";
+  context.fill();
+  context.strokeStyle = "rgba(185, 236, 248, 0.86)";
+  context.lineWidth = 2 * pixelRatio;
+  context.stroke();
+
+  const peakHz = Number(spectrum.peakHz) || 0;
+  const peakLevel = Number(spectrum.peakLevel) || 0;
+  if (peakHz > 0 && peakLevel > 0) {
+    const peakX = clampCanvas(toX(peakHz), chartLeft, chartRight);
+    const peakY = toY(peakLevel);
+    const curveWidth = 140 * pixelRatio;
+    context.strokeStyle = "rgba(255, 77, 85, 0.96)";
+    context.lineWidth = 4 * pixelRatio;
+    context.lineJoin = "round";
+    context.lineCap = "round";
+    context.beginPath();
+    for (let step = 0; step <= 42; step += 1) {
+      const progress = step / 42;
+      const x = peakX - curveWidth / 2 + progress * curveWidth;
+      const distance = (progress - 0.5) * 5.2;
+      const level = peakLevel * Math.exp(-distance * distance);
+      const y = toY(level);
+      if (step === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    }
+    context.stroke();
+    context.fillStyle = "#ff4d55";
+    context.strokeStyle = "rgba(255, 255, 255, 0.88)";
+    context.lineWidth = 2 * pixelRatio;
+    context.beginPath();
+    context.arc(peakX, peakY, 6 * pixelRatio, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.fillStyle = "rgba(255, 255, 255, 0.96)";
+    context.font = `700 ${13 * pixelRatio}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+    context.textAlign = "center";
+    context.textBaseline = "bottom";
+    context.fillText(`${Math.round(peakHz)} Hz`, peakX, peakY - 9 * pixelRatio);
+  }
+}
+
+function getVoiceAnalysisDisplaySpectrum(snapshot = {}) {
+  const spectrum = snapshot?.spectrum || {};
+  const liveBins = Array.isArray(spectrum.bins) ? spectrum.bins : [];
+  const livePeakLevel = Number(spectrum.peakLevel) || 0;
+  const liveAverageLevel = Number(spectrum.averageLevel) || 0;
+  if (liveBins.length && (livePeakLevel >= 1.2 || liveAverageLevel >= 0.4)) return spectrum;
+  const pitch = Number(snapshot.pitch?.current) || 0;
+  const volume = Math.max(0, Math.min(100, Number(snapshot.volume?.current) || 0));
+  if (!pitch && liveBins.length) {
+    const boostedBins = liveBins.map((bin) => ({
+      hz: bin.hz,
+      level: Math.max(0, Math.min(40, (Number(bin.level) || 0) * 3.2)),
+    }));
+    const peak = boostedBins.reduce((winner, bin) => bin.level > winner.level ? bin : winner, { hz: 0, level: 0 });
+    return {
+      ...spectrum,
+      peakHz: peak.hz,
+      peakLevel: peak.level,
+      averageLevel: Math.round((boostedBins.reduce((sum, bin) => sum + bin.level, 0) / Math.max(1, boostedBins.length)) * 10) / 10,
+      bins: boostedBins,
+    };
+  }
+  if (!pitch || !volume) return spectrum;
+  const minHz = 50;
+  const maxHz = 3500;
+  const maxLevel = 40;
+  const buckets = 96;
+  const bins = [];
+  let peakHz = 0;
+  let peakLevel = 0;
+  for (let index = 0; index < buckets; index += 1) {
+    const hz = Math.round(minHz + (index / (buckets - 1)) * (maxHz - minHz));
+    let level = 0;
+    [1, 2, 3, 4, 5].forEach((harmonic) => {
+      const harmonicHz = pitch * harmonic;
+      const distance = Math.abs(hz - harmonicHz) / Math.max(60, harmonicHz * 0.18);
+      level += Math.exp(-distance * distance) * (volume / 100) * maxLevel * (1 / harmonic);
+    });
+    level = Math.round(Math.max(0, Math.min(maxLevel, level)) * 10) / 10;
+    bins.push({ hz, level });
+    if (level > peakLevel) {
+      peakLevel = level;
+      peakHz = hz;
+    }
+  }
+  return {
+    minHz,
+    maxHz,
+    maxLevel,
+    peakHz,
+    peakLevel,
+    averageLevel: Math.round((bins.reduce((sum, bin) => sum + bin.level, 0) / Math.max(1, bins.length)) * 10) / 10,
+    bins,
+  };
+}
 function getSpectrogramColor(intensity) {
-  const value = clampCanvas(Number(intensity) || 0, 0, 1);
-  const alpha = 0.18 + value * 0.72;
-  if (value < 0.35) return `rgba(${Math.round(58 + value * 140)}, 24, ${Math.round(150 + value * 120)}, ${alpha})`;
-  if (value < 0.7) return `rgba(${Math.round(150 + value * 105)}, ${Math.round(34 + value * 115)}, ${Math.round(160 - value * 90)}, ${alpha})`;
-  return `rgba(255, ${Math.round(130 + value * 95)}, 38, ${alpha})`;
+  const value = Math.pow(clampCanvas(Number(intensity) || 0, 0, 1), 0.58);
+  const alpha = 0.28 + value * 0.68;
+  if (value < 0.32) return `rgba(${Math.round(72 + value * 170)}, 38, ${Math.round(170 + value * 95)}, ${alpha})`;
+  if (value < 0.7) return `rgba(${Math.round(170 + value * 95)}, ${Math.round(48 + value * 125)}, ${Math.round(170 - value * 85)}, ${alpha})`;
+  return `rgba(255, ${Math.round(150 + value * 90)}, 42, ${alpha})`;
 }
 
 function drawVoiceAnalysisSpectrogram(context, snapshot, width, height) {
@@ -18329,15 +19276,19 @@ function drawVoiceAnalysisSpectrogram(context, snapshot, width, height) {
   const highHz = 500;
   const leftAxis = 62 * pixelRatio;
   const rightPad = 12 * pixelRatio;
-  const topPad = 10 * pixelRatio;
-  const bottomPad = 16 * pixelRatio;
+  const topPad = 12 * pixelRatio;
+  const bottomPad = 22 * pixelRatio;
   const chartLeft = leftAxis;
   const chartRight = width - rightPad;
   const chartTop = topPad;
   const chartBottom = height - bottomPad;
   const chartWidth = Math.max(1, chartRight - chartLeft);
   const chartHeight = Math.max(1, chartBottom - chartTop);
-  const toY = (hz) => chartBottom - ((hz - lowHz) / Math.max(1, highHz - lowHz)) * chartHeight;
+  const toY = (hz) => clampCanvas(
+    chartBottom - ((hz - lowHz) / Math.max(1, highHz - lowHz)) * chartHeight,
+    chartTop + 3 * pixelRatio,
+    chartBottom - 3 * pixelRatio,
+  );
   const pitchHistory = Array.isArray(snapshot.pitchHistory) ? snapshot.pitchHistory.slice(-180) : [];
   const volumeHistory = Array.isArray(snapshot.volumeHistory) ? snapshot.volumeHistory.slice(-180) : [];
   const count = Math.max(pitchHistory.length, volumeHistory.length);
@@ -18359,10 +19310,10 @@ function drawVoiceAnalysisSpectrogram(context, snapshot, width, height) {
       const pitch = Number(pitchItem?.value ?? pitchItem) || 0;
       const volume = clampCanvas(Number(volumeItem?.value ?? volumeItem) || 0, 0, 100);
       const x = chartLeft + (index / Math.max(1, count - 1)) * chartWidth;
-      const baseIntensity = clampCanvas(volume / 85, 0.06, 1);
+      const baseIntensity = clampCanvas(Math.pow(volume / 70, 0.68), 0.1, 1);
       if (volume > 2) {
         const noiseTop = toY(lowHz + volume * 1.25);
-        context.fillStyle = getSpectrogramColor(baseIntensity * 0.42);
+        context.fillStyle = getSpectrogramColor(baseIntensity * 0.62);
         context.fillRect(x, noiseTop, columnWidth, Math.max(1, chartBottom - noiseTop));
       }
       if (pitch > 0) {
@@ -18371,8 +19322,8 @@ function drawVoiceAnalysisSpectrogram(context, snapshot, width, height) {
           if (hz > highHz) break;
           const y = clampCanvas(toY(hz), chartTop, chartBottom);
           const wobble = Math.sin(index * 0.28 + harmonic * 1.7) * 4 * pixelRatio;
-          const thickness = Math.max(2 * pixelRatio, (harmonic === 1 ? 11 : 8) * pixelRatio * (0.35 + 1 / harmonic));
-          const intensity = baseIntensity * (harmonic === 1 ? 1 : 0.82 / harmonic);
+          const thickness = Math.max(2 * pixelRatio, (harmonic === 1 ? 14 : 10) * pixelRatio * (0.38 + 1 / harmonic));
+          const intensity = clampCanvas(baseIntensity * (harmonic === 1 ? 1.08 : 1 / Math.sqrt(harmonic)), 0, 1);
           context.fillStyle = getSpectrogramColor(intensity);
           context.fillRect(x, y - thickness / 2 + wobble, columnWidth + pixelRatio, thickness);
         }
@@ -18439,11 +19390,15 @@ function drawVoiceAnalysisPitchChart(context, snapshot, width, height) {
   const chartBottom = height - bottomPad;
   const chartWidth = Math.max(1, chartRight - chartLeft);
   const chartHeight = Math.max(1, chartBottom - chartTop);
-  const toY = (hz) => chartBottom - ((hz - lowHz) / Math.max(1, highHz - lowHz)) * chartHeight;
+  const toY = (hz) => clampCanvas(
+    chartBottom - ((hz - lowHz) / Math.max(1, highHz - lowHz)) * chartHeight,
+    chartTop + 3 * pixelRatio,
+    chartBottom - 3 * pixelRatio,
+  );
   const bands = [
-    { from: 175, to: 275, color: "rgba(255, 151, 171, 0.72)", label: "Female", labelHz: 266 },
-    { from: 145, to: 175, color: "rgba(196, 197, 197, 0.86)", label: "Androgyn", labelHz: 166 },
-    { from: 85, to: 145, color: "rgba(125, 204, 225, 0.72)", label: "Male", labelHz: 136 },
+    { from: 255, to: 340, color: "rgba(255, 151, 171, 0.72)", label: "Hoch", labelHz: 310 },
+    { from: 220, to: 255, color: "rgba(196, 197, 197, 0.86)", label: "Mittel", labelHz: 238 },
+    { from: 70, to: 220, color: "rgba(125, 204, 225, 0.72)", label: "Tief", labelHz: 145 },
   ];
   context.fillStyle = "#d6e2e3";
   context.fillRect(0, 0, width, height);
@@ -18527,6 +19482,18 @@ function getVoiceAnalysisRangeShare(values = [], min = -Infinity, max = Infinity
   return Math.round((matching / spoken.length) * 100);
 }
 
+function getVoiceAnalysisDominantPitchBand(values = []) {
+  const spoken = values.map(Number).filter((value) => Number.isFinite(value) && value > 0);
+  if (!spoken.length) return { low: 0, middle: 0, high: 0, veryLow: 0, veryHigh: 0 };
+  return {
+    veryLow: getVoiceAnalysisRangeShare(spoken, 0, 70),
+    low: getVoiceAnalysisRangeShare(spoken, 70, 220),
+    middle: getVoiceAnalysisRangeShare(spoken, 220, 255),
+    high: getVoiceAnalysisRangeShare(spoken, 255, 340),
+    veryHigh: getVoiceAnalysisRangeShare(spoken, 340, Infinity),
+  };
+}
+
 function formatVoiceAnalysisHz(value, decimals = 0) {
   const numeric = Number(value) || 0;
   return `${numeric.toLocaleString("de-DE", { maximumFractionDigits: decimals, minimumFractionDigits: decimals })} Hz`;
@@ -18552,11 +19519,12 @@ function renderVoiceAnalysisEvaluation(snapshot = {}) {
   const volumeMedian = getVoiceAnalysisPercentile(volumeValues, 0.5);
   const volumeHigh = getVoiceAnalysisPercentile(volumeValues, 0.95);
   const volumeLow = getVoiceAnalysisPercentile(volumeValues, 0.05);
-  const maleShare = getVoiceAnalysisRangeShare(pitchValues, 85, 145);
-  const neutralShare = getVoiceAnalysisRangeShare(pitchValues, 145, 175);
-  const femaleShare = getVoiceAnalysisRangeShare(pitchValues, 175, 275);
-  const veryLowShare = getVoiceAnalysisRangeShare(pitchValues, 0, 85);
-  const veryHighShare = getVoiceAnalysisRangeShare(pitchValues, 275, Infinity);
+  const pitchBands = getVoiceAnalysisDominantPitchBand(pitchValues);
+  const lowShare = pitchBands.low;
+  const middleShare = pitchBands.middle;
+  const highShare = pitchBands.high;
+  const veryLowShare = pitchBands.veryLow;
+  const veryHighShare = pitchBands.veryHigh;
   const hasPitch = pitchValues.length > 0;
   const hasVolume = volumeValues.length > 0;
   return `
@@ -18569,9 +19537,9 @@ function renderVoiceAnalysisEvaluation(snapshot = {}) {
         </div>
         <div class="voice-test-bubbles" aria-label="Einordnung nach Tonhöhenbereichen">
           <strong class="voice-test-main-bubble">${hasPitch ? formatVoiceAnalysisHz(pitchAverage, 1) : "0 Hz"}</strong>
-          <span class="voice-test-bubble voice-test-bubble-female">${femaleShare}%<small>Weiblich</small></span>
-          <span class="voice-test-bubble voice-test-bubble-male">${maleShare}%<small>Männlich</small></span>
-          <span class="voice-test-bubble voice-test-bubble-neutral">${neutralShare}%<small>Androgyn</small></span>
+          <span class="voice-test-bubble voice-test-bubble-female">${highShare}%<small>Hoch</small></span>
+          <span class="voice-test-bubble voice-test-bubble-male">${lowShare}%<small>Tief</small></span>
+          <span class="voice-test-bubble voice-test-bubble-neutral">${middleShare}%<small>Mittel</small></span>
         </div>
       </div>
       <div class="voice-test-result-player">
@@ -18587,9 +19555,9 @@ function renderVoiceAnalysisEvaluation(snapshot = {}) {
           <div><dt>Median</dt><dd>${formatVoiceAnalysisHz(pitchMedian, 1)}</dd></div>
           <div><dt>Hoch (95%)</dt><dd>${formatVoiceAnalysisHz(pitchHigh, 1)}</dd></div>
           <div><dt>Tief (5%)</dt><dd>${formatVoiceAnalysisHz(pitchLow, 1)}</dd></div>
-          <div><dt>Weiblicher Bereich</dt><dd>${femaleShare}%</dd></div>
-          <div><dt>Androgyner Bereich</dt><dd>${neutralShare}%</dd></div>
-          <div><dt>Männlicher Bereich</dt><dd>${maleShare}%</dd></div>
+          <div><dt>Hohe Lage</dt><dd>${highShare}%</dd></div>
+          <div><dt>Mittlere Lage</dt><dd>${middleShare}%</dd></div>
+          <div><dt>Tiefe Lage</dt><dd>${lowShare}%</dd></div>
           <div><dt>Sehr tiefer Bereich</dt><dd>${veryLowShare}%</dd></div>
           <div><dt>Sehr hoher Bereich</dt><dd>${veryHighShare}%</dd></div>
         </dl>
@@ -18650,7 +19618,7 @@ function setReferenceVideoButtonPlaying(isPlaying) {
   referenceVideoPlayButton.setAttribute("aria-label", isPlaying ? "Referenzvideo stoppen" : "Referenzvideo abspielen");
   referenceVideoPlayButton.title = isPlaying ? "Referenzvideo stoppen" : "Referenzvideo abspielen";
   if (icon) icon.textContent = isPlaying ? "■" : "▶";
-  if (label) label.textContent = isPlaying ? "Video stoppen" : "Video abspielen";
+  if (label) label.textContent = isPlaying ? "Stop" : "Video";
 }
 
 function stopVoiceAnalysisReferenceVideo() {
@@ -18697,6 +19665,10 @@ function renderVoiceAnalysisDetails(snapshot, screen) {
   }
   const details = {
     monitor: [["Lautstärke", `${snapshot.volume.current}`], ["Tonhöhe", `${snapshot.pitch.current} Hz`], ["Dauer", formatVoiceAnalysisTime(snapshot.elapsedSeconds)], ["Pausen", `${snapshot.pauses.count}`]],
+    spectrum: [["Peak-Frequenz", `${Math.round(Number(snapshot.spectrum?.peakHz) || 0)} Hz`], ["Peak-Pegel", `${Math.round(Number(snapshot.spectrum?.peakLevel) || 0)} / 40`], ["Durchschnittspegel", `${Math.round(Number(snapshot.spectrum?.averageLevel) || 0)} / 40`], ["Frequenzbereich", `${snapshot.spectrum?.minHz || 50}-${snapshot.spectrum?.maxHz || 3500} Hz`]],
+    reference: [["Referenz", `${Math.round(Number(referenceToneCustom?.value || referenceToneSelect?.value || 140))} Hz`], ["Gesprochen", `${snapshot.pitch.current || snapshot.pitch.average || 0} Hz`], ["Abweichung", `${(Number(snapshot.pitch.current || snapshot.pitch.average) || 0) ? `${Math.round((Number(snapshot.pitch.current || snapshot.pitch.average) || 0) - Number(referenceToneCustom?.value || referenceToneSelect?.value || 140))} Hz` : "–"}`]],
+    recording: [["Status", snapshot.state === "recording" ? "REC" : "Bereit"], ["Dauer", formatVoiceAnalysisTime(snapshot.elapsedSeconds)], ["Aufnahme", snapshot.recordingBlob ? "vorhanden" : "leer"]],
+    textTraining: [["Text", snapshot.playback ? "Playback" : "Übungssatz"], ["Lautstärke", `${snapshot.volume.current}`], ["Tonhöhe", `${snapshot.pitch.current} Hz`], ["Dauer", formatVoiceAnalysisTime(snapshot.elapsedSeconds)]],
     duration: [["Messzeit", formatVoiceAnalysisTime(snapshot.elapsedSeconds)], ["Aktive Sprache", formatVoiceAnalysisTime(snapshot.activeSpeechSeconds)], ["Pausen", formatVoiceAnalysisTime(snapshot.pauses.totalDuration)]],
     pauses: [["Anzahl", snapshot.pauses.count], ["Ø Pause", `${snapshot.pauses.averageDuration} s`], ["Längste Pause", `${snapshot.pauses.longest} s`], ["Gesamt", `${snapshot.pauses.totalDuration} s`]],
     dynamics: [["Tonhöhenbereich", `${snapshot.pitch.min}–${snapshot.pitch.max} Hz`], ["Pitch-Variation", `${snapshot.pitch.variation} Hz`], ["Lautstärke min/max", `${snapshot.volume.min} / ${snapshot.volume.max}`], ["Lautstärke-Ø", `${snapshot.volume.average}`]],
@@ -18709,18 +19681,16 @@ function renderVoiceAnalysisDetails(snapshot, screen) {
 function renderVoiceAnalysisHistory() {
   if (!voiceAnalysisDetails || !voiceAnalysisEngine) return;
   const filter = voiceAnalysisHistoryFilter?.value || "all";
-  const now = Date.now();
-  const history = voiceAnalysisEngine.history().filter((entry) => {
-    if (filter === "all") return true;
-    const date = new Date(entry.date).getTime();
-    if (filter === "today") return new Date(entry.date).toDateString() === new Date().toDateString();
-    return now - date <= Number(filter) * 24 * 60 * 60 * 1000;
-  });
+  const history = getVoiceAnalysisHistoryEntries(filter);
   if (!history.length) {
-    voiceAnalysisDetails.innerHTML = "<p class=\"field-help\">Noch keine Messung gespeichert.</p>";
+    voiceAnalysisDetails.innerHTML = "<p class=\"field-help\">Noch keine Aufnahme oder Messung im gewählten Zeitraum.</p>";
     return;
   }
-  voiceAnalysisDetails.innerHTML = history.slice(0, 12).map((entry) => `<div><dt>${escapeHtml(entry.label || "Messung")}</dt><dd>${new Date(entry.date).toLocaleDateString("de-DE")} · ${formatVoiceAnalysisTime(entry.duration)} · Pitch ${Math.round(entry.pitch?.average || 0)} Hz</dd></div>`).join("");
+  voiceAnalysisDetails.innerHTML = history.slice(0, 16).map((entry) => {
+    const isRecording = entry.source === "recording" && entry.id;
+    const action = isRecording ? ` data-voice-history-recording="${escapeHtml(entry.id)}"` : "";
+    return `<button class="voice-analysis-history-entry" type="button"${action}${isRecording ? "" : " disabled"}><span>${escapeHtml(entry.label || "Messung")}</span><small>${new Date(entry.date).toLocaleDateString("de-DE")} · ${formatVoiceAnalysisTime(entry.duration)} · L ${Math.round(entry.volume?.average || 0)} · ${Math.round(entry.pitch?.average || 0)} Hz</small></button>`;
+  }).join("");
 }
 
 function setVoiceEvaluationPlayButtonPlaying(isPlaying) {
@@ -18747,6 +19717,17 @@ function prepareVoiceAnalysisAudio(snapshot = voiceAnalysisEngine?.getSnapshot?.
 
 async function toggleVoiceEvaluationPlayback() {
   const snapshot = voiceAnalysisEngine?.getSnapshot?.() || {};
+  if (snapshot.playback) {
+    if (snapshot.playback.playing) {
+      pauseVoiceAnalysisTimelineWithAudio();
+      setVoiceEvaluationPlayButtonPlaying(false);
+      return;
+    }
+    await playVoiceAnalysisTimelineWithAudio();
+    setVoiceEvaluationPlayButtonPlaying(true);
+    if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Playback wird mit Analyse abgespielt.";
+    return;
+  }
   if (!prepareVoiceAnalysisAudio(snapshot)) {
     if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Keine analysierte Aufnahme zum Abspielen vorhanden.";
     return;
@@ -18767,11 +19748,20 @@ async function toggleVoiceEvaluationPlayback() {
     if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Analysierte Aufnahme konnte nicht abgespielt werden.";
   }
 }
+function setVoiceAnalysisMetricLabels(labels = ["Aktuell", "Durchschnitt", "Min", "Max"]) {
+  voiceMetricLabels.forEach((label, index) => {
+    if (label) label.textContent = labels[index] || "";
+  });
+}
+
 function renderVoiceAnalysis(snapshot = voiceAnalysisEngine?.getSnapshot?.() || {}, screen = activeVoiceAnalysisScreen) {
   const definition = VOICE_ANALYSIS_SCREENS[screen] || VOICE_ANALYSIS_SCREENS.monitor;
   const metric = definition.metric;
   const isVolume = metric === "volume";
   const isPitch = metric === "pitch" || metric === "spectrogram";
+  const isSpectrum = metric === "spectrum";
+  const isTextTraining = screen === "textTraining";
+  setVoiceAnalysisMetricLabels(isTextTraining ? ["Lautstärke", "Ø Lautstärke", "Tonhöhe", "Dauer"] : ["Aktuell", "Durchschnitt", "Min", "Max"]);
   const waveformValues = Array.isArray(snapshot.waveform)
     ? snapshot.waveform.map((item) => Number(item?.amplitude ?? item?.value ?? item)).filter(Number.isFinite)
     : [];
@@ -18779,43 +19769,76 @@ function renderVoiceAnalysis(snapshot = voiceAnalysisEngine?.getSnapshot?.() || 
   const waveformAverage = Math.round(waveformValues.reduce((sum, value) => sum + value, 0) / Math.max(1, waveformValues.length));
   const waveformMin = Math.round(waveformValues.length ? Math.min(...waveformValues) : 0);
   const waveformMax = Math.round(waveformValues.length ? Math.max(...waveformValues) : 0);
-  const primary = isVolume ? snapshot.volume?.current : isPitch ? snapshot.pitch?.current : metric === "duration" ? formatVoiceAnalysisTime(snapshot.elapsedSeconds) : metric === "pauses" ? snapshot.pauses?.count : metric === "dynamics" ? snapshot.pitch?.variation : metric === "history" ? voiceAnalysisEngine?.history?.().length || 0 : metric === "speechRate" ? (snapshot.speechRate?.wordsPerMinute || "–") : metric === "waveform" ? waveformCurrent : snapshot.volume?.current;
-  const averageValue = isVolume ? snapshot.volume?.average : isPitch ? snapshot.pitch?.average : metric === "duration" ? formatVoiceAnalysisTime(snapshot.activeSpeechSeconds) : metric === "pauses" ? `${snapshot.pauses?.totalDuration || 0} s` : metric === "history" ? "Messungen" : metric === "dynamics" ? `${snapshot.volume?.max - snapshot.volume?.min || 0}` : metric === "speechRate" ? "WPM" : metric === "waveform" ? waveformAverage : snapshot.pitch?.average;
-  if (voiceMetricPrimary) voiceMetricPrimary.textContent = `${primary ?? 0}${isVolume || isPitch ? definition.unit : ""}`;
-  if (voiceMetricAverage) voiceMetricAverage.textContent = `${averageValue ?? 0}${isPitch ? " Hz" : ""}`;
-  if (voiceMetricMin) voiceMetricMin.textContent = isPitch ? `${snapshot.pitch?.min || 0} Hz` : isVolume ? snapshot.volume?.min || 0 : metric === "waveform" ? waveformMin : formatVoiceAnalysisTime(snapshot.pauses?.averageDuration || 0);
-  if (voiceMetricMax) voiceMetricMax.textContent = isPitch ? `${snapshot.pitch?.max || 0} Hz` : isVolume ? snapshot.volume?.max || 0 : metric === "waveform" ? waveformMax : formatVoiceAnalysisTime(snapshot.elapsedSeconds || 0);
-  if (voiceAnalysisState) voiceAnalysisState.textContent = snapshot.state === "recording" ? "Aufnahme läuft" : snapshot.state === "live" ? "Live" : "Bereit";
-  if (voiceAnalysisMessage && snapshot.state) voiceAnalysisMessage.textContent = snapshot.state === "recording" ? "Aufnahme läuft lokal." : snapshot.state === "live" ? "Mikrofon aktiv. Messung läuft." : "Mikrofon noch nicht gestartet.";
+  const displaySpectrum = getVoiceAnalysisDisplaySpectrum(snapshot);
+  const spectrumPeakHz = Math.round(Number(displaySpectrum?.peakHz) || 0);
+  const spectrumPeakLevel = Math.round(Number(displaySpectrum?.peakLevel) || 0);
+  const spectrumAverageLevel = Math.round(Number(displaySpectrum?.averageLevel) || 0);
+  const primary = isSpectrum ? `${spectrumPeakHz} Hz` : isVolume ? snapshot.volume?.current : isPitch ? snapshot.pitch?.current : metric === "duration" ? formatVoiceAnalysisTime(snapshot.elapsedSeconds) : metric === "pauses" ? snapshot.pauses?.count : metric === "dynamics" ? snapshot.pitch?.variation : metric === "history" ? voiceAnalysisEngine?.history?.().length || 0 : metric === "speechRate" ? (snapshot.speechRate?.wordsPerMinute || "–") : metric === "waveform" ? waveformCurrent : snapshot.volume?.current;
+  const averageValue = isSpectrum ? `${spectrumAverageLevel} / 40` : isVolume ? snapshot.volume?.average : isPitch ? snapshot.pitch?.average : metric === "duration" ? formatVoiceAnalysisTime(snapshot.activeSpeechSeconds) : metric === "pauses" ? `${snapshot.pauses?.totalDuration || 0} s` : metric === "history" ? "Messungen" : metric === "dynamics" ? `${snapshot.volume?.max - snapshot.volume?.min || 0}` : metric === "speechRate" ? "WPM" : metric === "waveform" ? waveformAverage : snapshot.pitch?.average;
+  if (voiceMetricPrimary) voiceMetricPrimary.textContent = isSpectrum ? String(primary) : `${primary ?? 0}${isVolume || isPitch ? definition.unit : ""}`;
+  if (voiceMetricAverage) voiceMetricAverage.textContent = isSpectrum ? String(averageValue) : `${averageValue ?? 0}${isPitch ? " Hz" : ""}`;
+  if (voiceMetricMin) voiceMetricMin.textContent = isSpectrum ? `${displaySpectrum?.minHz || 50} Hz` : isPitch ? `${snapshot.pitch?.min || 0} Hz` : isVolume ? snapshot.volume?.min || 0 : metric === "waveform" ? waveformMin : formatVoiceAnalysisTime(snapshot.pauses?.averageDuration || 0);
+  if (voiceMetricMax) voiceMetricMax.textContent = isSpectrum ? `${displaySpectrum?.maxHz || 3500} Hz` : isPitch ? `${snapshot.pitch?.max || 0} Hz` : isVolume ? snapshot.volume?.max || 0 : metric === "waveform" ? waveformMax : formatVoiceAnalysisTime(snapshot.elapsedSeconds || 0);
+  if (voiceAnalysisState) voiceAnalysisState.textContent = snapshot.state === "recording" ? "Aufnahme läuft" : snapshot.state === "live" ? "Live" : snapshot.state === "playback" ? "Playback" : "Bereit";
+  if (voiceAnalysisMessage && snapshot.state) voiceAnalysisMessage.textContent = snapshot.state === "recording" ? "Aufnahme läuft lokal." : snapshot.state === "live" ? "Mikrofon aktiv. Messung läuft." : snapshot.state === "playback" ? "Gespeicherte Aufnahme wird analysiert." : "Mikrofon noch nicht gestartet.";
   updateVoiceAnalysisMicButton(snapshot);
+  handleVoiceTextTrainingAutoStop(snapshot);
+  updateVoiceAnalysisPlaybackButton();
+  updateVoiceAnalysisTimeline(snapshot);
+  renderVoiceAnalysisPlaybackPicker();
   if (screen === "history") renderVoiceAnalysisHistory();
   else renderVoiceAnalysisDetails(snapshot, screen);
   drawVoiceAnalysisChart(snapshot, screen);
   if (voiceAnalysisAudio) {
     const hasRecordingAudio = prepareVoiceAnalysisAudio(snapshot);
-    voiceAnalysisAudio.classList.toggle("is-hidden", !hasRecordingAudio || screen === "evaluation");
+    voiceAnalysisAudio.classList.toggle("is-hidden", !hasRecordingAudio || screen === "evaluation" || Boolean(snapshot.playback));
   }
 }
 
 function setVoiceAnalysisScreen(screen = "home", updateHash = true) {
   const nextScreen = screen === "home" || VOICE_ANALYSIS_SCREENS[screen] ? screen : "home";
+  if (nextScreen !== activeVoiceAnalysisScreen) pauseVoiceAnalysisPlayers();
   activeVoiceAnalysisScreen = nextScreen;
+  if (nextScreen !== "textTraining") resetVoiceTextTrainingAutoStop();
   voiceAnalysisHome?.classList.toggle("is-hidden", nextScreen !== "home");
-  voiceAnalysisWorkspace?.classList.toggle("is-hidden", nextScreen === "home");
-  voiceAnalysisWorkspace?.classList.toggle("is-pitch-view", nextScreen === "pitch" || nextScreen === "pitchCurve" || nextScreen === "monitor");
+  if (voiceAnalysisWorkspace) {
+    const hideWorkspace = nextScreen === "home";
+    voiceAnalysisWorkspace.classList.toggle("is-hidden", hideWorkspace);
+    voiceAnalysisWorkspace.hidden = hideWorkspace;
+  }
+  voiceAnalysisWorkspace?.classList.toggle("is-pitch-summary-view", nextScreen === "pitch");
+  voiceAnalysisWorkspace?.classList.toggle("is-pitch-view", nextScreen === "pitchCurve" || nextScreen === "monitor");
   voiceAnalysisWorkspace?.classList.toggle("is-spectrogram-view", nextScreen === "spectrogram");
+  voiceAnalysisWorkspace?.classList.toggle("is-spectrum-view", nextScreen === "spectrum");
+  voiceAnalysisWorkspace?.classList.toggle("is-reference-view", nextScreen === "reference");
+  voiceAnalysisWorkspace?.classList.toggle("is-recording-view", nextScreen === "recording");
+  voiceAnalysisWorkspace?.classList.toggle("is-text-training-view", nextScreen === "textTraining");
+  voiceAnalysisWorkspace?.classList.toggle("is-history-view", nextScreen === "history");
   voiceAnalysisWorkspace?.classList.toggle("is-evaluation-view", nextScreen === "evaluation");
   const definition = VOICE_ANALYSIS_SCREENS[nextScreen];
   if (voiceAnalysisTitle) voiceAnalysisTitle.textContent = definition?.title || "Stimmanalyse";
+  voiceAnalysisTitle?.classList.toggle("is-hidden", nextScreen === "home");
   voiceAnalysisBackButton?.classList.toggle("is-hidden", nextScreen === "home");
+  voiceAnalysisPlaybackButton?.classList.add("is-hidden");
+  voiceAnalysisStartButton?.classList.toggle("is-hidden", nextScreen === "home" || nextScreen === "evaluation");
+  voiceAnalysisState?.classList.add("is-hidden");
   if (voiceAnalysisScreenTitle) voiceAnalysisScreenTitle.textContent = definition?.title || "Stimmanalyse";
   if (voiceAnalysisReferenceControls) {
     const hideReferenceControls = nextScreen !== "reference";
     voiceAnalysisReferenceControls.classList.toggle("is-hidden", hideReferenceControls);
     voiceAnalysisReferenceControls.hidden = hideReferenceControls;
   }
-  voiceAnalysisTextTraining?.classList.toggle("is-hidden", nextScreen !== "textTraining");
-  voiceAnalysisHistoryControls?.classList.toggle("is-hidden", nextScreen !== "history");
+  if (voiceAnalysisTextTraining) {
+    const hideTextTraining = nextScreen !== "textTraining";
+    voiceAnalysisTextTraining.classList.toggle("is-hidden", hideTextTraining);
+    voiceAnalysisTextTraining.hidden = hideTextTraining;
+    if (!hideTextTraining) syncVoiceAnalysisTextTrainingField();
+  }
+  if (voiceAnalysisHistoryControls) {
+    const hideHistoryControls = nextScreen !== "history";
+    voiceAnalysisHistoryControls.classList.toggle("is-hidden", hideHistoryControls);
+    voiceAnalysisHistoryControls.hidden = hideHistoryControls;
+  }
   if (updateHash) window.history.replaceState(null, "", nextScreen === "home" ? "#stimmanalyse" : `#stimmanalyse/${nextScreen}`);
   renderVoiceAnalysis(voiceAnalysisEngine?.getSnapshot?.() || {}, nextScreen);
 }
@@ -18827,29 +19850,78 @@ function initializeVoiceAnalysisUi() {
     if (target) setVoiceAnalysisScreen(target.dataset.analysisScreenTarget);
   });
   voiceAnalysisBackButton?.addEventListener("click", () => setVoiceAnalysisScreen("home"));
+  voiceAnalysisOpenPlaybackButton?.addEventListener("click", async () => {
+    const selectedId = voiceAnalysisPlaybackSelect?.value;
+    if (!selectedId) {
+      if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Keine gespeicherte Aufnahme ausgewählt.";
+      return;
+    }
+    await loadStoredRecordingIntoVoiceAnalysis(selectedId, "evaluation");
+  });
+  voiceAnalysisPlaybackSelect?.addEventListener("change", () => {
+    if (voiceAnalysisOpenPlaybackButton) voiceAnalysisOpenPlaybackButton.disabled = !voiceAnalysisPlaybackSelect.value;
+  });
+  voiceTrainingText?.addEventListener("input", () => {
+    if (activeVoiceAnalysisScreen === "textTraining") voiceAnalysisEngine?.setTrainingText?.(voiceTrainingText.value);
+  });
+  voiceAnalysisTimelinePlayButton?.addEventListener("click", async () => {
+    const snapshot = voiceAnalysisEngine?.getSnapshot?.() || {};
+    if (!snapshot.playback) return;
+    if (snapshot.playback.playing) pauseVoiceAnalysisTimelineWithAudio();
+    else await playVoiceAnalysisTimelineWithAudio();
+  });
+  voiceAnalysisTimelineSeek?.addEventListener("input", () => {
+    const snapshot = voiceAnalysisEngine?.getSnapshot?.() || {};
+    const duration = Number(snapshot.playback?.duration) || 0;
+    if (!duration) return;
+    const nextPosition = (Number(voiceAnalysisTimelineSeek.value) / 1000) * duration;
+    voiceAnalysisEngine.seekImportedTimeline?.(nextPosition);
+    syncVoiceAnalysisAudioToTimeline(nextPosition);
+  });
+  voiceAnalysisPlaybackButton?.addEventListener("click", () => {
+    const snapshot = buildVoiceAnalysisPlaybackSnapshot(currentMetadata, currentVideoBlob);
+    if (!snapshot) {
+      if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Keine gespeicherte Aufnahme geöffnet.";
+      updateVoiceAnalysisPlaybackButton();
+      return;
+    }
+    voiceAnalysisEngine.loadSnapshot(snapshot);
+    syncVoiceAnalysisTextTrainingField(currentMetadata);
+    if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = `Aufnahme übernommen: ${snapshot.label}.`;
+    if (activeVoiceAnalysisScreen === "home") setVoiceAnalysisScreen("evaluation");
+    else renderVoiceAnalysis(voiceAnalysisEngine.getSnapshot());
+  });
   voiceAnalysisStartButton?.addEventListener("click", async () => {
     try {
       if (isVoiceAnalysisMicActive()) {
+        resetVoiceTextTrainingAutoStop();
         voiceAnalysisEngine.stop();
         renderVoiceAnalysis();
         return;
       }
-      if (activeVoiceAnalysisScreen === "recording" || activeVoiceAnalysisScreen === "textTraining") await voiceAnalysisEngine.startRecording();
+      if (activeVoiceAnalysisScreen === "textTraining") {
+        resetVoiceTextTrainingAutoStop();
+        syncVoiceAnalysisTextTrainingField();
+        await voiceAnalysisEngine.startRecording(String(voiceTrainingText?.value || "").trim());
+      } else if (activeVoiceAnalysisScreen === "recording") await voiceAnalysisEngine.startRecording();
       else await voiceAnalysisEngine.start();
       renderVoiceAnalysis();
     } catch (error) {
-      voiceAnalysisMessage.textContent = error?.message || "Mikrofon konnte nicht gestartet werden.";
+      if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = error?.message || "Mikrofon konnte nicht gestartet werden.";
     }
   });
   voiceAnalysisPauseButton?.addEventListener("click", () => {
     if (voiceAnalysisEngine.recorder?.state === "paused") voiceAnalysisEngine.resumeRecording();
     else voiceAnalysisEngine.pauseRecording();
   });
-  voiceAnalysisStopButton?.addEventListener("click", () => voiceAnalysisEngine.stop());
+  voiceAnalysisStopButton?.addEventListener("click", () => {
+    resetVoiceTextTrainingAutoStop();
+    voiceAnalysisEngine.stop();
+  });
   voiceAnalysisResetButton?.addEventListener("click", () => voiceAnalysisEngine.reset());
   voiceAnalysisSaveButton?.addEventListener("click", () => {
     voiceAnalysisEngine.save(VOICE_ANALYSIS_SCREENS[activeVoiceAnalysisScreen]?.title || "Stimmanalyse");
-    voiceAnalysisMessage.textContent = "Messung lokal gespeichert.";
+    if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Messung lokal gespeichert.";
     renderVoiceAnalysis();
   });
   referenceToneSelect?.addEventListener("change", () => { if (referenceToneCustom) referenceToneCustom.value = referenceToneSelect.value; });
@@ -18912,13 +19984,45 @@ function initializeVoiceAnalysisUi() {
   voiceAnalysisDetails?.addEventListener("click", (event) => {
     const playButton = event.target.closest("#voiceEvaluationPlayButton");
     if (playButton) toggleVoiceEvaluationPlayback();
+    const historyButton = event.target.closest("[data-voice-history-recording]");
+    if (historyButton) loadStoredRecordingIntoVoiceAnalysis(historyButton.dataset.voiceHistoryRecording, "evaluation");
   });
   voiceAnalysisAudio?.addEventListener("ended", () => setVoiceEvaluationPlayButtonPlaying(false));
   voiceAnalysisAudio?.addEventListener("pause", () => setVoiceEvaluationPlayButtonPlaying(false));
   voiceAnalysisAudio?.addEventListener("play", () => setVoiceEvaluationPlayButtonPlaying(activeVoiceAnalysisScreen === "evaluation"));
+  voiceAnalysisAudio?.addEventListener("loadedmetadata", () => {
+    if (Number.isFinite(voiceAnalysisAudio.duration) && voiceAnalysisAudio.duration > 0) {
+      voiceAnalysisEngine?.setImportedDuration?.(voiceAnalysisAudio.duration);
+    }
+  });
+  voiceAnalysisAudio?.addEventListener("timeupdate", () => {
+    const snapshot = voiceAnalysisEngine?.getSnapshot?.() || {};
+    if (!snapshot.playback || !voiceAnalysisTimelineAudioSync) return;
+    if (Number.isFinite(voiceAnalysisAudio.duration) && voiceAnalysisAudio.duration > 0) {
+      voiceAnalysisEngine?.setImportedDuration?.(voiceAnalysisAudio.duration);
+    }
+    voiceAnalysisEngine.seekImportedTimeline?.(voiceAnalysisAudio.currentTime || 0);
+  });
+  voiceAnalysisAudio?.addEventListener("seeked", () => {
+    const snapshot = voiceAnalysisEngine?.getSnapshot?.() || {};
+    if (!snapshot.playback) return;
+    voiceAnalysisEngine.seekImportedTimeline?.(voiceAnalysisAudio.currentTime || 0);
+  });
+  voiceAnalysisAudio?.addEventListener("ended", () => {
+    voiceAnalysisTimelineAudioSync = false;
+    const snapshot = voiceAnalysisEngine?.getSnapshot?.() || {};
+    const duration = Number(snapshot.playback?.duration) || voiceAnalysisAudio.duration || 0;
+    if (duration) voiceAnalysisEngine.seekImportedTimeline?.(duration);
+    voiceAnalysisEngine.pauseImportedTimeline?.();
+  });
   voiceAnalysisHistoryFilter?.addEventListener("change", () => renderVoiceAnalysis());  voiceAnalysisEngine.subscribe((snapshot) => renderVoiceAnalysis(snapshot));
   window.addEventListener("hashchange", () => {
-    if (document.body.dataset.activeView === "voiceAnalysis") setVoiceAnalysisScreen(getVoiceAnalysisRouteScreen(), false);
+    if (!window.location.hash.startsWith("#stimmanalyse")) return;
+    if (document.body.dataset.activeView !== "voiceAnalysis") {
+      setActiveView("voiceAnalysis");
+      return;
+    }
+    setVoiceAnalysisScreen(getVoiceAnalysisRouteScreen(), false);
   });
 }
 
@@ -18929,6 +20033,10 @@ recordToEvaluationButton?.addEventListener("click", () => {
 
 function setActiveView(viewName) {
   const previousView = document.body.dataset.activeView || "";
+  if (previousView === "voiceAnalysis" && viewName !== "voiceAnalysis") pauseVoiceAnalysisPlayers();
+  if (viewName !== "voiceAnalysis" && window.location.hash.startsWith("#stimmanalyse")) {
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+  }
   if (viewName === "myCourses" && previousView !== "myCourses") expandedMyCourseAssignmentId = "";
   document.body.dataset.activeView = viewName;
   updateTopBarTitle(viewName);
@@ -18938,7 +20046,8 @@ function setActiveView(viewName) {
     closeEditorAiModal();
   }
 
-  navButtons.forEach((button) => {
+
+navButtons.forEach((button) => {
     button.classList.toggle("is-active", button.dataset.targetView === viewName);
   });
 
@@ -18988,7 +20097,7 @@ function updateTopBarTitle(viewName) {
     editor: "Editor",
     playback: "Playback",
     history: "Auswertung",
-    stats: "Analyse",
+    stats: "Übungsanalyse",
     voiceAnalysis: "Stimmanalyse",
     patients: "Patienten",
     dailyPlans: "Tagespläne",
@@ -19137,6 +20246,18 @@ function transactionDone(transaction) {
     transaction.onabort = () => reject(transaction.error);
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

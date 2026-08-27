@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   color-scheme: light;
   --ink: #17202a;
   --muted: #637083;
@@ -4454,11 +4454,31 @@ body[data-active-view="history"] .patient-stats {
   display: none;
 }
 
-body[data-active-view="stats"] .library-panel > .section-header,
 body[data-active-view="stats"] .patient-stats,
 body[data-active-view="stats"] #voiceProgressPanel,
 body[data-active-view="stats"] #recordingsList {
   display: none;
+}
+
+body[data-active-view="stats"] .library-panel > .section-header {
+  display: flex;
+}
+
+body[data-active-view="stats"] .exercise-analysis-header-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+body[data-active-view="stats"] #exerciseAnalysisBackButton {
+  width: auto;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(20, 154, 154, 0.26);
+  border-radius: 999px;
+  background: #dff4f4;
+  color: var(--accent-strong);
+  box-shadow: 0 8px 18px rgba(20, 154, 154, 0.12);
 }
 
 .voice-progress-panel {
@@ -6771,37 +6791,117 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   padding: 20px;
 }
 .voice-analysis-main-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 10px;
+  padding: 8px 0;
 }
 
 .voice-analysis-main-header h2 {
+  justify-self: center;
   margin: 0;
+  color: #111827;
+  font-size: 1rem;
+  line-height: 1.1;
+  text-align: center;
 }
 
 .voice-analysis-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-left: auto;
+  gap: 6px;
+  margin-left: 0;
 }
 
-.voice-analysis-header-actions #voiceAnalysisBackButton {
+.voice-analysis-main-header #voiceAnalysisBackButton {
+  display: inline-flex;
   width: auto;
-  min-height: 32px;
-  padding: 0 2px;
-  border-radius: 0;
-  background: transparent;
-  color: #111827;
-  box-shadow: none;
+  min-height: 38px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 12px 0 9px;
+  border: 1px solid rgba(0, 108, 112, 0.28);
+  border-radius: 999px;
+  background: #e2f6f5;
+  color: #006c70;
+  box-shadow: 0 8px 18px rgba(0, 108, 112, 0.12);
+  font-weight: 900;
   white-space: nowrap;
+}
+
+.voice-analysis-main-header #voiceAnalysisBackButton.is-hidden,
+.voice-analysis-header-actions #voiceAnalysisPlaybackButton.is-hidden,
+.voice-analysis-header-actions #voiceAnalysisStartButton.is-hidden,
+.voice-analysis-header-actions #voiceAnalysisState.is-hidden {
+  display: none;
+}
+
+.voice-analysis-main-header #voiceAnalysisBackButton span {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.voice-analysis-main-header #voiceAnalysisBackButton strong {
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.voice-analysis-header-actions #voiceAnalysisPlaybackButton {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 11px;
+  border: 1px solid rgba(22, 133, 139, 0.2);
+  border-radius: 999px;
+  background: #f4fbfb;
+  color: #126d73;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.voice-analysis-header-actions #voiceAnalysisPlaybackButton:disabled {
+  opacity: 0.42;
+}
+
+.voice-analysis-header-actions #voiceAnalysisPlaybackButton span {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.voice-analysis-header-actions #voiceAnalysisPlaybackButton strong {
+  font-size: 0.78rem;
+  line-height: 1;
 }
 
 .voice-analysis-tile-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+
+.voice-analysis-playback-open {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 6px 8px;
+  margin: 8px 0 10px;
+}
+
+.voice-analysis-picker-label {
+  grid-column: 1 / -1;
+  color: #5f6b7a;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.voice-analysis-playback-open .compact-action {
+  min-height: 44px;
+  padding-inline: 14px;
 }
 
 .voice-analysis-tile {
@@ -6886,6 +6986,34 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   background: #101820;
 }
 
+.voice-analysis-timeline {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid rgba(22, 133, 139, 0.16);
+  border-radius: 8px;
+  background: #f4fbfb;
+}
+
+.voice-analysis-timeline .compact-action {
+  min-width: 42px;
+  min-height: 38px;
+  padding: 0;
+}
+
+.voice-analysis-timeline .voice-analysis-action-label:empty {
+  display: none;
+}
+
+.voice-analysis-timeline #voiceAnalysisTimelineTime {
+  color: #647886;
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 #voiceAnalysisChart {
   display: block;
   width: 100%;
@@ -6900,12 +7028,55 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   height: 360px;
 }
 
+.voice-analysis-workspace.is-pitch-summary-view .voice-analysis-chart-wrap {
+  background: #101820;
+}
+
+.voice-analysis-workspace.is-pitch-summary-view #voiceAnalysisChart {
+  height: 190px;
+}
+
 .voice-analysis-workspace.is-spectrogram-view .voice-analysis-chart-wrap {
   background: #110083;
 }
 
 .voice-analysis-workspace.is-spectrogram-view #voiceAnalysisChart {
   height: 440px;
+}
+
+.voice-analysis-workspace.is-spectrum-view .voice-analysis-chart-wrap {
+  background: #63818a;
+}
+
+.voice-analysis-workspace.is-spectrum-view #voiceAnalysisChart {
+  height: 430px;
+}
+
+.voice-analysis-workspace.is-reference-view .voice-analysis-chart-wrap,
+.voice-analysis-workspace.is-recording-view .voice-analysis-chart-wrap,
+.voice-analysis-workspace.is-text-training-view .voice-analysis-chart-wrap,
+.voice-analysis-workspace.is-history-view .voice-analysis-chart-wrap {
+  background: #101820;
+}
+
+.voice-analysis-workspace.is-reference-view #voiceAnalysisChart,
+.voice-analysis-workspace.is-recording-view #voiceAnalysisChart,
+.voice-analysis-workspace.is-text-training-view #voiceAnalysisChart,
+.voice-analysis-workspace.is-history-view #voiceAnalysisChart {
+  height: 180px;
+}
+
+.voice-analysis-workspace.is-reference-view .voice-analysis-details,
+.voice-analysis-workspace.is-recording-view .voice-analysis-details {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.voice-analysis-workspace.is-text-training-view .voice-analysis-details {
+  display: none;
+}
+
+.voice-analysis-workspace.is-history-view .voice-analysis-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .voice-analysis-details {
@@ -6931,6 +7102,43 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   margin: 5px 0 0;
   color: #1d2a36;
   font-weight: 700;
+}
+
+.voice-analysis-history-entry {
+  appearance: none;
+  border: 1px solid rgba(20, 154, 154, 0.22);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #1d2a36;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 11px;
+  text-align: left;
+  box-shadow: 0 0.35rem 0.9rem rgba(22, 44, 54, 0.06);
+}
+
+.voice-analysis-history-entry span,
+.voice-analysis-history-entry small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voice-analysis-history-entry span {
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.voice-analysis-history-entry small {
+  color: #647886;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.voice-analysis-history-entry:disabled {
+  opacity: 0.7;
 }
 
 .voice-analysis-workspace.is-evaluation-view .voice-analysis-details {
@@ -7148,15 +7356,35 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   object-fit: contain;
 }
 
-.voice-analysis-reference-fields {
+.voice-analysis-reference-fields,
+.voice-analysis-reference-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
-.voice-analysis-reference-fields .field-label {
+.voice-analysis-reference-row {
+  grid-template-columns: minmax(105px, 1.1fr) minmax(88px, 1fr) 56px;
+  align-items: end;
+}
+
+.voice-analysis-reference-fields .field-label,
+.voice-analysis-reference-row .field-label {
   display: grid;
   gap: 6px;
+  min-width: 0;
+}
+
+.voice-analysis-reference-toggle {
+  width: 56px;
+  min-width: 56px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 10px;
+}
+
+.voice-analysis-reference-toggle .voice-analysis-action-label {
+  display: none;
 }
 
 .editor-analysis-grid {
@@ -7204,17 +7432,56 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
     margin-bottom: 8px;
   }
 
+  .voice-analysis-playback-open {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    margin: 5px 0 8px;
+  }
+
+  .voice-analysis-playback-open .compact-action {
+    min-height: 38px;
+    padding-inline: 10px;
+  }
+
   .voice-analysis-header-actions {
     gap: 6px;
   }
 
-  .voice-analysis-header-actions #voiceAnalysisBackButton {
-    min-height: 30px;
-    font-size: 0.82rem;
+  .voice-analysis-main-header #voiceAnalysisBackButton {
+    min-height: 34px;
+    padding: 0 9px 0 7px;
+  }
+
+  .voice-analysis-main-header #voiceAnalysisBackButton strong {
+    font-size: 0.76rem;
+  }
+
+  .voice-analysis-header-actions #voiceAnalysisPlaybackButton {
+    min-height: 34px;
+    padding: 0 8px;
+  }
+
+  .voice-analysis-header-actions #voiceAnalysisPlaybackButton strong {
+    font-size: 0.72rem;
   }
 
   .voice-analysis-chart-wrap {
     border-radius: 7px;
+  }
+
+  .voice-analysis-timeline {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 5px;
+    padding: 5px 6px;
+  }
+
+  .voice-analysis-timeline .compact-action {
+    min-width: 38px;
+    min-height: 34px;
+  }
+
+  .voice-analysis-timeline #voiceAnalysisTimelineTime {
+    font-size: 0.7rem;
   }
 
   #voiceAnalysisChart {
@@ -7223,6 +7490,17 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
 
   .voice-analysis-workspace.is-pitch-view #voiceAnalysisChart {
     height: 330px;
+  }
+
+  .voice-analysis-workspace.is-pitch-summary-view #voiceAnalysisChart {
+    height: 150px;
+  }
+
+  .voice-analysis-workspace.is-reference-view #voiceAnalysisChart,
+  .voice-analysis-workspace.is-recording-view #voiceAnalysisChart,
+  .voice-analysis-workspace.is-text-training-view #voiceAnalysisChart,
+  .voice-analysis-workspace.is-history-view #voiceAnalysisChart {
+    height: 145px;
   }
 
   .voice-analysis-details {
@@ -7351,7 +7629,8 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   object-fit: contain;
 }
 
-.voice-analysis-reference-fields {
+.voice-analysis-reference-fields,
+.voice-analysis-reference-row {
     gap: 4px;
   }
 
@@ -7369,6 +7648,16 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
 
   .voice-analysis-reference-actions {
     margin-top: 1px;
+  }
+
+  .voice-analysis-reference-row {
+    grid-template-columns: minmax(0, 1fr) minmax(76px, 0.85fr) 48px;
+  }
+
+  .voice-analysis-reference-toggle {
+    width: 48px;
+    min-width: 48px;
+    min-height: 44px;
   }
 
   #voiceTrainingText {
@@ -7411,7 +7700,7 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
     gap: 6px;
   }
 
-  .voice-analysis-icon-action {
+  .voice-analysis-icon-action:not(.voice-analysis-reference-toggle) {
     min-width: 0;
     min-height: 52px;
     padding: 9px 4px;
@@ -7451,6 +7740,10 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   .voice-analysis-workspace.is-spectrogram-view #voiceAnalysisChart {
     height: 430px;
   }
+
+  .voice-analysis-workspace.is-spectrum-view #voiceAnalysisChart {
+    height: 380px;
+  }
 }
 
 
@@ -7463,8 +7756,12 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   width: auto;
   min-width: 0;
   min-height: 34px;
+  margin: 0;
   padding: 0 11px;
+  border: 1px solid rgba(22, 133, 139, 0.22);
   border-radius: 999px;
+  background: #e2f6f5;
+  color: #006c70;
   box-shadow: none;
   gap: 6px;
 }
@@ -7474,7 +7771,25 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
   line-height: 1;
 }
 
-.voice-analysis-mic-toggle[aria-pressed="true"] {
-  background: #0f9494;
+.voice-analysis-header-actions .voice-analysis-mic-toggle.is-mic-live {
+  border-color: rgba(238, 25, 31, 0.65);
+  background: #ee191f;
   color: #fff;
 }
+
+.voice-analysis-header-actions .voice-analysis-mic-toggle.is-mic-recording {
+  border-color: rgba(238, 25, 31, 0.65);
+  background: #ee191f;
+  color: #fff;
+}
+
+.voice-analysis-header-actions .voice-analysis-mic-toggle.is-mic-playback {
+  border-color: rgba(100, 120, 134, 0.25);
+  background: #f4fbfb;
+  color: #647886;
+}
+
+
+
+
+

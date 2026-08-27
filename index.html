@@ -22,7 +22,7 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260825-voice-modules002" />
+    <link rel="stylesheet" href="styles.css?v=20260826-live-spectrum001" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
@@ -46,7 +46,6 @@
 
       <div id="appMenu" class="app-menu is-hidden" aria-label="Menü">
         <button type="button" data-menu-view="editor">Editor</button>
-        <button type="button" data-menu-view="stats">Analyse</button>
         <button type="button" data-menu-view="voiceAnalysis">Stimmanalyse</button>
         <button type="button" data-menu-view="patients">Patientenverwaltung</button>
         <button type="button" data-menu-view="dailyPlans" data-role-menu="staff">Tagespläne</button>
@@ -519,33 +518,41 @@
 
       <section id="voiceAnalysisPanel" class="voice-analysis-panel app-section" data-view="voiceAnalysis" aria-label="Stimmanalyse">
         <div class="section-header voice-analysis-main-header">
-          <div>
-            <h2 id="voiceAnalysisTitle">Voice Monitor</h2>
-          </div>
+          <button id="voiceAnalysisBackButton" class="quiet-action voice-analysis-back-button is-hidden" type="button"><span aria-hidden="true">‹</span><strong>Übersicht</strong></button>
+          <h2 id="voiceAnalysisTitle" class="is-hidden">Voice Monitor</h2>
           <div class="voice-analysis-header-actions">
-            <button id="voiceAnalysisBackButton" class="quiet-action is-hidden" type="button">Zur Übersicht</button>
+            <button id="voiceAnalysisPlaybackButton" class="secondary-action voice-analysis-icon-action is-hidden" type="button" aria-label="Geladene Aufnahme analysieren" title="Geladene Aufnahme analysieren"><span aria-hidden="true">▶</span><strong>Player</strong></button>
             <button id="voiceAnalysisStartButton" class="primary-action voice-analysis-icon-action voice-analysis-mic-toggle" type="button" aria-label="Mikrofon einschalten" title="Mikrofon einschalten" aria-pressed="false"><span class="voice-analysis-action-icon" aria-hidden="true">&#127908;</span><span class="voice-analysis-action-label">Mikrofon ein</span></button>
-            <span id="voiceAnalysisState" class="status-pill">Bereit</span>
+            <span id="voiceAnalysisState" class="status-pill is-hidden">Bereit</span>
           </div>
         </div>
 
         <div id="voiceAnalysisHome" class="voice-analysis-home" data-analysis-screen="home">
           <p class="field-help">Die wichtigsten Live-Werte sind gebündelt. Details öffnen sich bei Bedarf einzeln.</p>
+          <div class="voice-analysis-playback-open" aria-label="Gespeicherte Aufnahme analysieren">
+            <span class="voice-analysis-picker-label">Gespeicherte Aufnahme</span>
+            <select id="voiceAnalysisPlaybackSelect" class="select-input compact-select">
+              <option value="">Keine gespeicherte Aufnahme</option>
+            </select>
+            <button id="voiceAnalysisOpenPlaybackButton" class="secondary-action compact-action" type="button" disabled>Aufnahme analysieren</button>
+          </div>
           <div class="voice-analysis-tile-grid">
             <button class="voice-analysis-tile is-wide" type="button" data-analysis-screen-target="monitor"><strong>Live-Überblick</strong><small>Lautstärke, Tonhöhe, Dauer, Pausen und Dynamik</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="pitch"><strong>Tonhöhe</strong><small>Grundfrequenz in Hz</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="pitchCurve"><strong>Pitch-Verlauf</strong><small>Frequenzkurve über Zeit</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="spectrogram"><strong>Live-Spektrogramm</strong><small>Frequenzenergie farbig sehen</small></button>
+            <button class="voice-analysis-tile" type="button" data-analysis-screen-target="spectrum"><strong>Live-Spektrum</strong><small>Frequenzenergie und Peak sehen</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="waveform"><strong>Wellenform</strong><small>Signal live beobachten</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="recording"><strong>Aufnahme</strong><small>Sprachprobe aufnehmen und lokal speichern</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="reference"><strong>Referenz</strong><small>Ton oder Video abspielen</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="textTraining"><strong>Texttraining</strong><small>Übungssatz aufnehmen</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="evaluation"><strong>Auswertung</strong><small>Messung verständlich zusammenfassen</small></button>
             <button class="voice-analysis-tile" type="button" data-analysis-screen-target="history"><strong>Verlauf</strong><small>Gespeicherte Messungen öffnen</small></button>
+            <button id="voiceAnalysisExerciseAnalysisButton" class="voice-analysis-tile is-wide" type="button"><strong>Übungsanalyse</strong><small>Gespeicherte Aufnahmen und Messpunkte auswerten</small></button>
           </div>
         </div>
 
-        <div id="voiceAnalysisWorkspace" class="voice-analysis-workspace is-hidden">
+        <div id="voiceAnalysisWorkspace" class="voice-analysis-workspace is-hidden" hidden>
           <div class="voice-analysis-metrics">
             <div><span>Aktuell</span><strong id="voiceMetricPrimary">0</strong></div>
             <div><span>Durchschnitt</span><strong id="voiceMetricAverage">0</strong></div>
@@ -553,44 +560,43 @@
             <div><span>Max</span><strong id="voiceMetricMax">0</strong></div>
           </div>
           <div class="voice-analysis-chart-wrap"><canvas id="voiceAnalysisChart" width="900" height="240" aria-label="Live-Verlauf der Stimmanalyse"></canvas></div>
+          <div id="voiceAnalysisTimeline" class="voice-analysis-timeline is-hidden">
+            <button id="voiceAnalysisTimelinePlayButton" class="secondary-action compact-action voice-analysis-icon-action" type="button" aria-label="Analyse abspielen"><span class="voice-analysis-action-icon" aria-hidden="true">&#9654;</span><span class="voice-analysis-action-label"></span></button>
+            <input id="voiceAnalysisTimelineSeek" class="range-input" type="range" min="0" max="1000" value="1000" />
+            <span id="voiceAnalysisTimelineTime">00:00 / 00:00</span>
+          </div>
           <dl id="voiceAnalysisDetails" class="voice-analysis-details"></dl>
           <div id="voiceAnalysisReferenceControls" class="voice-analysis-reference is-hidden">
-            <div class="voice-analysis-reference-fields">
+            <div class="voice-analysis-reference-row">
               <label class="field-label" for="referenceToneSelect">Referenzton<select id="referenceToneSelect" class="select-input compact-select"><option value="120">120 Hz</option><option value="130">130 Hz</option><option value="140" selected>140 Hz</option><option value="150">150 Hz</option><option value="160">160 Hz</option></select></label>
               <label class="field-label" for="referenceToneCustom">Eigene Frequenz<input id="referenceToneCustom" type="number" min="60" max="400" value="140" inputmode="numeric" /></label>
-            </div>
-            <div class="button-row voice-analysis-reference-actions">
-              <button id="referenceTonePlayButton" class="primary-action voice-analysis-icon-action" type="button" aria-label="Referenzton abspielen" title="Referenzton abspielen" aria-pressed="false"><span class="voice-analysis-action-icon" aria-hidden="true">&#9654;</span><span class="voice-analysis-action-label">Ton abspielen</span></button>
-              <button id="referenceVideoPlayButton" class="secondary-action voice-analysis-icon-action" type="button" aria-label="Referenzvideo abspielen" title="Referenzvideo abspielen" aria-pressed="false"><span class="voice-analysis-action-icon" aria-hidden="true">&#9654;</span><span class="voice-analysis-action-label">Video abspielen</span></button>
+              <button id="referenceTonePlayButton" class="primary-action voice-analysis-icon-action voice-analysis-reference-toggle" type="button" aria-label="Referenzton abspielen" title="Referenzton abspielen" aria-pressed="false"><span class="voice-analysis-action-icon" aria-hidden="true">&#9654;</span><span class="voice-analysis-action-label">Start</span></button>
             </div>
             <video id="voiceAnalysisReferenceVideo" class="voice-analysis-reference-video is-hidden" playsinline controls preload="metadata"></video>
             <p id="referenceToneResult" class="message">Noch kein Vergleich.</p>
           </div>
-          <div id="voiceAnalysisTextTraining" class="voice-analysis-text-training is-hidden">
+          <div id="voiceAnalysisTextTraining" class="voice-analysis-text-training is-hidden" hidden>
             <label class="field-label" for="voiceTrainingText">Übungstext</label>
             <textarea id="voiceTrainingText" rows="3">Wir wollen heute wieder deutlich und kräftig sprechen.</textarea>
           </div>
-          <div id="voiceAnalysisHistoryControls" class="voice-analysis-reference is-hidden">
+          <div id="voiceAnalysisHistoryControls" class="voice-analysis-reference is-hidden" hidden>
             <label class="field-label" for="voiceAnalysisHistoryFilter">Zeitraum</label>
             <select id="voiceAnalysisHistoryFilter" class="select-input compact-select"><option value="all">Gesamter Zeitraum</option><option value="today">Heute</option><option value="7">Letzte 7 Tage</option><option value="30">Letzte 30 Tage</option></select>
           </div>
-          <div class="voice-analysis-actions">
-            <button id="voiceAnalysisPauseButton" class="secondary-action voice-analysis-icon-action" type="button" aria-label="Pause" title="Pause"><span class="voice-analysis-action-icon" aria-hidden="true">Ⅱ</span><span class="voice-analysis-action-label">Pause</span></button>
-            <button id="voiceAnalysisResetButton" class="quiet-action voice-analysis-icon-action" type="button" aria-label="Reset" title="Reset"><span class="voice-analysis-action-icon" aria-hidden="true">↻</span><span class="voice-analysis-action-label">Reset</span></button>
-            <button id="voiceAnalysisSaveButton" class="secondary-action voice-analysis-icon-action" type="button" aria-label="Messung speichern" title="Messung speichern"><span class="voice-analysis-action-icon" aria-hidden="true">▣</span><span class="voice-analysis-action-label">Messung speichern</span></button>
-          </div>
           <audio id="voiceAnalysisAudio" class="editor-audio-preview is-hidden" controls></audio>
-          <p id="voiceAnalysisMessage" class="message" role="status">Mikrofon noch nicht gestartet.</p>
         </div>
       </section>
 
-      <section class="library-panel app-section" data-view="history stats" aria-label="Auswertung und Analyse gespeicherter Aufnahmen">
+      <section class="library-panel app-section" data-view="history stats" aria-label="Übungsanalyse gespeicherter Aufnahmen">
         <div class="section-header">
           <div>
-            <p class="eyebrow">Auswertung</p>
+            <p class="eyebrow">Übungsanalyse</p>
             <h2 id="libraryTitle">Demo Patient</h2>
           </div>
-          <span id="recordingCountBadge" class="status-pill">0</span>
+          <div class="section-header-actions exercise-analysis-header-actions">
+            <button id="exerciseAnalysisBackButton" class="quiet-action" type="button">Zurück</button>
+            <span id="recordingCountBadge" class="status-pill">0</span>
+          </div>
         </div>
 
         <dl class="stats-grid patient-stats">
@@ -1335,7 +1341,16 @@
       </div>
     </div>
 
-    <script src="voice-analysis.js?v=20260825-voice-modules001"></script>
-    <script type="module" src="app.js?v=20260825-voice-modules001"></script>
+    <script src="voice-analysis.js?v=20260827-dialog-patient-eval001"></script>
+    <script type="module" src="app.js?v=20260827-spectrogram-contrast001"></script>
   </body>
 </html>
+
+
+
+
+
+
+
+
+

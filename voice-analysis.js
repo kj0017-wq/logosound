@@ -41,8 +41,11 @@
     const duration = Math.max(0, Number(durationSeconds) || 0);
     const sourceDuration = Math.max(0, Number(sourceDurationSeconds) || duration);
     const position = clamp(Number(positionSeconds) || 0, 0, duration || Number.MAX_SAFE_INTEGER);
+    if (position <= 0) {
+      return items.slice(0, Math.min(items.length, Math.max(1, Math.ceil(items.length * 0.015))));
+    }
     const visible = items.filter((item, index) => getItemTime(item, index, items.length, duration, sourceDuration) <= position);
-    if (visible.length || position <= 0) return visible;
+    if (visible.length) return visible;
     const ratio = duration ? clamp(position / duration, 0, 1) : 0;
     const count = Math.max(1, Math.min(items.length, Math.ceil(items.length * ratio)));
     return items.slice(0, count);

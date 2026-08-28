@@ -98,7 +98,10 @@ const musicPreview = document.querySelector("#musicPreview");
 const musicList = document.querySelector("#musicList");
 const mediaLibraryTitle = document.querySelector("#mediaLibraryTitle");
 const mediaLibraryKind = document.querySelector("#mediaLibraryKind");
+const mediaLibraryTopic = document.querySelector("#mediaLibraryTopic");
+const mediaLibraryTopicSuggestions = document.querySelector("#mediaLibraryTopicSuggestions");
 const mediaLibraryDescription = document.querySelector("#mediaLibraryDescription");
+const suggestMediaLibraryDescriptionButton = document.querySelector("#suggestMediaLibraryDescriptionButton");
 const mediaLibraryDuration = document.querySelector("#mediaLibraryDuration");
 const mediaLibraryFile = document.querySelector("#mediaLibraryFile");
 const saveMediaLibraryButton = document.querySelector("#saveMediaLibraryButton");
@@ -585,6 +588,9 @@ const COURSE_SESSIONS_KEY = "logosound-course-sessions";
 const COURSE_ASSIGNMENTS_KEY = "logosound-course-assignments";
 const RELAX_MUSIC_KEY = "logosound-relax-music";
 const MEDIA_LIBRARY_KEY = "logosound-media-library";
+const HEARING_TESTS_KEY = "logosound-hearing-tests";
+const HEARING_SETTINGS_KEY = "logosound-hearing-settings";
+const HEARING_TESTS_COLLECTION = "hearingTests";
 const MEDIA_LIBRARY_TOPICS = ["Kein Thema", "Gesicht und Mimik", "Stimme", "Artikulation", "Atmung", "Kiefer und Lippen", "Zunge", "Mobilisation", "Koordination", "Balance", "Beintraining", "Gymnastik", "Entspannung"];
 const EDITOR_DRAFT_KEY = "logosound-editor-draft";
 const SAVED_EDITOR_EXERCISE_KEY = "logosound-saved-editor-exercise";
@@ -854,6 +860,8 @@ let relaxMusicItems = [];
 let mediaLibraryItems = [];
 let selectedMediaLibraryItemId = "";
 const pendingMediaThumbnailIds = new Set();
+const pendingMediaMetadataIds = new Set();
+const mediaLibraryItemStatus = new Map();
 let expandedMyCourseAssignmentId = "";
 let editingMediaLibraryItemId = "";
 let editingDailyPlanPauseKey = "";
@@ -918,7 +926,10 @@ loadSavedEditorExercise();
 loadEditorDraft();
 applyTextOverlayVisibility();
 initializeVoiceAnalysisUi();
-setActiveView(window.location.hash.startsWith("#stimmanalyse") ? "voiceAnalysis" : "record");
+const initialView = window.location.hash.startsWith("#stimmanalyse")
+  ? "voiceAnalysis"
+  : "record";
+setActiveView(initialView);
 hideSplashAfterStartup();
 
 init().catch((error) => {
@@ -1317,13 +1328,18 @@ saveMusicButton?.addEventListener("click", async () => saveRelaxMusicFromForm())
 saveMediaLibraryButton?.addEventListener("click", async () => saveMediaLibraryFromForm());
 backfillMediaLibraryThumbnailsButton?.addEventListener("click", async () => backfillMediaLibraryThumbnails());
 closeMediaLibraryPlayerOverlayButton?.addEventListener("click", closeMediaLibraryPlayerOverlay);
+suggestMediaLibraryDescriptionButton?.addEventListener("click", () => suggestMediaLibraryDescription());
+mediaLibraryTopic?.addEventListener("input", () => renderMediaLibraryTopicSuggestions(mediaLibraryTopic.value));
 mediaLibraryFile?.addEventListener("change", () => {
   const file = mediaLibraryFile.files?.[0];
   if (!file) {
-    setMediaLibraryState("Audio, Video oder Bild auswählen.");
+    const selectedItem = mediaLibraryItems.find((item) => item.id === selectedMediaLibraryItemId);
+    updateMediaLibraryEditorMode(selectedItem || null);
+    setMediaLibraryState(selectedItem ? "Geladenes Medium kann bearbeitet werden." : "Audio, Video oder Bild auswählen.");
     return;
   }
   const mediaType = getMediaFileType(file.type, file.name);
+  updateMediaLibraryEditorMode(null);
   setMediaLibraryState(`${file.name} ausgewählt · ${mediaType === "audio" ? "Sound" : mediaType === "video" ? "Video" : "Bild"}`, "success");
 });
 
@@ -9018,6 +9034,130 @@ function getBestPlaybackAmplitudeSeries(metadata = currentMetadata) {
   return amplitudes;
 }
 
+function estimatePitchFromPcmWindow(samples, sampleRate) {
+  if (!samples?.length || !sampleRate) return 0;
+  let rms = 0;
+  for (let index = 0; index < samples.length; index += 1) rms += samples[index] * samples[index];
+  rms = Math.sqrt(rms / Math.max(1, samples.length));
+  if (rms < 0.01) return 0;
+
+  const minLag = Math.max(1, Math.floor(sampleRate / PITCH_HIGH_HZ));
+  const maxLag = Math.min(samples.length - 2, Math.floor(sampleRate / PITCH_LOW_HZ));
+  let bestLag = 0;
+  let bestCorrelation = 0;
+
+  for (let lag = minLag; lag <= maxLag; lag += 1) {
+    let correlation = 0;
+    let energy = 0;
+    for (let index = 0; index + lag < samples.length; index += 1) {
+      correlation += samples[index] * samples[index + lag];
+      energy += samples[index] * samples[index];
+    }
+    const normalized = energy ? correlation / energy : 0;
+    if (normalized > bestCorrelation) {
+      bestCorrelation = normalized;
+      bestLag = lag;
+    }
+  }
+
+  if (!bestLag || bestCorrelation < 0.28) return 0;
+  return Math.round(sampleRate / bestLag);
+}
+
+async function extractVoiceAnalysisSamplesFromBlob(blob) {
+  if (!blob?.size) return null;
+  const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextConstructor) return null;
+
+  let audioContext = null;
+  try {
+    const arrayBuffer = await blob.arrayBuffer();
+    audioContext = new AudioContextConstructor();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+    const sampleRate = audioBuffer.sampleRate || 44100;
+    const duration = audioBuffer.duration || 0;
+    const channelCount = Math.max(1, audioBuffer.numberOfChannels || 1);
+    const frameCount = audioBuffer.length || 0;
+    if (!frameCount || !duration) return null;
+
+    const targetCount = Math.max(80, Math.min(900, Math.round(duration * 28)));
+    const windowSize = Math.max(256, Math.floor(frameCount / targetCount));
+    const amplitudes = [];
+    const volumeLevels = [];
+    const pitchValues = [];
+
+    for (let offset = 0; offset < frameCount; offset += windowSize) {
+      const end = Math.min(frameCount, offset + windowSize);
+      const mono = new Float32Array(end - offset);
+      for (let channel = 0; channel < channelCount; channel += 1) {
+        const data = audioBuffer.getChannelData(channel);
+        for (let index = offset; index < end; index += 1) {
+          mono[index - offset] += data[index] / channelCount;
+        }
+      }
+
+      let sum = 0;
+      let peak = 0;
+      for (let index = 0; index < mono.length; index += 1) {
+        const value = mono[index] || 0;
+        sum += value * value;
+        peak = Math.max(peak, Math.abs(value));
+      }
+      const rms = Math.sqrt(sum / Math.max(1, mono.length));
+      const amplitude = clampCanvas(Math.round(Math.max(Math.sqrt(peak) * 112, peak * 380, rms * 520)), 0, 100);
+      const volume = clampCanvas(Math.round(20 * Math.log10(Math.max(0.0001, rms)) + 100), 0, 100);
+      amplitudes.push(amplitude);
+      volumeLevels.push(volume);
+      pitchValues.push(estimatePitchFromPcmWindow(mono, sampleRate));
+    }
+
+    return {
+      duration,
+      amplitudes,
+      volumeLevels,
+      pitchValues,
+    };
+  } catch (error) {
+    console.warn("Audio konnte nicht für die Stimmanalyse nachanalysiert werden.", error);
+    return null;
+  } finally {
+    try { await audioContext?.close?.(); } catch (error) {}
+  }
+}
+
+async function enrichVoiceAnalysisMetadataFromBlob(metadata = {}, blob = null) {
+  const existingAmplitudes = getBestPlaybackAmplitudeSeries(metadata);
+  const hasAmplitude = hasUsableWaveformSignal(existingAmplitudes);
+  const hasVolume = hasUsableWaveformSignal(metadata.lautstaerkePegel || metadata.lautstaerken || []);
+  const hasPitch = Array.isArray(metadata.stimmfrequenzenHz) && metadata.stimmfrequenzenHz.some((value) => Number(value) > 0);
+  if (!blob?.size || (hasAmplitude && hasVolume && hasPitch)) return metadata;
+
+  const extracted = await extractVoiceAnalysisSamplesFromBlob(blob);
+  if (!extracted) return metadata;
+
+  const enriched = { ...metadata };
+  if (!hasAmplitude && hasUsableWaveformSignal(extracted.amplitudes)) {
+    enriched.amplituden = extracted.amplitudes;
+  }
+  if (!hasVolume && hasUsableWaveformSignal(extracted.volumeLevels)) {
+    enriched.lautstaerkePegel = extracted.volumeLevels;
+    enriched.lautstaerken = extracted.volumeLevels;
+  }
+  if (!hasPitch && extracted.pitchValues.some((value) => Number(value) > 0)) {
+    enriched.stimmfrequenzenHz = extracted.pitchValues;
+  }
+  if (!Number(enriched.dauerSekunden) && extracted.duration) {
+    enriched.dauerSekunden = Number(extracted.duration.toFixed(2));
+  }
+
+  const volumeStats = calculateAmplitudeStats(enriched.lautstaerkePegel || enriched.lautstaerken || enriched.amplituden || []);
+  const pitchStats = calculatePitchStats(enriched.stimmfrequenzenHz || []);
+  enriched.durchschnittlicherLautstaerkePegel = Number(enriched.durchschnittlicherLautstaerkePegel || volumeStats.average || 0);
+  enriched.maximalerLautstaerkePegel = Number(enriched.maximalerLautstaerkePegel || volumeStats.maximum || 0);
+  enriched.durchschnittlicheStimmfrequenzHz = Number(enriched.durchschnittlicheStimmfrequenzHz || pitchStats.average || 0);
+  return enriched;
+}
+
 function drawFilledWaveformEnvelope(context, values, levels, options = {}) {
   const count = values.length;
   const width = options.waveformWidth || 1;
@@ -10291,6 +10431,7 @@ function calculateAmplitudeStats(values) {
     average: roundedValues.length
       ? Math.round(roundedValues.reduce((sum, value) => sum + value, 0) / roundedValues.length)
       : 0,
+    minimum: roundedValues.length ? Math.min(...roundedValues) : 0,
     maximum: roundedValues.length ? Math.max(...roundedValues) : 0,
   };
 }
@@ -13535,6 +13676,52 @@ function setMediaLibraryState(text, type = "info") {
   mediaLibraryState.dataset.state = type;
 }
 
+function setMediaLibraryItemStatus(itemId, text = "", type = "info") {
+  if (!itemId) return;
+  if (!text) {
+    mediaLibraryItemStatus.delete(itemId);
+  } else {
+    mediaLibraryItemStatus.set(itemId, { text, type });
+  }
+  renderMediaLibraryList();
+}
+
+function dataUrlToBlob(dataUrl) {
+  const [header = "", data = ""] = String(dataUrl || "").split(",");
+  const mimeType = header.match(/^data:([^;]+)/)?.[1] || "image/jpeg";
+  const binary = atob(data);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new Blob([bytes], { type: mimeType });
+}
+
+function uploadMediaThumbnailToCloud(item, thumbnail) {
+  const dataUrl = typeof thumbnail === "string" ? thumbnail : thumbnail?.dataUrl;
+  if (!item?.id || !dataUrl?.startsWith("data:image/")) {
+    return Promise.reject(new Error("thumbnail-missing"));
+  }
+  const blob = dataUrlToBlob(dataUrl);
+  const metadata = {
+    videoWidth: Number(thumbnail?.width || item.videoWidth || 0) || 0,
+    videoHeight: Number(thumbnail?.height || item.videoHeight || 0) || 0,
+    aspectRatio: formatMediaAspectRatio(thumbnail?.width || item.videoWidth, thumbnail?.height || item.videoHeight) || item.aspectRatio || "",
+  };
+  return fetch(`${getApiUrl("/api/media-library")}?thumbnail=1&id=${encodeURIComponent(item.id)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": blob.type || "image/jpeg",
+      "X-Media-Thumbnail-Metadata": encodeURIComponent(JSON.stringify(metadata)),
+    },
+    body: blob,
+  }).then(async (response) => {
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "thumbnail-upload-failed");
+    return payload;
+  });
+}
+
 function uploadMediaFileToCloud(file, item) {
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
@@ -13575,6 +13762,40 @@ function formatMediaAspectRatio(width, height) {
   return `${sourceWidth / factor}:${sourceHeight / factor}`;
 }
 
+function captureVideoElementThumbnail(video) {
+  const width = Number(video?.videoWidth || 0);
+  const height = Number(video?.videoHeight || 0);
+  if (!width || !height) return null;
+  const targetWidth = Math.min(420, width);
+  const targetHeight = Math.max(1, Math.round((height / width) * targetWidth));
+  const canvas = document.createElement("canvas");
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.drawImage(video, 0, 0, targetWidth, targetHeight);
+  return {
+    dataUrl: canvas.toDataURL("image/jpeg", 0.72),
+    width,
+    height,
+  };
+}
+
+async function fetchMediaSourceAsBlob(source) {
+  if (!source || source instanceof Blob) return source || null;
+  const url = resolveAppUrl(String(source || ""));
+  if (!url || url.startsWith("data:") || url.startsWith("blob:")) return null;
+  try {
+    const response = await fetch(url, { cache: "force-cache" });
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return blob?.size ? blob : null;
+  } catch (error) {
+    console.warn("Video konnte nicht als Blob fuer Thumbnail geladen werden", error);
+    return null;
+  }
+}
+
 function createVideoThumbnailDataUrl(source) {
   return new Promise((resolve) => {
     const video = document.createElement("video");
@@ -13595,25 +13816,9 @@ function createVideoThumbnailDataUrl(source) {
     }
 
     function capture() {
-      const width = Number(video.videoWidth || 0);
-      const height = Number(video.videoHeight || 0);
-      if (!width || !height) {
-        finish();
-        return;
-      }
-      const targetWidth = Math.min(420, width);
-      const targetHeight = Math.max(1, Math.round((height / width) * targetWidth));
-      const canvas = document.createElement("canvas");
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      const context = canvas.getContext("2d");
-      if (!context) {
-        finish();
-        return;
-      }
       try {
-        context.drawImage(video, 0, 0, targetWidth, targetHeight);
-        finish({ dataUrl: canvas.toDataURL("image/jpeg", 0.72), width, height });
+        const thumbnail = captureVideoElementThumbnail(video);
+        finish(thumbnail || "");
       } catch (error) {
         finish();
       }
@@ -13622,6 +13827,7 @@ function createVideoThumbnailDataUrl(source) {
     video.muted = true;
     video.playsInline = true;
     video.preload = "auto";
+    video.crossOrigin = "anonymous";
     video.addEventListener("loadeddata", capture, { once: true });
     video.addEventListener("error", () => finish(), { once: true });
     video.src = isBlob ? objectUrl : resolveAppUrl(String(source || ""));
@@ -13629,20 +13835,125 @@ function createVideoThumbnailDataUrl(source) {
   });
 }
 
-async function ensureMediaLibraryVideoThumbnail(item, source = "") {
-  if (!item || item.mediaType !== "video" || item.thumbnailDataUrl || pendingMediaThumbnailIds.has(item.id)) return;
+async function createRobustVideoThumbnailDataUrl(source, item = null) {
+  const activePlayer = item?.id === selectedMediaLibraryItemId && mediaLibraryPlayerVideo && !mediaLibraryPlayerVideo.classList.contains("is-hidden")
+    ? mediaLibraryPlayerVideo
+    : null;
+  if (activePlayer?.videoWidth && activePlayer?.videoHeight && activePlayer.readyState >= 2) {
+    try {
+      const thumbnail = captureVideoElementThumbnail(activePlayer);
+      if (thumbnail?.dataUrl) return thumbnail;
+    } catch (error) {
+      console.warn("Thumbnail aus aktivem Player fehlgeschlagen", error);
+    }
+  }
+
+  const directThumbnail = await createVideoThumbnailDataUrl(source || item?.downloadUrl || "").catch(() => null);
+  if (directThumbnail?.dataUrl) return directThumbnail;
+
+  const blob = await fetchMediaSourceAsBlob(source || item?.downloadUrl || "");
+  if (!blob) return directThumbnail || null;
+  return createVideoThumbnailDataUrl(blob).catch(() => directThumbnail || null);
+}
+
+function getMediaFileMetadata(file) {
+  return new Promise((resolve) => {
+    if (!file || getMediaFileType(file.type, file.name) !== "video") {
+      resolve({});
+      return;
+    }
+    const video = document.createElement("video");
+    const objectUrl = URL.createObjectURL(file);
+    let finished = false;
+    const timeout = window.setTimeout(() => finish({}), 8000);
+
+    function finish(metadata = {}) {
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(timeout);
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      URL.revokeObjectURL(objectUrl);
+      resolve(metadata);
+    }
+
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    video.addEventListener("loadedmetadata", () => {
+      const width = Number(video.videoWidth || 0);
+      const height = Number(video.videoHeight || 0);
+      const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
+      finish({
+        duration: duration ? Math.round(duration) : 0,
+        videoWidth: width || 0,
+        videoHeight: height || 0,
+        aspectRatio: formatMediaAspectRatio(width, height),
+      });
+    }, { once: true });
+    video.addEventListener("error", () => finish({}), { once: true });
+    video.src = objectUrl;
+    video.load();
+  });
+}
+
+function getMediaLibraryThumbnailSource(item) {
+  const localThumbnail = typeof item?.thumbnailDataUrl === "string" ? item.thumbnailDataUrl : item?.thumbnailDataUrl?.dataUrl || "";
+  return localThumbnail || resolveAppUrl(String(item?.thumbnailUrl || item?.posterUrl || (item?.mediaType === "image" ? item?.downloadUrl || "" : "")));
+}
+
+async function ensureMediaLibraryVideoThumbnail(item, source = "", options = {}) {
+  if (!item || item.mediaType !== "video") return false;
+  if (pendingMediaThumbnailIds.has(item.id)) {
+    setMediaLibraryState("Vorschaubild wird bereits erstellt ...");
+    return false;
+  }
+  if (!options.force && getMediaLibraryThumbnailSource(item)) return true;
   pendingMediaThumbnailIds.add(item.id);
+  mediaLibraryItemStatus.set(item.id, { text: "Vorschaubild wird erstellt ...", type: "info" });
+  renderMediaLibraryList();
   try {
-    const thumbnailDataUrl = await createVideoThumbnailDataUrl(source || item.downloadUrl || "");
-    if (!thumbnailDataUrl) return;
-    const updated = { ...item, thumbnailDataUrl, updatedAt: new Date().toISOString() };
-    const payload = await requestMediaLibraryApi("POST", { item: updated });
-    mediaLibraryItems = mergeById(mediaLibraryItems, [payload.item || updated]);
+    setMediaLibraryState(`Vorschaubild für „${item.title || "Video"}“ wird erstellt ...`);
+    const thumbnail = await createRobustVideoThumbnailDataUrl(source || item.downloadUrl || "", item);
+    const thumbnailDataUrl = typeof thumbnail === "string" ? thumbnail : thumbnail?.dataUrl;
+    if (!thumbnailDataUrl) {
+      const message = "Kein Bild lesbar. Video im Player kurz starten und erneut versuchen.";
+      mediaLibraryItemStatus.set(item.id, { text: message, type: "warning" });
+      setMediaLibraryState(`Vorschaubild: ${message}`, "warning");
+      renderMediaLibraryList();
+      return false;
+    }
+    const payload = await uploadMediaThumbnailToCloud(item, { ...thumbnail, dataUrl: thumbnailDataUrl });
+    const savedItem = payload.item || {
+      ...item,
+      thumbnailUrl: "",
+      thumbnailDataUrl: "",
+      videoWidth: Number(thumbnail?.width || item.videoWidth || 0) || undefined,
+      videoHeight: Number(thumbnail?.height || item.videoHeight || 0) || undefined,
+      aspectRatio: formatMediaAspectRatio(thumbnail?.width || item.videoWidth, thumbnail?.height || item.videoHeight) || item.aspectRatio || "",
+      updatedAt: new Date().toISOString(),
+    };
+    mediaLibraryItems = mergeById(mediaLibraryItems, [savedItem]);
     persistCourseModuleData();
     renderMediaLibraryList();
     renderDailyPlanExerciseLibrary();
+    mediaLibraryItemStatus.set(item.id, { text: "Vorschaubild gespeichert.", type: "success" });
+    setMediaLibraryState(`Vorschaubild gespeichert: ${savedItem.title || "Video"}`, "success");
+    window.setTimeout(() => {
+      if (mediaLibraryItemStatus.get(item.id)?.text === "Vorschaubild gespeichert.") {
+        mediaLibraryItemStatus.delete(item.id);
+        renderMediaLibraryList();
+      }
+    }, 3500);
+    return true;
   } catch (error) {
     console.warn("Video thumbnail creation failed", error);
+    const message = `Vorschaubild fehlgeschlagen: ${error.message || "Video konnte nicht gelesen werden."}`;
+    mediaLibraryItemStatus.set(item.id, { text: message, type: "error" });
+    setMediaLibraryState(message, "error");
+    renderMediaLibraryList();
+    return false;
   } finally {
     pendingMediaThumbnailIds.delete(item.id);
   }
@@ -13651,8 +13962,13 @@ async function ensureMediaLibraryVideoThumbnail(item, source = "") {
 async function saveMediaLibraryFromForm() {
   const file = mediaLibraryFile?.files?.[0];
   const title = String(mediaLibraryTitle?.value || file?.name || "").trim();
+  const selectedItem = mediaLibraryItems.find((item) => item.id === selectedMediaLibraryItemId);
+  if (!file && selectedItem) {
+    await saveSelectedMediaLibraryItemFromForm(selectedItem);
+    return;
+  }
   if (!file || !title) {
-    setMediaLibraryState("Bitte Titel und Datei auswählen.", "warning");
+    setMediaLibraryState("Bitte Titel und Datei auswählen oder ein Medium im Player laden.", "warning");
     return;
   }
   if (!isSupportedMediaFile(file)) {
@@ -13669,18 +13985,24 @@ async function saveMediaLibraryFromForm() {
   setMediaLibraryState("Upload wird gestartet ...");
   try {
     const now = new Date().toISOString();
+    const mediaType = getMediaFileType(file.type, file.name);
+    const fileMetadata = await getMediaFileMetadata(file);
+    const duration = Math.max(1, Math.min(3600, Number(fileMetadata.duration || mediaLibraryDuration?.value) || 30));
     const item = {
       id,
       title,
       kind: mediaLibraryKind?.value === "pause" ? "pause" : "exercise",
       description: String(mediaLibraryDescription?.value || "").trim(),
-      duration: Math.max(1, Math.min(3600, Number(mediaLibraryDuration?.value) || 30)),
-      mediaType: getMediaFileType(file.type, file.name),
+      duration,
+      mediaType,
       mimeType: file.type || "application/octet-stream",
       fileName: file.name,
       active: true,
-      topic: "Kein Thema",
-      playbackMode: getMediaFileType(file.type, file.name) === "video" ? "once" : "once",
+      topic: normalizeMediaLibraryTopic(mediaLibraryTopic?.value || "Kein Thema"),
+      playbackMode: mediaType === "video" ? "once" : "once",
+      videoWidth: Number(fileMetadata.videoWidth || 0) || undefined,
+      videoHeight: Number(fileMetadata.videoHeight || 0) || undefined,
+      aspectRatio: fileMetadata.aspectRatio || "",
       createdAt: now,
       updatedAt: now,
     };
@@ -13693,8 +14015,10 @@ async function saveMediaLibraryFromForm() {
     }
     persistCourseModuleData();
     if (mediaLibraryTitle) mediaLibraryTitle.value = "";
+    if (mediaLibraryTopic) mediaLibraryTopic.value = "Kein Thema";
     if (mediaLibraryDescription) mediaLibraryDescription.value = "";
     if (mediaLibraryFile) mediaLibraryFile.value = "";
+    updateMediaLibraryEditorMode(null);
     const mediaMode = item.kind === "pause" ? "media_pause" : "media_exercise";
     const mediaModeLabel = item.kind === "pause" ? "Pauseneinheit" : "Medienmodul";
     setMediaLibraryState(
@@ -13709,6 +14033,206 @@ async function saveMediaLibraryFromForm() {
     setMediaLibraryState(`Speichern fehlgeschlagen: ${error.message}`, "error");
   } finally {
     saveMediaLibraryButton.disabled = false;
+  }
+}
+
+function updateMediaLibraryEditorMode(item = null) {
+  if (!saveMediaLibraryButton) return;
+  const hasFile = Boolean(mediaLibraryFile?.files?.[0]);
+  saveMediaLibraryButton.textContent = item && !hasFile ? "Änderungen speichern" : "Medium hochladen";
+}
+
+function loadMediaLibraryItemIntoEditor(item) {
+  if (!item) return;
+  if (mediaLibraryTitle) mediaLibraryTitle.value = item.title || "";
+  if (mediaLibraryKind) mediaLibraryKind.value = item.kind === "pause" ? "pause" : "exercise";
+  if (mediaLibraryTopic) mediaLibraryTopic.value = normalizeMediaLibraryTopic(item.topic || "Kein Thema");
+  if (mediaLibraryDescription) mediaLibraryDescription.value = item.description || "";
+  if (mediaLibraryDuration) mediaLibraryDuration.value = String(Math.max(1, Math.round(Number(item.duration || 30) || 30)));
+  renderMediaLibraryTopicSuggestions(item.topic || "");
+  updateMediaLibraryEditorMode(item);
+}
+
+async function saveSelectedMediaLibraryItemFromForm(item) {
+  const title = String(mediaLibraryTitle?.value || "").trim();
+  if (!title) {
+    setMediaLibraryState("Bitte einen Namen eingeben.", "warning");
+    mediaLibraryTitle?.focus();
+    return;
+  }
+  const updated = {
+    ...item,
+    title,
+    kind: mediaLibraryKind?.value === "pause" ? "pause" : "exercise",
+    topic: normalizeMediaLibraryTopic(mediaLibraryTopic?.value || "Kein Thema"),
+    description: String(mediaLibraryDescription?.value || "").trim(),
+    duration: Math.max(1, Math.min(3600, Number(mediaLibraryDuration?.value) || Number(item.duration || 30) || 30)),
+    updatedAt: new Date().toISOString(),
+  };
+  if (saveMediaLibraryButton) saveMediaLibraryButton.disabled = true;
+  setMediaLibraryState("Änderungen werden gespeichert ...");
+  try {
+    const payload = await requestMediaLibraryApi("POST", { item: updated });
+    const savedItem = payload.item || updated;
+    mediaLibraryItems = mergeById(mediaLibraryItems, [savedItem]);
+    selectedMediaLibraryItemId = savedItem.id;
+    persistCourseModuleData();
+    showMediaLibraryItem(savedItem);
+    renderCourseViews();
+    setMediaLibraryState(`Aktualisiert: ${savedItem.title}`, "success");
+  } catch (error) {
+    setMediaLibraryState(`Speichern fehlgeschlagen: ${error.message}`, "error");
+  } finally {
+    if (saveMediaLibraryButton) saveMediaLibraryButton.disabled = false;
+    updateMediaLibraryEditorMode(updated);
+  }
+}
+
+function buildMediaLibraryDescriptionSuggestion(item = null) {
+  const mediaType = item?.mediaType || getMediaFileType(mediaLibraryFile?.files?.[0]?.type, mediaLibraryFile?.files?.[0]?.name);
+  const typeLabel = mediaType === "video" ? "Video" : (mediaType === "image" ? "Bild" : "Audio");
+  const title = String(mediaLibraryTitle?.value || item?.title || "Medium").trim();
+  const topic = normalizeMediaLibraryTopic(mediaLibraryTopic?.value || item?.topic || "Kein Thema");
+  const kind = (mediaLibraryKind?.value || item?.kind) === "pause" ? "Pausenmedium" : "Übungsmedium";
+  const duration = Math.max(0, Math.round(Number(mediaLibraryDuration?.value || item?.duration || 0) || 0));
+  const facts = [
+    `${typeLabel} als ${kind.toLowerCase()}`,
+    topic !== "Kein Thema" ? `zum Thema ${topic}` : "",
+    duration ? `mit ca. ${formatCourseDuration(duration)} Länge` : "",
+    item?.mediaType === "video" ? getMediaLibraryOrientationLabel(item) : "",
+    item?.mediaType === "video" ? getMediaLibraryRatioLabel(item) : "",
+  ].filter(Boolean).join(", ");
+  if (kind === "Pausenmedium") {
+    return `${title} ist ein ${facts}. Es eignet sich als ruhige Zwischenphase oder kurze Entlastung innerhalb eines LogoSound-Kurses.`;
+  }
+  return `${title} ist ein ${facts}. Es kann als kompakter Medienbaustein in Übungen oder Tagesplänen eingesetzt werden.`;
+}
+
+async function getMediaLibraryDescriptionImageSource(item = null) {
+  if (!item) return "";
+  const existingSource = getMediaLibraryThumbnailSource(item);
+  if (existingSource) return existingSource;
+  if (item.mediaType !== "video") return resolveAppUrl(String(item.downloadUrl || ""));
+  const thumbnail = await createRobustVideoThumbnailDataUrl(item.downloadUrl || "", item).catch(() => null);
+  return typeof thumbnail === "string" ? thumbnail : String(thumbnail?.dataUrl || "");
+}
+
+async function suggestMediaLibraryDescription() {
+  const item = mediaLibraryItems.find((entry) => entry.id === selectedMediaLibraryItemId) || null;
+  if (!mediaLibraryDescription) return;
+  const fallbackSuggestion = buildMediaLibraryDescriptionSuggestion(item);
+  if (suggestMediaLibraryDescriptionButton) suggestMediaLibraryDescriptionButton.disabled = true;
+  setMediaLibraryState("Thumbnail wird für die Beschreibung analysiert ...");
+  try {
+    await ensureChatGptAccess().catch(() => {});
+    const chatGptConfig = getChatGptRequestConfig();
+    const imageSource = await getMediaLibraryDescriptionImageSource(item);
+    const analysisImageSource = imageSource.startsWith("data:image/")
+      ? imageSource
+      : resolveAppUrl(imageSource);
+    const response = await fetch(getApiUrl("/api/chatgpt"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        apiKey: chatGptConfig.apiKey,
+        model: chatGptConfig.model,
+        mediaDescription: {
+          title: String(mediaLibraryTitle?.value || item?.title || "Medium").trim(),
+          mediaType: item?.mediaType || getMediaFileType(mediaLibraryFile?.files?.[0]?.type, mediaLibraryFile?.files?.[0]?.name),
+          kind: (mediaLibraryKind?.value || item?.kind) === "pause" ? "Pausenmedium" : "Übungsmedium",
+          topic: normalizeMediaLibraryTopic(mediaLibraryTopic?.value || item?.topic || "Kein Thema"),
+          durationLabel: formatCourseDuration(Number(mediaLibraryDuration?.value || item?.duration || 0) || 0),
+          dimensions: [getMediaLibraryOrientationLabel(item), getMediaLibraryDimensionLabel(item), getMediaLibraryRatioLabel(item)].filter(Boolean).join(" · "),
+          thumbnailDataUrl: analysisImageSource.startsWith("data:image/") ? analysisImageSource : "",
+          thumbnailUrl: analysisImageSource.startsWith("http") ? analysisImageSource : "",
+        },
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.text) {
+      if (payload.error === "missing-openai-api-key") throw new Error("missing-openai-api-key");
+      throw new Error(payload.error || "media-description-failed");
+    }
+    mediaLibraryDescription.value = String(payload.text || "").trim();
+    setMediaLibraryState(
+      payload.warning
+        ? `KI-Beschreibung eingefügt, Thumbnail nicht ausgewertet (${payload.warning}).`
+        : "Thumbnail analysiert. Beschreibung eingefügt.",
+      payload.warning ? "warning" : "success",
+    );
+  } catch (error) {
+    mediaLibraryDescription.value = fallbackSuggestion;
+    setMediaLibraryState(
+      error?.message === "missing-openai-api-key"
+        ? "Kein ChatGPT-Key aktiv. Lokaler Beschreibungsvorschlag eingefügt."
+        : `Thumbnail-Analyse nicht erreichbar (${error.message || "Fehler"}). Lokaler Vorschlag eingefügt.`,
+      "warning",
+    );
+  } finally {
+    if (suggestMediaLibraryDescriptionButton) suggestMediaLibraryDescriptionButton.disabled = false;
+  }
+}
+
+function getMediaElementMetadata(item, element) {
+  if (!item || !element) return {};
+  const duration = Number.isFinite(element.duration) && element.duration > 0 ? Math.round(element.duration) : 0;
+  const metadata = {};
+  if (duration) metadata.duration = duration;
+  if (element instanceof HTMLVideoElement) {
+    const width = Number(element.videoWidth || 0);
+    const height = Number(element.videoHeight || 0);
+    if (width) metadata.videoWidth = Math.round(width);
+    if (height) metadata.videoHeight = Math.round(height);
+    if (width && height) metadata.aspectRatio = formatMediaAspectRatio(width, height);
+  }
+  return metadata;
+}
+
+function hasMeaningfulMediaMetadataChange(item, metadata = {}) {
+  if (!item || !metadata) return false;
+  const currentDuration = Math.round(Number(item.duration || 0) || 0);
+  const nextDuration = Math.round(Number(metadata.duration || 0) || 0);
+  if (nextDuration && Math.abs(nextDuration - currentDuration) >= 1) return true;
+  if (Number(metadata.videoWidth || 0) && Number(metadata.videoWidth || 0) !== Number(item.videoWidth || 0)) return true;
+  if (Number(metadata.videoHeight || 0) && Number(metadata.videoHeight || 0) !== Number(item.videoHeight || 0)) return true;
+  if (metadata.aspectRatio && metadata.aspectRatio !== String(item.aspectRatio || "")) return true;
+  return false;
+}
+
+async function updateMediaLibraryMetadataFromPlayer(item, element) {
+  if (!item?.id || pendingMediaMetadataIds.has(item.id)) return;
+  const metadata = getMediaElementMetadata(item, element);
+  if (!hasMeaningfulMediaMetadataChange(item, metadata)) {
+    if (item.id === selectedMediaLibraryItemId) loadMediaLibraryItemIntoEditor(item);
+    return;
+  }
+  pendingMediaMetadataIds.add(item.id);
+  const updated = {
+    ...item,
+    ...metadata,
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    const payload = await requestMediaLibraryApi("POST", { item: updated });
+    const savedItem = payload.item || updated;
+    mediaLibraryItems = mergeById(mediaLibraryItems, [savedItem]);
+    if (selectedMediaLibraryItemId === savedItem.id) {
+      loadMediaLibraryItemIntoEditor(savedItem);
+      if (mediaLibraryPlayerTitle) mediaLibraryPlayerTitle.textContent = savedItem.title || "Medium";
+    }
+    persistCourseModuleData();
+    renderDailyPlanExerciseLibrary();
+    renderCourseExerciseLibrary();
+    renderMediaLibraryList();
+    setMediaLibraryState(
+      `Videodaten aktualisiert: ${formatCourseDuration(savedItem.duration)}${savedItem.aspectRatio ? ` · ${savedItem.aspectRatio}` : ""}`,
+      "success",
+    );
+  } catch (error) {
+    console.warn("Media metadata update failed", error);
+    setMediaLibraryState("Videodaten konnten nicht automatisch gespeichert werden.", "warning");
+  } finally {
+    pendingMediaMetadataIds.delete(item.id);
   }
 }
 
@@ -13748,6 +14272,7 @@ function showMediaLibraryItem(item, autoplay = false) {
     return;
   }
   selectedMediaLibraryItemId = item.id;
+  loadMediaLibraryItemIntoEditor(item);
   clearMediaLibraryPlayer();
   if (mediaLibraryPlayerTitle) mediaLibraryPlayerTitle.textContent = item.title || "Medium";
   mediaLibraryPlayerEmpty?.classList.add("is-hidden");
@@ -13759,6 +14284,9 @@ function showMediaLibraryItem(item, autoplay = false) {
   if (player instanceof HTMLVideoElement) player.loop = item.playbackMode === "loop";
   player.classList.remove("is-hidden");
   if (player instanceof HTMLImageElement) return;
+  player.addEventListener("loadedmetadata", () => {
+    updateMediaLibraryMetadataFromPlayer(item, player);
+  }, { once: true });
   player.load();
   if (autoplay) player.play().catch(() => {});
 }
@@ -13779,7 +14307,7 @@ function getMediaLibraryTypeLabel(item) {
 }
 
 function renderMediaLibraryThumbnail(item) {
-  const source = String(item.thumbnailDataUrl || "") || resolveAppUrl(String(item.thumbnailUrl || item.posterUrl || (item.mediaType === "image" ? item.downloadUrl || "" : "")));
+  const source = getMediaLibraryThumbnailSource(item);
   const type = item.mediaType === "video" ? "video" : (item.mediaType === "image" ? "image" : "audio");
   if ((type === "image" || type === "video") && source) {
     if (type === "video") {
@@ -13794,7 +14322,7 @@ function renderMediaLibraryThumbnail(item) {
 
 
 async function backfillMediaLibraryThumbnails() {
-  const videos = mediaLibraryItems.filter((item) => item.mediaType === "video" && !item.thumbnailDataUrl);
+  const videos = mediaLibraryItems.filter((item) => item.mediaType === "video" && !getMediaLibraryThumbnailSource(item));
   if (!videos.length) {
     setMediaLibraryState("Alle Videos haben bereits ein Vorschaubild.", "success");
     return;
@@ -13811,19 +14339,79 @@ async function backfillMediaLibraryThumbnails() {
   } finally {
     if (backfillMediaLibraryThumbnailsButton) backfillMediaLibraryThumbnailsButton.disabled = false;
   }
-}function getMediaLibraryRatioLabel(item) {
+}
+
+function getMediaLibraryRatioLabel(item) {
   if (item?.mediaType !== "video") return "";
   return String(item.aspectRatio || formatMediaAspectRatio(item.videoWidth, item.videoHeight) || "");
 }
 
+function getMediaLibraryOrientationLabel(item) {
+  if (item?.mediaType !== "video") return "";
+  const width = Number(item.videoWidth || 0);
+  const height = Number(item.videoHeight || 0);
+  if (!width || !height) return "";
+  if (width === height) return "Quadrat";
+  return width > height ? "Querformat" : "Hochformat";
+}
+
+function getMediaLibraryDimensionLabel(item) {
+  if (item?.mediaType !== "video") return "";
+  const width = Number(item.videoWidth || 0);
+  const height = Number(item.videoHeight || 0);
+  if (!width || !height) return "";
+  return `${Math.round(width)}×${Math.round(height)}`;
+}
+
+function getMediaLibraryFactsMarkup(item) {
+  const ratio = getMediaLibraryRatioLabel(item);
+  const facts = [
+    getMediaLibraryTypeLabel(item),
+    formatCourseDuration(item.duration),
+    getMediaLibraryOrientationLabel(item),
+    getMediaLibraryDimensionLabel(item),
+    ratio,
+    item.playbackMode === "loop" ? "Loop" : "",
+  ].filter(Boolean);
+  return facts
+    .map((fact) => fact === ratio ? `<span class="media-library-ratio">${mediaLibraryEscape(fact)}</span>` : mediaLibraryEscape(fact))
+    .join(" · ");
+}
+
 function getMediaLibraryTopicOptions(selected = "Kein Thema") {
-  const normalized = MEDIA_LIBRARY_TOPICS.includes(selected) ? selected : "Kein Thema";
-  return MEDIA_LIBRARY_TOPICS.map((topic) => `<option value="${mediaLibraryEscape(topic)}"${topic === normalized ? " selected" : ""}>${mediaLibraryEscape(topic)}</option>`).join("");
+  const topics = getMediaLibraryTopics(selected);
+  const normalized = normalizeMediaLibraryTopic(selected);
+  return topics.map((topic) => `<option value="${mediaLibraryEscape(topic)}"${topic === normalized ? " selected" : ""}>${mediaLibraryEscape(topic)}</option>`).join("");
+}
+
+function normalizeMediaLibraryTopic(topic = "") {
+  const normalized = String(topic || "").trim().replace(/\s+/g, " ");
+  return normalized || "Kein Thema";
+}
+
+function getMediaLibraryTopics(extraTopic = "") {
+  const topics = new Map();
+  [...MEDIA_LIBRARY_TOPICS, ...mediaLibraryItems.map((item) => item.topic), extraTopic]
+    .map(normalizeMediaLibraryTopic)
+    .filter(Boolean)
+    .forEach((topic) => topics.set(topic.toLowerCase(), topic));
+  return [...topics.values()].sort((left, right) => {
+    if (left === "Kein Thema") return -1;
+    if (right === "Kein Thema") return 1;
+    return left.localeCompare(right, "de");
+  });
+}
+
+function renderMediaLibraryTopicSuggestions(extraTopic = "") {
+  if (!mediaLibraryTopicSuggestions) return;
+  mediaLibraryTopicSuggestions.innerHTML = getMediaLibraryTopics(extraTopic)
+    .map((topic) => `<option value="${mediaLibraryEscape(topic)}"></option>`)
+    .join("");
 }
 
 async function saveMediaLibraryItemEdit(item, card) {
   const titleInput = card.querySelector('[data-field="title"]');
-  const topicSelect = card.querySelector('[data-field="topic"]');
+  const topicInput = card.querySelector('[data-field="topic"]');
   const playbackSelect = card.querySelector('[data-field="playbackMode"]');
   const title = String(titleInput?.value || "").trim();
   if (!title) {
@@ -13834,7 +14422,7 @@ async function saveMediaLibraryItemEdit(item, card) {
   const updated = {
     ...item,
     title,
-    topic: String(topicSelect?.value || "Kein Thema"),
+    topic: normalizeMediaLibraryTopic(topicInput?.value || "Kein Thema"),
     playbackMode: item.mediaType === "video" ? String(playbackSelect?.value || item.playbackMode || "once") : "once",
     updatedAt: new Date().toISOString(),
   };
@@ -13852,6 +14440,7 @@ async function saveMediaLibraryItemEdit(item, card) {
 
 function renderMediaLibraryList() {
   if (!mediaLibraryList) return;
+  renderMediaLibraryTopicSuggestions(mediaLibraryTopic?.value || "");
   mediaLibraryList.innerHTML = "";
   const items = mediaLibraryItems
     .slice()
@@ -13870,7 +14459,8 @@ function renderMediaLibraryList() {
   items.forEach((item) => {
     const editing = item.id === editingMediaLibraryItemId;
     const topic = String(item.topic || "Kein Thema");
-    const ratio = getMediaLibraryRatioLabel(item);
+    const itemStatus = mediaLibraryItemStatus.get(item.id);
+    const thumbnailPending = pendingMediaThumbnailIds.has(item.id);
     const card = document.createElement("article");
     card.className = `course-card media-library-card${item.active === false ? " is-inactive" : ""}${item.id === selectedMediaLibraryItemId ? " is-selected" : ""}${editing ? " is-editing" : ""}`;
     card.innerHTML = `
@@ -13878,19 +14468,26 @@ function renderMediaLibraryList() {
         ${renderMediaLibraryThumbnail(item)}
         <span class="media-library-card-copy">
           <strong title="${mediaLibraryEscape(item.title)}">${mediaLibraryEscape(item.title)}</strong>
-          <small>${getMediaLibraryTypeLabel(item)} · ${formatCourseDuration(item.duration)}${ratio ? ` · <span class="media-library-ratio">${mediaLibraryEscape(ratio)}</span>` : ""}${item.playbackMode === "loop" ? " · Loop" : ""}</small>
+          <small>${getMediaLibraryFactsMarkup(item)}</small>
           <small class="media-library-topic-label">Thema: ${mediaLibraryEscape(topic)}</small>
         </span>
       </button>
       <div class="media-library-card-actions">
         <button class="icon-button" type="button" data-action="${editing ? "save" : "edit"}" title="${editing ? "Änderungen speichern" : "Titel und Thema bearbeiten"}" aria-label="${editing ? "Änderungen speichern" : "Titel und Thema bearbeiten"}">${editing ? "&#10003;" : "&#9998;"}</button>
+        ${item.mediaType === "video" ? `<button class="icon-button" type="button" data-action="thumbnail" title="Vorschaubild nachholen" aria-label="Vorschaubild nachholen"${thumbnailPending ? " disabled" : ""}>${thumbnailPending ? "..." : "&#128247;"}</button>` : ""}
         <button class="icon-button danger-action" type="button" data-action="delete" title="Medium löschen" aria-label="Medium löschen">&#128465;</button>
       </div>
+      ${itemStatus ? `<p class="media-library-card-status" data-state="${mediaLibraryEscape(itemStatus.type || "info")}">${mediaLibraryEscape(itemStatus.text)}</p>` : ""}
       ${editing ? `
         <div class="media-library-edit-fields">
           <label>Titel<input type="text" data-field="title" value="${mediaLibraryEscape(item.title)}"></label>
-          <label>Thema<select data-field="topic">${getMediaLibraryTopicOptions(topic)}</select></label>
+          <label>Thema<input type="text" list="mediaLibraryTopicSuggestions" data-field="topic" value="${mediaLibraryEscape(topic)}" placeholder="Neues Thema"></label>
           ${item.mediaType === "video" ? `<label>Wiedergabe<select data-field="playbackMode"><option value="once"${item.playbackMode !== "loop" ? " selected" : ""}>Einmal abspielen</option><option value="loop"${item.playbackMode === "loop" ? " selected" : ""}>Als Loop wiederholen</option></select></label>` : ""}
+          <div class="media-library-edit-actions">
+            <button class="secondary-action compact-action" type="button" data-action="cancelEdit">Abbrechen</button>
+            ${item.mediaType === "video" ? `<button class="secondary-action compact-action" type="button" data-action="thumbnail">Vorschaubild</button>` : ""}
+            <button class="primary-action compact-action" type="button" data-action="save">Speichern</button>
+          </div>
         </div>` : ""}
     `;
     card.addEventListener("click", async (event) => {
@@ -13905,6 +14502,16 @@ function renderMediaLibraryList() {
       if (action === "edit") {
         editingMediaLibraryItemId = item.id;
         renderMediaLibraryList();
+        return;
+      }
+      if (action === "cancelEdit") {
+        editingMediaLibraryItemId = "";
+        renderMediaLibraryList();
+        return;
+      }
+      if (action === "thumbnail") {
+        event.target.closest("button").disabled = true;
+        await ensureMediaLibraryVideoThumbnail(item, "", { force: true });
         return;
       }
       if (action === "save") {
@@ -14878,8 +15485,11 @@ function resolveCourseDayPlan(planRef) {
 
 function renderCourseNameControls(selectedCourseId = editingCourseId) {
   const isEditing = Boolean(selectedCourseId);
-  courseNameInputGroup?.classList.toggle("is-hidden", isEditing);
+  courseNameInputGroup?.classList.remove("is-hidden");
   courseNameSelectGroup?.classList.toggle("is-hidden", !isEditing);
+  const courseNameLabel = courseNameInputGroup?.querySelector(".field-label");
+  if (courseNameLabel) courseNameLabel.textContent = isEditing ? "Kursname bearbeiten" : "Kursname";
+  if (courseName) courseName.placeholder = isEditing ? "Kurs umbenennen" : "Woche 1 Sprachtraining";
   newCourseButton?.classList.toggle("is-active", !isEditing);
   editCourseButton?.classList.toggle("is-active", isEditing);
   document.querySelector(".courses-panel")?.classList.toggle("is-editing-course", isEditing);
@@ -14939,6 +15549,12 @@ function resetCourseEditor(course = null) {
 }
 
 async function saveCourseFromForm() {
+  const nextCourseName = courseName?.value.trim() || "";
+  if (!nextCourseName) {
+    setCourseEditorState("Bitte einen Kursnamen eingeben.", "warning");
+    courseName?.focus();
+    return;
+  }
   if (!courseDraftPlans.length) {
     setCourseEditorState("Bitte mindestens einen Tagesplan für den Kurs auswählen.", "warning");
     return;
@@ -14948,7 +15564,7 @@ async function saveCourseFromForm() {
   const existingCourse = courses.find((item) => item.id === editingCourseId) || null;
   const course = {
     id: editingCourseId || createId("course"),
-    name: courseName?.value.trim() || "Neuer Kurs",
+    name: nextCourseName,
     description: courseDescription?.value.trim() || "",
     period: existingCourse?.period || "",
     symbol: existingCourse?.symbol || "LS",
@@ -17513,30 +18129,34 @@ function renderLibrary(preferredId = null) {
   const patientRecordings = allRecordings
     .filter((recording) => isRecordingForPatient(recording, selectedPatientId, selectedPatient))
     .sort((a, b) => b.datum.localeCompare(a.datum));
+  const showAllLocalRecordings = !patientRecordings.length && allRecordings.length > 0;
+  const visibleRecordings = showAllLocalRecordings
+    ? [...allRecordings].sort((a, b) => String(b.datum || "").localeCompare(String(a.datum || "")))
+    : patientRecordings;
 
-  libraryTitle.textContent = selectedPatient;
-  recordingCountBadge.textContent = String(patientRecordings.length);
-  patientRecordingCount.textContent = String(patientRecordings.length);
+  libraryTitle.textContent = showAllLocalRecordings ? "Lokale Aufnahmen" : selectedPatient;
+  recordingCountBadge.textContent = String(visibleRecordings.length);
+  patientRecordingCount.textContent = String(visibleRecordings.length);
 
-  const totalDuration = patientRecordings.reduce((sum, recording) => sum + Number(recording.dauerSekunden || 0), 0);
-  const totalVolume = patientRecordings.reduce(
+  const totalDuration = visibleRecordings.reduce((sum, recording) => sum + Number(recording.dauerSekunden || 0), 0);
+  const totalVolume = visibleRecordings.reduce(
     (sum, recording) => sum + Number(recording.durchschnittlicheLautstaerke || 0),
     0,
   );
-  patientAverageDuration.textContent = patientRecordings.length
-    ? formatTime(totalDuration / patientRecordings.length)
+  patientAverageDuration.textContent = visibleRecordings.length
+    ? formatTime(totalDuration / visibleRecordings.length)
     : "00:00";
-  patientAverageVolume.textContent = patientRecordings.length
-    ? String(Math.round(totalVolume / patientRecordings.length))
+  patientAverageVolume.textContent = visibleRecordings.length
+    ? String(Math.round(totalVolume / visibleRecordings.length))
     : "0";
 
   recordingsList.innerHTML = "";
-  updateStatisticsRecordingSelect(patientRecordings, preferredId);
-  renderPlaybackRecordingAccess(patientRecordings, preferredId);
-  renderVoiceProgress(patientRecordings, preferredId);
+  updateStatisticsRecordingSelect(visibleRecordings, preferredId);
+  renderPlaybackRecordingAccess(visibleRecordings, preferredId);
+  renderVoiceProgress(visibleRecordings, preferredId);
   renderAudioAnalysis(getSelectedAnalysisRecording());
 
-  if (!patientRecordings.length) {
+  if (!visibleRecordings.length) {
     const empty = document.createElement("p");
     empty.className = "message";
     empty.textContent = "Noch keine Aufnahme für diesen Patienten.";
@@ -17544,7 +18164,14 @@ function renderLibrary(preferredId = null) {
     return;
   }
 
-  patientRecordings.forEach((recording) => {
+  if (showAllLocalRecordings) {
+    const notice = document.createElement("p");
+    notice.className = "message";
+    notice.textContent = `Für ${selectedPatient} ist keine Aufnahme zugeordnet. Angezeigt werden alle lokal gespeicherten Aufnahmen.`;
+    recordingsList.append(notice);
+  }
+
+  visibleRecordings.forEach((recording) => {
     const item = document.createElement("article");
     item.className = "recording-item";
 
@@ -18174,9 +18801,11 @@ async function openStoredRecording(id) {
 function getPatientRecordings() {
   const selectedPatient = getCurrentPatientName();
   const selectedPatientId = getCurrentPatientId();
-  return allRecordings
+  const patientRecordings = allRecordings
     .filter((recording) => isRecordingForPatient(recording, selectedPatientId, selectedPatient))
     .sort((a, b) => b.datum.localeCompare(a.datum));
+  if (patientRecordings.length || !allRecordings.length) return patientRecordings;
+  return [...allRecordings].sort((a, b) => String(b.datum || "").localeCompare(String(a.datum || "")));
 }
 
 function getCurrentPatientName() {
@@ -18365,6 +18994,25 @@ function formatVoiceAnalysisTime(seconds) {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
+function getVoiceAnalysisMicrophoneErrorMessage(error) {
+  const name = String(error?.name || "");
+  const messageText = String(error?.message || "");
+  const insecureRemoteLink = window.location.protocol !== "https:" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+  if (insecureRemoteLink) {
+    return "Mikrofon wird auf diesem Link vom Browser blockiert. Bitte HTTPS/Firebase-Link verwenden oder lokal am PC testen.";
+  }
+  if (name === "NotAllowedError" || name === "SecurityError") {
+    return "Mikrofon ist blockiert. Bitte Browser-Berechtigung für Mikrofon erlauben und die Seite neu laden.";
+  }
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+    return "Kein Mikrofon gefunden. Bitte Gerät/Mikrofon prüfen.";
+  }
+  if (name === "NotReadableError" || name === "TrackStartError") {
+    return "Mikrofon ist gerade von einer anderen App belegt. Bitte andere Aufnahme/Meeting-App schließen.";
+  }
+  return messageText || "Mikrofon konnte nicht gestartet werden.";
+}
+
 function formatVoiceAnalysisDialogTrainingText(turns = []) {
   return turns
     .map((turn) => normalizeDialogTurn(turn))
@@ -18476,18 +19124,19 @@ async function loadStoredRecordingIntoVoiceAnalysis(id, targetScreen = "evaluati
   }
   const { videoBlob, audioBlob, ...metadata } = storedRecording;
   const storedBlob = videoBlob || audioBlob || null;
-  currentMetadata = metadata;
-  selectedAnalysisRecordingId = metadata.id;
+  const analysisMetadata = await enrichVoiceAnalysisMetadataFromBlob(metadata, storedBlob);
+  currentMetadata = analysisMetadata;
+  selectedAnalysisRecordingId = analysisMetadata.id;
   currentVideoBlob = storedBlob;
-  rawAmplitudes = metadata.rawAmplituden || [];
-  const snapshot = buildVoiceAnalysisPlaybackSnapshot(metadata, storedBlob);
+  rawAmplitudes = analysisMetadata.rawAmplituden || [];
+  const snapshot = buildVoiceAnalysisPlaybackSnapshot(analysisMetadata, storedBlob);
   if (!snapshot) {
     if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = "Aufnahme enthält keine auswertbaren Analysedaten.";
     return false;
   }
   voiceAnalysisEngine.loadSnapshot(snapshot);
-  syncVoiceAnalysisTextTrainingField(metadata);
-  renderPlaybackRecordingAccess(getPatientRecordings(), metadata.id);
+  syncVoiceAnalysisTextTrainingField(analysisMetadata);
+  renderPlaybackRecordingAccess(getPatientRecordings(), analysisMetadata.id);
   updateVoiceAnalysisPlaybackButton();
   renderVoiceAnalysisPlaybackPicker();
   setVoiceAnalysisScreen(targetScreen);
@@ -19907,7 +20556,7 @@ function initializeVoiceAnalysisUi() {
       else await voiceAnalysisEngine.start();
       renderVoiceAnalysis();
     } catch (error) {
-      if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = error?.message || "Mikrofon konnte nicht gestartet werden.";
+      if (voiceAnalysisMessage) voiceAnalysisMessage.textContent = getVoiceAnalysisMicrophoneErrorMessage(error);
     }
   });
   voiceAnalysisPauseButton?.addEventListener("click", () => {
@@ -20026,6 +20675,624 @@ function initializeVoiceAnalysisUi() {
   });
 }
 
+
+const HEARING_DEFAULT_SETTINGS = {
+  frequencies: [250, 500, 1000, 2000, 4000, 8000],
+  toneDurationMs: 900,
+  pauseDurationMs: 350,
+  repetitions: 2,
+  startLevel: 45,
+  headphoneType: "Kopfhörer",
+  testMode: "Schnelltest",
+  masterVolume: 0.28,
+};
+const HEARING_SCREENS = {
+  home: "Hören",
+  test: "Hörtest",
+  audiogram: "Audiogramm",
+  history: "Verlauf",
+  settings: "Testparameter",
+};
+let hearingTests = [];
+let hearingSettings = loadHearingSettings();
+let activeHearingScreen = "home";
+let hearingAudioContext = null;
+let hearingToneStopper = null;
+let hearingState = null;
+let hearingExportUrl = "";
+
+function clampHearingValue(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getHearingContent() {
+  return document.querySelector("#hearingContent");
+}
+
+function getHearingBackButton() {
+  return document.querySelector("#hearingBackButton");
+}
+
+function getHearingScreenTitle() {
+  return document.querySelector("#hearingScreenTitle");
+}
+
+function normalizeHearingSettings(raw = {}) {
+  const rawFrequencies = Array.isArray(raw.frequencies)
+    ? raw.frequencies
+    : String(raw.frequencies || "").split(/[,;\s]+/);
+  const frequencies = rawFrequencies
+    .map(Number)
+    .filter((value) => Number.isFinite(value) && value >= 100 && value <= 12000);
+  return {
+    ...HEARING_DEFAULT_SETTINGS,
+    ...raw,
+    frequencies: frequencies.length ? [...new Set(frequencies)].sort((a, b) => a - b) : HEARING_DEFAULT_SETTINGS.frequencies,
+    toneDurationMs: clampHearingValue(Number(raw.toneDurationMs) || HEARING_DEFAULT_SETTINGS.toneDurationMs, 200, 3000),
+    pauseDurationMs: clampHearingValue(Number(raw.pauseDurationMs) || HEARING_DEFAULT_SETTINGS.pauseDurationMs, 100, 2000),
+    repetitions: clampHearingValue(Number(raw.repetitions) || HEARING_DEFAULT_SETTINGS.repetitions, 1, 5),
+    startLevel: clampHearingValue(Number(raw.startLevel) || HEARING_DEFAULT_SETTINGS.startLevel, 5, 80),
+    masterVolume: clampHearingValue(Number(raw.masterVolume) || HEARING_DEFAULT_SETTINGS.masterVolume, 0.05, 0.9),
+    headphoneType: String(raw.headphoneType || HEARING_DEFAULT_SETTINGS.headphoneType),
+    testMode: String(raw.testMode || HEARING_DEFAULT_SETTINGS.testMode),
+  };
+}
+
+function loadHearingSettings() {
+  try {
+    return normalizeHearingSettings(JSON.parse(localStorage.getItem(HEARING_SETTINGS_KEY) || "{}"));
+  } catch (error) {
+    return normalizeHearingSettings();
+  }
+}
+
+function saveHearingSettings() {
+  localStorage.setItem(HEARING_SETTINGS_KEY, JSON.stringify(hearingSettings));
+}
+
+function loadHearingTestsLocal() {
+  try {
+    return JSON.parse(localStorage.getItem(HEARING_TESTS_KEY) || "[]").filter((test) => test?.id);
+  } catch (error) {
+    return [];
+  }
+}
+
+function persistHearingTestsLocal() {
+  localStorage.setItem(HEARING_TESTS_KEY, JSON.stringify(hearingTests));
+}
+
+async function loadHearingTestsFromCloud() {
+  try {
+    const cloudTests = await loadCloudCollection(HEARING_TESTS_COLLECTION);
+    hearingTests = mergeById(hearingTests, cloudTests).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+    persistHearingTestsLocal();
+    if (document.body.dataset.activeView === "hearing") renderHearingView();
+  } catch (error) {
+    console.warn("Firebase-Hörtests konnten nicht geladen werden", error);
+  }
+}
+
+async function saveHearingTestToCloud(test) {
+  await setDoc(doc(firestore, HEARING_TESTS_COLLECTION, test.id), test);
+}
+
+function getHearingPatientId() {
+  try {
+    return getCurrentPatientId();
+  } catch (error) {
+    return localStorage.getItem(SELECTED_PATIENT_ID_KEY) || "patient-ohne-name";
+  }
+}
+
+function getHearingPatientName() {
+  try {
+    return getCurrentPatientName();
+  } catch (error) {
+    return localStorage.getItem(SELECTED_PATIENT_KEY) || "Demo Patient";
+  }
+}
+
+function getVisibleHearingTests() {
+  const patientId = getHearingPatientId();
+  const patientName = getHearingPatientName();
+  return hearingTests.filter((test) => String(test.patientId || "") === patientId || (!test.patientId && String(test.patientName || "") === patientName));
+}
+
+function getLastHearingTest() {
+  return getVisibleHearingTests()[0] || hearingTests[0] || null;
+}
+
+function formatHearingFrequency(frequency) {
+  return `${Number(frequency).toLocaleString("de-DE")} Hz`;
+}
+
+function formatHearingDate(value) {
+  try {
+    return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  } catch (error) {
+    return "ohne Datum";
+  }
+}
+
+function getHearingRouteScreen() {
+  const screen = String(window.location.hash || "").replace("#hearing", "").replace(/^\/+/, "");
+  return HEARING_SCREENS[screen] ? screen : "home";
+}
+
+function setHearingScreen(screen, updateHash = true) {
+  activeHearingScreen = HEARING_SCREENS[screen] ? screen : "home";
+  if (updateHash) {
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${activeHearingScreen === "home" ? "#hearing" : `#hearing/${activeHearingScreen}`}`);
+  }
+  renderHearingView();
+}
+
+function initializeHearingUi() {
+  hearingTests = loadHearingTestsLocal().sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+  loadHearingTestsFromCloud();
+  getHearingBackButton()?.addEventListener("click", () => setHearingScreen("home"));
+  getHearingContent()?.addEventListener("click", handleHearingClick);
+  getHearingContent()?.addEventListener("change", handleHearingChange);
+  window.addEventListener("hashchange", () => {
+    if (!window.location.hash.startsWith("#hearing")) return;
+    if (document.body.dataset.activeView !== "hearing") {
+      setActiveView("hearing");
+      return;
+    }
+    setHearingScreen(getHearingRouteScreen(), false);
+  });
+}
+
+function handleHearingClick(event) {
+  const screenButton = event.target.closest("[data-hearing-screen]");
+  if (screenButton) {
+    setHearingScreen(screenButton.dataset.hearingScreen);
+    return;
+  }
+  const calibrationButton = event.target.closest("[data-hearing-calibrate]");
+  if (calibrationButton) {
+    const direction = Number(calibrationButton.dataset.hearingCalibrate) || 0;
+    hearingSettings.startLevel = clampHearingValue(hearingSettings.startLevel + direction, 5, 80);
+    saveHearingSettings();
+    renderHearingTest();
+    playHearingTone(1000, hearingSettings.startLevel, "both").catch(showHearingAudioError);
+    return;
+  }
+  if (event.target.closest("[data-hearing-calibration-done]")) {
+    const state = document.querySelector("#hearingCalibrationState");
+    if (state) state.textContent = "Ausgangslautstärke gespeichert.";
+    return;
+  }
+  if (event.target.closest("[data-hearing-start]")) {
+    startHearingTest();
+    return;
+  }
+  if (event.target.closest("[data-hearing-play-tone]")) {
+    playCurrentHearingTone();
+    return;
+  }
+  const answerButton = event.target.closest("[data-hearing-answer]");
+  if (answerButton) {
+    answerHearingTest(answerButton.dataset.hearingAnswer === "heard");
+    return;
+  }
+  if (event.target.closest("[data-hearing-save-settings]")) {
+    collectHearingSettings();
+    saveHearingSettings();
+    renderHearingSettings("Einstellungen gespeichert.");
+    return;
+  }
+  if (event.target.closest("[data-hearing-export]")) exportHearingTestsJson();
+}
+
+function handleHearingChange(event) {
+  if (event.target?.id === "hearingDeviceType") {
+    hearingSettings.headphoneType = event.target.value;
+    saveHearingSettings();
+  }
+}
+
+function showHearingAudioError(error) {
+  const state = document.querySelector("#hearingTestStatus");
+  if (state) state.textContent = error?.message || "Ton konnte nicht abgespielt werden.";
+}
+
+function stopHearingTone() {
+  if (hearingToneStopper) {
+    hearingToneStopper();
+    hearingToneStopper = null;
+  }
+}
+
+async function playHearingTone(frequency, level = hearingSettings.startLevel, ear = "both") {
+  stopHearingTone();
+  const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextConstructor) throw new Error("Dieser Browser unterstützt den Hörtest-Ton nicht.");
+  if (!hearingAudioContext || hearingAudioContext.state === "closed") hearingAudioContext = new AudioContextConstructor();
+  if (hearingAudioContext.state === "suspended") await hearingAudioContext.resume();
+  const now = hearingAudioContext.currentTime;
+  const duration = Math.max(0.2, hearingSettings.toneDurationMs / 1000);
+  const oscillator = hearingAudioContext.createOscillator();
+  const gain = hearingAudioContext.createGain();
+  const panner = hearingAudioContext.createStereoPanner ? hearingAudioContext.createStereoPanner() : null;
+  const volume = clampHearingValue(hearingSettings.masterVolume * Math.pow(10, (Number(level) - 50) / 45), 0.001, 0.85);
+  let resolved = false;
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(Number(frequency) || 1000, now);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(volume, now + 0.04);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(0.08, duration - 0.05));
+  oscillator.connect(gain);
+  if (panner) {
+    panner.pan.value = ear === "left" ? -1 : ear === "right" ? 1 : 0;
+    gain.connect(panner);
+    panner.connect(hearingAudioContext.destination);
+  } else {
+    gain.connect(hearingAudioContext.destination);
+  }
+  return new Promise((resolve) => {
+    const cleanup = () => {
+      if (resolved) return;
+      resolved = true;
+      try { oscillator.disconnect(); } catch (error) {}
+      try { gain.disconnect(); } catch (error) {}
+      try { panner?.disconnect(); } catch (error) {}
+      if (hearingToneStopper === cleanup) hearingToneStopper = null;
+      resolve();
+    };
+    hearingToneStopper = () => {
+      try { oscillator.stop(); } catch (error) {}
+      cleanup();
+    };
+    oscillator.onended = cleanup;
+    oscillator.start(now);
+    oscillator.stop(now + duration);
+  });
+}
+
+function createHearingTestState() {
+  return {
+    id: `hearing_${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    patientId: getHearingPatientId(),
+    patientName: getHearingPatientName(),
+    headphoneType: hearingSettings.headphoneType,
+    settings: { ...hearingSettings, frequencies: [...hearingSettings.frequencies] },
+    ear: "left",
+    earIndex: 0,
+    freqIndex: 0,
+    attempt: 0,
+    step: 20,
+    currentLevel: hearingSettings.startLevel,
+    heardAt: null,
+    results: { left: [], right: [] },
+    finished: false,
+  };
+}
+
+function startHearingTest() {
+  hearingState = createHearingTestState();
+  renderHearingTest();
+  window.setTimeout(() => playCurrentHearingTone(), 160);
+}
+
+function getHearingCurrentFrequency() {
+  return hearingState?.settings?.frequencies?.[hearingState.freqIndex] || hearingSettings.frequencies[0];
+}
+
+function getHearingProgressPercent() {
+  if (!hearingState) return 0;
+  const total = hearingState.settings.frequencies.length * 2;
+  const done = hearingState.earIndex * hearingState.settings.frequencies.length + hearingState.freqIndex;
+  return clampHearingValue(Math.round((done / total) * 100), 0, 100);
+}
+
+async function playCurrentHearingTone() {
+  if (!hearingState || hearingState.finished) return;
+  try {
+    await playHearingTone(getHearingCurrentFrequency(), hearingState.currentLevel, hearingState.ear);
+  } catch (error) {
+    showHearingAudioError(error);
+  }
+}
+
+function answerHearingTest(heard) {
+  if (!hearingState || hearingState.finished) return;
+  if (heard) {
+    hearingState.heardAt = hearingState.heardAt == null ? hearingState.currentLevel : Math.min(hearingState.heardAt, hearingState.currentLevel);
+    hearingState.currentLevel -= hearingState.step;
+  } else {
+    hearingState.currentLevel += hearingState.step;
+  }
+  hearingState.currentLevel = clampHearingValue(Math.round(hearingState.currentLevel), 0, 100);
+  hearingState.step = Math.max(5, Math.round(hearingState.step / 2));
+  hearingState.attempt += 1;
+  const requiredAttempts = Math.max(4, Number(hearingState.settings.repetitions) + 3);
+  if (hearingState.attempt >= requiredAttempts || (hearingState.step <= 5 && hearingState.attempt >= 3)) {
+    finalizeCurrentHearingPoint();
+    return;
+  }
+  renderHearingTest();
+  window.setTimeout(playCurrentHearingTone, hearingState.settings.pauseDurationMs);
+}
+
+function finalizeCurrentHearingPoint() {
+  const frequency = getHearingCurrentFrequency();
+  const threshold = clampHearingValue(Math.round(hearingState.heardAt ?? hearingState.currentLevel), 0, 100);
+  hearingState.results[hearingState.ear].push({ frequency, threshold, attempts: hearingState.attempt });
+  hearingState.freqIndex += 1;
+  if (hearingState.freqIndex >= hearingState.settings.frequencies.length) {
+    hearingState.freqIndex = 0;
+    if (hearingState.ear === "left") {
+      hearingState.ear = "right";
+      hearingState.earIndex = 1;
+    } else {
+      completeHearingTest();
+      return;
+    }
+  }
+  hearingState.attempt = 0;
+  hearingState.step = 20;
+  hearingState.currentLevel = hearingState.settings.startLevel;
+  hearingState.heardAt = null;
+  renderHearingTest();
+  window.setTimeout(playCurrentHearingTone, hearingState.settings.pauseDurationMs);
+}
+
+function summarizeHearingEar(points = []) {
+  if (!points.length) return { average: 0, max: 0, min: 0 };
+  const thresholds = points.map((point) => Number(point.threshold) || 0);
+  return {
+    average: Math.round(thresholds.reduce((sum, value) => sum + value, 0) / thresholds.length),
+    max: Math.max(...thresholds),
+    min: Math.min(...thresholds),
+  };
+}
+
+function summarizeHearingTest(test) {
+  const left = summarizeHearingEar(test.leftEar);
+  const right = summarizeHearingEar(test.rightEar);
+  const difference = Math.abs(left.average - right.average);
+  return {
+    leftAverage: left.average,
+    rightAverage: right.average,
+    difference,
+    resultText: difference >= 20 ? "Links und rechts unterscheiden sich deutlich." : difference >= 10 ? "Leichte Seitenunterschiede sichtbar." : "Beide Seiten wirken ähnlich.",
+  };
+}
+
+function completeHearingTest() {
+  const test = {
+    id: hearingState.id,
+    createdAt: hearingState.createdAt,
+    patientId: hearingState.patientId,
+    patientName: hearingState.patientName,
+    headphoneType: hearingState.headphoneType,
+    deviceInfo: navigator.userAgent,
+    settings: hearingState.settings,
+    leftEar: hearingState.results.left,
+    rightEar: hearingState.results.right,
+    appVersion: String(new URLSearchParams(window.location.search).get("v") || "local"),
+  };
+  test.summary = summarizeHearingTest(test);
+  hearingTests = [test, ...hearingTests.filter((item) => item.id !== test.id)];
+  persistHearingTestsLocal();
+  saveHearingTestToCloud(test).catch((error) => console.warn("Hörtest konnte nicht in Firebase gespeichert werden", error));
+  hearingState.finished = true;
+  hearingState = null;
+  setHearingScreen("audiogram");
+}
+
+function renderHearingView() {
+  const title = getHearingScreenTitle();
+  const backButton = getHearingBackButton();
+  if (title) title.textContent = HEARING_SCREENS[activeHearingScreen] || "Hören";
+  backButton?.classList.toggle("is-hidden", activeHearingScreen === "home");
+  if (activeHearingScreen === "test") renderHearingTest();
+  else if (activeHearingScreen === "audiogram") renderHearingAudiogram();
+  else if (activeHearingScreen === "history") renderHearingHistory();
+  else if (activeHearingScreen === "settings") renderHearingSettings();
+  else renderHearingHome();
+}
+
+function renderHearingHome() {
+  const content = getHearingContent();
+  if (!content) return;
+  const last = getLastHearingTest();
+  content.innerHTML = `
+    <div class="hearing-tile-grid">
+      <button class="hearing-tile" type="button" data-hearing-screen="test"><span class="hearing-tile-icon">Hz</span><strong>Hörtest</strong><small>Töne links und rechts prüfen</small></button>
+      <button class="hearing-tile" type="button" data-hearing-screen="audiogram"><span class="hearing-tile-icon">dB</span><strong>Audiogramm</strong><small>Letzte Messung anzeigen</small></button>
+      <button class="hearing-tile" type="button" data-hearing-screen="history"><span class="hearing-tile-icon">↗</span><strong>Verlauf</strong><small>Frühere Tests vergleichen</small></button>
+      <button class="hearing-tile" type="button" data-hearing-screen="settings"><span class="hearing-tile-icon">Hz</span><strong>Testparameter</strong><small>Frequenzen und Dauer</small></button>
+    </div>
+    <div class="hearing-card">
+      <p class="eyebrow">Letzter Test</p>
+      <strong>${last ? `${formatHearingDate(last.createdAt)} · ${escapeHtml(last.summary?.resultText || "Messung gespeichert")}` : "Noch kein Hörtest gespeichert."}</strong>
+    </div>
+    <div class="hearing-card hearing-disclaimer">Der Hörtest ist eine Orientierung im persönlichen Verlauf. Er ersetzt keine Untersuchung beim HNO-Arzt, Hörakustiker oder Therapeuten.</div>
+  `;
+}
+
+function renderHearingTest() {
+  const content = getHearingContent();
+  if (!content) return;
+  if (!hearingState) {
+    content.innerHTML = `
+      <div class="hearing-card">
+        <p class="eyebrow">Vorbereitung</p>
+        <h3>Kopfhörer aufsetzen</h3>
+        <p>Der Test spielt kurze Sinustöne getrennt links und rechts ab. Wählen Sie eine ruhige Umgebung.</p>
+        <label for="hearingDeviceType">Kopfhörer oder Gerät</label>
+        <select id="hearingDeviceType">
+          ${["Kopfhörer", "In-Ear", "Lautsprecher", "Hörgerät"].map((option) => `<option value="${option}"${option === hearingSettings.headphoneType ? " selected" : ""}>${option}</option>`).join("")}
+        </select>
+      </div>
+      <div class="hearing-card">
+        <p class="eyebrow">Lautstärke kalibrieren</p>
+        <strong>1000 Hz · Startpegel ${hearingSettings.startLevel}</strong>
+        <div class="hearing-button-row">
+          <button type="button" data-hearing-calibrate="-5">Leiser</button>
+          <button type="button" data-hearing-calibrate="5">Lauter</button>
+          <button type="button" data-hearing-calibration-done>Passt</button>
+        </div>
+        <p id="hearingCalibrationState" class="hearing-status">Mit den drei Tasten eine angenehme Ausgangslautstärke einstellen.</p>
+      </div>
+      <button class="primary-action hearing-main-action" type="button" data-hearing-start>Hörtest starten</button>
+    `;
+    return;
+  }
+  const earLabel = hearingState.ear === "left" ? "Linkes Ohr" : "Rechtes Ohr";
+  content.innerHTML = `
+    <div class="hearing-card hearing-active-test">
+      <p class="eyebrow">${earLabel}</p>
+      <h3>${formatHearingFrequency(getHearingCurrentFrequency())}</h3>
+      <div class="hearing-progress"><span style="width:${getHearingProgressPercent()}%"></span></div>
+      <p id="hearingTestStatus" class="hearing-status">Ton ${hearingState.attempt + 1} · Pegel ${hearingState.currentLevel}</p>
+      <button class="secondary-action" type="button" data-hearing-play-tone>Ton wiederholen</button>
+      <div class="hearing-answer-grid">
+        <button class="primary-action" type="button" data-hearing-answer="heard">Gehört</button>
+        <button class="secondary-action" type="button" data-hearing-answer="missed">Nicht gehört</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderHearingAudiogram() {
+  const content = getHearingContent();
+  if (!content) return;
+  const test = getLastHearingTest();
+  if (!test) {
+    content.innerHTML = `<div class="hearing-card"><strong>Noch kein Audiogramm vorhanden.</strong><p>Starten Sie zuerst einen Hörtest.</p></div>`;
+    return;
+  }
+  content.innerHTML = `
+    <div class="hearing-card hearing-summary-grid">
+      <div><span>Links Ø</span><strong>${test.summary?.leftAverage ?? 0}</strong></div>
+      <div><span>Rechts Ø</span><strong>${test.summary?.rightAverage ?? 0}</strong></div>
+      <div><span>Differenz</span><strong>${test.summary?.difference ?? 0}</strong></div>
+    </div>
+    <div class="hearing-card">
+      <canvas id="hearingAudiogramCanvas" width="720" height="360" aria-label="Audiogramm links und rechts"></canvas>
+      <p class="hearing-status">${escapeHtml(test.summary?.resultText || "Messung gespeichert.")}</p>
+    </div>
+    <div class="hearing-card hearing-disclaimer">Die Werte zeigen relative Hörschwellen innerhalb dieser App und sind keine medizinische Diagnose.</div>
+  `;
+  requestAnimationFrame(() => drawHearingAudiogram(test));
+}
+
+function drawHearingAudiogram(test) {
+  const canvas = document.querySelector("#hearingAudiogramCanvas");
+  const context = canvas?.getContext?.("2d");
+  if (!canvas || !context) return;
+  const width = canvas.width;
+  const height = canvas.height;
+  const paddingLeft = 64;
+  const paddingRight = 24;
+  const paddingTop = 30;
+  const paddingBottom = 48;
+  const frequencies = test.settings?.frequencies?.length ? test.settings.frequencies : hearingSettings.frequencies;
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#0f1a22";
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = "rgba(255,255,255,0.18)";
+  context.fillStyle = "rgba(255,255,255,0.78)";
+  context.font = "22px system-ui";
+  [0, 20, 40, 60, 80, 100].forEach((level) => {
+    const y = paddingTop + (level / 100) * (height - paddingTop - paddingBottom);
+    context.beginPath();
+    context.moveTo(paddingLeft, y);
+    context.lineTo(width - paddingRight, y);
+    context.stroke();
+    context.fillText(`${level}`, 12, y + 7);
+  });
+  context.fillText("rel. Schwelle", 10, 24);
+  frequencies.forEach((frequency, index) => {
+    const x = paddingLeft + (index / Math.max(1, frequencies.length - 1)) * (width - paddingLeft - paddingRight);
+    context.fillText(String(frequency), x - 24, height - 14);
+  });
+  const drawEar = (points, color, label) => {
+    context.strokeStyle = color;
+    context.fillStyle = color;
+    context.lineWidth = 5;
+    context.beginPath();
+    points.forEach((point, index) => {
+      const freqIndex = frequencies.indexOf(point.frequency);
+      const x = paddingLeft + ((freqIndex >= 0 ? freqIndex : index) / Math.max(1, frequencies.length - 1)) * (width - paddingLeft - paddingRight);
+      const y = paddingTop + (clampHearingValue(Number(point.threshold) || 0, 0, 100) / 100) * (height - paddingTop - paddingBottom);
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+      context.fillRect(x - 5, y - 5, 10, 10);
+    });
+    context.stroke();
+    context.fillText(label, width - 150, label === "Links" ? 34 : 64);
+  };
+  drawEar(test.leftEar || [], "#2f80ed", "Links");
+  drawEar(test.rightEar || [], "#d6475f", "Rechts");
+}
+
+function renderHearingHistory() {
+  const content = getHearingContent();
+  if (!content) return;
+  const tests = getVisibleHearingTests();
+  const baseline = tests[tests.length - 1];
+  content.innerHTML = `
+    <div class="hearing-card hearing-history-actions">
+      <strong>${tests.length} Hörtests gespeichert</strong>
+      <button type="button" data-hearing-export>JSON exportieren</button>
+    </div>
+    <div class="hearing-list">
+      ${tests.map((test, index) => {
+        const previous = tests[index + 1];
+        const baselineDiff = baseline ? Math.round(((test.summary?.leftAverage + test.summary?.rightAverage) - (baseline.summary?.leftAverage + baseline.summary?.rightAverage)) / 2) : 0;
+        const previousDiff = previous ? Math.round(((test.summary?.leftAverage + test.summary?.rightAverage) - (previous.summary?.leftAverage + previous.summary?.rightAverage)) / 2) : 0;
+        return `<article class="hearing-list-item"><strong>${formatHearingDate(test.createdAt)}</strong><span>${escapeHtml(test.patientName || "Patient")} · ${escapeHtml(test.headphoneType || "Gerät")}</span><small>Baseline ${baselineDiff >= 0 ? "+" : ""}${baselineDiff} · Vorher ${previousDiff >= 0 ? "+" : ""}${previousDiff}</small></article>`;
+      }).join("") || `<div class="hearing-card">Noch keine Tests für diesen Patienten.</div>`}
+    </div>
+    ${hearingExportUrl ? `<a class="hearing-export-link" href="${hearingExportUrl}" download="logosound-hoertests.json">Export herunterladen</a>` : ""}
+  `;
+}
+
+function collectHearingSettings() {
+  const frequencies = String(document.querySelector("#hearingFrequencies")?.value || "")
+    .split(/[,;\s]+/)
+    .map(Number)
+    .filter((value) => Number.isFinite(value));
+  hearingSettings = normalizeHearingSettings({
+    ...hearingSettings,
+    frequencies,
+    toneDurationMs: Number(document.querySelector("#hearingToneDuration")?.value),
+    pauseDurationMs: Number(document.querySelector("#hearingPauseDuration")?.value),
+    repetitions: Number(document.querySelector("#hearingRepetitions")?.value),
+    masterVolume: Number(document.querySelector("#hearingMasterVolume")?.value) / 100,
+    headphoneType: String(document.querySelector("#hearingSettingsHeadphone")?.value || hearingSettings.headphoneType),
+  });
+}
+
+function renderHearingSettings(feedback = "") {
+  const content = getHearingContent();
+  if (!content) return;
+  content.innerHTML = `
+    <div class="hearing-card hearing-settings-grid">
+      <label>Frequenzen<input id="hearingFrequencies" value="${hearingSettings.frequencies.join(", ")}" /></label>
+      <label>Tondauer ms<input id="hearingToneDuration" type="number" min="200" max="3000" step="50" value="${hearingSettings.toneDurationMs}" /></label>
+      <label>Pause ms<input id="hearingPauseDuration" type="number" min="100" max="2000" step="50" value="${hearingSettings.pauseDurationMs}" /></label>
+      <label>Wiederholungen<input id="hearingRepetitions" type="number" min="1" max="5" value="${hearingSettings.repetitions}" /></label>
+      <label>Grundlautstärke<input id="hearingMasterVolume" type="number" min="5" max="90" value="${Math.round(hearingSettings.masterVolume * 100)}" /></label>
+      <label>Kopfhörer<select id="hearingSettingsHeadphone">${["Kopfhörer", "AirPods", "Bluetooth-Kopfhörer", "Kabelgebundene Kopfhörer", "Gerätelautsprecher"].map((option) => `<option value="${option}"${option === hearingSettings.headphoneType ? " selected" : ""}>${option}</option>`).join("")}</select></label>
+    </div>
+    <button class="primary-action hearing-main-action" type="button" data-hearing-save-settings>Einstellungen speichern</button>
+    ${feedback ? `<p class="hearing-feedback">${escapeHtml(feedback)}</p>` : ""}
+  `;
+}
+
+function exportHearingTestsJson() {
+  if (hearingExportUrl) URL.revokeObjectURL(hearingExportUrl);
+  const blob = new Blob([JSON.stringify(getVisibleHearingTests(), null, 2)], { type: "application/json" });
+  hearingExportUrl = URL.createObjectURL(blob);
+  renderHearingHistory();
+}
 recordToEvaluationButton?.addEventListener("click", () => {
   setActiveView("voiceAnalysis");
   setVoiceAnalysisScreen("evaluation");
@@ -20035,6 +21302,9 @@ function setActiveView(viewName) {
   const previousView = document.body.dataset.activeView || "";
   if (previousView === "voiceAnalysis" && viewName !== "voiceAnalysis") pauseVoiceAnalysisPlayers();
   if (viewName !== "voiceAnalysis" && window.location.hash.startsWith("#stimmanalyse")) {
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+  }
+  if (viewName !== "hearing" && window.location.hash.startsWith("#hearing")) {
     window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
   }
   if (viewName === "myCourses" && previousView !== "myCourses") expandedMyCourseAssignmentId = "";
@@ -20072,6 +21342,10 @@ navButtons.forEach((button) => {
     setVoiceAnalysisScreen(getVoiceAnalysisRouteScreen(), false);
   }
 
+  if (viewName === "hearing") {
+    setHearingScreen(getHearingRouteScreen(), false);
+  }
+
   if (["dailyPlans", "courses", "relaxMusic", "mediaLibrary", "myCourses"].includes(viewName)) {
     renderCourseViews();
   }
@@ -20099,6 +21373,7 @@ function updateTopBarTitle(viewName) {
     history: "Auswertung",
     stats: "Übungsanalyse",
     voiceAnalysis: "Stimmanalyse",
+    hearing: "Hören",
     patients: "Patienten",
     dailyPlans: "Tagespläne",
     courses: "Kurse",
@@ -20146,10 +21421,12 @@ async function getRecording(id) {
   const store = transaction.objectStore(STORE_NAME);
   const request = store.get(id);
 
-  return new Promise((resolve, reject) => {
+  const localRecording = await new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+  if (localRecording) return localRecording;
+  return getCloudRecording(id);
 }
 
 async function getAllRecordings() {
@@ -20158,7 +21435,7 @@ async function getAllRecordings() {
   const store = transaction.objectStore(STORE_NAME);
   const request = store.getAll();
 
-  return new Promise((resolve, reject) => {
+  const localRecordings = await new Promise((resolve, reject) => {
     request.onsuccess = () =>
       resolve(
         request.result.map((recording) => {
@@ -20172,6 +21449,62 @@ async function getAllRecordings() {
       );
     request.onerror = () => reject(request.error);
   });
+  const cloudRecordings = await getCloudRecordings().catch((error) => {
+    console.warn("Firebase-Aufnahmen konnten nicht geladen werden", error);
+    return [];
+  });
+  const merged = new Map();
+  cloudRecordings.forEach((recording) => merged.set(recording.id, recording));
+  localRecordings.forEach((recording) => merged.set(recording.id, { ...merged.get(recording.id), ...recording }));
+  return [...merged.values()];
+}
+
+async function getCloudRecordings() {
+  const snapshot = await getDocs(collection(firestore, "recordings"));
+  return snapshot.docs.map((documentSnapshot) => normalizeCloudRecordingMetadata({
+    id: documentSnapshot.id,
+    ...documentSnapshot.data(),
+  }));
+}
+
+async function getCloudRecording(id) {
+  if (!id) return null;
+  const snapshot = await getDoc(doc(firestore, "recordings", id));
+  if (!snapshot.exists()) return null;
+  const metadata = normalizeCloudRecordingMetadata({ id: snapshot.id, ...snapshot.data() });
+  const videoBlob = await getCloudRecordingBlob(metadata);
+  if (!videoBlob) return metadata;
+  const localCopy = { ...metadata, videoBlob };
+  saveRecording(metadata, videoBlob).catch((error) => {
+    console.warn("Firebase-Aufnahme konnte nicht lokal zwischengespeichert werden", error);
+  });
+  return localCopy;
+}
+
+async function getCloudRecordingBlob(metadata) {
+  const downloadUrl = metadata?.videoDownloadUrl || metadata?.audioDownloadUrl || "";
+  if (downloadUrl) {
+    const response = await fetch(downloadUrl);
+    if (!response.ok) throw new Error("Firebase-Aufnahme konnte nicht geladen werden.");
+    const blob = await response.blob();
+    return blob?.size ? blob : null;
+  }
+  if (metadata?.firebaseVideoPath) {
+    const url = await getDownloadURL(ref(storage, metadata.firebaseVideoPath));
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Firebase-Aufnahme konnte nicht geladen werden.");
+    const blob = await response.blob();
+    return blob?.size ? blob : null;
+  }
+  return null;
+}
+
+function normalizeCloudRecordingMetadata(metadata = {}) {
+  return {
+    ...metadata,
+    patientName: metadata.patientName || "Demo Patient",
+    patientId: metadata.patientId || findPatientProfileByName(metadata.patientName || "")?.id || slugify(metadata.patientName || "Demo Patient"),
+  };
 }
 
 async function deleteRecording(id) {
@@ -20246,20 +21579,10 @@ function transactionDone(transaction) {
     transaction.onabort = () => reject(transaction.error);
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+initializeHearingUi();
+if (window.location.hash.startsWith("#hearing")) {
+  setActiveView("hearing");
+}
 
 
 

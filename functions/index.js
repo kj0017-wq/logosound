@@ -235,7 +235,8 @@ exports.mediaLibrary = onRequest(
             return;
           }
           const item = itemSnapshot.data();
-          const storagePath = String(item.storagePath || "");
+          const wantsThumbnail = String(request.query?.thumbnail || "") === "1";
+          const storagePath = String(wantsThumbnail ? item.thumbnailPath || "" : item.storagePath || "");
           if (!storagePath) {
             response.status(404).json({ error: "media-file-not-found" });
             return;
@@ -272,13 +273,15 @@ exports.mediaLibrary = onRequest(
           }
 
           const contentLength = fileSize > 0 ? end - start + 1 : 0;
-          const responseMimeType = inferMediaMimeType(
-            item.mimeType || fileMetadata.contentType,
-            item.fileName || storagePath,
-          );
+          const responseMimeType = wantsThumbnail
+            ? "image/jpeg"
+            : inferMediaMimeType(
+                item.mimeType || fileMetadata.contentType,
+                item.fileName || storagePath,
+              );
           response.set("Content-Type", responseMimeType);
-          response.set("Content-Disposition", `inline; filename="${safeStorageFileName(item.fileName || "medium")}"`);
-          response.set("Cache-Control", "public, max-age=3600");
+          response.set("Content-Disposition", `inline; filename="${safeStorageFileName(wantsThumbnail ? "thumbnail.jpg" : item.fileName || "medium")}"`);
+          response.set("Cache-Control", wantsThumbnail ? "public, max-age=31536000, immutable" : "public, max-age=3600");
           response.set("X-Content-Type-Options", "nosniff");
           response.set("Accept-Ranges", "bytes");
           if (fileSize > 0) response.set("Content-Length", String(contentLength));
@@ -324,6 +327,58 @@ exports.mediaLibrary = onRequest(
     }
 
     if (request.method === "POST") {
+      if (String(request.query?.thumbnail || "") === "1") {
+        try {
+          const id = String(request.query?.id || request.get("X-Media-Id") || "").trim();
+          const rawBody = Buffer.isBuffer(request.rawBody) ? request.rawBody : Buffer.from(request.rawBody || "");
+          if (!id || !rawBody.length) {
+            response.status(400).json({ error: "missing-thumbnail-data" });
+            return;
+          }
+          if (rawBody.length > 1024 * 1024) {
+            response.status(413).json({ error: "thumbnail-too-large", maxMegabytes: 1 });
+            return;
+          }
+          const encodedMetadata = String(request.get("X-Media-Thumbnail-Metadata") || "");
+          const thumbnailMetadata = encodedMetadata
+            ? JSON.parse(decodeURIComponent(encodedMetadata))
+            : {};
+          const documentRef = collectionRef.doc(id);
+          const itemSnapshot = await documentRef.get();
+          if (!itemSnapshot.exists) {
+            response.status(404).json({ error: "media-not-found" });
+            return;
+          }
+          const thumbnailPath = `media-library/${id}/thumbnail.jpg`;
+          await admin.storage().bucket(STORAGE_BUCKET).file(thumbnailPath).save(rawBody, {
+            resumable: false,
+            metadata: {
+              contentType: inferMediaMimeType(request.get("Content-Type") || "image/jpeg", "thumbnail.jpg"),
+              cacheControl: "public, max-age=31536000",
+            },
+          });
+          const now = new Date().toISOString();
+          const thumbnailUrl = `/api/media-library?file=${encodeURIComponent(id)}&thumbnail=1&v=${encodeURIComponent(now)}`;
+          const updated = {
+            ...itemSnapshot.data(),
+            id,
+            thumbnailPath,
+            thumbnailUrl,
+            videoWidth: Number(thumbnailMetadata.videoWidth || 0) || itemSnapshot.data()?.videoWidth,
+            videoHeight: Number(thumbnailMetadata.videoHeight || 0) || itemSnapshot.data()?.videoHeight,
+            aspectRatio: String(thumbnailMetadata.aspectRatio || itemSnapshot.data()?.aspectRatio || ""),
+            thumbnailDataUrl: admin.firestore.FieldValue.delete(),
+            updatedAt: now,
+          };
+          await documentRef.set(updated, { merge: true });
+          const savedSnapshot = await documentRef.get();
+          response.status(200).json({ ok: true, item: { id, ...savedSnapshot.data() } });
+        } catch (error) {
+          console.error("Media thumbnail upload failed", error);
+          response.status(500).json({ error: "media-thumbnail-upload-failed" });
+        }
+        return;
+      }
       if (String(request.query?.upload || "") === "1") {
         try {
           const encodedMetadata = String(request.get("X-Media-Metadata") || "");
@@ -403,8 +458,10 @@ exports.mediaLibrary = onRequest(
       try {
         const itemSnapshot = await collectionRef.doc(id).get();
         const storagePath = itemSnapshot.exists ? String(itemSnapshot.data()?.storagePath || "") : "";
+        const thumbnailPath = itemSnapshot.exists ? String(itemSnapshot.data()?.thumbnailPath || "") : "";
         await collectionRef.doc(id).delete();
         if (storagePath) await admin.storage().bucket(STORAGE_BUCKET).file(storagePath).delete({ ignoreNotFound: true });
+        if (thumbnailPath) await admin.storage().bucket(STORAGE_BUCKET).file(thumbnailPath).delete({ ignoreNotFound: true });
         response.status(200).json({ ok: true, deleted: id });
       } catch (error) {
         console.error("Media library delete failed", error);
@@ -609,6 +666,7 @@ exports.chatgpt = onRequest(
     const systemPrompt = String(request.body?.systemPrompt || "").trim();
     const exercise = request.body?.exercise || {};
     const editorPrompt = String(request.body?.editorPrompt || "").trim();
+    const mediaDescription = request.body?.mediaDescription || null;
     let apiKey = requestApiKey;
     if (!apiKey || !apiKey.startsWith("sk-")) {
       const snapshot = await admin.firestore().collection(SETTINGS_COLLECTION).doc(CHATGPT_SETTINGS_DOC).get().catch(() => null);
@@ -618,6 +676,130 @@ exports.chatgpt = onRequest(
 
     if (!apiKey || !apiKey.startsWith("sk-")) {
       response.status(400).json({ error: "missing-openai-api-key" });
+      return;
+    }
+
+    if (mediaDescription && typeof mediaDescription === "object") {
+      try {
+        const title = String(mediaDescription.title || "Medium").slice(0, 140);
+        const mediaType = String(mediaDescription.mediaType || "media").slice(0, 40);
+        const topic = String(mediaDescription.topic || "Kein Thema").slice(0, 100);
+        const kind = String(mediaDescription.kind || "exercise").slice(0, 40);
+        const duration = String(mediaDescription.durationLabel || "").slice(0, 40);
+        const dimensions = String(mediaDescription.dimensions || "").slice(0, 80);
+        const imageUrl = String(mediaDescription.thumbnailDataUrl || mediaDescription.thumbnailUrl || "").trim();
+        const content = [
+          {
+            type: "input_text",
+            text: [
+              "Analysiere das Thumbnail bzw. Vorschaubild und erstelle daraus eine kurze deutsche Medienbeschreibung fuer LogoSound.",
+              "Die Beschreibung soll neutral, konkret und gut fuer eine Medienbibliothek geeignet sein.",
+              "Keine Diagnose, keine Therapiebehauptung, keine Markdown-Zeichen.",
+              "Maximal zwei kurze Saetze.",
+              "",
+              `Titel: ${title}`,
+              `Medientyp: ${mediaType}`,
+              `Verwendung: ${kind}`,
+              `Thema: ${topic}`,
+              duration ? `Dauer: ${duration}` : "",
+              dimensions ? `Format: ${dimensions}` : "",
+            ].filter(Boolean).join("\n"),
+          },
+        ];
+        if (/^(data:image\/|https?:\/\/)/i.test(imageUrl)) {
+          content.push({ type: "input_image", image_url: imageUrl });
+        }
+
+        const openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            input: [
+              {
+                role: "system",
+                content: [
+                  {
+                    type: "input_text",
+                    text: "Du beschreibst Medieninhalte fuer eine deutsche logopaedische WebApp kurz, sachlich und alltagstauglich.",
+                  },
+                ],
+              },
+              {
+                role: "user",
+                content,
+              },
+            ],
+            max_output_tokens: 700,
+          }),
+        });
+
+        const payload = await openAiResponse.json().catch(() => ({}));
+        const retryWithoutImage = async (warning) => {
+          const retryResponse = await fetch(OPENAI_RESPONSES_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model,
+              input: [
+                {
+                  role: "system",
+                  content: [
+                    {
+                      type: "input_text",
+                      text: "Du beschreibst Medieninhalte fuer eine deutsche logopaedische WebApp kurz, sachlich und alltagstauglich. Antworte zwingend mit ein bis zwei deutschen Saetzen.",
+                    },
+                  ],
+                },
+                {
+                  role: "user",
+                  content: content.filter((entry) => entry.type !== "input_image"),
+                },
+              ],
+              max_output_tokens: 700,
+            }),
+          });
+          const retryPayload = await retryResponse.json().catch(() => ({}));
+          const retryText = extractOpenAiText(retryPayload).trim();
+          if (retryResponse.ok && retryText) {
+            response.status(200).json({ text: retryText.slice(0, 700), warning });
+            return true;
+          }
+          return false;
+        };
+        if (!openAiResponse.ok) {
+          const detail = String(payload?.error?.message || payload?.error?.code || payload?.error || "openai-media-description-failed").slice(0, 220);
+          console.error("OpenAI media description failed", openAiResponse.status, detail);
+          if (await retryWithoutImage(detail || "image-analysis-failed")) return;
+          response.status(502).json({ error: detail || "openai-media-description-failed" });
+          return;
+        }
+
+        const text = extractOpenAiText(payload).trim();
+        if (!text) {
+          console.error("OpenAI media description returned empty text");
+          if (await retryWithoutImage("openai-empty-response")) return;
+          const metadataText = [
+            `${title} ist ein ${mediaType === "video" ? "Video" : mediaType} fuer LogoSound.`,
+            duration || dimensions
+              ? `Es kann als ${kind} genutzt werden${duration ? ` und dauert ca. ${duration}` : ""}${dimensions ? ` (${dimensions})` : ""}.`
+              : `Es kann als ${kind} in Uebungen oder Tagesplaenen genutzt werden.`,
+          ].join(" ");
+          response.status(200).json({ text: metadataText.slice(0, 700), warning: "openai-empty-response" });
+          return;
+        }
+
+        response.status(200).json({ text: text.slice(0, 700) });
+      } catch (error) {
+        console.error("ChatGPT media description function failed", error);
+        response.status(500).json({ error: "chatgpt-media-description-request-failed" });
+      }
       return;
     }
 

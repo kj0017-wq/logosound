@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   color-scheme: light;
   --ink: #17202a;
   --muted: #637083;
@@ -4759,7 +4759,7 @@ dd {
 }
 
 .is-view-hidden {
-  display: none;
+  display: none !important;
 }
 
 .bottom-nav {
@@ -5648,6 +5648,10 @@ body.breathing-exercise-active .camera-panel {
   .breathing-phase { font-size: 2.2rem; }
 }
 .media-library-player {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin: 0 0 16px;
   padding: 10px;
   border: 1px solid #bdd9df;
@@ -5672,6 +5676,9 @@ body.breathing-exercise-active .camera-panel {
 
 .media-library-player-stage {
   display: grid;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 176px;
   place-items: center;
   overflow: hidden;
@@ -5685,6 +5692,7 @@ body.breathing-exercise-active .camera-panel {
 .media-library-player-stage img {
   display: block;
   width: 100%;
+  max-width: 100%;
   max-height: min(52vh, 420px);
   object-fit: contain;
 }
@@ -5808,6 +5816,26 @@ body.breathing-exercise-active .camera-panel {
 .media-library-card-actions { align-self: center; gap: 5px; }
 .media-library-card .icon-button { width: 38px; min-width: 38px; height: 38px; border-radius: 50%; font-size: 19px; }
 .media-library-card .danger-action { color: #a83046; background: #fde7ec; }
+.media-library-card-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #e8f6f8;
+  color: #08777d;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+.media-library-card-status[data-state="success"] { background: #def7e8; color: #147640; }
+.media-library-card-status[data-state="warning"] { background: #fff3cf; color: #7a5a00; }
+.media-library-card-status[data-state="error"] { background: #fde4ea; color: #a12c42; }
+.media-description-suggest {
+  width: auto;
+  min-height: 38px;
+  margin: -4px 0 4px;
+  padding: 0 12px;
+  justify-self: start;
+}
 
 .media-library-edit-fields {
   display: grid;
@@ -5821,10 +5849,25 @@ body.breathing-exercise-active .camera-panel {
 .media-library-edit-fields label { display: grid; gap: 4px; color: #52677d; font-size: 12px; font-weight: 800; }
 .media-library-edit-fields input,
 .media-library-edit-fields select { min-width: 0; height: 36px; border: 1px solid #b8d7dc; border-radius: 6px; padding: 0 8px; color: #172533; background: #ffffff; font: inherit; }
+.media-library-edit-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.media-library-edit-actions .compact-action {
+  width: auto;
+  min-height: 38px;
+  padding: 0 14px;
+}
 
 @media (max-width: 520px) {
   .media-library-card { grid-template-columns: minmax(0, 1fr) auto; }
   .media-library-edit-fields { grid-template-columns: 1fr; }
+  .media-library-edit-actions { justify-content: stretch; }
+  .media-library-edit-actions .compact-action { flex: 1 1 110px; }
   .media-library-thumbnail { width: 58px; height: 58px; flex-basis: 58px; }
   .media-library-card-actions { gap: 3px; }
   .media-library-card .icon-button { width: 38px; min-width: 38px; height: 38px; font-size: 19px; }
@@ -6085,8 +6128,17 @@ body.course-recording-mode.recording-focus:not(.recording-overview) .camera-pane
   z-index: 1300;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  max-width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  min-width: 0;
   margin: 0;
   padding: clamp(16px, 4vw, 28px);
+  overflow: hidden;
+  overscroll-behavior: none;
   border: 0;
   border-radius: 0;
   background: rgba(8, 18, 28, 0.98);
@@ -6101,8 +6153,12 @@ body.course-recording-mode.recording-focus:not(.recording-overview) .camera-pane
 }
 
 .media-library-player.is-overlay-open .media-library-player-stage {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 0;
   height: 100%;
+  max-height: 100%;
   border: 0;
   border-radius: 8px;
   background: #07111a;
@@ -6112,8 +6168,11 @@ body.course-recording-mode.recording-focus:not(.recording-overview) .camera-pane
 .media-library-player.is-overlay-open .media-library-player-stage video,
 .media-library-player.is-overlay-open .media-library-player-stage img {
   width: 100%;
+  max-width: 100%;
   height: 100%;
-  max-height: none;
+  max-height: 100%;
+  min-height: 0;
+  min-width: 0;
   object-fit: contain;
 }
 
@@ -6141,10 +6200,21 @@ body.course-recording-mode.recording-focus:not(.recording-overview) .camera-pane
 
 body.has-media-library-player-overlay {
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 @media (max-width: 560px) {
-  .media-library-player.is-overlay-open { padding: 14px; }
+  .media-library-player.is-overlay-open {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    padding: 10px;
+  }
+  .media-library-player.is-overlay-open .media-library-player-title {
+    min-width: 0;
+    padding-right: 48px;
+  }
   .media-library-player.is-overlay-open .media-library-player-stage { border-radius: 6px; }
 }
 
@@ -7790,6 +7860,251 @@ body.course-breathing-active.breathing-preview-idle .breathing-course-actions {
 }
 
 
+
+
+
+
+.hearing-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+}
+
+.hearing-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.hearing-back-button {
+  border: 1px solid rgba(15, 139, 141, 0.35);
+  border-radius: 8px;
+  background: #e8f8f8;
+  color: #007477;
+  font-weight: 800;
+  padding: 10px 12px;
+}
+
+.hearing-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hearing-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.hearing-tile,
+.hearing-card {
+  border: 1px solid rgba(15, 139, 141, 0.22);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f7ffff, #e9f8f8);
+  box-shadow: 0 10px 30px rgba(15, 139, 141, 0.08);
+}
+
+.hearing-tile {
+  min-height: 116px;
+  padding: 14px;
+  color: #14202c;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hearing-tile strong {
+  font-size: 1rem;
+}
+
+.hearing-tile small,
+.hearing-card p,
+.hearing-status,
+.hearing-list-item small,
+.hearing-list-item span {
+  color: #5e6b7d;
+  font-weight: 700;
+}
+
+.hearing-tile-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #d7f2f2;
+  color: #007477;
+  font-weight: 900;
+}
+
+.hearing-card {
+  padding: 14px;
+}
+
+.hearing-card h3 {
+  margin: 4px 0 10px;
+  font-size: 1.45rem;
+}
+
+.hearing-card label,
+.hearing-settings-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #5e6b7d;
+  font-weight: 800;
+}
+
+.hearing-card select,
+.hearing-settings-grid input,
+.hearing-settings-grid select {
+  width: 100%;
+  border: 1px solid rgba(15, 139, 141, 0.28);
+  border-radius: 8px;
+  background: #fff;
+  color: #14202c;
+  font: inherit;
+  font-weight: 800;
+  padding: 12px;
+}
+
+.hearing-button-row,
+.hearing-answer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.hearing-answer-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.hearing-button-row button,
+.hearing-history-actions button,
+.hearing-main-action,
+.hearing-answer-grid button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.hearing-main-action {
+  width: 100%;
+  color: white;
+  background: #0f8b8d;
+}
+
+.hearing-progress {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #d8e7ea;
+}
+
+.hearing-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #0f8b8d;
+}
+
+.hearing-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hearing-summary-grid div {
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.hearing-summary-grid span {
+  display: block;
+  color: #5e6b7d;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.hearing-summary-grid strong {
+  color: #007477;
+  font-size: 1.5rem;
+}
+
+#hearingAudiogramCanvas {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 8px;
+  background: #0f1a22;
+}
+
+.hearing-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hearing-list-item {
+  border: 1px solid rgba(15, 139, 141, 0.2);
+  border-radius: 8px;
+  background: #fff;
+  padding: 12px;
+  display: grid;
+  gap: 3px;
+}
+
+.hearing-history-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hearing-history-actions button {
+  padding: 0 12px;
+  background: #d7f2f2;
+  color: #007477;
+}
+
+.hearing-settings-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.hearing-feedback,
+.hearing-export-link {
+  display: block;
+  border-radius: 8px;
+  background: #dcf7e4;
+  color: #137b40;
+  font-weight: 900;
+  padding: 12px;
+  text-decoration: none;
+}
+
+.hearing-disclaimer {
+  background: #fff7dc;
+  color: #5d4b14;
+  font-weight: 800;
+}
+
+@media (min-width: 720px) {
+  .hearing-tile-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .hearing-settings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
 
 

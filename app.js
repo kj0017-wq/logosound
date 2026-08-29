@@ -138,6 +138,19 @@ const exerciseName = document.querySelector("#exerciseName");
 const recordingExerciseShortcuts = document.querySelector("#recordingExerciseShortcuts");
 const previewExerciseButton = document.querySelector("#previewExerciseButton");
 const recordToEvaluationButton = document.querySelector("#recordToEvaluationButton");
+const recordingMetronome = document.querySelector("#recordingMetronome");
+const recordingMetronomeToggle = document.querySelector("#recordingMetronomeToggle");
+const recordingMetronomePanel = document.querySelector("#recordingMetronomePanel");
+const recordingMetronomeBpm = document.querySelector("#recordingMetronomeBpm");
+const recordingMetronomeBpmLabel = document.querySelector("#recordingMetronomeBpmLabel");
+const recordingMetronomeBpmValue = document.querySelector("#recordingMetronomeBpmValue");
+const recordingMetronomeMinus = document.querySelector("#recordingMetronomeMinus");
+const recordingMetronomePlus = document.querySelector("#recordingMetronomePlus");
+const recordingMetronomeLinked = document.querySelector("#recordingMetronomeLinked");
+const recordingMetronomeTone = document.querySelector("#recordingMetronomeTone");
+const recordingMetronomeVisual = document.querySelector("#recordingMetronomeVisual");
+const recordingMetronomeVibration = document.querySelector("#recordingMetronomeVibration");
+const recordingMetronomeVolume = document.querySelector("#recordingMetronomeVolume");
 const previewSessionBar = document.querySelector("#previewSessionBar");
 const previewSessionLabel = document.querySelector("#previewSessionLabel");
 const previewStopButton = document.querySelector("#previewStopButton");
@@ -156,6 +169,10 @@ const editorSentenceBuilder = document.querySelector("#editorSentenceBuilder");
 const editorSentenceInput = document.querySelector("#editorSentenceInput");
 const addEditorSentenceButton = document.querySelector("#addEditorSentenceButton");
 const editorSentenceList = document.querySelector("#editorSentenceList");
+const editorPacingBoardBuilder = document.querySelector("#editorPacingBoardBuilder");
+const editorPacingUnitInput = document.querySelector("#editorPacingUnitInput");
+const addEditorPacingUnitButton = document.querySelector("#addEditorPacingUnitButton");
+const editorPacingUnitList = document.querySelector("#editorPacingUnitList");
 const editorDialogBuilder = document.querySelector("#editorDialogBuilder");
 const editorDialogList = document.querySelector("#editorDialogList");
 const addEditorDialogTurnButton = document.querySelector("#addEditorDialogTurnButton");
@@ -216,6 +233,18 @@ const exerciseIntroTitle = document.querySelector("#exerciseIntroTitle");
 const exerciseIntroText = document.querySelector("#exerciseIntroText");
 const exerciseIntroState = document.querySelector("#exerciseIntroState");
 const karaokeOverlay = document.querySelector("#karaokeOverlay");
+const pacingBoardOverlay = document.querySelector("#pacingBoardOverlay");
+const pacingBoardTitle = document.querySelector("#pacingBoardTitle");
+const pacingBoardHint = document.querySelector("#pacingBoardHint");
+const pacingBoardUnits = document.querySelector("#pacingBoardUnits");
+const pacingBoardPlayButton = document.querySelector("#pacingBoardPlayButton");
+const pacingBoardPauseButton = document.querySelector("#pacingBoardPauseButton");
+const pacingBoardPrevButton = document.querySelector("#pacingBoardPrevButton");
+const pacingBoardPlusButton = document.querySelector("#pacingBoardPlusButton");
+const pacingBoardMinusButton = document.querySelector("#pacingBoardMinusButton");
+const pacingBoardSpeedValue = document.querySelector("#pacingBoardSpeedValue");
+const pacingBoardMetronomeButton = document.querySelector("#pacingBoardMetronomeButton");
+const pacingBoardHomeButton = document.querySelector("#pacingBoardHomeButton");
 const breathingOverlay = document.querySelector("#breathingOverlay");
 const breathingBall = document.querySelector("#breathingBall");
 const breathingPhase = document.querySelector("#breathingPhase");
@@ -532,6 +561,252 @@ function setReferenceToneButtonPlaying(isPlaying) {
   if (label) label.textContent = isPlaying ? "Stop" : "Start";
 }
 
+let metronomeState;
+let metronomeAudioContext = null;
+let metronomeSchedulerId = 0;
+let metronomeNextBeatTime = 0;
+let metronomeBeatIndex = 0;
+let metronomeStartedAt = 0;
+let metronomeRecordingStartedAt = 0;
+let metronomeBeatTimes = [];
+
+function loadMetronomeSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(METRONOME_SETTINGS_KEY) || "{}");
+    return normalizeMetronomeSettings(saved);
+  } catch (error) {
+    return normalizeMetronomeSettings({});
+  }
+}
+
+function normalizeMetronomeSettings(settings = {}) {
+  const minBpm = Math.max(40, Math.min(120, Math.round(Number(settings.minBpm || 40))));
+  const maxBpm = Math.max(minBpm, Math.min(120, Math.round(Number(settings.maxBpm || 120))));
+  const bpm = Math.max(minBpm, Math.min(maxBpm, Math.round(Number(settings.bpm || settings.defaultBpm || 72))));
+  let tone = settings.tone !== false;
+  let visual = settings.visual !== false;
+  let vibration = Boolean(settings.vibration);
+  if (!tone && !visual && !vibration) visual = true;
+  return {
+    enabled: Boolean(settings.enabled),
+    bpm,
+    minBpm,
+    maxBpm,
+    volume: Math.max(0, Math.min(100, Math.round(Number(settings.volume ?? 45)))),
+    tone,
+    visual,
+    vibration,
+    beatMode: ["syllable", "word", "unit", "free"].includes(settings.beatMode) ? settings.beatMode : "unit",
+    patientCanAdjust: settings.patientCanAdjust !== false,
+    autoIncrease: Boolean(settings.autoIncrease),
+    linkedToKaraoke: Boolean(settings.linkedToKaraoke),
+  };
+}
+
+function saveMetronomeSettings() {
+  localStorage.setItem(METRONOME_SETTINGS_KEY, JSON.stringify(metronomeState));
+}
+
+async function ensureMetronomeAudioContext() {
+  const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextConstructor) return null;
+  if (!metronomeAudioContext || metronomeAudioContext.state === "closed") {
+    metronomeAudioContext = new AudioContextConstructor();
+  }
+  if (metronomeAudioContext.state === "suspended") await metronomeAudioContext.resume();
+  return metronomeAudioContext;
+}
+
+function getMetronomeExerciseConfig(exercise = getActiveRecordingExercise()) {
+  const mode = normalizeEditorExerciseModeValue(exercise?.mode || "");
+  const config = normalizeMetronomeSettings(exercise?.metronome || {});
+  const available = exercise?.metronome?.available ?? METRONOME_SUPPORTED_MODES.has(mode || "syllables");
+  return {
+    ...config,
+    available: Boolean(available),
+    enabled: Boolean(metronomeState.enabled),
+  };
+}
+
+function isMetronomeAvailableForCurrentExercise() {
+  return getMetronomeExerciseConfig().available;
+}
+
+function getBpmForKaraokeSpeed(speed = recordingKaraokeSpeed?.value || 3) {
+  const timing = EDITOR_SPEEDS[clampRecordingKaraokeSpeed(speed)] || EDITOR_SPEEDS[3];
+  const secondsPerUnit = Math.max(0.5, Number(timing.wordSeconds || 1));
+  return Math.max(40, Math.min(120, Math.round(60 / secondsPerUnit)));
+}
+
+function getKaraokeSpeedForBpm(bpm = metronomeState.bpm) {
+  const target = Math.max(40, Math.min(120, Number(bpm) || 72));
+  return Number(Object.keys(EDITOR_SPEEDS).reduce((bestSpeed, speed) => {
+    const currentBpm = getBpmForKaraokeSpeed(speed);
+    const bestBpm = getBpmForKaraokeSpeed(bestSpeed);
+    return Math.abs(currentBpm - target) < Math.abs(bestBpm - target) ? speed : bestSpeed;
+  }, "3"));
+}
+
+function syncMetronomeFromKaraokeSpeed() {
+  if (!metronomeState.linkedToKaraoke) return;
+  metronomeState.bpm = getBpmForKaraokeSpeed(recordingKaraokeSpeed?.value || 3);
+  saveMetronomeSettings();
+  updateRecordingMetronomeUi();
+}
+
+function syncKaraokeSpeedFromMetronome() {
+  if (!metronomeState.linkedToKaraoke) return;
+  updateRecordingKaraokeSpeed(getKaraokeSpeedForBpm(metronomeState.bpm), { skipMetronomeSync: true });
+}
+
+function updateRecordingMetronomeUi() {
+  if (!recordingMetronome) return;
+  const config = getMetronomeExerciseConfig();
+  recordingMetronome.classList.toggle("is-hidden", !config.available);
+  recordingMetronome.classList.toggle("is-on", metronomeState.enabled);
+  recordingMetronome.classList.toggle("is-running", Boolean(metronomeSchedulerId));
+  if (recordingMetronomeToggle) {
+    recordingMetronomeToggle.setAttribute("aria-pressed", String(metronomeState.enabled));
+    recordingMetronomeToggle.setAttribute("aria-label", metronomeState.enabled ? "Metronom ausschalten" : "Metronom einschalten");
+    recordingMetronomeToggle.title = metronomeState.enabled ? "Metronom ausschalten" : "Metronom einschalten";
+  }
+  if (recordingMetronomeBpm) {
+    recordingMetronomeBpm.min = String(config.minBpm);
+    recordingMetronomeBpm.max = String(config.maxBpm);
+    recordingMetronomeBpm.value = String(metronomeState.bpm);
+    recordingMetronomeBpm.disabled = !config.patientCanAdjust;
+  }
+  if (recordingMetronomeBpmLabel) recordingMetronomeBpmLabel.textContent = String(metronomeState.bpm);
+  if (recordingMetronomeBpmValue) recordingMetronomeBpmValue.textContent = String(metronomeState.bpm);
+  if (recordingMetronomeLinked) recordingMetronomeLinked.checked = metronomeState.linkedToKaraoke;
+  if (recordingMetronomeTone) recordingMetronomeTone.checked = metronomeState.tone;
+  if (recordingMetronomeVisual) recordingMetronomeVisual.checked = metronomeState.visual;
+  if (recordingMetronomeVibration) {
+    recordingMetronomeVibration.checked = metronomeState.vibration;
+    recordingMetronomeVibration.disabled = !("vibrate" in navigator);
+  }
+  if (recordingMetronomeVolume) recordingMetronomeVolume.value = String(metronomeState.volume);
+  if (pacingBoardMetronomeButton) {
+    pacingBoardMetronomeButton.classList.toggle("is-active", metronomeState.enabled);
+    pacingBoardMetronomeButton.setAttribute("aria-pressed", String(metronomeState.enabled));
+    pacingBoardMetronomeButton.setAttribute("aria-label", metronomeState.enabled ? "Metronom ausschalten" : "Metronom einschalten");
+    pacingBoardMetronomeButton.title = metronomeState.enabled ? "Metronom ausschalten" : "Metronom";
+    const bpmLabel = pacingBoardMetronomeButton.querySelector("strong");
+    if (bpmLabel) bpmLabel.textContent = String(metronomeState.bpm);
+  }
+}
+
+function setMetronomePanelOpen(open) {
+  recordingMetronomePanel?.classList.toggle("is-hidden", !open);
+  if (recordingMetronomePanel) recordingMetronomePanel.hidden = !open;
+}
+
+function setMetronomeBpm(value) {
+  const config = getMetronomeExerciseConfig();
+  metronomeState.bpm = Math.max(config.minBpm, Math.min(config.maxBpm, Math.round(Number(value) || metronomeState.bpm)));
+  saveMetronomeSettings();
+  syncKaraokeSpeedFromMetronome();
+  updateRecordingMetronomeUi();
+}
+
+function ensureMetronomeOutput() {
+  if (!metronomeState.tone && !metronomeState.visual && !metronomeState.vibration) {
+    metronomeState.visual = true;
+  }
+}
+
+function scheduleMetronomeClick(time, strong = false) {
+  if (!metronomeAudioContext || !metronomeState.tone || metronomeState.volume <= 0) return;
+  const oscillator = metronomeAudioContext.createOscillator();
+  const gain = metronomeAudioContext.createGain();
+  const volume = Math.max(0.001, metronomeState.volume / 100);
+  oscillator.type = "square";
+  oscillator.frequency.setValueAtTime(strong ? 1180 : 880, time);
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.exponentialRampToValueAtTime(0.18 * volume, time + 0.004);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.055);
+  oscillator.connect(gain);
+  gain.connect(metronomeAudioContext.destination);
+  oscillator.start(time);
+  oscillator.stop(time + 0.065);
+}
+
+function pulseMetronomeAt(delayMs) {
+  if (!metronomeState.visual || !recordingMetronome) return;
+  window.setTimeout(() => {
+    recordingMetronome.classList.remove("is-beat");
+    void recordingMetronome.offsetWidth;
+    recordingMetronome.classList.add("is-beat");
+    window.setTimeout(() => recordingMetronome?.classList.remove("is-beat"), 130);
+  }, Math.max(0, delayMs));
+}
+
+function vibrateMetronomeAt(delayMs) {
+  if (!metronomeState.vibration || !("vibrate" in navigator)) return;
+  window.setTimeout(() => navigator.vibrate?.(22), Math.max(0, delayMs));
+}
+
+function runMetronomeScheduler() {
+  if (!metronomeAudioContext || !metronomeSchedulerId) return;
+  const lookAheadSeconds = 0.14;
+  const secondsPerBeat = 60 / Math.max(40, metronomeState.bpm);
+  while (metronomeNextBeatTime < metronomeAudioContext.currentTime + lookAheadSeconds) {
+    const beatTime = metronomeNextBeatTime;
+    const delayMs = Math.max(0, (beatTime - metronomeAudioContext.currentTime) * 1000);
+    const relativeTime = metronomeRecordingStartedAt
+      ? Math.max(0, (performance.now() + delayMs - metronomeRecordingStartedAt) / 1000)
+      : Math.max(0, beatTime - metronomeStartedAt);
+    metronomeBeatTimes.push(Number(relativeTime.toFixed(3)));
+    scheduleMetronomeClick(beatTime, metronomeBeatIndex % 4 === 0);
+    pulseMetronomeAt(delayMs);
+    vibrateMetronomeAt(delayMs);
+    metronomeBeatIndex += 1;
+    metronomeNextBeatTime += secondsPerBeat;
+  }
+  metronomeSchedulerId = window.setTimeout(runMetronomeScheduler, 25);
+}
+
+async function startMetronome(options = {}) {
+  if (!metronomeState.enabled || !isMetronomeAvailableForCurrentExercise()) return false;
+  ensureMetronomeOutput();
+  const context = await ensureMetronomeAudioContext();
+  if (!context) return false;
+  stopMetronome({ keepEnabled: true, silent: true });
+  metronomeStartedAt = context.currentTime;
+  metronomeRecordingStartedAt = options.recordingStartMs || performance.now();
+  metronomeNextBeatTime = context.currentTime + 0.05;
+  metronomeBeatIndex = 0;
+  metronomeBeatTimes = [];
+  metronomeSchedulerId = window.setTimeout(runMetronomeScheduler, 0);
+  updateRecordingMetronomeUi();
+  return true;
+}
+
+function stopMetronome(options = {}) {
+  if (metronomeSchedulerId) window.clearTimeout(metronomeSchedulerId);
+  metronomeSchedulerId = 0;
+  if (!options.keepEnabled) metronomeState.enabled = false;
+  if (!options.silent) saveMetronomeSettings();
+  updateRecordingMetronomeUi();
+}
+
+function getMetronomeRecordingSnapshot(durationSeconds = 0) {
+  if (!metronomeBeatTimes.length && !metronomeState.enabled) return null;
+  return {
+    used: Boolean(metronomeBeatTimes.length),
+    bpm: metronomeState.bpm,
+    beatMode: metronomeState.beatMode,
+    linkedToKaraoke: Boolean(metronomeState.linkedToKaraoke),
+    duration: Number(durationSeconds.toFixed(1)),
+    outputs: {
+      tone: metronomeState.tone,
+      visual: metronomeState.visual,
+      vibration: metronomeState.vibration,
+    },
+    beatTimes: metronomeBeatTimes.slice(),
+  };
+}
+
 const VOICE_ANALYSIS_SCREENS = {
   volume: { title: "Lautstärke", metric: "volume", unit: "", detail: "Relative Lautstärke · nicht kalibriert" },
   pitch: { title: "Tonhöhe", metric: "pitch", unit: " Hz", detail: "Grundfrequenz der Stimme" },
@@ -579,6 +854,7 @@ const RECORDING_KARAOKE_SPEED_KEY = "logosound-recording-karaoke-speed";
 const RECORDING_KARAOKE_SPEEDS_KEY = "logosound-recording-karaoke-speeds-by-exercise";
 const TEXT_OVERLAY_VISIBLE_KEY = "logosound-text-overlay-visible";
 const PLAYBACK_GAIN_KEY = "logosound-playback-gain";
+const METRONOME_SETTINGS_KEY = "logosound-metronome-settings";
 const STATISTICS_WAVEFORM_HEIGHT_KEY = "logosound-statistics-waveform-height";
 const ANALYSIS_CALIBRATION_KEY = "logosound-analysis-calibration";
 const CALIBRATION_NOISE_KEY = "logosound-calibration-noise-floor";
@@ -638,6 +914,8 @@ const KARAOKE_CONTEXT_AFTER = 2;
 const RECORDING_TAIL_SECONDS = 1.2;
 const SENTENCE_FINAL_TAIL_SECONDS = 0.35;
 const END_ANALYSIS_SILENCE_SECONDS = 0.45;
+const METRONOME_SUPPORTED_MODES = new Set(["syllables", "sentences", "text", "long_text", "vowels", "pacingBoard"]);
+metronomeState = loadMetronomeSettings();
 const SENTENCE_SILENCE_MS = 1000;
 const SENTENCE_MAX_ACTIVE_MS = 12000;
 const SENTENCE_SPEECH_THRESHOLD = 8;
@@ -698,6 +976,29 @@ const STANDARD_EDITOR_EXERCISES = [
     repeats: 10,
     speed: 4,
     voiceInstruction: EXERCISE_INSTRUCTIONS["Pa Ta Ka"],
+  },
+  {
+    id: "sprechbrett-pa-ta-ka",
+    name: "Sprechbrett Pa Ta Ka",
+    mode: "pacingBoard",
+    content: "PA | TA | KA",
+    units: ["PA", "TA", "KA"],
+    pacingMode: "syllables",
+    repeats: 3,
+    speed: 3,
+    voiceInstruction: "Tippen oder starten Sie das Sprechbrett. Sprechen Sie jede Silbe einzeln und deutlich.",
+    metronome: { available: true, enabled: false, bpm: 72, minBpm: 40, maxBpm: 120, beatMode: "syllable" },
+  },
+  {
+    id: "sprechbrett-guten-morgen",
+    name: "Sprechbrett Guten Morgen",
+    mode: "pacingBoard",
+    content: "Guten Morgen",
+    pacingMode: "syllables",
+    repeats: 1,
+    speed: 3,
+    voiceInstruction: "Sprechen Sie die Felder nacheinander im ruhigen Tempo.",
+    metronome: { available: true, enabled: false, bpm: 72, minBpm: 40, maxBpm: 120, beatMode: "syllable" },
   },
   {
     id: "text-lesen",
@@ -844,6 +1145,11 @@ let sentencePeakVolumeSinceAdvance = 0;
 let sentenceActiveStartedAt = 0;
 let recordingKaraokeEvents = [];
 let activeRecordingKaraokeEvent = null;
+let pacingBoardUnitsState = [];
+let pacingBoardActiveIndex = 0;
+let pacingBoardAutoTimerId = 0;
+let pacingBoardAutoRunning = false;
+let pacingBoardEvents = [];
 let dialogVoiceInProgress = false;
 let dialogVoiceTurnIndex = -1;
 let dialogAdvanceLock = false;
@@ -872,6 +1178,7 @@ const pendingMediaMetadataIds = new Set();
 const mediaLibraryItemStatus = new Map();
 let selectedExerciseBrowserCategory = "";
 let selectedExerciseBrowserSubcategory = "";
+let mediaLibraryPlayerReturnView = "";
 let expandedMyCourseAssignmentId = "";
 let editingMediaLibraryItemId = "";
 let editingDailyPlanPauseKey = "";
@@ -1139,6 +1446,7 @@ async function init() {
   updateEditorForm();
   setupKaraokeText();
   syncBreathingRecordPreview();
+  updateRecordingMetronomeUi();
   permissionState.textContent = "Bereit";
   message.textContent = "Wähle eine Übung und starte direkt. Kamera, Mikrofon und Kalibrierung laufen automatisch.";
   recordButton.disabled = false;
@@ -1170,6 +1478,7 @@ function repairStaticUiLabels() {
     text: "Karaoke-Text",
     long_text: "Langer Text",
     vowels: "Vokale",
+    pacingBoard: "Sprechbrett",
     dialog: "Dialog",
   };
 
@@ -1269,8 +1578,110 @@ previewStopButton?.addEventListener("click", () => {
   stopExercisePreview();
 });
 
+recordingMetronomeToggle?.addEventListener("click", async () => {
+  if (!isMetronomeAvailableForCurrentExercise()) return;
+  metronomeState.enabled = !metronomeState.enabled;
+  ensureMetronomeOutput();
+  saveMetronomeSettings();
+  setMetronomePanelOpen(metronomeState.enabled);
+  if (isRecording && metronomeState.enabled) {
+    await startMetronome({ recordingStartMs: startedAt || performance.now() });
+  } else if (!metronomeState.enabled) {
+    stopMetronome();
+  }
+  updateRecordingMetronomeUi();
+});
+
+pacingBoardMetronomeButton?.addEventListener("click", async () => {
+  if (!isMetronomeAvailableForCurrentExercise()) return;
+  metronomeState.enabled = !metronomeState.enabled;
+  ensureMetronomeOutput();
+  saveMetronomeSettings();
+  if (isRecording && metronomeState.enabled) {
+    await startMetronome({ recordingStartMs: startedAt || performance.now() });
+  } else if (!metronomeState.enabled) {
+    stopMetronome();
+  } else {
+    await ensureMetronomeAudioContext();
+  }
+  updateRecordingMetronomeUi();
+});
+
+recordingMetronomeBpm?.addEventListener("input", () => setMetronomeBpm(recordingMetronomeBpm.value));
+recordingMetronomeMinus?.addEventListener("click", () => setMetronomeBpm(metronomeState.bpm - 1));
+recordingMetronomePlus?.addEventListener("click", () => setMetronomeBpm(metronomeState.bpm + 1));
+recordingMetronomeLinked?.addEventListener("change", () => {
+  metronomeState.linkedToKaraoke = Boolean(recordingMetronomeLinked.checked);
+  if (metronomeState.linkedToKaraoke) metronomeState.bpm = getBpmForKaraokeSpeed(recordingKaraokeSpeed?.value || 3);
+  saveMetronomeSettings();
+  updateRecordingMetronomeUi();
+});
+[recordingMetronomeTone, recordingMetronomeVisual, recordingMetronomeVibration].forEach((input) => {
+  input?.addEventListener("change", () => {
+    metronomeState.tone = Boolean(recordingMetronomeTone?.checked);
+    metronomeState.visual = Boolean(recordingMetronomeVisual?.checked);
+    metronomeState.vibration = Boolean(recordingMetronomeVibration?.checked);
+    ensureMetronomeOutput();
+    saveMetronomeSettings();
+    updateRecordingMetronomeUi();
+  });
+});
+recordingMetronomeVolume?.addEventListener("input", () => {
+  metronomeState.volume = Math.max(0, Math.min(100, Math.round(Number(recordingMetronomeVolume.value) || 0)));
+  saveMetronomeSettings();
+  updateRecordingMetronomeUi();
+});
+
+pacingBoardPlayButton?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  if (!isPacingBoardExercise()) return;
+  if (!pacingBoardUnitsState.length) setupPacingBoard(getActiveRecordingExercise());
+  if (pacingBoardAutoRunning) {
+    stopPacingBoardAuto();
+  } else {
+    startPacingBoardAuto();
+  }
+});
+
+pacingBoardPauseButton?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  stopPacingBoardAuto();
+});
+pacingBoardPrevButton?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  advancePacingBoard(-1, "manual");
+});
+pacingBoardPlusButton?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  updateRecordingKaraokeSpeed(Number(recordingKaraokeSpeed?.value || 3) + 1);
+  updatePacingBoardUi();
+});
+pacingBoardMinusButton?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  updateRecordingKaraokeSpeed(Number(recordingKaraokeSpeed?.value || 3) - 1);
+  updatePacingBoardUi();
+});
+pacingBoardHomeButton?.addEventListener("click", () => {
+  if (isRecording) stopRecording();
+  setActiveView("exercises");
+});
+
+pacingBoardUnits?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-index]");
+  if (!button) return;
+  setPacingBoardActiveIndex(Number(button.dataset.index || 0), "manual");
+});
+
 breathingStopButton?.addEventListener("click", () => {
-  stopBreathingExercise("Atemübung beendet.");
+  stopBreathingExercise("Atemübung beendet.", {
+    returnToExercises: true,
+    skipPreviewSync: true,
+  });
 });
 breathingCourseActions?.addEventListener("click", (event) => {
   const action = event.target.closest("button")?.dataset.action;
@@ -1384,6 +1795,7 @@ exerciseName.addEventListener("change", () => {
   setupKaraokeText();
   renderRecordingExerciseShortcuts();
   syncBreathingRecordPreview();
+  updateRecordingMetronomeUi();
   message.textContent = `Übung ausgewählt: ${getExerciseLabel()}`;
 });
 
@@ -1393,6 +1805,7 @@ recordingModeFilter?.addEventListener("change", () => {
   loadRecordingKaraokeSpeedForCurrentExercise();
   setupKaraokeText();
   syncBreathingRecordPreview();
+  updateRecordingMetronomeUi();
   message.textContent = recordingModeFilter.value
     ? `Funktionsart gefiltert: ${getEditorModeLabel(recordingModeFilter.value)}`
     : "Alle Funktionsarten sichtbar.";
@@ -1407,6 +1820,7 @@ recordingModeFilter?.addEventListener("change", () => {
     saveEditorDraft();
     updateEditorForm();
     if (input === editorContent) renderEditorSentenceList();
+    if (input === editorContent) renderEditorPacingUnitList();
     if (exerciseName.value === "custom-editor") setupKaraokeText();
   });
 });
@@ -1434,6 +1848,32 @@ editorMode.addEventListener("change", () => {
 
 addEditorSentenceButton?.addEventListener("click", () => {
   addEditorSentence();
+});
+
+addEditorPacingUnitButton?.addEventListener("click", () => {
+  addEditorPacingUnit();
+});
+
+editorPacingUnitInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  addEditorPacingUnit();
+});
+
+editorPacingUnitList?.addEventListener("click", (event) => {
+  const actionButton = event.target.closest("[data-pacing-action]");
+  if (!actionButton) return;
+  const index = Number(actionButton.dataset.index || -1);
+  const action = actionButton.dataset.pacingAction;
+  if (action === "delete") deleteEditorPacingUnit(index);
+  if (action === "up") moveEditorPacingUnit(index, -1);
+  if (action === "down") moveEditorPacingUnit(index, 1);
+});
+
+editorPacingUnitList?.addEventListener("input", (event) => {
+  const input = event.target.closest("[data-pacing-unit-input]");
+  if (!input) return;
+  updateEditorPacingUnit(Number(input.dataset.index || -1), input.value);
 });
 
 addEditorDialogTurnButton?.addEventListener("click", () => {
@@ -2062,7 +2502,8 @@ function waitForBreathingPhase(seconds, sessionId, onTick) {
     window.clearTimeout(breathingCountdownTimerId);
     let settled = false;
     let timerId = null;
-    const endAt = Date.now() + seconds * 1000;
+    let lastRemaining = null;
+    const endAt = performance.now() + seconds * 1000;
     const finish = (value) => {
       if (settled) return;
       settled = true;
@@ -2075,11 +2516,15 @@ function waitForBreathingPhase(seconds, sessionId, onTick) {
         finish(false);
         return;
       }
-      const remaining = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
-      onTick(remaining);
-      if (remaining <= 0) finish(true);
+      const remainingMs = Math.max(0, endAt - performance.now());
+      const remaining = Math.max(0, Math.ceil(remainingMs / 1000));
+      if (remaining !== lastRemaining) {
+        lastRemaining = remaining;
+        onTick(remaining);
+      }
+      if (remainingMs <= 0) finish(true);
       else {
-        timerId = window.setTimeout(tick, 180);
+        timerId = window.setTimeout(tick, 120);
         breathingCountdownTimerId = timerId;
       }
     };
@@ -2310,6 +2755,7 @@ function stopBreathingExercise(statusText = "Atemübung beendet.", options = {})
   breathingBallAnimation = null;
   stopBreathingVoice();
   clearBreathingPhaseAudioCache();
+  stopInstructionAudio();
   hideExerciseIntroScreen();
   breathingOverlay?.classList.add("is-hidden");
   setBreathingCourseUiVisible(false);
@@ -2325,8 +2771,13 @@ function stopBreathingExercise(statusText = "Atemübung beendet.", options = {})
   message.textContent = statusText;
   if (shouldCancelCourseRun) {
     cancelActiveCourseRunFromBreathing();
-  } else {
+  } else if (!options.skipPreviewSync) {
     window.setTimeout(syncBreathingRecordPreview, 0);
+  }
+  if (options.returnToExercises) {
+    setActiveView("exercises");
+    renderExerciseBrowser();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 }
 
@@ -2410,7 +2861,7 @@ async function startBreathingExercise(exercise, options = {}) {
     instructionPlaybackActive = false;
     for (const step of COUNTDOWN_STEPS) {
       if (breathingCountdown) breathingCountdown.textContent = `Start in ${step}`;
-      await wait(320);
+      await wait(1000);
     }
     hideExerciseIntroScreen();
     if (courseBreathingMode) setBreathingCourseUiVisible(true, exercise);
@@ -2444,7 +2895,16 @@ async function startBreathingExercise(exercise, options = {}) {
       }
     }
     if (sessionId !== breathingSessionId) return;
-    stopBreathingExercise("Sehr gut. Die Atemübung ist beendet.", { keepCourseRun: !options.preview });
+    stopBreathingExercise("Sehr gut. Die Atemübung ist beendet.", {
+      keepCourseRun: !options.preview,
+      skipPreviewSync: true,
+    });
+    if (!courseBreathingMode) {
+      setActiveView("exercises");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      renderExerciseBrowser();
+      return;
+    }
     if (!options.preview) await completeCourseBreathingExercise(exercise);
   } catch (error) {
     stopBreathingExercise("Atemübung wurde unterbrochen.");
@@ -2558,6 +3018,7 @@ async function speakExerciseInstruction() {
 
 async function playBreathingExerciseInstruction(exercise) {
   instructionPlaybackActive = true;
+  const sessionId = breathingSessionId;
   const activeExercise = hydrateEditorExercise(exercise) || getActiveRecordingExercise();
   const instruction =
     String(activeExercise?.voiceInstruction || "").trim() ||
@@ -2565,6 +3026,7 @@ async function playBreathingExerciseInstruction(exercise) {
   const savedAudio = activeExercise?.voiceAudioUrl || activeExercise?.voiceAudioDataUrl || "";
 
   if (savedAudio && isInstructionVoiceAudioCurrent(activeExercise, instruction)) {
+    if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) return false;
     message.textContent = "Atem-Intro läuft.";
     const played = await playVoiceAudio(savedAudio);
     if (played) return;
@@ -2572,12 +3034,17 @@ async function playBreathingExerciseInstruction(exercise) {
 
   const generatedAudio = await withTimeout(createTemporaryVoiceAudio(instruction), 6000);
   if (generatedAudio) {
+    if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) {
+      URL.revokeObjectURL(generatedAudio);
+      return false;
+    }
     message.textContent = "Atem-Intro läuft.";
     const played = await playVoiceAudio(generatedAudio);
     URL.revokeObjectURL(generatedAudio);
     if (played) return;
   }
 
+  if (sessionId !== breathingSessionId || !isBreathingExerciseRunning) return false;
   message.textContent = instruction;
   await speakWithBrowserVoice(instruction);
 }
@@ -3689,6 +4156,10 @@ function playVoiceAudioElement(audioUrl, options = {}) {
 }
 
 function stopInstructionAudio() {
+  instructionPlaybackActive = false;
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
   instructionAudio.pause();
   instructionAudio.removeAttribute("src");
   instructionAudio.load();
@@ -3702,6 +4173,7 @@ function stopInstructionAudio() {
 async function startRecording() {
   if (!mediaStream) return false;
   if (isRecording) return true;
+  document.body.classList.remove("pacing-board-idle");
   if (isCalibrating) stopCalibration();
   const activeExercise = getActiveRecordingExercise();
   const isDialogRecording = activeExercise?.mode === "dialog";
@@ -3724,6 +4196,14 @@ async function startRecording() {
   activeKaraokeIndex = 0;
   recordingKaraokeEvents = [];
   activeRecordingKaraokeEvent = null;
+  pacingBoardEvents = [];
+  pacingBoardActiveIndex = 0;
+  if (isPacingBoardExercise(activeExercise)) {
+    setExerciseVisualsVisible(true);
+    setupPacingBoard(activeExercise);
+  } else {
+    hidePacingBoard();
+  }
   sentenceSilenceStartedAt = 0;
   sentenceHasSpeechSinceAdvance = false;
   sentenceStopScheduled = false;
@@ -3780,6 +4260,11 @@ async function startRecording() {
   mediaRecorder.start(250);
   startedAt = performance.now();
   isRecording = true;
+  startMetronome({ recordingStartMs: startedAt }).catch(() => false);
+  if (isPacingBoardExercise(activeExercise)) {
+    setExerciseVisualsVisible(true);
+    setupPacingBoard(activeExercise);
+  }
   startRecordingKaraokeEventIfPatient(activeKaraokeIndex);
   enterRecordingFocus();
 
@@ -3811,7 +4296,10 @@ function stopRecording() {
 
   const recorderWasActive = mediaRecorder?.state === "recording";
   isRecording = false;
+  stopPacingBoardAuto();
+  stopMetronome({ keepEnabled: true });
   setExerciseVisualsVisible(false);
+  updatePacingBoardIdleState();
   window.clearTimeout(autoStopTimeoutId);
   window.clearTimeout(hardStopTimeoutId);
   exitRecordingFocus();
@@ -3872,6 +4360,7 @@ async function finishRecording() {
     const stats = calculateAmplitudeStats(roundedAmplitudes);
     const volumeStats = calculateAmplitudeStats(roundedVolumeLevels);
     const pitchStats = calculatePitchStats(roundedPitchHz);
+    const pacingBoardSnapshot = getPacingBoardRecordingSnapshot(durationSeconds);
     const sourceAudioTracks = mediaStream?.getAudioTracks?.().length || 0;
     const sourceVideoTracks = mediaStream?.getVideoTracks?.().length || 0;
 
@@ -3882,6 +4371,8 @@ async function finishRecording() {
       uebung: getExerciseLabel(),
       uebungText: getExerciseScript(),
       uebungKonfiguration: getExerciseConfiguration(),
+      metronom: getMetronomeRecordingSnapshot(durationSeconds),
+      sprechbrett: pacingBoardSnapshot,
       analysisConfig: normalizeAnalysisConfig(getActiveRecordingExercise()?.analysisConfig),
       karaokeEreignisse: recordingKaraokeEvents
         .filter((event) => Number.isFinite(event.start))
@@ -4599,6 +5090,20 @@ function measureAudio() {
 
 function setupKaraokeText() {
   const activeExercise = getActiveRecordingExercise();
+  if (isPacingBoardExercise(activeExercise)) {
+    updatePacingBoardIdleState(activeExercise);
+    setupPacingBoard(activeExercise);
+    karaokeWords = getPacingBoardUnits(activeExercise);
+    karaokeTimeline = applyRepeatMetadata(
+      buildKaraokeTimeline(karaokeWords, getCurrentKaraokeTiming()),
+      activeExercise?.repeats || 1,
+    );
+    renderKaraokeOverlay(karaokeOverlay, []);
+    return;
+  }
+
+  updatePacingBoardIdleState(activeExercise);
+  hidePacingBoard();
   const dialogTurns =
     activeExercise?.mode === "dialog"
       ? getExerciseDialogTurns(activeExercise)
@@ -4673,6 +5178,8 @@ function splitExerciseSpeechUnits(text, mode = "") {
   const source = String(text || "").trim();
   if (!source) return [];
 
+  if (normalizedMode === "pacingBoard") return splitPacingBoardUnits(source);
+
   if (normalizedMode === "vowels" || normalizedMode === "syllables") {
     return source
       .split(/[\s,;|/\\]+/)
@@ -4686,6 +5193,286 @@ function splitExerciseSpeechUnits(text, mode = "") {
 function formatExerciseContentLabel(content, mode = "") {
   const units = splitExerciseSpeechUnits(content, mode);
   return units.length ? units.join(", ") : String(content || "").trim();
+}
+
+function isPacingBoardExercise(exercise = getActiveRecordingExercise()) {
+  return normalizeEditorExerciseModeValue(exercise?.mode || exercise?.type || exercise?.kind || "") === "pacingBoard";
+}
+
+function splitPacingBoardUnits(text) {
+  const source = String(text || "").trim();
+  if (!source) return [];
+
+  return source
+    .split(/[\s|,;:/\\]+/g)
+    .flatMap((word) => splitGermanWordIntoPacingSyllables(word))
+    .map((unit) => unit.trim())
+    .filter(Boolean);
+}
+
+const GERMAN_PACING_SYLLABLE_OVERRIDES = new Map([
+  ["guten", ["gu", "ten"]],
+  ["morgen", ["mor", "gen"]],
+  ["schokolade", ["scho", "ko", "la", "de"]],
+  ["banane", ["ba", "na", "ne"]],
+  ["kaffee", ["kaf", "fee"]],
+  ["heute", ["heu", "te"]],
+  ["schneeflocklein", ["schnee", "flock", "lein"]],
+  ["schneeflöcklein", ["schnee", "flöck", "lein"]],
+  ["niedersinken", ["nie", "der", "sin", "ken"]],
+  ["sternlein", ["stern", "lein"]],
+  ["blinken", ["blin", "ken"]],
+]);
+
+function normalizeGermanSyllableKey(value = "") {
+  return String(value || "")
+    .trim()
+    .toLocaleLowerCase("de-DE")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function applyPacingSyllableCasing(original, syllables) {
+  const source = String(original || "");
+  if (source && source === source.toLocaleUpperCase("de-DE")) {
+    return syllables.map((part) => part.toLocaleUpperCase("de-DE"));
+  }
+  if (/^[A-ZÄÖÜ]/u.test(source)) {
+    return syllables.map((part, index) => (
+      index === 0
+        ? `${part.charAt(0).toLocaleUpperCase("de-DE")}${part.slice(1).toLocaleLowerCase("de-DE")}`
+        : part.toLocaleLowerCase("de-DE")
+    ));
+  }
+  return syllables.map((part) => part.toLocaleLowerCase("de-DE"));
+}
+
+function getGermanPacingClusterSplitOffset(cluster = "") {
+  const text = String(cluster || "");
+  const lower = text.toLocaleLowerCase("de-DE");
+  if (!text) return 0;
+  if (text.length === 1) return 0;
+  if (lower.startsWith("ck") || lower.startsWith("ch") || lower.startsWith("sch")) return 0;
+  if (lower.startsWith("tz")) return 1;
+
+  const preferredOnsets = [
+    "schl", "schn", "schr", "schw", "sch",
+    "sp", "st", "ch",
+    "bl", "br", "dr", "fl", "fr", "gl", "gr", "kl", "kn", "kr",
+    "pl", "pr", "qu", "tr", "zw",
+  ];
+  const onset = preferredOnsets.find((candidate) => lower.endsWith(candidate));
+  if (onset) return Math.max(0, text.length - onset.length);
+
+  return Math.max(1, text.length - 1);
+}
+
+function splitGermanWordIntoPacingSyllables(word) {
+  const source = String(word || "").trim();
+  if (!source) return [];
+  const match = source.match(/^([("„“'«»]*)(.*?)([.!?:)"„“'«»]*)$/);
+  const prefix = match?.[1] || "";
+  const core = match?.[2] || source;
+  const suffix = match?.[3] || "";
+  if (!core) return [];
+  if (core.length <= 3 || /^[A-ZÄÖÜ]{1,3}$/u.test(core)) return [`${prefix}${core}${suffix}`];
+
+  const override = GERMAN_PACING_SYLLABLE_OVERRIDES.get(normalizeGermanSyllableKey(core))
+    || GERMAN_PACING_SYLLABLE_OVERRIDES.get(core.toLocaleLowerCase("de-DE"));
+  if (override?.length) {
+    const parts = applyPacingSyllableCasing(core, override);
+    parts[0] = `${prefix}${parts[0]}`;
+    parts[parts.length - 1] = `${parts[parts.length - 1]}${suffix}`;
+    return parts;
+  }
+
+  const vowelGroups = Array.from(core.matchAll(/[aeiouäöüy]+/giu)).map((matchItem) => ({
+    start: matchItem.index,
+    end: matchItem.index + matchItem[0].length,
+  }));
+  if (vowelGroups.length <= 1) return [`${prefix}${core}${suffix}`];
+
+  const parts = [];
+  let start = 0;
+  for (let index = 0; index < vowelGroups.length - 1; index += 1) {
+    const current = vowelGroups[index];
+    const next = vowelGroups[index + 1];
+    const cluster = core.slice(current.end, next.start);
+    const splitAt = current.end + getGermanPacingClusterSplitOffset(cluster);
+    if (splitAt <= start || splitAt >= core.length) continue;
+    parts.push(core.slice(start, splitAt));
+    start = splitAt;
+  }
+
+  parts.push(core.slice(start));
+  const cleanParts = applyPacingSyllableCasing(core, parts)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (cleanParts.length <= 1) return [`${prefix}${core}${suffix}`];
+  cleanParts[0] = `${prefix}${cleanParts[0]}`;
+  cleanParts[cleanParts.length - 1] = `${cleanParts[cleanParts.length - 1]}${suffix}`;
+  return cleanParts;
+}
+
+function getPacingBoardUnits(exercise = getActiveRecordingExercise()) {
+  const textUnits = splitPacingBoardUnits(exercise?.rawContent || exercise?.content || exercise?.script || "");
+  const savedUnits = Array.isArray(exercise?.units)
+    ? exercise.units.map((unit) => String(unit || "").trim()).filter(Boolean)
+    : [];
+  const baseUnits = textUnits.length ? textUnits : savedUnits;
+  const repeats = Math.max(1, Number(exercise?.repeats || 1));
+  if (repeats <= 1) return baseUnits;
+  return Array.from({ length: repeats }).flatMap(() => baseUnits);
+}
+
+function setupPacingBoard(exercise = getActiveRecordingExercise()) {
+  if (!pacingBoardOverlay || !pacingBoardUnits) return;
+  const units = getPacingBoardUnits(exercise);
+  pacingBoardUnitsState = units;
+  pacingBoardActiveIndex = Math.min(Math.max(0, pacingBoardActiveIndex), Math.max(0, units.length - 1));
+  pacingBoardOverlay.classList.toggle("is-hidden", !units.length);
+  if (pacingBoardTitle) pacingBoardTitle.textContent = exercise?.name || "Sprechbrett";
+  pacingBoardUnits.innerHTML = "";
+  units.forEach((unit, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "pacing-board-unit";
+    button.dataset.index = String(index);
+    button.textContent = unit;
+    button.setAttribute("aria-label", `Sprecheinheit ${index + 1}: ${unit}`);
+    pacingBoardUnits.append(button);
+  });
+  updatePacingBoardUi();
+  scrollPacingBoardToActive({ instant: true });
+}
+
+function hidePacingBoard() {
+  stopPacingBoardAuto();
+  pacingBoardOverlay?.classList.add("is-hidden");
+  pacingBoardUnitsState = [];
+}
+
+function updatePacingBoardIdleState(exercise = getActiveRecordingExercise()) {
+  const isIdle = isPacingBoardExercise(exercise)
+    && !isRecording
+    && !isPreviewingExercise
+    && !document.body.classList.contains("exercise-intro-active");
+  document.body.classList.toggle("pacing-board-idle", Boolean(isIdle));
+}
+
+function updatePacingBoardUi() {
+  if (!pacingBoardUnits) return;
+  Array.from(pacingBoardUnits.querySelectorAll(".pacing-board-unit")).forEach((button) => {
+    const index = Number(button.dataset.index || 0);
+    button.classList.toggle("is-active", index === pacingBoardActiveIndex);
+    button.classList.toggle("is-done", index < pacingBoardActiveIndex);
+    button.setAttribute("aria-current", index === pacingBoardActiveIndex ? "step" : "false");
+  });
+  if (pacingBoardPrevButton) pacingBoardPrevButton.disabled = pacingBoardActiveIndex <= 0;
+  if (pacingBoardSpeedValue) pacingBoardSpeedValue.textContent = String(clampRecordingKaraokeSpeed(recordingKaraokeSpeed?.value || 3));
+  if (pacingBoardPlayButton) {
+    pacingBoardPlayButton.classList.toggle("is-active", pacingBoardAutoRunning);
+    pacingBoardPlayButton.setAttribute("aria-label", pacingBoardAutoRunning ? "Sprechbrett läuft" : "Sprechbrett automatisch starten");
+  }
+  if (pacingBoardPauseButton) pacingBoardPauseButton.classList.toggle("is-active", !pacingBoardAutoRunning);
+}
+
+function scrollPacingBoardToActive(options = {}) {
+  if (!pacingBoardUnits) return;
+  const activeButton = pacingBoardUnits.querySelector(".pacing-board-unit.is-active");
+  if (!activeButton) return;
+  const targetTop = Math.max(0, activeButton.offsetTop);
+  pacingBoardUnits.scrollTo({
+    top: targetTop,
+    behavior: options.instant ? "auto" : "smooth",
+  });
+  pacingBoardUnits.scrollTop = targetTop;
+}
+
+function setPacingBoardActiveIndex(index, source = "manual") {
+  if (!pacingBoardUnitsState.length) return;
+  const nextIndex = Math.max(0, Math.min(pacingBoardUnitsState.length - 1, Number(index) || 0));
+  pacingBoardActiveIndex = nextIndex;
+  recordPacingBoardEvent(nextIndex, source);
+  updatePacingBoardUi();
+  scrollPacingBoardToActive({ instant: source === "setup" });
+}
+
+function recordPacingBoardEvent(index, source = "manual") {
+  const unit = pacingBoardUnitsState[index];
+  if (!unit) return;
+  const previous = pacingBoardEvents.at(-1);
+  if (previous?.index === index && performance.now() - Number(previous.wallTime || 0) < 180) return;
+  pacingBoardEvents.push({
+    index,
+    unit,
+    source,
+    time: Number(getRecordingElapsedSeconds().toFixed(3)),
+    expectedTime: Number(getPacingBoardExpectedTime(index).toFixed(3)),
+    wallTime: performance.now(),
+  });
+}
+
+function getPacingBoardExpectedTime(index) {
+  const bpmSeconds = metronomeState?.enabled ? 60 / Math.max(40, Number(metronomeState.bpm || 72)) : null;
+  const timing = getCurrentKaraokeTiming();
+  const secondsPerUnit = bpmSeconds || Math.max(0.45, Number(timing.wordSeconds || 1));
+  return Math.max(0, index * secondsPerUnit);
+}
+
+function getPacingBoardIntervalMs() {
+  return Math.max(420, Math.round((getPacingBoardExpectedTime(1) || 0.8) * 1000));
+}
+
+function advancePacingBoard(step = 1, source = "manual") {
+  setPacingBoardActiveIndex(pacingBoardActiveIndex + step, source);
+}
+
+function startPacingBoardAuto() {
+  if (!pacingBoardUnitsState.length) return;
+  stopPacingBoardAuto({ keepButton: true });
+  pacingBoardAutoRunning = true;
+  if (pacingBoardActiveIndex >= pacingBoardUnitsState.length - 1) pacingBoardActiveIndex = 0;
+  setPacingBoardActiveIndex(pacingBoardActiveIndex, "auto");
+  const tick = () => {
+    if (!pacingBoardAutoRunning) return;
+    if (pacingBoardActiveIndex >= pacingBoardUnitsState.length - 1) {
+      stopPacingBoardAuto();
+      return;
+    }
+    advancePacingBoard(1, "auto");
+    pacingBoardAutoTimerId = window.setTimeout(tick, getPacingBoardIntervalMs());
+  };
+  pacingBoardAutoTimerId = window.setTimeout(tick, getPacingBoardIntervalMs());
+  updatePacingBoardUi();
+}
+
+function stopPacingBoardAuto(options = {}) {
+  if (pacingBoardAutoTimerId) window.clearTimeout(pacingBoardAutoTimerId);
+  pacingBoardAutoTimerId = 0;
+  pacingBoardAutoRunning = false;
+  if (!options.keepButton) updatePacingBoardUi();
+}
+
+function getPacingBoardRecordingSnapshot(durationSeconds = 0) {
+  if (!pacingBoardEvents.length && !pacingBoardUnitsState.length) return null;
+  const units = pacingBoardUnitsState.slice();
+  const eventTimes = pacingBoardEvents.map((event) => event.time).filter((value) => Number.isFinite(value));
+  const unitCount = units.length || pacingBoardEvents.length;
+  const averageUnitSeconds = unitCount ? Number((Number(durationSeconds || 0) / unitCount).toFixed(2)) : 0;
+  return {
+    type: "pacingBoard",
+    units,
+    unitCount,
+    duration: Number(Number(durationSeconds || 0).toFixed(1)),
+    averageUnitSeconds,
+    bpm: metronomeState?.bpm || null,
+    metronomeUsed: Boolean(metronomeBeatTimes.length),
+    events: pacingBoardEvents.map(({ wallTime, ...event }) => event),
+    firstEventAt: eventTimes.length ? Math.min(...eventTimes) : 0,
+    lastEventAt: eventTimes.length ? Math.max(...eventTimes) : 0,
+  };
 }
 
 function isLongTextMode(mode) {
@@ -5600,6 +6387,7 @@ function loadRecordingKaraokeSpeedForCurrentExercise() {
   const speed = clampRecordingKaraokeSpeed(speedMap[key] || getDefaultKaraokeSpeedForCurrentExercise());
   if (recordingKaraokeSpeed) recordingKaraokeSpeed.value = String(speed);
   updateRecordingKaraokeSpeedLabel();
+  syncMetronomeFromKaraokeSpeed();
 }
 
 function saveRecordingKaraokeSpeedForCurrentExercise(speed) {
@@ -5621,12 +6409,13 @@ function clampRecordingKaraokeSpeed(value) {
   return Math.max(1, Math.min(12, Math.round(numericValue)));
 }
 
-function updateRecordingKaraokeSpeed(value) {
+function updateRecordingKaraokeSpeed(value, options = {}) {
   const nextValue = clampRecordingKaraokeSpeed(value);
   if (recordingKaraokeSpeed) recordingKaraokeSpeed.value = String(nextValue);
   saveRecordingKaraokeSpeedForCurrentExercise(nextValue);
   persistRecordingSpeedToActiveExercise(nextValue);
   updateRecordingKaraokeSpeedLabel();
+  if (!options.skipMetronomeSync) syncMetronomeFromKaraokeSpeed();
   retimeKaraokeAfterSpeedChange();
 }
 
@@ -5801,6 +6590,79 @@ function syncEditorSentences(sentences) {
   updateEditorForm();
   renderEditorSentenceList();
   if (exerciseName.value === "custom-editor") setupKaraokeText();
+}
+
+function getEditorPacingUnits() {
+  return splitPacingBoardUnits(editorContent?.value || "").slice(0, 80);
+}
+
+function syncEditorPacingUnits(units) {
+  editorContent.value = units.map((unit) => String(unit || "").trim()).filter(Boolean).join(" | ");
+  saveEditorDraft();
+  updateEditorForm();
+  renderEditorPacingUnitList();
+  if (exerciseName.value === "custom-editor") setupKaraokeText();
+}
+
+function addEditorPacingUnit() {
+  const unit = editorPacingUnitInput?.value.trim();
+  if (!unit) return;
+  const units = getEditorPacingUnits();
+  units.push(unit);
+  if (editorPacingUnitInput) editorPacingUnitInput.value = "";
+  syncEditorPacingUnits(units);
+  editorPacingUnitInput?.focus();
+}
+
+function updateEditorPacingUnit(index, value) {
+  const units = getEditorPacingUnits();
+  if (index < 0 || index >= units.length) return;
+  units[index] = String(value || "").trim();
+  editorContent.value = units.map((unit) => String(unit || "").trim()).filter(Boolean).join(" | ");
+  saveEditorDraft();
+  renderEditorPreview(buildEditorExerciseFromForm());
+  if (exerciseName.value === "custom-editor") setupKaraokeText();
+}
+
+function deleteEditorPacingUnit(index) {
+  const units = getEditorPacingUnits();
+  if (index < 0 || index >= units.length) return;
+  units.splice(index, 1);
+  syncEditorPacingUnits(units);
+}
+
+function moveEditorPacingUnit(index, direction) {
+  const units = getEditorPacingUnits();
+  const nextIndex = index + direction;
+  if (index < 0 || index >= units.length || nextIndex < 0 || nextIndex >= units.length) return;
+  [units[index], units[nextIndex]] = [units[nextIndex], units[index]];
+  syncEditorPacingUnits(units);
+}
+
+function renderEditorPacingUnitList() {
+  if (!editorPacingUnitList) return;
+  const units = getEditorPacingUnits();
+  editorPacingUnitList.innerHTML = "";
+
+  if (!units.length) {
+    const empty = document.createElement("p");
+    empty.className = "editor-sentence-empty";
+    empty.textContent = "Noch keine Sprecheinheiten.";
+    editorPacingUnitList.append(empty);
+    return;
+  }
+
+  units.forEach((unit, index) => {
+    const row = document.createElement("div");
+    row.className = "editor-pacing-unit-row";
+    row.innerHTML = `
+      <input data-pacing-unit-input data-index="${index}" type="text" value="${escapeHtml(unit)}" aria-label="Sprecheinheit ${index + 1}" />
+      <button class="compact-action secondary-action" type="button" data-pacing-action="up" data-index="${index}" aria-label="Nach oben" ${index === 0 ? "disabled" : ""}>↑</button>
+      <button class="compact-action secondary-action" type="button" data-pacing-action="down" data-index="${index}" aria-label="Nach unten" ${index === units.length - 1 ? "disabled" : ""}>↓</button>
+      <button class="compact-action secondary-action danger-action" type="button" data-pacing-action="delete" data-index="${index}" aria-label="Löschen">×</button>
+    `;
+    editorPacingUnitList.append(row);
+  });
 }
 
 function addEditorSentence() {
@@ -5996,6 +6858,7 @@ function getExerciseConfiguration() {
       sekundenProEinheit: recordingTiming.wordSeconds,
       pauseSekunden: recordingTiming.pauseSeconds,
       satzPauseSekunden: recordingTiming.sentencePauseSeconds || SENTENCE_END_PAUSE_SECONDS,
+      metronom: getMetronomeExerciseConfig(exercise),
     };
   }
 
@@ -6030,6 +6893,7 @@ function getExerciseConfiguration() {
     sekundenProEinheit: recordingTiming.wordSeconds,
     pauseSekunden: recordingTiming.pauseSeconds,
     satzPauseSekunden: recordingTiming.sentencePauseSeconds || SENTENCE_END_PAUSE_SECONDS,
+    metronom: getMetronomeExerciseConfig(exercise),
   };
 }
 
@@ -6054,6 +6918,7 @@ function getActiveRecordingExercise() {
       volumeAnalysis: false,
       frequencyAnalysis: false,
       analysisConfig: courseExercise.analysisConfig,
+      metronome: courseExercise.metronome || { available: false },
     });
   }
   if (normalizeEditorExerciseModeValue(courseExercise?.mode) === "media_exercise" && courseExercise.exerciseId === exerciseName.value) {
@@ -6064,6 +6929,7 @@ function getActiveRecordingExercise() {
       script: courseExercise.patientHint || courseExercise.title || "Medienübung",
       repeats: 1,
       speed: Number(recordingKaraokeSpeed?.value || 3),
+      metronome: courseExercise.metronome || {},
     });
   }
   if (courseExercise?.exerciseId && courseExercise.exerciseId === exerciseName.value) {
@@ -6081,6 +6947,7 @@ function getActiveRecordingExercise() {
       voiceAudioDataUrl: courseExercise.voiceAudioDataUrl || "",
       voiceAudioTextHash: courseExercise.voiceAudioTextHash || "",
       analysisConfig: courseExercise.analysisConfig,
+      metronome: courseExercise.metronome || {},
       breathing: courseExercise.breathing || courseExercise.breathingSettings || null,
     });
   }
@@ -6144,7 +7011,9 @@ function hydrateEditorExercise(exercise) {
   const mode = normalizeEditorExerciseModeValue(exercise.mode || "syllables");
   const speed = Number(exercise.speed || 3);
   const timing = exercise.timing || EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
-  const initialContent = exercise.content || getDefaultEditorContent(mode);
+  const initialContent = mode === "pacingBoard"
+    ? (exercise.rawContent || exercise.content || getDefaultEditorContent(mode))
+    : exercise.content || getDefaultEditorContent(mode);
   const vowelParts = mode === "vowels" ? getVowelExerciseParts(initialContent) : null;
   const content = vowelParts?.content || initialContent;
   const breathing = mode === "breathing" ? getBreathingSettings(exercise) : null;
@@ -6164,9 +7033,14 @@ function hydrateEditorExercise(exercise) {
   const dialogTurns = mode === "dialog" ? hydrateDialogTurnsWithAudio(parsedDialogTurns, exercise) : [];
   const script = mode === "vowels"
     ? (repeats > 1 ? buildRepeatedScript(content, repeats) : content)
+    : mode === "pacingBoard"
+    ? content
     : !isTextLikeMode(mode) && mode !== "dialog" && repeats > 1
     ? buildRepeatedScript(content, repeats)
     : exercise.script || content;
+  const pacingUnits = mode === "pacingBoard"
+    ? splitPacingBoardUnits(content)
+    : [];
   const sentences = exercise.sentences || (mode === "sentences" ? content.split("|").map((sentence) => sentence.trim()).filter(Boolean) : []);
   const patientTurnCount = dialogTurns.filter((turn) => turn.role === "patient").length;
   const embeddedVoiceProfile = getEmbeddedExerciseVoiceProfile(exercise);
@@ -6178,6 +7052,8 @@ function hydrateEditorExercise(exercise) {
       ? `${patientTurnCount || 1} Sprecherteil${patientTurnCount === 1 ? "" : "e"}`
       : mode === "sentences"
       ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
+      : mode === "pacingBoard"
+      ? `${pacingUnits.length || 1} Sprecheinheit${pacingUnits.length === 1 ? "" : "en"}`
       : isLongTextMode(mode)
       ? `${getExerciseTextPassages({ ...exercise, mode, content }).length || 1} Textabschnitt${getExerciseTextPassages({ ...exercise, mode, content }).length === 1 ? "" : "e"}`
       : formatExerciseContentLabel(content, mode)) ||
@@ -6192,8 +7068,12 @@ function hydrateEditorExercise(exercise) {
     patientId: assignedPatientId,
     isSharedTemplate: !assignedPatientName,
     content,
+    rawContent: mode === "pacingBoard" ? content : exercise.rawContent,
+    units: pacingUnits,
+    pacingMode: exercise.pacingMode || (mode === "pacingBoard" ? "syllables" : ""),
     breathing,
     analysisConfig: normalizeAnalysisConfig(exercise.analysisConfig),
+    metronome: normalizeMetronomeSettings(exercise.metronome || {}),
     contentLabel,
     sentences,
     dialogTurns,
@@ -6235,6 +7115,8 @@ function buildEditorExerciseFromForm() {
   const rawTextContent = editorContent.value.trim();
   const vowelParts = mode === "vowels" ? getVowelExerciseParts(rawTextContent) : null;
   const vowelContent = vowelParts?.content || getDefaultEditorContent(mode);
+  const pacingSourceText = mode === "pacingBoard" ? (rawTextContent || getDefaultEditorContent(mode)) : "";
+  const pacingUnits = mode === "pacingBoard" ? splitPacingBoardUnits(pacingSourceText) : [];
   const textPassages = isLongTextMode(mode) ? splitTextPassages(rawTextContent) : [];
   const tokens =
     isTextLikeMode(mode)
@@ -6253,6 +7135,8 @@ function buildEditorExerciseFromForm() {
       ? rawTextContent || getDefaultEditorContent(mode)
       : mode === "vowels"
       ? vowelContent
+      : mode === "pacingBoard"
+      ? pacingSourceText
       : tokens.length
         ? tokens.join(" ")
         : getDefaultEditorContent(mode);
@@ -6276,7 +7160,7 @@ function buildEditorExerciseFromForm() {
     speed,
     timing,
     content,
-    rawContent: isTextLikeMode(mode) ? content : "",
+    rawContent: isTextLikeMode(mode) || mode === "pacingBoard" ? content : "",
     textPassages,
     contentLabel:
       mode === "breathing"
@@ -6285,10 +7169,14 @@ function buildEditorExerciseFromForm() {
         ? `${patientTurnCount || 1} Sprecherteil${patientTurnCount === 1 ? "" : "e"}`
         : mode === "sentences"
         ? `${sentences.length || 1} Satz${sentences.length === 1 ? "" : "e"}`
+        : mode === "pacingBoard"
+        ? `${pacingUnits.length || 1} Sprecheinheit${pacingUnits.length === 1 ? "" : "en"}`
         : isLongTextMode(mode) && textPassages.length
         ? `${textPassages.length} Karaoke-Abschnitt${textPassages.length === 1 ? "" : "e"}`
         : tokens.join(", ") || getDefaultEditorContent(mode),
     sentences,
+    units: pacingUnits,
+    pacingMode: mode === "pacingBoard" ? "syllables" : "",
     dialogTurns,
     voiceInstruction,
     voiceProfileKey: editorVoice?.key || "",
@@ -6323,6 +7211,7 @@ function buildEditorExerciseFromForm() {
     repeats,
     breathing,
     analysisConfig: getEditorAnalysisConfigFromForm(),
+    metronome: normalizeMetronomeSettings(savedEditorExercise?.name === name ? savedEditorExercise.metronome || {} : {}),
     script,
   };
 }
@@ -6362,6 +7251,28 @@ function buildStructuredVoiceAnalysis(metadata = {}) {
   if (config.pauses) result.pauses = { count: 0, totalDuration: 0 };
   if (config.speechRate) result.speechRate = { wordsPerMinute: 0, source: "Noch keine Transkription" };
   if (config.waveform) result.waveform = Array.isArray(metadata.amplituden) ? metadata.amplituden.slice(-900) : [];
+  if (metadata.metronom?.used) {
+    result.metronome = {
+      bpm: Number(metadata.metronom.bpm || 0),
+      beatMode: metadata.metronom.beatMode || "unit",
+      linkedToKaraoke: Boolean(metadata.metronom.linkedToKaraoke),
+      duration: Number(metadata.metronom.duration || duration),
+      beatCount: Array.isArray(metadata.metronom.beatTimes) ? metadata.metronom.beatTimes.length : 0,
+      beatTimes: Array.isArray(metadata.metronom.beatTimes) ? metadata.metronom.beatTimes.slice(0, 600) : [],
+    };
+  }
+  if (metadata.sprechbrett?.unitCount) {
+    result.pacingBoard = {
+      type: "pacingBoard",
+      units: Array.isArray(metadata.sprechbrett.units) ? metadata.sprechbrett.units.slice() : [],
+      unitCount: Number(metadata.sprechbrett.unitCount || 0),
+      duration: Number(metadata.sprechbrett.duration || duration),
+      averageUnitSeconds: Number(metadata.sprechbrett.averageUnitSeconds || 0),
+      bpm: metadata.sprechbrett.bpm || null,
+      metronomeUsed: Boolean(metadata.sprechbrett.metronomeUsed),
+      unitEvents: Array.isArray(metadata.sprechbrett.events) ? metadata.sprechbrett.events.slice(0, 300) : [],
+    };
+  }
   return result;
 }
 
@@ -6380,6 +7291,7 @@ function getDefaultEditorContent(mode) {
   if (mode === "text") return "Heute lese ich langsam und deutlich.";
   if (mode === "long_text") return "Es blaut die Nacht.\nDie Sternlein blinken.\nSchneeflöcklein leise niedersinken.";
   if (mode === "vowels") return "A";
+  if (mode === "pacingBoard") return "PA | TA | KA";
   if (mode === "breathing") return "Ruhige Atemübung";
   if (mode === "dialog") {
     const speakerName = getCurrentPatientName();
@@ -6394,6 +7306,7 @@ function getDefaultEditorVoiceInstruction(mode) {
   if (mode === "text") return "Bitte lesen Sie den eingeblendeten Text ruhig und deutlich vor.";
   if (mode === "long_text") return "Bitte lesen Sie jeden eingeblendeten Textabschnitt ruhig und deutlich vor.";
   if (mode === "vowels") return "Atmen Sie ein. Atmen Sie aus. Atmen Sie ein. Atmen Sie vollständig aus. Atmen Sie ein. Sprechen Sie den Vokal lang und anhaltend.";
+  if (mode === "pacingBoard") return "Sprechen Sie jede Sprecheinheit einzeln und deutlich. Nutzen Sie das Sprechbrett als Tempohilfe.";
   if (mode === "breathing") return "Folgen Sie der Atemkugel in Ihrem eigenen ruhigen Tempo.";
   return "Bitte sprechen Sie die einzelnen Silben ruhig und deutlich.";
 }
@@ -6422,6 +7335,10 @@ function buildVoiceInstructionSuggestion() {
     const units = splitExerciseSpeechUnits(exercise.content, exercise.mode);
     const targetText = units.length === 1 ? `den Vokal ${units[0]}` : `die Vokale ${exercise.contentLabel}`;
     return `Atmen Sie ein. Atmen Sie aus. Atmen Sie ein. Atmen Sie vollständig aus. Atmen Sie ein. Sprechen Sie ${targetText} lang und anhaltend im Tempo ${speedText}.`;
+  }
+
+  if (exercise.mode === "pacingBoard") {
+    return `Bereiten Sie sich auf das Sprechbrett vor. Sprechen Sie jede Einheit nacheinander im Tempo ${speedText}.`;
   }
 
   return `Bereiten Sie sich auf die SilbenÜbung vor. Sprechen Sie ${exercise.contentLabel} einzeln und deutlich. Wiederholen Sie die Folge ${exercise.repeats} mal im Tempo ${speedText}.`;
@@ -7384,8 +8301,10 @@ function updateEditorForm() {
   exerciseEditor?.classList.toggle("long-text-mode", isLongTextModeSelected);
   const isDialogMode = editorMode.value === "dialog";
   const isBreathingMode = editorMode.value === "breathing";
+  const isPacingBoardMode = editorMode.value === "pacingBoard";
   exerciseEditor?.classList.toggle("dialog-mode", isDialogMode);
   exerciseEditor?.classList.toggle("breathing-mode", isBreathingMode);
+  exerciseEditor?.classList.toggle("pacing-board-mode", isPacingBoardMode);
   breathingSettings?.classList.toggle("is-hidden", !isBreathingMode);
   editorTimingOptions?.classList.toggle("is-hidden", isBreathingMode);
   const canUseRepeats = supportsEditorRepeats(editorMode.value);
@@ -7394,12 +8313,14 @@ function updateEditorForm() {
   repeatControl.classList.toggle("is-hidden", !canUseRepeats || !editorUseRepeats.checked);
   editorUseRepeats.disabled = !canUseRepeats;
   editorSentenceBuilder?.classList.toggle("is-hidden", !isSentenceMode || isBreathingMode);
+  editorPacingBoardBuilder?.classList.toggle("is-hidden", !isPacingBoardMode || isBreathingMode);
   editorDialogBuilder?.classList.toggle("is-hidden", !isDialogMode);
   editorContent?.closest(".editor-section-content")?.classList.toggle("breathing-content-mode", isBreathingMode);
   editorSpeedValue.textContent = EDITOR_SPEEDS[editorSpeed.value]?.label || "Normal";
   updateEditorKaraokeTimingHint();
   renderEditorPreview(buildEditorExerciseFromForm());
   renderEditorSentenceList();
+  renderEditorPacingUnitList();
   if (isDialogMode) renderEditorDialogList();
 }
 
@@ -7419,7 +8340,7 @@ function updateEditorKaraokeTimingHint() {
 }
 
 function supportsEditorRepeats(mode) {
-  return mode === "syllables" || mode === "vowels";
+  return mode === "syllables" || mode === "vowels" || mode === "pacingBoard";
 }
 
 function renderEditorPreview(exercise, activeIndex = -1) {
@@ -7476,6 +8397,10 @@ function buildEditorPreviewTimeline(exercise = buildEditorExerciseFromForm()) {
     return buildTextPassageTimeline(getExerciseTextPassages(exercise), exercise.timing);
   }
 
+  if (exercise.mode === "pacingBoard") {
+    return buildKaraokeTimeline(getPacingBoardUnits(exercise), exercise.timing);
+  }
+
   const words = String(exercise.script || "")
     .split(/\s+/)
     .map((word) => word.trim())
@@ -7505,7 +8430,7 @@ function startEditorKaraokeTest() {
 }
 
 function supportsEditorKaraokeTempoTest(mode) {
-  return isTextLikeMode(mode) || mode === "sentences" || mode === "dialog";
+  return isTextLikeMode(mode) || mode === "sentences" || mode === "dialog" || mode === "pacingBoard";
 }
 
 function runEditorKaraokeFrame(startTime, exercise) {
@@ -7571,6 +8496,10 @@ function convertEditorContentForMode(targetMode, sourceText) {
       : `System: ${cleanText}`;
   }
 
+  if (targetMode === "pacingBoard") {
+    return splitPacingBoardUnits(cleanText).join(" | ");
+  }
+
   return cleanText
     .split(/\s*\|\s*|\n+/)
     .map((part) => part.trim())
@@ -7610,6 +8539,8 @@ function applyEditorModeDefaults() {
     editorExerciseName.value = "Karaoke-Text";
   } else if (editorMode.value === "vowels") {
     editorExerciseName.value = "Vokal halten";
+  } else if (editorMode.value === "pacingBoard") {
+    editorExerciseName.value = "Sprechbrett";
   } else if (editorMode.value === "dialog") {
     editorExerciseName.value = "Dialog";
   } else if (editorMode.value === "breathing") {
@@ -7919,6 +8850,7 @@ function normalizeEditorExerciseModeValue(mode) {
   if (["breathing", "breath", "breathing_exercise", "atem", "atemuebung", "atemübung"].includes(normalizedMode)) return "breathing";
   if (["media", "media_exercise", "video", "image", "bild"].includes(normalizedMode)) return "media_exercise";
   if (["media_pause", "pause", "audio_pause", "sound_pause"].includes(normalizedMode)) return "media_pause";
+  if (["pacingboard", "pacing_board", "sprechbrett", "sprech-brett"].includes(normalizedMode)) return "pacingBoard";
   return normalizedMode || "syllables";
 }
 
@@ -8639,6 +9571,16 @@ function updateKaraokeDisplayAtTime(overlay, timeline, seconds) {
 function scheduleAutoStop() {
   window.clearTimeout(autoStopTimeoutId);
   window.clearTimeout(hardStopTimeoutId);
+
+  if (isPacingBoardExercise(getActiveRecordingExercise())) {
+    hardStopTimeoutId = window.setTimeout(() => {
+      if (mediaRecorder?.state === "recording") {
+        message.textContent = "Sicherheitsstopp erreicht. Aufnahme wird beendet.";
+        stopRecording();
+      }
+    }, 10 * 60 * 1000);
+    return;
+  }
 
   if (isHoldUntilSilenceExercise()) {
     hardStopTimeoutId = window.setTimeout(() => {
@@ -12392,6 +13334,20 @@ function renderAudioAnalysis(metadata = currentMetadata) {
     ["Ø Frequenz gesamt", analysis.frequenz.durchschnittHz ? `${analysis.frequenz.durchschnittHz} Hz` : "0 Hz"],
     ["Stimmanteil gesamt", `${analysis.frequenz.stimmanteilProzent}%`],
   ];
+  if (metadata.metronom?.used) {
+    items.push(
+      ["Metronom", `${metadata.metronom.bpm || 0} BPM`],
+      ["Taktmodus", metadata.metronom.beatMode || "unit"],
+      ["Takte", Array.isArray(metadata.metronom.beatTimes) ? metadata.metronom.beatTimes.length : 0],
+    );
+  }
+  if (metadata.sprechbrett?.unitCount) {
+    items.push(
+      ["Sprechbrett", `${metadata.sprechbrett.unitCount} Einheiten`],
+      ["Ø Einheit", `${String(metadata.sprechbrett.averageUnitSeconds || 0).replace(".", ",")} s`],
+      ["Feld-Tipps", Array.isArray(metadata.sprechbrett.events) ? metadata.sprechbrett.events.length : 0],
+    );
+  }
 
   items.forEach(([label, value]) => {
     const item = document.createElement("div");
@@ -13331,6 +14287,7 @@ function getCourseTemplates() {
 function getExerciseCategory(exercise) {
   const mode = normalizeEditorExerciseModeValue(exercise?.mode || "");
   if (mode === "breathing") return "atmung";
+  if (mode === "pacingBoard") return "sprechbrett";
   if (mode === "vowels") return "stimme";
   if (mode === "syllables") return "artikulation";
   if (mode === "sentences" || mode === "text" || mode === "long_text" || mode === "dialog") return "sprechen";
@@ -13338,6 +14295,25 @@ function getExerciseCategory(exercise) {
 }
 
 function getExerciseLibraryItems() {
+  const templates = STANDARD_EDITOR_EXERCISES.map((exercise) => ({
+    id: `standard:${exercise.id || slugify(exercise.name)}`,
+    exerciseId: exercise.name,
+    name: exercise.name,
+    mode: exercise.mode || "syllables",
+    content: exercise.content || "",
+    rawContent: exercise.rawContent || exercise.content || "",
+    script: exercise.script || exercise.content || "",
+    contentLabel: exercise.contentLabel || formatExerciseContentLabel(exercise.content, exercise.mode) || "",
+    units: Array.isArray(exercise.units) ? exercise.units.slice() : [],
+    pacingMode: exercise.pacingMode || "",
+    metronome: exercise.metronome || {},
+    analysisConfig: exercise.analysisConfig || {},
+    description: exercise.contentLabel || formatExerciseContentLabel(exercise.content, exercise.mode) || "LogoSound-Vorlage",
+    duration: estimateExerciseDurationSeconds(exercise),
+    difficulty: exercise.difficulty || "leicht",
+    isCustom: false,
+  }));
+
   const fixed = Array.from(exerciseName?.options || [])
     .filter((option) => option.value && option.value !== "custom-editor")
     .map((option) => ({
@@ -13356,6 +14332,14 @@ function getExerciseLibraryItems() {
     exerciseId: exercise.name,
     name: exercise.name,
     mode: exercise.mode || "syllables",
+    content: exercise.content || "",
+    rawContent: exercise.rawContent || exercise.content || "",
+    script: exercise.script || exercise.content || "",
+    contentLabel: exercise.contentLabel || "",
+    units: Array.isArray(exercise.units) ? exercise.units.slice() : [],
+    pacingMode: exercise.pacingMode || "",
+    metronome: exercise.metronome || {},
+    analysisConfig: exercise.analysisConfig || {},
     description: exercise.contentLabel || "Individuell erstellte Übung",
     duration: estimateExerciseDurationSeconds(exercise),
     difficulty: exercise.difficulty || "mittel",
@@ -13385,9 +14369,9 @@ function getExerciseLibraryItems() {
 
   // Uploaded media are shown first so newly added audio/video modules do not
   // disappear below a long list of built-in and editor exercises.
-  return [...media, ...saved, ...fixed].map((exercise) => ({
+  return [...media, ...saved, ...templates, ...fixed].map((exercise) => ({
     ...exercise,
-    category: exercise.isMedia ? "medien" : (exercise.isCustom ? "individuell" : getExerciseCategory(exercise)),
+    category: exercise.isMedia ? "medien" : getExerciseCategory(exercise),
   }));
 }
 
@@ -13396,6 +14380,7 @@ const EXERCISE_BROWSER_CATEGORIES = [
   { id: "breathing", title: "Atemübungen", icon: "○", hint: "Atemball und Rhythmus" },
   { id: "topic:gymnastik", title: "Gymnastik", icon: "G", hint: "Bewegung und Mobilisation" },
   { id: "stimme", title: "Stimme", icon: "Hz", hint: "Vokale und Stimme" },
+  { id: "sprechbrett", title: "Sprechbrett", icon: "▦", hint: "Tempo und Sprecheinheiten" },
   { id: "artikulation", title: "Artikulation", icon: "Pa", hint: "Silben und Laute" },
   { id: "individuell", title: "Eigene", icon: "★", hint: "Gespeicherte Übungen" },
 ];
@@ -13443,6 +14428,7 @@ function getExerciseBrowserCategoryId(exercise) {
   const topic = normalizeMediaLibraryTopic(exercise?.topic || "");
   if ((exercise?.isMedia || mode === "media_exercise") && topic !== "Kein Thema") return `topic:${slugify(topic)}`;
   if (mode === "breathing") return "breathing";
+  if (mode === "pacingBoard") return "sprechbrett";
   if (/\b(gymnastik|mobilisation|koordination|balance|beintraining|beweglichkeit|rumpf|kniebeuge|fersen|ausfallschritt|stuhl)\b/.test(title)) return "topic:gymnastik";
   if (exercise?.isMedia || mode === "media_exercise") return "text";
   if (/\b(mimik|gesicht|wange|stirn|lippe|kiefer|zunge)\b/.test(title)) return "artikulation";
@@ -13610,6 +14596,7 @@ async function openExerciseBrowserItem(item) {
     const mediaItem = mediaLibraryItems.find((media) => media.id === item.mediaId);
     if (mediaItem) {
       selectedMediaLibraryItemId = mediaItem.id;
+      mediaLibraryPlayerReturnView = "exercises";
       setActiveView("mediaLibrary");
       showMediaLibraryItem(mediaItem, true);
       openMediaLibraryPlayerOverlay();
@@ -13643,6 +14630,14 @@ function buildCourseExercise(libraryItem) {
   return {
     exerciseId: libraryItem.exerciseId,
     title: libraryItem.name,
+    content: libraryItem.content || libraryItem.script || libraryItem.description || libraryItem.name,
+    rawContent: libraryItem.rawContent || libraryItem.content || libraryItem.script || libraryItem.description || libraryItem.name,
+    script: libraryItem.script || libraryItem.content || libraryItem.description || libraryItem.name,
+    contentLabel: libraryItem.contentLabel || libraryItem.description || "",
+    units: Array.isArray(libraryItem.units) ? libraryItem.units.slice() : [],
+    pacingMode: libraryItem.pacingMode || "",
+    metronome: libraryItem.metronome || {},
+    analysisConfig: libraryItem.analysisConfig || {},
     position: dailyPlanDraftExercises.length + 1,
     duration: isBreathingExerciseItem ? getBreathingExerciseDuration(libraryItem) : (isMediaPause ? pauseDuration : (libraryItem.duration || 90)),
     repetitions: 1,
@@ -13714,6 +14709,10 @@ function normalizeCourseExercise(exercise, index = 0) {
       useVideo: normalized.useVideo ?? !breathing,
       volumeAnalysis: normalized.volumeAnalysis ?? !breathing,
       frequencyAnalysis: normalized.frequencyAnalysis ?? !breathing,
+      metronome: {
+        ...normalizeMetronomeSettings(normalized.metronome || {}),
+        available: normalized.metronome?.available ?? !breathing,
+      },
       transitionType: getCourseTransitionType(normalized.transitionType),
       transitionDuration: getCourseTransitionDuration(normalized.transitionDuration),
       pauseAfter: {
@@ -13755,6 +14754,10 @@ function normalizeCourseExercise(exercise, index = 0) {
     transitionDuration: getCourseTransitionDuration(normalized.transitionDuration),
     recordAudio: false,
     recordVideo: false,
+    metronome: {
+      ...normalizeMetronomeSettings(normalized.metronome || {}),
+      available: false,
+    },
     pauseAfter: {
       ...(normalized.pauseAfter || {}),
       enabled: false,
@@ -14607,15 +15610,29 @@ function openMediaLibraryPlayerOverlay() {
   if (!mediaLibraryPlayer) return;
   mediaLibraryPlayer.classList.add("is-overlay-open");
   document.body.classList.add("has-media-library-player-overlay");
+  if (mediaLibraryPlayerVideo && !mediaLibraryPlayerVideo.classList.contains("is-hidden")) {
+    mediaLibraryPlayerVideo.style.width = "100%";
+    mediaLibraryPlayerVideo.style.height = "100%";
+    mediaLibraryPlayerVideo.style.maxHeight = "none";
+    mediaLibraryPlayerVideo.style.objectFit = "cover";
+    mediaLibraryPlayerVideo.style.objectPosition = "center center";
+  }
   window.requestAnimationFrame(() => closeMediaLibraryPlayerOverlayButton?.focus());
 }
 
 function closeMediaLibraryPlayerOverlay() {
   if (!mediaLibraryPlayer?.classList.contains("is-overlay-open")) return;
+  const returnView = mediaLibraryPlayerReturnView;
+  mediaLibraryPlayerReturnView = "";
   mediaLibraryPlayerVideo?.pause();
   mediaLibraryPlayerAudio?.pause();
   mediaLibraryPlayer.classList.remove("is-overlay-open");
   document.body.classList.remove("has-media-library-player-overlay");
+  if (returnView === "exercises") {
+    setActiveView("exercises");
+    renderExerciseBrowser();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 }
 function clearMediaLibraryPlayer() {
   mediaLibraryPlayer?.classList.remove("is-media-video", "is-media-image", "is-media-audio");
@@ -14665,7 +15682,9 @@ function showMediaLibraryItem(item, autoplay = false) {
     player.style.opacity = "1";
     player.style.width = "100%";
     player.style.height = "100%";
-    player.style.objectFit = "contain";
+    player.style.maxHeight = "none";
+    player.style.objectFit = "cover";
+    player.style.objectPosition = "center center";
     player.style.backgroundColor = "#080f16";
     if (posterUrl) player.poster = posterUrl;
     else player.removeAttribute("poster");
@@ -14675,6 +15694,9 @@ function showMediaLibraryItem(item, autoplay = false) {
   player.addEventListener("loadedmetadata", () => {
     updateMediaLibraryMetadataFromPlayer(item, player);
   }, { once: true });
+  if (mediaLibraryPlayerReturnView === "exercises") {
+    player.addEventListener("ended", closeMediaLibraryPlayerOverlay, { once: true });
+  }
   player.load();
   if (autoplay) player.play().catch(() => {});
 }
@@ -17403,6 +18425,100 @@ function renderCourseUnitMedia(exercise) {
   return `<div class="course-unit-media">${media.mediaType === "audio" ? "" : renderMediaPreview(media)}</div><p class="course-media-state" aria-live="polite"></p>`;
 }
 
+function renderCourseVideoControlsOverlay() {
+  return `
+    <div class="course-video-controls-overlay" aria-label="Video-Steuerung">
+      <div class="course-video-top-controls">
+        <button class="course-video-round-button" type="button" data-action="cancel" aria-label="Video schliessen">×</button>
+        <button class="course-video-round-button" type="button" data-action="nativeVideoFullscreen" aria-label="Vollbild öffnen">▭</button>
+        <button class="course-video-round-button" type="button" data-action="enableVideoSound" aria-label="Ton einschalten">↗</button>
+      </div>
+      <div class="course-video-center-controls">
+        <button class="course-video-skip-button" type="button" data-action="videoSeek" data-seek="-10" aria-label="10 Sekunden zurück">↶<span>10</span></button>
+        <button class="course-video-main-play" type="button" data-action="videoPlayPause" aria-label="Video starten">▶</button>
+        <button class="course-video-skip-button" type="button" data-action="videoSeek" data-seek="10" aria-label="10 Sekunden vor">↷<span>10</span></button>
+      </div>
+      <div class="course-video-bottom-controls">
+        <span data-course-video-current>0:00</span>
+        <div class="course-video-progress-track" data-action="videoSeekBar" role="slider" aria-label="Video-Zeitachse" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span data-course-video-progress></span>
+        </div>
+        <span data-course-video-remaining>-0:00</span>
+      </div>
+    </div>
+  `;
+}
+
+function formatVideoTime(totalSeconds) {
+  const safeSeconds = Math.max(0, Number(totalSeconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = Math.floor(safeSeconds % 60);
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function updateCourseVideoControls(videoElement = courseVisibleVideo) {
+  if (!coursePlayer || !videoElement) return;
+  const duration = Number.isFinite(videoElement.duration) && videoElement.duration > 0 ? videoElement.duration : 0;
+  const current = Math.max(0, Number(videoElement.currentTime || 0));
+  const progress = duration ? Math.max(0, Math.min(100, (current / duration) * 100)) : 0;
+  const currentLabel = coursePlayer.querySelector("[data-course-video-current]");
+  const remainingLabel = coursePlayer.querySelector("[data-course-video-remaining]");
+  const progressBar = coursePlayer.querySelector("[data-course-video-progress]");
+  const progressTrack = coursePlayer.querySelector("[data-action='videoSeekBar']");
+  const playButton = coursePlayer.querySelector("[data-action='videoPlayPause']");
+  if (currentLabel) currentLabel.textContent = formatVideoTime(current);
+  if (remainingLabel) remainingLabel.textContent = `-${formatVideoTime(Math.max(0, duration - current))}`;
+  if (progressBar) progressBar.style.width = `${progress}%`;
+  if (progressTrack) progressTrack.setAttribute("aria-valuenow", String(Math.round(progress)));
+  if (playButton) {
+    const paused = videoElement.paused || videoElement.ended;
+    playButton.textContent = paused ? "▶" : "Ⅱ";
+    playButton.setAttribute("aria-label", paused ? "Video starten" : "Video pausieren");
+    playButton.classList.toggle("is-playing", !paused);
+  }
+}
+
+function seekCourseVideoBy(seconds) {
+  const videoElement = courseVisibleVideo || coursePlayer?.querySelector("video");
+  if (!videoElement) return;
+  const duration = Number.isFinite(videoElement.duration) && videoElement.duration > 0 ? videoElement.duration : 0;
+  videoElement.currentTime = Math.max(0, Math.min(duration || Number.MAX_SAFE_INTEGER, Number(videoElement.currentTime || 0) + seconds));
+  updateCourseVideoControls(videoElement);
+}
+
+function seekCourseVideoFromEvent(event) {
+  const videoElement = courseVisibleVideo || coursePlayer?.querySelector("video");
+  const track = event.target.closest("[data-action='videoSeekBar']");
+  if (!videoElement || !track) return;
+  const duration = Number.isFinite(videoElement.duration) && videoElement.duration > 0 ? videoElement.duration : 0;
+  if (!duration) return;
+  const rect = track.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(1, rect.width)));
+  videoElement.currentTime = ratio * duration;
+  updateCourseVideoControls(videoElement);
+}
+
+async function toggleCourseVideoPlayback() {
+  const videoElement = courseVisibleVideo || coursePlayer?.querySelector("video");
+  if (!videoElement) return;
+  if (videoElement.paused || videoElement.ended) {
+    await videoElement.play().catch(() => {});
+  } else {
+    videoElement.pause();
+  }
+  updateCourseVideoControls(videoElement);
+}
+
+function openCourseVideoNativeFullscreen() {
+  const videoElement = courseVisibleVideo || coursePlayer?.querySelector("video");
+  if (!videoElement) return;
+  if (videoElement.webkitEnterFullscreen) {
+    videoElement.webkitEnterFullscreen();
+    return;
+  }
+  videoElement.requestFullscreen?.().catch(() => {});
+}
+
 function isIosMediaDevice() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -17646,7 +18762,7 @@ async function startCourseUnitMedia(exercise) {
     courseVisibleVideo = mediaElement;
     mediaElement.src = mediaUrl;
     mediaElement.className = "media-library-preview course-playlist-video";
-    mediaElement.controls = true;
+    mediaElement.controls = false;
     mediaElement.preload = "auto";
     mediaElement.playsInline = true;
     mediaElement.style.position = "";
@@ -17662,6 +18778,9 @@ async function startCourseUnitMedia(exercise) {
     mediaElement.onerror = null;
     mediaElement.onabort = null;
     mediaElement.onplaying = null;
+    mediaElement.ontimeupdate = () => updateCourseVideoControls(mediaElement);
+    mediaElement.onloadedmetadata = () => updateCourseVideoControls(mediaElement);
+    mediaElement.onpause = () => updateCourseVideoControls(mediaElement);
     if (posterUrl) mediaElement.poster = posterUrl;
     else mediaElement.removeAttribute("poster");
     container.replaceChildren(mediaElement);
@@ -17683,9 +18802,13 @@ async function startCourseUnitMedia(exercise) {
     mediaElement.onplaying = () => {
       coursePlaylistVideoAudioUnlocked = true;
       if (state) state.textContent = "";
+      updateCourseVideoControls(mediaElement);
     };
     if (!shouldLoop) {
-      mediaElement.onended = () => coursePlayer.querySelector("[data-action='done']")?.click();
+      mediaElement.onended = () => {
+        updateCourseVideoControls(mediaElement);
+        coursePlayer.querySelector("[data-action='done']")?.click();
+      };
     }
     if (state) state.textContent = "Video wird geladen ...";
     try {
@@ -17695,6 +18818,7 @@ async function startCourseUnitMedia(exercise) {
       } catch (seekError) {
         // Some mobile browsers only allow seeking after playback starts.
       }
+      updateCourseVideoControls(mediaElement);
       await mediaElement.play();
       coursePlaylistVideoAudioUnlocked = true;
       if (state) state.textContent = "";
@@ -17853,6 +18977,7 @@ function renderCoursePlayer() {
         <p>${exercise.patientHint || (isMediaPause ? "Nehmen Sie sich einen ruhigen Moment." : "Bereiten Sie sich auf die nächste Übung vor.")}</p>
         ${isMediaPause ? `<p class="course-media-countdown" aria-live="polite"><strong id="courseMediaPauseCountdown">${Math.max(1, Number(exercise.duration || 30))}</strong><span>Sekunden</span></p>` : ""}
         ${renderCourseUnitMedia(exercise)}
+        ${isFullscreenVideo ? renderCourseVideoControlsOverlay() : ""}
         ${media?.downloadUrl ? `<button class="secondary-action course-inline-media-start" type="button" data-action="playMedia" data-course-media-start-button>${mediaStartLabel}</button>` : ""}
       </div>
       <div class="course-actions course-actions-bd">
@@ -17902,7 +19027,8 @@ function startCourseMediaPauseCountdown(exercise) {
 }
 
 function handleCoursePlayerClick(event) {
-  const action = event.target.closest("button")?.dataset.action;
+  const actionTarget = event.target.closest("[data-action]");
+  const action = actionTarget?.dataset.action;
   if (!action || !activeCourseRun) return;
   const { session, plan, index } = activeCourseRun;
   const exercises = plan?.exercises || [];
@@ -17932,7 +19058,23 @@ function handleCoursePlayerClick(event) {
       .catch(() => {
         const state = coursePlayer.querySelector(".course-media-state");
         if (state) state.textContent = "Bitte im Video auf Play tippen.";
-      });
+    });
+    return;
+  }
+  if (action === "videoPlayPause") {
+    toggleCourseVideoPlayback();
+    return;
+  }
+  if (action === "videoSeek") {
+    seekCourseVideoBy(Number(actionTarget?.dataset.seek || 0));
+    return;
+  }
+  if (action === "videoSeekBar") {
+    seekCourseVideoFromEvent(event);
+    return;
+  }
+  if (action === "nativeVideoFullscreen") {
+    openCourseVideoNativeFullscreen();
     return;
   }
   if (action === "enablePauseSound") {
@@ -21717,6 +22859,8 @@ exerciseBrowserBackButton?.addEventListener("click", () => {
 function setActiveView(viewName) {
   const previousView = document.body.dataset.activeView || "";
   if (previousView === "voiceAnalysis" && viewName !== "voiceAnalysis") pauseVoiceAnalysisPlayers();
+  if (viewName !== "record") document.body.classList.remove("pacing-board-idle");
+  if (viewName !== "record") setMetronomePanelOpen(false);
   if (viewName !== "voiceAnalysis" && window.location.hash.startsWith("#stimmanalyse")) {
     window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
   }
@@ -21748,6 +22892,7 @@ navButtons.forEach((button) => {
 
   if (viewName === "record") {
     prepareRecordViewFromNavigation();
+    updateRecordingMetronomeUi();
   }
 
   if (viewName === "stats") {

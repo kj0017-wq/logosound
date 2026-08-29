@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260828-media-fullscreen001" />
+    <link rel="stylesheet" href="styles.css?v=20260829-metronome-label001" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-28 vowel-intro-start001</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-29 metronome-label001</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -112,6 +112,21 @@
           </div>
         </section>
         <div id="karaokeOverlay" class="karaoke-overlay"></div>
+        <section id="pacingBoardOverlay" class="pacing-board-overlay is-hidden" aria-label="Sprechbrett">
+          <div class="pacing-board-toolbar">
+            <button id="pacingBoardPrevButton" class="pacing-board-icon-button is-back" type="button" aria-label="Vorherige Einheit" title="Zurück">‹</button>
+            <button id="pacingBoardPauseButton" class="pacing-board-icon-button" type="button" aria-label="Sprechbrett pausieren" title="Pause">❚❚</button>
+            <button id="pacingBoardPlayButton" class="pacing-board-icon-button" type="button" aria-label="Sprechbrett automatisch starten" title="Start">▶</button>
+            <button id="pacingBoardPlusButton" class="pacing-board-icon-button" type="button" aria-label="Tempo erhöhen" title="Schneller">+</button>
+            <button id="pacingBoardMinusButton" class="pacing-board-icon-button" type="button" aria-label="Tempo verringern" title="Langsamer">-</button>
+            <strong id="pacingBoardSpeedValue" class="pacing-board-speed">5</strong>
+            <button id="pacingBoardMetronomeButton" class="pacing-board-icon-button is-metronome" type="button" aria-label="Metronom einschalten" title="Metronom"><span aria-hidden="true">♩</span><span class="metronome-button-label">Metro</span><strong>72</strong></button>
+            <button id="pacingBoardHomeButton" class="pacing-board-icon-button is-light" type="button" aria-label="Zur Übungsübersicht" title="Übungen">⌂</button>
+          </div>
+          <strong id="pacingBoardTitle" class="pacing-board-title">Sprechbrett</strong>
+          <p id="pacingBoardHint" class="pacing-board-hint is-hidden">Sprechen Sie jede Einheit nacheinander passend zu den Feldern.</p>
+          <div id="pacingBoardUnits" class="pacing-board-units"></div>
+        </section>
         <section id="breathingOverlay" class="breathing-overlay is-hidden" aria-live="polite">
           <div id="breathingCourseContext" class="course-player-context breathing-course-context is-hidden"></div>
           <div class="breathing-visual">
@@ -151,6 +166,7 @@
             <option value="text">Karaoke-Text</option>
             <option value="long_text">Langer Text</option>
             <option value="vowels">Vokale</option>
+            <option value="pacingBoard">Sprechbrett</option>
             <option value="dialog">Dialog</option>
                 <option value="breathing">Atemübung</option>
           </select>
@@ -175,8 +191,33 @@
             <option value="custom-editor" data-mode="">Gespeicherte Editor-Übung</option>
           </select>
           <div id="recordingExerciseShortcuts" class="recording-exercise-shortcuts"></div>
-          <button id="recordButton" class="primary-action recording-start-action" type="button">Übung starten</button>
-          <button id="previewExerciseButton" class="secondary-action preview-exercise-action" type="button">Vorführung</button>
+          <div class="recording-main-actions">
+            <button id="recordButton" class="primary-action recording-start-action" type="button">Übung starten</button>
+            <div id="recordingMetronome" class="recording-metronome is-compact" aria-label="Metronom">
+              <button id="recordingMetronomeToggle" class="secondary-action recording-metronome-toggle" type="button" aria-pressed="false" aria-label="Metronom einschalten" title="Metronom">
+                <span aria-hidden="true">♩</span><span class="metronome-button-label">Metronom</span><strong id="recordingMetronomeBpmLabel">72</strong>
+              </button>
+              <div id="recordingMetronomePanel" class="recording-metronome-panel is-hidden" hidden>
+                <div class="recording-metronome-bpm">
+                  <button id="recordingMetronomeMinus" class="secondary-action compact-action" type="button" aria-label="BPM verringern">−</button>
+                  <strong><span id="recordingMetronomeBpmValue">72</span> BPM</strong>
+                  <button id="recordingMetronomePlus" class="secondary-action compact-action" type="button" aria-label="BPM erhöhen">+</button>
+                </div>
+                <input id="recordingMetronomeBpm" class="range-input" type="range" min="40" max="120" step="1" value="72" aria-label="Metronom BPM" />
+                <div class="recording-metronome-options">
+                  <label><input id="recordingMetronomeLinked" type="checkbox" /> Koppeln</label>
+                  <label><input id="recordingMetronomeTone" type="checkbox" checked /> Ton</label>
+                  <label><input id="recordingMetronomeVisual" type="checkbox" checked /> Visuell</label>
+                  <label><input id="recordingMetronomeVibration" type="checkbox" /> Vibration</label>
+                </div>
+                <label class="recording-metronome-volume">
+                  <span>Lautstärke</span>
+                  <input id="recordingMetronomeVolume" class="range-input" type="range" min="0" max="100" step="1" value="45" aria-label="Metronom-Lautstärke" />
+                </label>
+              </div>
+            </div>
+            <button id="previewExerciseButton" class="secondary-action preview-exercise-action" type="button">Vorführung</button>
+          </div>
           <button id="recordToEvaluationButton" class="secondary-action record-evaluation-action" type="button">Zur Stimmauswertung</button>
         </div>
 
@@ -376,6 +417,7 @@
               <option value="text">Karaoke-Text</option>
               <option value="long_text">Langer Text</option>
               <option value="vowels">Vokale</option>
+              <option value="pacingBoard">Sprechbrett</option>
               <option value="dialog">Dialog</option>
                 <option value="breathing">Atemübung</option>
             </select>
@@ -396,6 +438,7 @@
                 <option value="text">Karaoke-Text</option>
                 <option value="long_text">Langer Text</option>
                 <option value="vowels">Vokale</option>
+                <option value="pacingBoard">Sprechbrett</option>
                 <option value="dialog">Dialog</option>
                 <option value="breathing">Atemübung</option>
               </select>
@@ -411,6 +454,15 @@
           <div class="editor-section editor-section-content">
             <label class="field-label" for="editorContent">Text, Vokal oder Laute</label>
             <textarea id="editorContent" rows="4">Pa Ta Ka</textarea>
+            <div id="editorPacingBoardBuilder" class="editor-pacing-builder is-hidden" aria-label="Sprechbrett bearbeiten">
+              <label class="field-label" for="editorPacingUnitInput">Sprecheinheit</label>
+              <div class="editor-pacing-row">
+                <input id="editorPacingUnitInput" type="text" placeholder="z. B. GU" inputmode="text" />
+                <button id="addEditorPacingUnitButton" class="secondary-action compact-action" type="button" aria-label="Sprecheinheit hinzufügen">+</button>
+              </div>
+              <div id="editorPacingUnitList" class="editor-pacing-list"></div>
+              <p class="field-help">Jede Kachel ist eine Sprecheinheit. Reihenfolge und Text werden direkt gespeichert.</p>
+            </div>
             <div id="breathingSettings" class="breathing-settings is-hidden">
               <div class="breathing-settings-heading">
                 <strong>Atemablauf</strong>
@@ -1104,7 +1156,6 @@
       <section class="exercise-browser-panel app-section" data-view="exercises" aria-label="Übungen">
         <div class="section-header exercise-browser-header">
           <div>
-            <p class="eyebrow">Übungen</p>
             <h2 id="exerciseBrowserTitle">Übungsbibliothek</h2>
           </div>
           <button id="exerciseBrowserBackButton" class="quiet-action exercise-browser-back-button is-hidden" type="button"><span aria-hidden="true">‹</span> Kategorien</button>
@@ -1388,7 +1439,7 @@
     </div>
 
     <script src="voice-analysis.js?v=20260828-amplitude-fallback001"></script>
-    <script type="module" src="app.js?v=20260828-vowel-intro-start001"></script>
+    <script type="module" src="app.js?v=20260829-metronome-label001"></script>
   </body>
 </html>
 

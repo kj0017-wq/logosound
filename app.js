@@ -70,6 +70,14 @@ const dailyPlanLibrarySummary = document.querySelector("#dailyPlanLibrarySummary
 const saveDailyPlanButton = document.querySelector("#saveDailyPlanButton");
 const dailyPlanEditorState = document.querySelector("#dailyPlanEditorState");
 const dailyPlanList = document.querySelector("#dailyPlanList");
+const exerciseCategoryGrid = document.querySelector("#exerciseCategoryGrid");
+const exerciseBrowserTitle = document.querySelector("#exerciseBrowserTitle");
+const exerciseBrowserSubmenu = document.querySelector("#exerciseBrowserSubmenu");
+const exerciseBrowserSubmenuTitle = document.querySelector("#exerciseBrowserSubmenuTitle");
+const exerciseBrowserSubmenuMeta = document.querySelector("#exerciseBrowserSubmenuMeta");
+const exerciseBrowserSubcategoryGrid = document.querySelector("#exerciseBrowserSubcategoryGrid");
+const exerciseBrowserBackButton = document.querySelector("#exerciseBrowserBackButton");
+const exerciseBrowserList = document.querySelector("#exerciseBrowserList");
 const userRoleSelect = document.querySelector("#userRoleSelect");
 const newCourseButton = document.querySelector("#newCourseButton");
 const editCourseButton = document.querySelector("#editCourseButton");
@@ -655,9 +663,9 @@ const EDITOR_SPEEDS = {
 };
 const EXERCISE_INSTRUCTIONS = {
   "Vokal A halten":
-    "Bitte halten Sie den Vokal A gleichmäßig. Achten Sie auf eine ruhige Stimme und eine stabile Lautstärke.",
+    "Atmen Sie ein. Atmen Sie aus. Atmen Sie ein. Atmen Sie vollständig aus. Atmen Sie ein. Sprechen Sie den Vokal lang und anhaltend.",
   "A E I O U":
-    "Bitte sprechen Sie die Vokale nacheinander deutlich aus. A, E, I, O, U. Achten Sie auf klare Mundbewegungen.",
+    "Atmen Sie ein. Atmen Sie aus. Atmen Sie ein. Atmen Sie vollständig aus. Atmen Sie ein. Sprechen Sie die Vokale nacheinander lang und anhaltend.",
   "Pa Ta Ka":
     "Bitte sprechen Sie nur die Einzelsilben Pa, Ta und Ka. Wiederholen Sie diese zehnmal mit kurzer Pause zwischen den Durchgängen.",
   "Text lesen":
@@ -668,7 +676,7 @@ const STANDARD_EDITOR_EXERCISES = [
     id: "vokal-a-halten",
     name: "Vokal A halten",
     mode: "vowels",
-    content: "A halten",
+    content: "A",
     repeats: 1,
     speed: 3,
     voiceInstruction: EXERCISE_INSTRUCTIONS["Vokal A halten"],
@@ -862,6 +870,8 @@ let selectedMediaLibraryItemId = "";
 const pendingMediaThumbnailIds = new Set();
 const pendingMediaMetadataIds = new Set();
 const mediaLibraryItemStatus = new Map();
+let selectedExerciseBrowserCategory = "";
+let selectedExerciseBrowserSubcategory = "";
 let expandedMyCourseAssignmentId = "";
 let editingMediaLibraryItemId = "";
 let editingDailyPlanPauseKey = "";
@@ -912,13 +922,13 @@ let activeCaptureSourceWidth = 0;
 let activeCaptureSourceHeight = 0;
 
 document.body.classList.add("camera-not-ready");
-recordButton.disabled = true;
-patientName.value = localStorage.getItem(SELECTED_PATIENT_KEY) || patientName.value;
-sensitivitySlider.value = clampSensitivity(localStorage.getItem(SENSITIVITY_KEY) || sensitivitySlider.value);
-sensitivityValue.textContent = formatSensitivityLabel(sensitivitySlider.value);
+if (recordButton) recordButton.disabled = true;
+if (patientName) patientName.value = localStorage.getItem(SELECTED_PATIENT_KEY) || patientName.value;
+if (sensitivitySlider) sensitivitySlider.value = clampSensitivity(localStorage.getItem(SENSITIVITY_KEY) || sensitivitySlider.value);
+if (sensitivityValue && sensitivitySlider) sensitivityValue.textContent = formatSensitivityLabel(sensitivitySlider.value);
 loadRecordingKaraokeSpeedForCurrentExercise();
-playbackVolumeSlider.value = localStorage.getItem(PLAYBACK_GAIN_KEY) || playbackVolumeSlider.value;
-playbackVolumeValue.textContent = `${playbackVolumeSlider.value}%`;
+if (playbackVolumeSlider) playbackVolumeSlider.value = localStorage.getItem(PLAYBACK_GAIN_KEY) || playbackVolumeSlider.value;
+if (playbackVolumeValue && playbackVolumeSlider) playbackVolumeValue.textContent = `${playbackVolumeSlider.value}%`;
 applySavedStatisticsWaveformHeight();
 loadAnalysisCalibrationControls();
 loadSettingsControls();
@@ -926,19 +936,33 @@ loadSavedEditorExercise();
 loadEditorDraft();
 applyTextOverlayVisibility();
 initializeVoiceAnalysisUi();
-const initialView = window.location.hash.startsWith("#stimmanalyse")
-  ? "voiceAnalysis"
-  : "record";
-setActiveView(initialView);
-hideSplashAfterStartup();
-
-init().catch((error) => {
-  console.error("LogoSound konnte nicht vollständig starten", error);
-  recordButton.disabled = false;
-  permissionState.textContent = "Bereit";
-  message.textContent = "Ein Bereich konnte nicht geladen werden. Die App ist trotzdem bereit.";
+if (window.location.hash.startsWith("#stimmanalyse") || window.location.hash.startsWith("#hearing")) {
+  window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+}
+try {
+  setActiveView("exercises");
+} catch (error) {
+  console.error("LogoSound Startansicht konnte nicht geöffnet werden", error);
+} finally {
   hideSplashAfterStartup();
-});
+}
+
+init()
+  .then(() => {
+    setActiveView("exercises");
+    hideSplashAfterStartup();
+  })
+  .catch((error) => {
+    console.error("LogoSound konnte nicht vollständig starten", error);
+    if (recordButton) recordButton.disabled = false;
+    if (permissionState) permissionState.textContent = "Bereit";
+    if (message) message.textContent = "Ein Bereich konnte nicht geladen werden. Die App ist trotzdem bereit.";
+    try {
+      setActiveView("exercises");
+    } finally {
+      hideSplashAfterStartup();
+    }
+  });
 
 
 document.querySelector("#voiceAnalysisExerciseAnalysisButton")?.addEventListener("click", () => {
@@ -1017,7 +1041,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-cameraStartButton.addEventListener("click", async () => {
+cameraStartButton?.addEventListener("click", async () => {
   await ensureMediaStream();
 });
 
@@ -1116,7 +1140,7 @@ async function init() {
   setupKaraokeText();
   syncBreathingRecordPreview();
   permissionState.textContent = "Bereit";
-  message.textContent = "Kamera und Mikrofon vor der ersten Übung aktivieren.";
+  message.textContent = "Wähle eine Übung und starte direkt. Kamera, Mikrofon und Kalibrierung laufen automatisch.";
   recordButton.disabled = false;
   loadCloudEditorExercises().then(() => {
     updateEditorForm();
@@ -1198,12 +1222,23 @@ recordButton.addEventListener("click", async (event) => {
     if (!streamReady && !hasActiveMediaStream()) {
       recordButton.disabled = false;
       recordButton.textContent = "\u00dcbung starten";
-      message.textContent = "Kamera/Mikrofon konnten nicht aktiviert werden.";
+      message.textContent = "Kamera/Mikrofon konnten nicht aktiviert werden. Bitte erneut Übung starten tippen.";
       return;
     }
 
     await withTimeout(ensureCameraPreviewPlaying(), 1200).catch(() => false);
+    await runAutomaticNoiseCalibration();
     const activeExercise = getActiveRecordingExercise();
+    const instruction = getCurrentExerciseInstructionText();
+    if (instruction) {
+      showExerciseIntroScreen(activeExercise, instruction);
+      recordButton.textContent = "Intro läuft";
+      message.textContent = "Ansage läuft.";
+      await withTimeout(
+        speakExerciseInstruction(),
+        Math.max(9000, Math.round(estimateSpeechDurationSeconds(instruction) * 1000) + 5000),
+      ).catch(() => false);
+    }
     const audioPreparation = prepareRecordingAudio({
       preferExistingStream: activeExercise?.mode === "dialog",
     });
@@ -4361,10 +4396,10 @@ function updateSilenceNoiseCalibration(sample, now) {
   });
   adaptiveNoiseFloor = Math.max(adaptiveNoiseFloor, calibrationNoiseFloor.voiceFloor);
   adaptiveVolumeNoiseFloor = Math.max(adaptiveVolumeNoiseFloor, calibrationNoiseFloor.volumeGate / VOLUME_NOISE_GATE_MULTIPLIER);
-  message.textContent = "Grundrauschen gemessen. Jetzt sprechen und bei Bedarf Empfindlichkeit einstellen.";
+  message.textContent = "Grundrauschen gemessen. Die Pause-/Sprachschwelle ist gesetzt.";
   if (settingsCalibrationStatus) {
     settingsCalibrationStatus.textContent =
-      "Grundrauschen gemessen. Jetzt sprechen, Testaudio starten oder Empfindlichkeit anpassen.";
+      "Grundrauschen gemessen. Die automatische Pause-/Sprachschwelle ist gesetzt.";
   }
   updateCalibrationTestAudioButton();
   return false;
@@ -5453,6 +5488,21 @@ async function startCalibration(options = {}) {
   return true;
 }
 
+async function runAutomaticNoiseCalibration() {
+  if (isRecording || isCalibrating) return false;
+  recordButton.textContent = "Kalibrierung";
+  message.textContent = "Bitte kurz still sein. LogoSound misst automatisch das Grundrauschen.";
+  const started = await startCalibration({ embedded: true, returnView: "record" });
+  if (!started) return false;
+  const startedAtMs = performance.now();
+  while (isCalibrating && calibrationNoiseState && !calibrationNoiseState.completed) {
+    if (performance.now() - startedAtMs > CALIBRATION_SILENCE_MS + 1600) break;
+    await wait(80);
+  }
+  stopCalibration({ silent: true });
+  message.textContent = "Kalibrierung abgeschlossen. Die Übung startet.";
+  return true;
+}
 function stopCalibration(options = {}) {
   isCalibrating = false;
   calibrationNoiseState = null;
@@ -5470,15 +5520,17 @@ function stopCalibration(options = {}) {
   updateCalibrationTestAudioButton();
   calibrationBackButton?.classList.add("is-hidden");
   settingsCalibrationBackButton?.classList.add("is-hidden");
-  if (settingsCalibrationStatus) {
-    settingsCalibrationStatus.textContent = `Kalibrierung gespeichert: Rauschschwelle ${Math.round(
-      calibrationNoiseFloor.volumeGate || VOLUME_NOISE_GATE,
-    )}, Empfindlichkeit ${formatSensitivityLabel(sensitivitySlider.value)}.`;
+  if (!options.silent && settingsCalibrationStatus) {
+    settingsCalibrationStatus.textContent = "Kalibrierung gespeichert: Rauschschwelle "
+      + Math.round(calibrationNoiseFloor.volumeGate || VOLUME_NOISE_GATE)
+      + ".";
   }
-  message.textContent = `Kalibrierung gespeichert: Rauschschwelle ${Math.round(
-    calibrationNoiseFloor.volumeGate || VOLUME_NOISE_GATE,
-  )}, Empfindlichkeit ${formatSensitivityLabel(sensitivitySlider.value)}.`;
-  if (options.restoreView && calibrationReturnView && calibrationReturnView !== document.body.dataset.activeView) {
+  if (!options.silent) {
+    message.textContent = "Kalibrierung gespeichert: Rauschschwelle "
+      + Math.round(calibrationNoiseFloor.volumeGate || VOLUME_NOISE_GATE)
+      + ".";
+  }
+  if (!options.silent && options.restoreView && calibrationReturnView && calibrationReturnView !== document.body.dataset.activeView) {
     setActiveView(calibrationReturnView);
   }
   calibrationReturnView = "record";
@@ -5699,11 +5751,40 @@ function formatSecondsAndMilliseconds(seconds) {
 }
 
 function getEditorTokens() {
-  return editorContent.value
+  const source = editorMode?.value === "vowels"
+    ? getVowelExerciseParts(editorContent.value).content
+    : editorContent.value;
+  return source
     .split(/[\s,;]+/)
     .map((token) => token.trim())
     .filter(Boolean)
     .slice(0, 80);
+}
+
+function getVowelExerciseParts(value = "") {
+  const source = String(value || "").replace(/\s+/g, " ").trim();
+  if (!source) return { content: "A", instruction: "" };
+  const explicitVowels = source
+    .split(/[\s,;|/\\:.-]+/)
+    .map((token) => token.trim().toLocaleUpperCase("de-DE"))
+    .filter((token) => /^[AEIOUÄÖÜ]$/.test(token));
+  const content = explicitVowels.length ? explicitVowels.join(" ") : source;
+  let instruction = source
+    .replace(/[„“"']/g, "")
+    .replace(/\b[AEIOUÄÖÜ]\b/gi, "")
+    .replace(/\s*[:;,.|-]\s*$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (/^[AEIOUÄÖÜ](?:\s+[AEIOUÄÖÜ])*$/.test(source.toLocaleUpperCase("de-DE"))) {
+    instruction = "";
+  }
+  return { content, instruction };
+}
+
+function isLegacyVowelVoiceInstruction(value = "") {
+  const text = String(value || "").trim();
+  return text === "Sprechen Sie lang und anhaltend."
+    || text === "Bitte sprechen Sie die Vokale nacheinander deutlich aus.";
 }
 
 function getEditorSentences() {
@@ -5864,6 +5945,9 @@ function getEditorRepeats() {
 function getExerciseInstruction() {
   const exercise = getActiveRecordingExercise();
   if (!exercise) return "";
+  if (exercise.mode === "vowels" && (!exercise.voiceInstruction || isLegacyVowelVoiceInstruction(exercise.voiceInstruction))) {
+    return getDefaultEditorVoiceInstruction("vowels");
+  }
   if (exercise.voiceInstruction) return exercise.voiceInstruction;
 
   if (exercise.mode === "dialog") {
@@ -5982,6 +6066,24 @@ function getActiveRecordingExercise() {
       speed: Number(recordingKaraokeSpeed?.value || 3),
     });
   }
+  if (courseExercise?.exerciseId && courseExercise.exerciseId === exerciseName.value) {
+    return hydrateEditorExercise({
+      name: courseExercise.title || courseExercise.name || courseExercise.exerciseId || "Kursübung",
+      mode: courseExercise.mode || "long_text",
+      content: courseExercise.content || courseExercise.patientHint || courseExercise.script || courseExercise.title || "",
+      rawContent: courseExercise.rawContent || "",
+      script: courseExercise.script || courseExercise.content || courseExercise.patientHint || courseExercise.title || "",
+      repeats: courseExercise.repetitions || courseExercise.repeats || 1,
+      speed: courseExercise.speed || Number(recordingKaraokeSpeed?.value || 3),
+      voiceInstruction: courseExercise.voiceInstruction || "",
+      voiceAudioUrl: courseExercise.voiceAudioUrl || "",
+      voiceAudioPath: courseExercise.voiceAudioPath || "",
+      voiceAudioDataUrl: courseExercise.voiceAudioDataUrl || "",
+      voiceAudioTextHash: courseExercise.voiceAudioTextHash || "",
+      analysisConfig: courseExercise.analysisConfig,
+      breathing: courseExercise.breathing || courseExercise.breathingSettings || null,
+    });
+  }
   if (exerciseName.value === "custom-editor") return getActiveEditorExercise();
 
   const selectedOption = exerciseName.selectedOptions?.[0];
@@ -6042,7 +6144,9 @@ function hydrateEditorExercise(exercise) {
   const mode = normalizeEditorExerciseModeValue(exercise.mode || "syllables");
   const speed = Number(exercise.speed || 3);
   const timing = exercise.timing || EDITOR_SPEEDS[speed] || EDITOR_SPEEDS[3];
-  const content = exercise.content || getDefaultEditorContent(mode);
+  const initialContent = exercise.content || getDefaultEditorContent(mode);
+  const vowelParts = mode === "vowels" ? getVowelExerciseParts(initialContent) : null;
+  const content = vowelParts?.content || initialContent;
   const breathing = mode === "breathing" ? getBreathingSettings(exercise) : null;
   const repeats = Math.max(1, Number(exercise.repeats || 1));
   const assignedPatientName = String(exercise.patientName || "").trim();
@@ -6058,14 +6162,16 @@ function hydrateEditorExercise(exercise) {
           : getExerciseDialogTurns({ ...exercise, mode, content }))
     : [];
   const dialogTurns = mode === "dialog" ? hydrateDialogTurnsWithAudio(parsedDialogTurns, exercise) : [];
-  const script = !isTextLikeMode(mode) && mode !== "dialog" && repeats > 1
+  const script = mode === "vowels"
+    ? (repeats > 1 ? buildRepeatedScript(content, repeats) : content)
+    : !isTextLikeMode(mode) && mode !== "dialog" && repeats > 1
     ? buildRepeatedScript(content, repeats)
     : exercise.script || content;
   const sentences = exercise.sentences || (mode === "sentences" ? content.split("|").map((sentence) => sentence.trim()).filter(Boolean) : []);
   const patientTurnCount = dialogTurns.filter((turn) => turn.role === "patient").length;
   const embeddedVoiceProfile = getEmbeddedExerciseVoiceProfile(exercise);
   const contentLabel =
-    exercise.contentLabel ||
+    (mode === "vowels" ? "" : exercise.contentLabel) ||
     (mode === "breathing"
       ? `${breathing.repeats} Atemrunden · ${getBreathingExerciseDuration({ breathing })} Sekunden`
       : mode === "dialog"
@@ -6096,6 +6202,10 @@ function hydrateEditorExercise(exercise) {
     voiceProfileGender: exercise.voiceProfileGender || embeddedVoiceProfile?.gender || "neutral",
     voiceProfileVoiceId: String(exercise.voiceProfileVoiceId || embeddedVoiceProfile?.voiceId || ""),
     voiceProfileSettings: exercise.voiceProfileSettings || embeddedVoiceProfile?.settings || null,
+    voiceInstruction: mode === "vowels"
+      && (!String(exercise.voiceInstruction || "").trim() || isLegacyVowelVoiceInstruction(exercise.voiceInstruction))
+      ? (vowelParts?.instruction || getDefaultEditorVoiceInstruction("vowels"))
+      : exercise.voiceInstruction,
     voiceAudioUrl: getGlobalVoiceAudioUrl(exercise.voiceAudioUrl, exercise.voiceAudioPath),
     demoAudioUrl: getGlobalVoiceAudioUrl(exercise.demoAudioUrl, exercise.demoAudioPath),
     demoAudioSegments: Array.isArray(exercise.demoAudioSegments)
@@ -6123,6 +6233,8 @@ function buildEditorExerciseFromForm() {
   const parsedDialogTurns = mode === "dialog" ? getEditorDialogTurns() : [];
   const dialogTurns = mode === "dialog" ? hydrateDialogTurnsWithAudio(parsedDialogTurns, baseExerciseForAudio) : [];
   const rawTextContent = editorContent.value.trim();
+  const vowelParts = mode === "vowels" ? getVowelExerciseParts(rawTextContent) : null;
+  const vowelContent = vowelParts?.content || getDefaultEditorContent(mode);
   const textPassages = isLongTextMode(mode) ? splitTextPassages(rawTextContent) : [];
   const tokens =
     isTextLikeMode(mode)
@@ -6139,11 +6251,13 @@ function buildEditorExerciseFromForm() {
       ? sentences.join(" | ") || getDefaultEditorContent(mode)
       : isTextLikeMode(mode)
       ? rawTextContent || getDefaultEditorContent(mode)
+      : mode === "vowels"
+      ? vowelContent
       : tokens.length
         ? tokens.join(" ")
         : getDefaultEditorContent(mode);
   const voiceInstruction =
-    editorVoiceInstruction.value.trim() || getDefaultEditorVoiceInstruction(mode);
+    editorVoiceInstruction.value.trim() || vowelParts?.instruction || getDefaultEditorVoiceInstruction(mode);
   const editorVoiceSettings = getElevenLabsSettings();
   const editorVoice = getEditorSelectedVoice(editorVoiceSettings);
   const editorVoiceRequestSettings = getVoiceRequestSettingsForVoice(editorVoice, editorVoiceSettings);
@@ -6265,7 +6379,7 @@ function getDefaultEditorContent(mode) {
   if (mode === "sentences") return "";
   if (mode === "text") return "Heute lese ich langsam und deutlich.";
   if (mode === "long_text") return "Es blaut die Nacht.\nDie Sternlein blinken.\nSchneeflöcklein leise niedersinken.";
-  if (mode === "vowels") return "A E I O U";
+  if (mode === "vowels") return "A";
   if (mode === "breathing") return "Ruhige Atemübung";
   if (mode === "dialog") {
     const speakerName = getCurrentPatientName();
@@ -6279,7 +6393,7 @@ function getDefaultEditorVoiceInstruction(mode) {
   if (mode === "sentences") return "Bitte lesen Sie die kurzen Sätze nacheinander ruhig und deutlich vor. Machen Sie nach jedem Satz eine kurze Pause.";
   if (mode === "text") return "Bitte lesen Sie den eingeblendeten Text ruhig und deutlich vor.";
   if (mode === "long_text") return "Bitte lesen Sie jeden eingeblendeten Textabschnitt ruhig und deutlich vor.";
-  if (mode === "vowels") return "Bitte sprechen Sie die Vokale nacheinander deutlich aus.";
+  if (mode === "vowels") return "Atmen Sie ein. Atmen Sie aus. Atmen Sie ein. Atmen Sie vollständig aus. Atmen Sie ein. Sprechen Sie den Vokal lang und anhaltend.";
   if (mode === "breathing") return "Folgen Sie der Atemkugel in Ihrem eigenen ruhigen Tempo.";
   return "Bitte sprechen Sie die einzelnen Silben ruhig und deutlich.";
 }
@@ -6305,7 +6419,9 @@ function buildVoiceInstructionSuggestion() {
   }
 
   if (exercise.mode === "vowels") {
-    return `Bereiten Sie sich auf die Vokalübung vor. Sprechen Sie ${exercise.contentLabel} nacheinander im Tempo ${speedText}. Achten Sie auf klare Mundöffnung und gleichmäßige Stimme.`;
+    const units = splitExerciseSpeechUnits(exercise.content, exercise.mode);
+    const targetText = units.length === 1 ? `den Vokal ${units[0]}` : `die Vokale ${exercise.contentLabel}`;
+    return `Atmen Sie ein. Atmen Sie aus. Atmen Sie ein. Atmen Sie vollständig aus. Atmen Sie ein. Sprechen Sie ${targetText} lang und anhaltend im Tempo ${speedText}.`;
   }
 
   return `Bereiten Sie sich auf die SilbenÜbung vor. Sprechen Sie ${exercise.contentLabel} einzeln und deutlich. Wiederholen Sie die Folge ${exercise.repeats} mal im Tempo ${speedText}.`;
@@ -6740,9 +6856,9 @@ function buildLocalEditorAiExercise(prompt) {
   }
 
   if (kind === "vowels") {
-    const items = sound ? [sound] : ["A", "E", "I", "O", "U"];
+    const items = sound ? [sound.toLocaleUpperCase("de-DE")] : ["A", "E", "I", "O", "U"];
     return {
-      title: titleBase,
+      title: items.length === 1 ? `Vokal ${items[0]} halten` : "Vokale nacheinander",
       kind: "vowels",
       summary: `${items.length} Vokale lokal erstellt.`,
       items,
@@ -7493,7 +7609,7 @@ function applyEditorModeDefaults() {
   } else if (editorMode.value === "text") {
     editorExerciseName.value = "Karaoke-Text";
   } else if (editorMode.value === "vowels") {
-    editorExerciseName.value = "Vokale nacheinander";
+    editorExerciseName.value = "Vokal halten";
   } else if (editorMode.value === "dialog") {
     editorExerciseName.value = "Dialog";
   } else if (editorMode.value === "breathing") {
@@ -12288,7 +12404,7 @@ function renderAudioAnalysis(metadata = currentMetadata) {
   });
 
   audioAnalysisNote.textContent = analysis.qualitaet.zuLeise
-    ? "Hinweis: Die Aufnahme wirkt sehr leise. Empfindlichkeit oder Abstand zum Mikrofon prüfen."
+    ? "Hinweis: Die Aufnahme wirkt sehr leise. Bitte Abstand zum Mikrofon prüfen oder neu kalibrieren."
     : "Schieberegler bewegt die Analyseposition. Die Werte werden aus einem kurzen Fenster um diese Stelle berechnet.";
 }
 
@@ -13275,6 +13391,242 @@ function getExerciseLibraryItems() {
   }));
 }
 
+const EXERCISE_BROWSER_CATEGORIES = [
+  { id: "text", title: "Texte & Sprache", icon: "T", hint: "Lange Texte, Dialoge, kurze Sätze" },
+  { id: "breathing", title: "Atemübungen", icon: "○", hint: "Atemball und Rhythmus" },
+  { id: "topic:gymnastik", title: "Gymnastik", icon: "G", hint: "Bewegung und Mobilisation" },
+  { id: "stimme", title: "Stimme", icon: "Hz", hint: "Vokale und Stimme" },
+  { id: "artikulation", title: "Artikulation", icon: "Pa", hint: "Silben und Laute" },
+  { id: "individuell", title: "Eigene", icon: "★", hint: "Gespeicherte Übungen" },
+];
+const TEXT_EXERCISE_SUBCATEGORIES = [
+  { id: "short", title: "Kurze Sätze", hint: "Satzübungen", modes: ["sentences"] },
+  { id: "long", title: "Langer Text", hint: "Lesetexte", modes: ["text", "long_text"] },
+  { id: "dialog", title: "Dialoge", hint: "Rollen und Wechsel", modes: ["dialog"] },
+  { id: "karaoke", title: "Karaoke-Text", hint: "Wort für Wort", modes: ["karaoke"] },
+];
+
+function getTextExerciseSubcategoryId(exercise) {
+  const mode = normalizeEditorExerciseModeValue(exercise?.mode || "");
+  const match = TEXT_EXERCISE_SUBCATEGORIES.find((subcategory) => subcategory.modes.includes(mode));
+  return match?.id || "long";
+}
+
+function getExerciseBrowserCategories(items = getExerciseBrowserItems()) {
+  const fixedCategoryIds = new Set(EXERCISE_BROWSER_CATEGORIES.map((category) => category.id));
+  const fixedCategoryTitles = new Set(EXERCISE_BROWSER_CATEGORIES.map((category) => normalizeMediaLibraryTopic(category.title)));
+  const blockedTopicTitles = new Set(["Intro", "Pause", "Pausen", "Mimik", "Gesicht und Mimik"]);
+  const topicCategories = new Map();
+  items.forEach((item) => {
+    const topic = normalizeMediaLibraryTopic(item.topic || "");
+    if (!item.isMedia || topic === "Kein Thema") return;
+    const topicId = `topic:${slugify(topic)}`;
+    if (fixedCategoryIds.has(topicId) || fixedCategoryTitles.has(topic) || blockedTopicTitles.has(topic)) return;
+    topicCategories.set(topicId, {
+      id: topicId,
+      title: topic,
+      icon: "⌁",
+      hint: "Thema",
+      isTopic: true,
+    });
+  });
+  return [
+    ...EXERCISE_BROWSER_CATEGORIES,
+    ...[...topicCategories.values()].sort((left, right) => left.title.localeCompare(right.title, "de")),
+  ];
+}
+
+function getExerciseBrowserCategoryId(exercise) {
+  const mode = normalizeEditorExerciseModeValue(exercise?.mode || "");
+  const title = String(exercise?.name || exercise?.title || exercise?.description || "").toLocaleLowerCase("de-DE");
+  if (mode === "media_pause") return "pausen";
+  const topic = normalizeMediaLibraryTopic(exercise?.topic || "");
+  if ((exercise?.isMedia || mode === "media_exercise") && topic !== "Kein Thema") return `topic:${slugify(topic)}`;
+  if (mode === "breathing") return "breathing";
+  if (/\b(gymnastik|mobilisation|koordination|balance|beintraining|beweglichkeit|rumpf|kniebeuge|fersen|ausfallschritt|stuhl)\b/.test(title)) return "topic:gymnastik";
+  if (exercise?.isMedia || mode === "media_exercise") return "text";
+  if (/\b(mimik|gesicht|wange|stirn|lippe|kiefer|zunge)\b/.test(title)) return "artikulation";
+  if (mode === "vowels" || /\b(stimme|vokal|ton|laut)\b/.test(title)) return "stimme";
+  if (mode === "syllables" || /\b(pa ta ka|silbe|artikulation)\b/.test(title)) return "artikulation";
+  if (["sentences", "text", "long_text", "dialog", "karaoke"].includes(mode)) return "text";
+  return exercise?.isCustom ? "individuell" : "text";
+}
+
+function getExerciseBrowserItems() {
+  const byKey = new Map();
+  getExerciseLibraryItems().forEach((item) => {
+    const key = String(item.exerciseId || item.name || item.id).trim().toLocaleLowerCase("de-DE");
+    if (!key) return;
+    const category = getExerciseBrowserCategoryId(item);
+    const existing = byKey.get(key);
+    if (!existing || (!existing.isCustom && item.isCustom)) byKey.set(key, { ...item, browserCategory: category, textSubcategory: getTextExerciseSubcategoryId(item) });
+  });
+  return [...byKey.values()].sort((left, right) => {
+    const categories = getExerciseBrowserCategories([]);
+    const leftCategoryIndex = categories.findIndex((category) => category.id === left.browserCategory);
+    const rightCategoryIndex = categories.findIndex((category) => category.id === right.browserCategory);
+    const categoryOrder = (leftCategoryIndex < 0 ? 999 : leftCategoryIndex) - (rightCategoryIndex < 0 ? 999 : rightCategoryIndex);
+    return categoryOrder || String(left.name || "").localeCompare(String(right.name || ""), "de");
+  });
+}
+
+function renderExerciseBrowser() {
+  if (!exerciseCategoryGrid || !exerciseBrowserList) return;
+  const items = getExerciseBrowserItems();
+  const allCategories = getExerciseBrowserCategories(items);
+  const counts = items.reduce((map, item) => {
+    map[item.browserCategory] = (map[item.browserCategory] || 0) + 1;
+    return map;
+  }, {});
+  const categories = allCategories.filter((category) => (counts[category.id] || 0) > 0);
+  if (selectedExerciseBrowserCategory && !categories.some((category) => category.id === selectedExerciseBrowserCategory)) {
+    selectedExerciseBrowserCategory = "";
+    selectedExerciseBrowserSubcategory = "";
+  }
+  exerciseCategoryGrid.innerHTML = "";
+  categories.forEach((category) => {
+    const count = counts[category.id] || 0;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `exercise-category-tile${selectedExerciseBrowserCategory === category.id ? " is-active" : ""}${category.isTopic ? " is-topic" : ""}`;
+    button.innerHTML = `
+      <span class="exercise-category-icon" aria-hidden="true">${escapeHtml(category.icon)}</span>
+      <strong>${escapeHtml(category.title)}</strong>
+      <small>${escapeHtml(category.hint)} · ${count}</small>
+    `;
+    button.addEventListener("click", () => {
+      selectedExerciseBrowserCategory = category.id;
+      selectedExerciseBrowserSubcategory = "";
+      renderExerciseBrowser();
+    });
+    exerciseCategoryGrid.append(button);
+  });
+
+  const selectedCategory = categories.find((category) => category.id === selectedExerciseBrowserCategory);
+  exerciseCategoryGrid.classList.toggle("is-hidden", Boolean(selectedCategory));
+  exerciseCategoryGrid.hidden = Boolean(selectedCategory);
+  if (exerciseBrowserTitle) {
+    exerciseBrowserTitle.textContent = selectedCategory?.title || "Übungsbibliothek";
+  }
+  exerciseBrowserSubmenu?.classList.toggle("is-hidden", !selectedCategory);
+  if (exerciseBrowserSubmenu) exerciseBrowserSubmenu.hidden = !selectedCategory;
+  exerciseBrowserBackButton?.classList.toggle("is-hidden", !selectedCategory);
+  if (!selectedCategory) return;
+
+  let categoryItems = items.filter((item) => item.browserCategory === selectedCategory.id);
+  const isTextCategory = selectedCategory.id === "text";
+  if (exerciseBrowserSubcategoryGrid) {
+    exerciseBrowserSubcategoryGrid.hidden = !isTextCategory;
+    exerciseBrowserSubcategoryGrid.classList.toggle("is-hidden", !isTextCategory);
+    exerciseBrowserSubcategoryGrid.innerHTML = "";
+  }
+  if (isTextCategory) {
+    exerciseBrowserSubmenuTitle?.classList.remove("is-hidden");
+    const countsBySubcategory = categoryItems.reduce((map, item) => {
+      map[item.textSubcategory] = (map[item.textSubcategory] || 0) + 1;
+      return map;
+    }, {});
+    const availableSubcategories = TEXT_EXERCISE_SUBCATEGORIES.filter((subcategory) => countsBySubcategory[subcategory.id]);
+    if (selectedExerciseBrowserSubcategory && !availableSubcategories.some((subcategory) => subcategory.id === selectedExerciseBrowserSubcategory)) {
+      selectedExerciseBrowserSubcategory = "";
+    }
+    const subcategoryButtons = categoryItems.length
+      ? [
+          { id: "", title: "Alle", hint: "Alle Textübungen", count: categoryItems.length },
+          ...availableSubcategories.map((subcategory) => ({
+            ...subcategory,
+            count: countsBySubcategory[subcategory.id],
+          })),
+        ]
+      : [];
+    subcategoryButtons.forEach((subcategory) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `exercise-subcategory-button${selectedExerciseBrowserSubcategory === subcategory.id ? " is-active" : ""}`;
+      button.innerHTML = `
+        <strong>${escapeHtml(subcategory.title)}</strong>
+        <small>${escapeHtml(subcategory.hint)} · ${subcategory.count}</small>
+      `;
+      button.addEventListener("click", () => {
+        selectedExerciseBrowserSubcategory = subcategory.id;
+        renderExerciseBrowser();
+      });
+      exerciseBrowserSubcategoryGrid?.append(button);
+    });
+    const selectedSubcategory = availableSubcategories.find((subcategory) => subcategory.id === selectedExerciseBrowserSubcategory);
+    if (exerciseBrowserSubmenuTitle) exerciseBrowserSubmenuTitle.textContent = selectedSubcategory?.title || "Alle Textübungen";
+    if (!availableSubcategories.length && exerciseBrowserSubmenuMeta) {
+      exerciseBrowserSubmenuMeta.textContent = "Noch keine Text- oder Sprachübung vorhanden.";
+    }
+    if (selectedExerciseBrowserSubcategory) {
+      categoryItems = categoryItems.filter((item) => item.textSubcategory === selectedExerciseBrowserSubcategory);
+    }
+  } else if (exerciseBrowserSubmenuTitle) {
+    exerciseBrowserSubmenuTitle.textContent = "";
+    exerciseBrowserSubmenuTitle.classList.add("is-hidden");
+  }
+  if (exerciseBrowserSubmenuMeta) {
+    exerciseBrowserSubmenuMeta.textContent = categoryItems.length
+      ? `${categoryItems.length} Übung${categoryItems.length === 1 ? "" : "en"}`
+      : "Noch keine Übung in dieser Kategorie.";
+  }
+  exerciseBrowserList.innerHTML = "";
+  categoryItems.forEach((item) => {
+    const isPause = item.mode === "media_pause";
+    const card = document.createElement("article");
+    card.className = `course-exercise-card exercise-browser-card${isPause ? " is-pause" : ""}`;
+    card.innerHTML = `
+      <div class="course-exercise-content">
+        ${renderDailyPlanLibraryVisual(item, isPause)}
+        <div class="course-exercise-copy">
+          <strong>${escapeHtml(item.name || "Übung")}</strong>
+          <small>${escapeHtml(item.description || getEditorModeLabel(item.mode))}</small>
+          <div class="course-exercise-meta">
+            <span>${formatCourseDuration(item.duration || 0)}</span>
+            <span>${escapeHtml(getEditorModeLabel(normalizeEditorExerciseModeValue(item.mode)))}</span>
+          </div>
+        </div>
+        <div class="course-exercise-actions">
+          <button type="button" class="primary-action compact-action" data-action="open" aria-label="${escapeHtml(item.name || "Übung")} öffnen" title="Öffnen">›</button>
+        </div>
+      </div>
+    `;
+    card.addEventListener("click", (event) => {
+      if (!event.target.closest("button, .course-exercise-content")) return;
+      openExerciseBrowserItem(item).catch((error) => {
+        message.textContent = `Übung konnte nicht geöffnet werden: ${error?.message || "Bitte erneut versuchen."}`;
+      });
+    });
+    exerciseBrowserList.append(card);
+  });
+  if (!categoryItems.length) {
+    exerciseBrowserList.innerHTML = '<div class="course-empty">Hier erscheinen Übungen, sobald sie im Editor oder als Medium angelegt wurden.</div>';
+  }
+}
+
+async function openExerciseBrowserItem(item) {
+  if (!item) return;
+  if (item.isMedia) {
+    const mediaItem = mediaLibraryItems.find((media) => media.id === item.mediaId);
+    if (mediaItem) {
+      selectedMediaLibraryItemId = mediaItem.id;
+      setActiveView("mediaLibrary");
+      showMediaLibraryItem(mediaItem, true);
+      openMediaLibraryPlayerOverlay();
+      return;
+    }
+  }
+  const courseExercise = normalizeCourseExercise(buildCourseExercise(item), 0);
+  prepareCourseExerciseInRecordView(courseExercise);
+  setActiveView("record");
+  if (isBreathingExercise(courseExercise)) {
+    await startBreathingExercise(getActiveRecordingExercise(), { preview: true });
+    return;
+  }
+  message.textContent = `Übung bereit: ${item.name || "Übung"}`;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 function estimateExerciseDurationSeconds(exercise) {
   if (isBreathingExercise(exercise)) return getBreathingExerciseDuration(exercise);
   const timing = exercise?.timing || EDITOR_SPEEDS[exercise?.speed || 3] || EDITOR_SPEEDS[3];
@@ -13338,9 +13690,24 @@ function normalizeCourseExercise(exercise, index = 0) {
   normalized.mode = normalizedMode;
   if (!isCoursePauseExercise(normalized)) {
     const breathing = normalizedMode === "breathing";
+    const vowelParts = normalizedMode === "vowels"
+      ? getVowelExerciseParts(normalized.content || normalized.script || normalized.patientHint || normalized.title || "")
+      : null;
+    const content = vowelParts?.content || normalized.content || normalized.script || normalized.patientHint || normalized.title || "";
+    const repetitions = Math.max(1, Number(normalized.repetitions || normalized.repeats || 1));
     return {
       ...normalized,
       mode: normalizedMode,
+      content,
+      script: normalizedMode === "vowels"
+        ? (repetitions > 1 ? buildRepeatedScript(content, repetitions) : content)
+        : (normalized.script || content),
+      contentLabel: normalizedMode === "vowels" ? formatExerciseContentLabel(content, normalizedMode) : normalized.contentLabel,
+      voiceInstruction: normalizedMode === "vowels"
+        && (!String(normalized.voiceInstruction || "").trim() || isLegacyVowelVoiceInstruction(normalized.voiceInstruction))
+        ? (vowelParts?.instruction || getDefaultEditorVoiceInstruction("vowels"))
+        : normalized.voiceInstruction,
+      repetitions,
       duration: breathing ? getBreathingExerciseDuration(normalized) : normalized.duration,
       recordAudio: normalized.recordAudio ?? !breathing,
       recordVideo: normalized.recordVideo ?? !breathing,
@@ -14251,6 +14618,7 @@ function closeMediaLibraryPlayerOverlay() {
   document.body.classList.remove("has-media-library-player-overlay");
 }
 function clearMediaLibraryPlayer() {
+  mediaLibraryPlayer?.classList.remove("is-media-video", "is-media-image", "is-media-audio");
   [mediaLibraryPlayerVideo, mediaLibraryPlayerAudio].forEach((player) => {
     if (!player) return;
     player.pause();
@@ -14276,12 +14644,32 @@ function showMediaLibraryItem(item, autoplay = false) {
   clearMediaLibraryPlayer();
   if (mediaLibraryPlayerTitle) mediaLibraryPlayerTitle.textContent = item.title || "Medium";
   mediaLibraryPlayerEmpty?.classList.add("is-hidden");
+  mediaLibraryPlayer?.classList.add(`is-media-${item.mediaType === "image" ? "image" : item.mediaType === "video" ? "video" : "audio"}`);
   const player = item.mediaType === "video"
     ? mediaLibraryPlayerVideo
     : (item.mediaType === "audio" ? mediaLibraryPlayerAudio : mediaLibraryPlayerImage);
   if (!player) return;
   player.src = source;
-  if (player instanceof HTMLVideoElement) player.loop = item.playbackMode === "loop";
+  if (player instanceof HTMLVideoElement) {
+    const posterUrl = getMediaLibraryThumbnailSource(item);
+    player.controls = true;
+    player.loop = item.playbackMode === "loop";
+    player.muted = false;
+    player.defaultMuted = false;
+    player.playsInline = true;
+    player.preload = "metadata";
+    player.setAttribute("playsinline", "");
+    player.setAttribute("webkit-playsinline", "");
+    player.style.display = "block";
+    player.style.visibility = "visible";
+    player.style.opacity = "1";
+    player.style.width = "100%";
+    player.style.height = "100%";
+    player.style.objectFit = "contain";
+    player.style.backgroundColor = "#080f16";
+    if (posterUrl) player.poster = posterUrl;
+    else player.removeAttribute("poster");
+  }
   player.classList.remove("is-hidden");
   if (player instanceof HTMLImageElement) return;
   player.addEventListener("loadedmetadata", () => {
@@ -14558,6 +14946,7 @@ function renderCourseViews() {
   renderCourseList();
   renderRelaxMusicList();
   renderMediaLibraryList();
+  renderExerciseBrowser();
   renderMyCourses();
 }
 
@@ -17228,7 +17617,20 @@ async function startCourseUnitMedia(exercise) {
     return false;
   }
 
-  if (media.mediaType !== "audio") {
+  if (media.mediaType === "image") {
+    const container = coursePlayer.querySelector(".course-unit-media");
+    if (!container) return false;
+    const imageElement = document.createElement("img");
+    imageElement.className = "media-library-preview course-playlist-image";
+    imageElement.src = resolveAppUrl(media.downloadUrl);
+    imageElement.alt = media.title || exercise?.title || "Übungsmedium";
+    container.replaceChildren(imageElement);
+    if (state) state.textContent = "";
+    showStartButton(false);
+    return true;
+  }
+
+  if (media.mediaType === "video") {
     const container = coursePlayer.querySelector("[data-course-video-container]")
       || coursePlayer.querySelector(".course-unit-media");
     if (!container) return false;
@@ -17244,14 +17646,18 @@ async function startCourseUnitMedia(exercise) {
     courseVisibleVideo = mediaElement;
     mediaElement.src = mediaUrl;
     mediaElement.className = "media-library-preview course-playlist-video";
-    mediaElement.controls = false;
+    mediaElement.controls = true;
     mediaElement.preload = "auto";
     mediaElement.playsInline = true;
     mediaElement.style.position = "";
-    mediaElement.style.width = "";
-    mediaElement.style.height = "";
-    mediaElement.style.opacity = "";
-    mediaElement.style.pointerEvents = "";
+    mediaElement.style.display = "block";
+    mediaElement.style.visibility = "visible";
+    mediaElement.style.width = "100%";
+    mediaElement.style.height = "100%";
+    mediaElement.style.opacity = "1";
+    mediaElement.style.pointerEvents = "auto";
+    mediaElement.style.objectFit = "contain";
+    mediaElement.style.backgroundColor = "#080f16";
     mediaElement.onended = null;
     mediaElement.onerror = null;
     mediaElement.onabort = null;
@@ -21298,6 +21704,16 @@ recordToEvaluationButton?.addEventListener("click", () => {
   setVoiceAnalysisScreen("evaluation");
 });
 
+exerciseBrowserBackButton?.addEventListener("click", () => {
+  if (selectedExerciseBrowserSubcategory) {
+    selectedExerciseBrowserSubcategory = "";
+    renderExerciseBrowser();
+    return;
+  }
+  selectedExerciseBrowserCategory = "";
+  renderExerciseBrowser();
+});
+
 function setActiveView(viewName) {
   const previousView = document.body.dataset.activeView || "";
   if (previousView === "voiceAnalysis" && viewName !== "voiceAnalysis") pauseVoiceAnalysisPlayers();
@@ -21318,7 +21734,7 @@ function setActiveView(viewName) {
 
 
 navButtons.forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.targetView === viewName);
+    button.classList.toggle("is-active", button.dataset.targetView === viewName || (viewName === "record" && button.dataset.targetView === "exercises"));
   });
 
   appSections.forEach((section) => {
@@ -21346,7 +21762,7 @@ navButtons.forEach((button) => {
     setHearingScreen(getHearingRouteScreen(), false);
   }
 
-  if (["dailyPlans", "courses", "relaxMusic", "mediaLibrary", "myCourses"].includes(viewName)) {
+  if (["dailyPlans", "courses", "relaxMusic", "mediaLibrary", "myCourses", "exercises"].includes(viewName)) {
     renderCourseViews();
   }
 
@@ -21367,12 +21783,13 @@ function updatePlaybackVisibility() {
 
 function updateTopBarTitle(viewName) {
   const titles = {
-    record: "Aufnahme",
+    record: "Übungen",
     editor: "Editor",
     playback: "Playback",
     history: "Auswertung",
     stats: "Übungsanalyse",
     voiceAnalysis: "Stimmanalyse",
+    exercises: "Übungen",
     hearing: "Hören",
     patients: "Patienten",
     dailyPlans: "Tagespläne",
@@ -21580,9 +21997,33 @@ function transactionDone(transaction) {
   });
 }
 initializeHearingUi();
-if (window.location.hash.startsWith("#hearing")) {
-  setActiveView("hearing");
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

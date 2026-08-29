@@ -22,13 +22,13 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="stylesheet" href="styles.css?v=20260827-thumb-feedback001" />
+    <link rel="stylesheet" href="styles.css?v=20260828-media-fullscreen001" />
   </head>
   <body>
     <div id="appSplash" class="app-splash" aria-label="LogoSound startet">
       <img class="app-splash-icon" src="icons/homescreen-logo-20260801.png" alt="" />
       <div class="app-splash-title">LogoSound</div>
-      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-20 amp338</div>
+      <div class="app-splash-subtitle">Sprachübung startet · Version 2026-08-28 vowel-intro-start001</div>
       <div class="app-splash-loader" aria-hidden="true"></div>
     </div>
 
@@ -47,6 +47,7 @@
       <div id="appMenu" class="app-menu is-hidden" aria-label="Menü">
         <button type="button" data-menu-view="editor">Editor</button>
         <button type="button" data-menu-view="voiceAnalysis">Stimmanalyse</button>
+        <button type="button" data-menu-view="exercises">Übungen</button>
         <button type="button" data-menu-view="hearing">Hören</button>
         <button type="button" data-menu-view="patients">Patientenverwaltung</button>
         <button type="button" data-menu-view="dailyPlans" data-role-menu="staff">Tagespläne</button>
@@ -85,7 +86,7 @@
             <h1>LogoSound</h1>
             <p>Kamera und Mikrofon erst aktivieren, wenn die Übung beginnt.</p>
           </div>
-          <button id="cameraStartButton" class="primary-action" type="button">Kamera aktivieren</button>
+          <button id="cameraStartButton" class="primary-action" type="button">Kamera und Mikrofon freigeben</button>
         </div>
         <button id="toggleVideoButton" class="video-toggle-button" type="button">Video aus</button>
         <canvas id="liveWaveform" width="900" height="260" aria-label="Live-Wellenform"></canvas>
@@ -202,7 +203,7 @@
             <input id="recordingKaraokeSpeed" class="range-input" type="range" min="1" max="12" step="1" value="3" />
             <p id="recordingKaraokeTimingHint" class="range-help">Standzeit wird nach der Übung berechnet.</p>
           </div>
-          <div class="recording-tuning-card">
+          <div class="recording-tuning-card sensitivity-tuning-card">
             <label class="field-label range-label sensitivity-label" for="sensitivitySlider">
               Empfindlichkeit <strong id="sensitivityValue">50</strong>
             </label>
@@ -215,7 +216,7 @@
         <button id="calibrationBackButton" class="secondary-action calibration-back-action is-hidden" type="button">Zurück</button>
 
         <p id="message" class="message" role="status">
-          Kamera und Mikrofon freigeben, dann kann die Übung beginnen.
+          Übung auswählen und starten. Kamera, Mikrofon und Kalibrierung laufen automatisch.
         </p>
         <p id="firebaseState" class="cloud-state">Firebase bereit.</p>
       </section>
@@ -859,13 +860,15 @@
         <details class="settings-group settings-collapsible calibration-settings-group">
           <summary>
             <span class="eyebrow">Kalibrierung</span>
-            <strong>Empfindlichkeit und EQ</strong>
+            <strong>Automatische Kalibrierung und EQ</strong>
           </summary>
           <div class="settings-collapsible-content">
-          <label class="field-label range-label" for="settingsSensitivity">
-            Empfindlichkeit <strong id="settingsSensitivityValue">30%</strong>
-          </label>
-          <input id="settingsSensitivity" class="range-input" type="range" min="1" max="200" step="1" value="30" />
+          <div class="settings-sensitivity-row is-hidden">
+            <label class="field-label range-label" for="settingsSensitivity">
+              Empfindlichkeit <strong id="settingsSensitivityValue">30%</strong>
+            </label>
+            <input id="settingsSensitivity" class="range-input" type="range" min="1" max="200" step="1" value="30" />
+          </div>
           <button id="settingsCalibrationButton" class="secondary-action" type="button">Kalibrieren</button>
           <div id="settingsCalibrationStatus" class="helper-text">Kalibrierung misst 2 Sekunden Stille und setzt daraus die Pause-/Sprachschwelle.</div>
           <div class="settings-calibration-actions">
@@ -1098,6 +1101,23 @@
 
       </section>
 
+      <section class="exercise-browser-panel app-section" data-view="exercises" aria-label="Übungen">
+        <div class="section-header exercise-browser-header">
+          <div>
+            <p class="eyebrow">Übungen</p>
+            <h2 id="exerciseBrowserTitle">Übungsbibliothek</h2>
+          </div>
+          <button id="exerciseBrowserBackButton" class="quiet-action exercise-browser-back-button is-hidden" type="button"><span aria-hidden="true">‹</span> Kategorien</button>
+        </div>
+        <div id="exerciseCategoryGrid" class="exercise-category-grid" aria-label="Übungskategorien"></div>
+        <div id="exerciseBrowserSubmenu" class="exercise-browser-submenu is-hidden" hidden>
+          <p id="exerciseBrowserSubmenuTitle" class="exercise-browser-submenu-title">Kategorie</p>
+          <p id="exerciseBrowserSubmenuMeta" class="field-help">Übung auswählen.</p>
+          <div id="exerciseBrowserSubcategoryGrid" class="exercise-subcategory-grid is-hidden" hidden></div>
+          <div id="exerciseBrowserList" class="exercise-browser-list"></div>
+        </div>
+      </section>
+
       <section class="courses-panel app-section" data-view="courses" aria-label="Kurse">
         <div class="section-header">
           <div>
@@ -1297,7 +1317,7 @@
             <p>Aufnahme öffnen, Übung auswählen, bei Bedarf Kamera aktivieren und dann <strong>Übung starten</strong> drücken.</p>
           </details>
           <details class="help-detail">
-            <summary>Wo ändere ich Stimme, Empfindlichkeit oder KI?</summary>
+            <summary>Wo ändere ich Stimme, Kalibrierung oder KI?</summary>
             <p>Im Bereich <strong>Einstellungen</strong>. Dort liegen ElevenLabs, ChatGPT, Kalibrierung, EQ und Wiedergabe-Lautstärke.</p>
           </details>
           <details class="help-detail">
@@ -1312,7 +1332,7 @@
       </section>
 
       <nav class="bottom-nav" aria-label="App-Navigation">
-        <button class="nav-button is-active" type="button" data-target-view="record">Aufnahme</button>
+        <button class="nav-button is-active" type="button" data-target-view="exercises">Übungen</button>
         <button class="nav-button" type="button" data-target-view="playback">Playback</button>
         <button class="nav-button" type="button" data-target-view="history">Auswertung</button>
         <button class="nav-button" type="button" data-target-view="myCourses">Kurs</button>
@@ -1367,10 +1387,29 @@
       </div>
     </div>
 
-    <script src="voice-analysis.js?v=20260827-dialog-patient-eval001"></script>
-    <script type="module" src="app.js?v=20260828-thumb-empty-retry001"></script>
+    <script src="voice-analysis.js?v=20260828-amplitude-fallback001"></script>
+    <script type="module" src="app.js?v=20260828-vowel-intro-start001"></script>
   </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

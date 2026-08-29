@@ -301,10 +301,12 @@
     monitor() {
       if (!this.analyser) return;
       const buffer = new Float32Array(this.analyser.fftSize);
+      const byteBuffer = new Uint8Array(this.analyser.fftSize);
       const frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
       const sampleRate = this.audioContext?.sampleRate || 44100;
       const tick = () => {
         if (!this.analyser) return;
+        if (this.audioContext?.state === "suspended") this.audioContext.resume?.();
         this.analyser.getFloatTimeDomainData(buffer);
         this.analyser.getByteFrequencyData(frequencyData);
         let sum = 0;
@@ -312,6 +314,17 @@
         for (let index = 0; index < buffer.length; index += 1) {
           sum += buffer[index] * buffer[index];
           peak = Math.max(peak, Math.abs(buffer[index]));
+        }
+        if (peak < 0.00001) {
+          sum = 0;
+          peak = 0;
+          this.analyser.getByteTimeDomainData(byteBuffer);
+          for (let index = 0; index < byteBuffer.length; index += 1) {
+            const sample = (byteBuffer[index] - 128) / 128;
+            buffer[index] = sample;
+            sum += sample * sample;
+            peak = Math.max(peak, Math.abs(sample));
+          }
         }
         const rms = Math.sqrt(sum / Math.max(1, buffer.length));
         const volume = clamp(Math.round(20 * Math.log10(Math.max(0.0001, rms)) + 100), 0, 100);
@@ -609,6 +622,8 @@
     readHistory,
   };
 })();
+
+
 
 
 
